@@ -2,31 +2,28 @@ const { pool } = require("../db");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-const resolveRolId = async (conn, id_rol) => {
-	if (id_rol) return id_rol;
-
+const getRolIdByName = async (conn, nombre) => {
 	const [rows] = await conn.execute(
 		"SELECT id_rol FROM roles WHERE nombre = ? LIMIT 1",
-		["paciente"],
+		[nombre],
 	);
 	if (!rows.length) {
-		const err = new Error("Rol paciente no existe");
+		const err = new Error(`Rol ${nombre} no existe`);
 		err.code = "ROL_NOT_FOUND";
 		throw err;
 	}
 	return rows[0].id_rol;
 };
 
-const createPacienteController = async (payload) => {
+const createEspecialistaController = async (payload) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
 
 		const id_usuario = crypto.randomUUID();
-		const id_rol = await resolveRolId(conn, payload.id_rol);
+		const id_rol = await getRolIdByName(conn, "especialista");
 		const hashedPassword = await bcrypt.hash(payload.contrasena, 10);
 
-		// 1) Insert usuario (tabla base)
 		const sqlUsuario = `
       INSERT INTO usuario
         (id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
@@ -47,33 +44,29 @@ const createPacienteController = async (payload) => {
 			id_rol,
 		]);
 
-		// 2) Insert paciente (hereda de usuario: id_paciente = id_usuario)
-		const sqlPaciente = `
-      INSERT INTO paciente
-        (id_paciente, tipo_sangre, descripcion, direccion, contacto_emergencia_nombre, contacto_emergencia_telefono)
+		const sqlEspecialista = `
+      INSERT INTO especialista
+        (id_especialista, id_especialidad, codigo_colegiatura)
       VALUES
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?)
     `;
 
-		await conn.execute(sqlPaciente, [
+		await conn.execute(sqlEspecialista, [
 			id_usuario,
-			payload.tipo_sangre,
-			payload.descripcion,
-			payload.direccion ?? null,
-			payload.contacto_emergencia_nombre ?? null,
-			payload.contacto_emergencia_telefono ?? null,
+			payload.id_especialidad,
+			payload.codigo_colegiatura ?? null,
 		]);
 
 		await conn.commit();
 
-		// Lo que devuelves al front
 		return {
 			id_usuario,
-			id_paciente: id_usuario,
+			id_especialista: id_usuario,
 			nombre: payload.nombre,
 			apellido: payload.apellido,
 			correo: payload.correo,
 			telefono: payload.telefono,
+			id_especialidad: payload.id_especialidad,
 		};
 	} catch (err) {
 		await conn.rollback();
@@ -83,25 +76,17 @@ const createPacienteController = async (payload) => {
 	}
 };
 
-const listPacientesController = async ({ q }) => {
+const listEspecialistasController = async ({ q }) => {
 	let sql = `
     SELECT
-      u.id_usuario AS id_paciente,
+      u.id_usuario AS id_especialista,
       u.nombre,
       u.apellido,
-      u.genero,
-      u.cedula,
-      u.correo,
-      u.telefono,
-      u.activo,
-      u.fecha_nacimiento,
-      p.tipo_sangre,
-      p.descripcion,
-      p.direccion,
-      p.contacto_emergencia_nombre,
-      p.contacto_emergencia_telefono
-    FROM paciente p
-    INNER JOIN usuario u ON u.id_usuario = p.id_paciente
+      e.id_especialidad,
+      es.nombre AS especialidad
+    FROM especialista e
+    INNER JOIN usuario u ON u.id_usuario = e.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = e.id_especialidad
     WHERE 1=1
   `;
 	const params = [];
@@ -111,7 +96,7 @@ const listPacientesController = async ({ q }) => {
         u.nombre LIKE ?
         OR u.apellido LIKE ?
         OR u.correo LIKE ?
-        OR u.cedula LIKE ?
+        OR es.nombre LIKE ?
       )
     `;
 		const like = `%${q}%`;
@@ -122,10 +107,28 @@ const listPacientesController = async ({ q }) => {
 	return rows;
 };
 
-const getPacienteByIdController = async (id_paciente) => {
+const getEspecialistaByIdController = async (id_especialista) => {
 	const sql = `
     SELECT
-      u.id_usuario AS id_paciente,
+      u.id_usuario AS id_especialista,
+      u.nombre,
+      u.apellido,
+      e.id_especialidad,
+      es.nombre AS especialidad
+    FROM especialista e
+    INNER JOIN usuario u ON u.id_usuario = e.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = e.id_especialidad
+    WHERE e.id_especialista = ?
+    LIMIT 1
+  `;
+	const [rows] = await pool.execute(sql, [id_especialista]);
+	return rows[0] || null;
+};
+
+const getEspecialistaSelfController = async (id_especialista) => {
+	const sql = `
+    SELECT
+      u.id_usuario AS id_especialista,
       u.nombre,
       u.apellido,
       u.genero,
@@ -135,24 +138,46 @@ const getPacienteByIdController = async (id_paciente) => {
       u.activo,
       u.fecha_nacimiento,
       u.fecha_registro,
-      p.tipo_sangre,
-      p.descripcion,
-      p.direccion,
-      p.contacto_emergencia_nombre,
-      p.contacto_emergencia_telefono
-    FROM paciente p
-    INNER JOIN usuario u ON u.id_usuario = p.id_paciente
-    WHERE p.id_paciente = ?
+      e.id_especialidad,
+      e.codigo_colegiatura,
+      es.nombre AS especialidad
+    FROM especialista e
+    INNER JOIN usuario u ON u.id_usuario = e.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = e.id_especialidad
+    WHERE e.id_especialista = ?
     LIMIT 1
   `;
-	const [rows] = await pool.execute(sql, [id_paciente]);
+	const [rows] = await pool.execute(sql, [id_especialista]);
 	return rows[0] || null;
 };
 
-const updatePacienteController = async (id_paciente, payload) => {
+const deactivateEspecialistaController = async (id_especialista) => {
+	const sql = `
+    UPDATE usuario
+    SET activo = 0
+    WHERE id_usuario = ?
+  `;
+	const [result] = await pool.execute(sql, [id_especialista]);
+	return {
+		updated: result.affectedRows,
+		id_especialista,
+	};
+};
+
+const updateEspecialistaController = async (id_especialista, payload) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
+
+		const [existsRows] = await conn.execute(
+			"SELECT id_especialista FROM especialista WHERE id_especialista = ?",
+			[id_especialista],
+		);
+		if (!existsRows.length) {
+			const err = new Error("Especialista no encontrado");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
 
 		const userFields = [
 			"nombre",
@@ -165,57 +190,47 @@ const updatePacienteController = async (id_paciente, payload) => {
 		];
 		const userUpdates = [];
 		const userParams = [];
-
 		userFields.forEach((field) => {
 			if (payload[field] !== undefined) {
 				userUpdates.push(`${field} = ?`);
 				userParams.push(payload[field]);
 			}
 		});
-
 		if (userUpdates.length) {
 			const sqlUsuario = `
         UPDATE usuario
         SET ${userUpdates.join(", ")}
         WHERE id_usuario = ?
       `;
-			await conn.execute(sqlUsuario, [...userParams, id_paciente]);
+			await conn.execute(sqlUsuario, [...userParams, id_especialista]);
 		}
 
-		const pacienteFields = [
-			"tipo_sangre",
-			"descripcion",
-			"direccion",
-			"contacto_emergencia_nombre",
-			"contacto_emergencia_telefono",
-		];
-		const pacienteUpdates = [];
-		const pacienteParams = [];
-
-		pacienteFields.forEach((field) => {
+		const espFields = ["id_especialidad", "codigo_colegiatura"];
+		const espUpdates = [];
+		const espParams = [];
+		espFields.forEach((field) => {
 			if (payload[field] !== undefined) {
-				pacienteUpdates.push(`${field} = ?`);
-				pacienteParams.push(payload[field]);
+				espUpdates.push(`${field} = ?`);
+				espParams.push(payload[field]);
 			}
 		});
-
-		if (pacienteUpdates.length) {
-			const sqlPaciente = `
-        UPDATE paciente
-        SET ${pacienteUpdates.join(", ")}
-        WHERE id_paciente = ?
+		if (espUpdates.length) {
+			const sqlEsp = `
+        UPDATE especialista
+        SET ${espUpdates.join(", ")}
+        WHERE id_especialista = ?
       `;
-			await conn.execute(sqlPaciente, [...pacienteParams, id_paciente]);
+			await conn.execute(sqlEsp, [...espParams, id_especialista]);
 		}
 
-		if (!userUpdates.length && !pacienteUpdates.length) {
+		if (!userUpdates.length && !espUpdates.length) {
 			const err = new Error("No hay campos para actualizar");
 			err.code = "NO_FIELDS";
 			throw err;
 		}
 
 		await conn.commit();
-		return { id_paciente };
+		return { updated: 1, id_especialista };
 	} catch (err) {
 		await conn.rollback();
 		throw err;
@@ -224,30 +239,17 @@ const updatePacienteController = async (id_paciente, payload) => {
 	}
 };
 
-const deactivatePacienteController = async (id_paciente) => {
-	const sql = `
-    UPDATE usuario
-    SET activo = 0
-    WHERE id_usuario = ?
-  `;
-	const [result] = await pool.execute(sql, [id_paciente]);
-	return {
-		updated: result.affectedRows,
-		id_paciente,
-	};
-};
-
-const updatePacienteSelfController = async ({ id_usuario, telefono, contrasena }) => {
+const updateEspecialistaSelfController = async ({ id_usuario, telefono, contrasena }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
 
 		const [rows] = await conn.execute(
-			"SELECT id_paciente FROM paciente WHERE id_paciente = ?",
+			"SELECT id_especialista FROM especialista WHERE id_especialista = ?",
 			[id_usuario],
 		);
 		if (!rows.length) {
-			const err = new Error("Paciente no encontrado");
+			const err = new Error("Especialista no encontrado");
 			err.code = "NOT_FOUND";
 			throw err;
 		}
@@ -291,10 +293,11 @@ const updatePacienteSelfController = async ({ id_usuario, telefono, contrasena }
 };
 
 module.exports = {
-	createPacienteController,
-	listPacientesController,
-	getPacienteByIdController,
-	updatePacienteController,
-	deactivatePacienteController,
-	updatePacienteSelfController,
+	createEspecialistaController,
+	listEspecialistasController,
+	getEspecialistaByIdController,
+	deactivateEspecialistaController,
+	updateEspecialistaController,
+	updateEspecialistaSelfController,
+	getEspecialistaSelfController,
 };

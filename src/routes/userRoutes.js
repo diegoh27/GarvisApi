@@ -1,9 +1,38 @@
 const { Router } = require("express");
-const { userCreateHandler, prueba } = require("../handlers/userHandlers");
+const {
+	userCreateHandler,
+	prueba,
+	getUserByIdHandler,
+	updateUserHandler,
+	setUserActiveHandler,
+} = require("../handlers/userHandlers");
+const { authenticateToken } = require("../middleware/auth");
+const { authorizeRoles } = require("../middleware/authorizeRoles");
 
 const userRoutes = Router();
 
 userRoutes.get("/", prueba);
 userRoutes.post("/", userCreateHandler);
+// GET /users/:id (solo admin)
+userRoutes.get(
+	"/:id",
+	authenticateToken,
+	authorizeRoles("admin"),
+	getUserByIdHandler,
+);
+// PUT /users/:id (solo admin)
+userRoutes.put(
+	"/:id",
+	authenticateToken,
+	authorizeRoles("admin"),
+	updateUserHandler,
+);
+// PATCH /users/:id/estado (solo admin)
+userRoutes.patch(
+	"/:id/estado",
+	authenticateToken,
+	authorizeRoles("admin"),
+	setUserActiveHandler,
+);
 
 module.exports = userRoutes;
