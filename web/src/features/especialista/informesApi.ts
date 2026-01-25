@@ -12,7 +12,7 @@ const informesApi = baseApi.injectEndpoints({
 		getInformeByCita: builder.query<Informe | null, string>({
 			query: (id_cita) => `/informes/cita/${id_cita}`,
 			transformResponse: (response: ApiResponse<Informe>) => response.data,
-			providesTags: (result, error, id_cita) => [
+			providesTags: (_result, _error, id_cita) => [
 				{ type: "Informes", id: id_cita },
 			],
 		}),
@@ -22,7 +22,7 @@ const informesApi = baseApi.injectEndpoints({
 				method: "POST",
 				body,
 			}),
-			invalidatesTags: (result, error, arg) => [
+			invalidatesTags: (_result, _error, arg) => [
 				"Informes",
 				{ type: "Informes", id: arg.id_cita },
 				"Citas", // También invalidar citas para actualizar la columna de informe

@@ -93,7 +93,6 @@ const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
 						src={proxyUrl}
 						className="h-full w-full"
 						title="PDF Viewer"
-						type="application/pdf"
 					/>
 				</div>
 			</div>
