@@ -1,0 +1,233 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AppLayout from "../layouts/AppLayout";
+import { AuthForgot, AuthLogin, AuthRegister } from "../features/auth";
+import { CitasPage } from "../features/citas";
+import { DashboardPage } from "../features/dashboard";
+import { DisponibilidadPublicaPage } from "../features/disponibilidad";
+import { EcosPage } from "../features/ecos";
+import { EmpleadosPage } from "../features/empleados";
+import { EntesLegalesPage } from "../features/entesLegales";
+import { EspecialidadesPage } from "../features/especialidades";
+import {
+	CalendarioPage,
+	ConfiguracionPage,
+	InformesPage,
+	NotificacionesPage,
+	PacientesPage,
+} from "../features/especialista";
+import {
+	EspecialistaDetallePage,
+	EspecialistasListPage,
+} from "../features/especialistas";
+import { HomePage } from "../features/home";
+import { InventarioPage } from "../features/inventario";
+import { ModeradoresPage } from "../features/moderadores";
+import { NotFoundPage } from "../features/notfound";
+import { PagosPage } from "../features/pagos";
+import { ProductosPage } from "../features/productos";
+import { ResultadosPage } from "../features/resultados";
+import { RolesPage } from "../features/roles";
+import { UsuariosPage } from "../features/usuarios";
+import GuestRoute from "../routes/GuestRoute";
+import ProtectedRoute from "../routes/ProtectedRoute";
+import RoleRoute from "../routes/RoleRoute";
+
+const App = () => {
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route element={<AppLayout />}>
+					<Route
+						index
+						element={
+							<GuestRoute>
+								<HomePage />
+							</GuestRoute>
+						}
+					/>
+					<Route
+						path="auth/login"
+						element={
+							<GuestRoute>
+								<AuthLogin />
+							</GuestRoute>
+						}
+					/>
+					<Route
+						path="auth/forgot"
+						element={
+							<GuestRoute>
+								<AuthForgot />
+							</GuestRoute>
+						}
+					/>
+					<Route
+						path="auth/register"
+						element={
+							<GuestRoute>
+								<AuthRegister />
+							</GuestRoute>
+						}
+					/>
+					<Route
+						path="dashboard"
+						element={
+							<ProtectedRoute>
+								<DashboardPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="calendario"
+						element={
+							<ProtectedRoute>
+								<CalendarioPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="especialistas"
+						element={
+							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
+								<EspecialistasListPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="especialistas/:id"
+						element={
+							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
+								<EspecialistaDetallePage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="disponibilidad"
+						element={
+							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
+								<DisponibilidadPublicaPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="pacientes"
+						element={
+							<RoleRoute allowed={["admin", "moderador", "especialista"]}>
+								<PacientesPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="moderadores"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<ModeradoresPage />
+							</RoleRoute>
+						}
+					/>
+					<Route path="especialidades" element={<EspecialidadesPage />} />
+					<Route path="ecos" element={<EcosPage />} />
+					<Route
+						path="informes"
+						element={
+							<RoleRoute allowed={["admin", "moderador", "especialista"]}>
+								<InformesPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="citas"
+						element={
+							<ProtectedRoute>
+								<CitasPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="resultados"
+						element={
+							<ProtectedRoute>
+								<ResultadosPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="notificaciones"
+						element={
+							<ProtectedRoute>
+								<NotificacionesPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="pagos"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<PagosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="inventario"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<InventarioPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="productos"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<ProductosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="entes-legales"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<EntesLegalesPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="empleados"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<EmpleadosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="usuarios"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<UsuariosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="roles"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<RolesPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="configuracion"
+						element={
+							<ProtectedRoute>
+								<ConfiguracionPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route path="*" element={<NotFoundPage />} />
+				</Route>
+			</Routes>
+		</BrowserRouter>
+	);
+};
+
+export default App;
