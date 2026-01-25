@@ -56,7 +56,13 @@ const HistorialModal = ({
 						<tbody>
 							{citas.map((cita) => (
 								<tr key={cita.id_cita} className="border-b border-mist/70">
-									<td className="px-3 py-3">{formatFecha(cita.fecha_cita)}</td>
+									<td className="px-3 py-3">
+										{formatFecha(
+											cita.fecha_cita instanceof Date
+												? cita.fecha_cita.toISOString()
+												: cita.fecha_cita
+										)}
+									</td>
 									<td className="px-3 py-3">{formatHora(cita.hora_cita)}</td>
 									<td className="px-3 py-3">{cita.eco_nombre}</td>
 									<td className="px-3 py-3">

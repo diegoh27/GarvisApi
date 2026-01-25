@@ -219,7 +219,12 @@ const CalendarioPage = () => {
 				bloque.hora_inicio.length === 5
 					? `${bloque.hora_inicio}:00`
 					: bloque.hora_inicio;
-			map.set(`${dateKey}|${hourKey}`, bloque);
+			// Convertir al tipo Disponibilidad del calendario (fecha debe ser string)
+			const disponibilidad: Disponibilidad = {
+				...bloque,
+				fecha: typeof bloque.fecha === "string" ? bloque.fecha : bloque.fecha.toISOString().split("T")[0],
+			};
+			map.set(`${dateKey}|${hourKey}`, disponibilidad);
 		});
 		citas.forEach((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);

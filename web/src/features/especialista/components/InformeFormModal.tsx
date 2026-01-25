@@ -4,6 +4,7 @@ import "sweetalert2/dist/sweetalert2.min.css";
 import {
 	useGetInformeByCitaQuery,
 	useCreateOrUpdateInformeMutation,
+	type CrearInformePayload,
 } from "../informesApi";
 import PDFViewerModal from "./PDFViewerModal";
 import type { CitaEspecialista } from "../types";
@@ -27,8 +28,6 @@ const InformeFormModal = ({
 	const { data: informeExistente, isLoading: loadingInforme } =
 		useGetInformeByCitaQuery(cita.id_cita, {
 			skip: !cita.id_cita,
-			// No mostrar error si no existe (404 es esperado cuando aún no se ha creado)
-			error: undefined,
 		});
 
 	const [createOrUpdateInforme, { isLoading: saving }] =
@@ -67,11 +66,15 @@ const InformeFormModal = ({
 		}
 
 		try {
-			await createOrUpdateInforme({
+			const payload: CrearInformePayload = {
 				id_cita: cita.id_cita,
 				reseña: reseña.trim(),
-				recomendaciones: recomendaciones.trim() || null,
-			}).unwrap();
+			};
+			// Solo incluir recomendaciones si tiene valor
+			if (recomendaciones.trim()) {
+				payload.recomendaciones = recomendaciones.trim();
+			}
+			await createOrUpdateInforme(payload).unwrap();
 
 			await Swal.fire({
 				title: "¡Éxito!",
