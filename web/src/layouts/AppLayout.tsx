@@ -70,9 +70,10 @@ const AppLayout = () => {
 	};
 
 	if (!showShell) {
+		const isHomePage = location.pathname === "/";
 		return (
 			<div className="min-h-screen bg-base-100">
-				<main className={isAuthRoute ? "min-h-screen" : "px-4 py-6"}>
+				<main className={isAuthRoute ? "min-h-screen" : isHomePage ? "" : "px-4 py-6"}>
 					<Outlet />
 				</main>
 			</div>

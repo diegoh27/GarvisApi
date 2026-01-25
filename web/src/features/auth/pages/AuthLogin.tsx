@@ -16,9 +16,16 @@ const AuthLogin = () => {
 						/>
 						<div className="absolute inset-0 bg-emerald-900/35" />
 						<div className="relative flex h-full flex-col justify-between p-10 text-white">
-							<div className="text-sm font-semibold uppercase tracking-widest">
+							{/* <div className="text-sm font-semibold uppercase tracking-widest">
 								Logo
-							</div>
+							</div> */}
+							<Link to="/" className="flex items-center gap-3 -ml-2 lg:-ml-4">
+								<img
+									src="/logo.png"
+									alt="Logo Garbis"
+									className="h-30 w-30 object-contain"
+								/>
+							</Link>
 							<div className="space-y-2">
 								<p className="text-sm font-semibold uppercase tracking-[0.2em]">
 									Agenda tu ecografía

@@ -27,7 +27,7 @@ const generateInformePDF = async (datos) => {
 					const buffer = Buffer.concat(chunks);
 					const result = await uploadBufferToCloudinary(
 						buffer,
-						"garvis/informes/pdfs",
+						"garbis/informes/pdfs",
 						"raw",
 						{
 							// Forzar formato PDF y nombre con extensión

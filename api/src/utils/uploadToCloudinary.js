@@ -10,7 +10,7 @@ const { Readable } = require("stream");
  */
 const uploadBufferToCloudinary = async (
 	fileBuffer,
-	folder = "garvis",
+	folder = "garbis",
 	resourceType = "auto",
 	options = {}
 ) => {
@@ -64,7 +64,7 @@ const uploadBufferToCloudinary = async (
  * @param {string} folder - Carpeta en Cloudinary
  * @returns {Promise<{url: string, public_id: string}>}
  */
-const uploadMulterFileToCloudinary = async (file, folder = "garvis") => {
+const uploadMulterFileToCloudinary = async (file, folder = "garbis") => {
 	if (!file || !file.buffer) {
 		throw new Error("Archivo inválido");
 	}

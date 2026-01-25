@@ -72,7 +72,7 @@ const uploadFirmaHandler = async (req, res) => {
 		// Subir a Cloudinary
 		const result = await uploadMulterFileToCloudinary(
 			req.file,
-			"garvis/informes/firmas"
+			"garbis/informes/firmas"
 		);
 
 		return res.status(200).json({
@@ -124,7 +124,7 @@ const uploadInformePDFHandler = async (req, res) => {
 		// Subir a Cloudinary
 		const result = await uploadMulterFileToCloudinary(
 			req.file,
-			"garvis/informes/pdfs"
+			"garbis/informes/pdfs"
 		);
 
 		return res.status(200).json({
