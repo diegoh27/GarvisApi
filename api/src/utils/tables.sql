@@ -1,4 +1,8 @@
 -- =========================
+-- Script SQL completo para crear la base de datos y todas las tablas
+-- =========================
+
+-- =========================
 -- 0) DB
 -- =========================
 CREATE DATABASE IF NOT EXISTS garvis
@@ -258,7 +262,7 @@ CREATE TABLE IF NOT EXISTS resultado (
   id_cita CHAR(36) NOT NULL,
   id_especialista CHAR(36) NOT NULL,
   nombre VARCHAR(255) NULL,
-  archivo VARCHAR(255) NULL,
+  archivo TEXT NULL, -- TEXT para almacenar arrays JSON de múltiples URLs
   estado_resultado TINYINT NOT NULL DEFAULT 0, -- 0 Borrador, 1 Listo, 2 Publicado
   fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_publicacion TIMESTAMP NULL DEFAULT NULL,
@@ -446,16 +450,13 @@ CREATE TABLE IF NOT EXISTS obligacion_bitacora (
   id_usuario CHAR(36) NOT NULL,
   accion VARCHAR(120) NOT NULL,
   fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
   PRIMARY KEY (id_bitacora),
   KEY idx_bitacora_obligacion (id_obligacion),
   KEY idx_bitacora_usuario (id_usuario),
-
   CONSTRAINT fk_bitacora_obligacion
     FOREIGN KEY (id_obligacion) REFERENCES obligacion(id_obligacion)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-
   CONSTRAINT fk_bitacora_usuario
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
     ON UPDATE CASCADE

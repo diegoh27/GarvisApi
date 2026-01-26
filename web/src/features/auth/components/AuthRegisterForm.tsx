@@ -287,6 +287,9 @@ const AuthRegisterForm = () => {
 				</div>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
+						<label className="mb-1 block text-sm font-medium text-slate-700">
+							Fecha de nacimiento
+						</label>
 						<input
 							type="date"
 							placeholder="Fecha de nacimiento"
@@ -304,6 +307,9 @@ const AuthRegisterForm = () => {
 						)}
 					</div>
 					<div>
+						<label className="mb-1 block text-sm font-medium text-slate-700">
+							Género
+						</label>
 						<select
 							className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
 								fieldErrors.genero ? "border-red-500" : "border-emerald-200"

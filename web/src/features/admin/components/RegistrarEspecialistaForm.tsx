@@ -220,7 +220,7 @@ const RegistrarEspecialistaForm = () => {
 				showConfirmButton: false,
 			});
 
-			navigate("/especialistas");
+			navigate("/usuarios");
 		} catch (err: any) {
 			const message =
 				err?.data?.message || "No se pudo registrar el especialista";
