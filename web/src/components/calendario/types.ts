@@ -3,6 +3,8 @@ type Disponibilidad = {
 	fecha: string;
 	hora_inicio: string;
 	hora_fin: string;
+	id_eco?: string | null;
+	eco_nombre?: string | null;
 	estado: number;
 	estado_pago?: number;
 	estado_cita?: number;

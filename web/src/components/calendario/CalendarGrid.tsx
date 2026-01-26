@@ -1,3 +1,4 @@
+import React from "react";
 import type { Disponibilidad, TimeOption } from "./types";
 
 type CalendarGridProps = {
@@ -9,6 +10,7 @@ type CalendarGridProps = {
 	minFecha: string;
 	busyCell: string | null;
 	cancelingId: string | null;
+	selectedCell: string | null;
 	estadoColor: Record<number, string>;
 	estadoLabel: Record<number, string>;
 	formatHora: (value: string) => string;
@@ -25,6 +27,7 @@ const CalendarGrid = ({
 	minFecha,
 	busyCell,
 	cancelingId,
+	selectedCell,
 	estadoColor,
 	estadoLabel,
 	formatHora,
@@ -32,21 +35,20 @@ const CalendarGrid = ({
 	onCellClick,
 }: CalendarGridProps) => {
 	return (
-		<div className="mt-4 overflow-hidden rounded-2xl border border-mist bg-paper">
-			<div className="grid grid-cols-[80px_repeat(7,minmax(120px,1fr))] border-b border-mist text-xs text-brand-800">
-				<div className="p-3" />
+		<div className="mt-4 overflow-x-auto rounded-2xl border border-mist bg-paper">
+			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] border-b border-mist text-xs text-brand-800">
+				<div className="p-2 sm:p-3" />
 				{dayLabels.map((label) => (
-					<div key={label} className="border-l border-mist p-3 font-semibold">
+					<div key={label} className="border-l border-mist p-2 sm:p-3 font-semibold">
 						{label}
 					</div>
 				))}
 			</div>
-			<div className="grid grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-xs">
+			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-xs">
 				{timeOptions.map((hour) => (
-					<>
+					<React.Fragment key={hour.value}>
 						<div
-							key={`${hour.value}-label`}
-							className="border-b border-mist p-3 text-brand-800"
+							className="border-b border-mist p-2 sm:p-3 text-brand-800"
 						>
 							{hour.label}
 						</div>
@@ -76,12 +78,17 @@ const CalendarGrid = ({
 										? "bg-amber-400 text-brand-900"
 										: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
 								: "";
+							const isSelected = selectedCell === cellKey && !bloque;
 							return (
 								<div
 									key={cellKey}
-									className={`border-b border-l border-mist p-0 ${
+									className={`border-b border-l border-mist p-0 transition-colors ${
 										isEspecialista ? "cursor-pointer" : ""
-									} ${isPast ? "bg-cloud/60" : ""}`}
+									} ${isPast ? "bg-cloud/60" : ""} ${
+										isSelected
+											? "bg-gray-200 border-brand-500 border-2"
+											: "hover:bg-brand-50"
+									}`}
 									onClick={() => onCellClick(dateKey, hour.value)}
 									title={tooltip}
 								>
@@ -94,6 +101,11 @@ const CalendarGrid = ({
 													? "Cancelando..."
 													: label}
 											</span>
+											{bloque.eco_nombre && (
+												<span className="text-[10px] font-semibold">
+													{bloque.eco_nombre}
+												</span>
+											)}
 											{!isAtendida && isPagoPendiente ? (
 												<span className="text-[10px] font-semibold">
 													Pago por aprobar
@@ -111,7 +123,7 @@ const CalendarGrid = ({
 								</div>
 							);
 						})}
-					</>
+					</React.Fragment>
 				))}
 			</div>
 		</div>

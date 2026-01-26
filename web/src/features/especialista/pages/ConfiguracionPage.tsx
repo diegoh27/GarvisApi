@@ -27,14 +27,22 @@ const ConfiguracionPage = () => {
 
 	const isEspecialista = user?.rol === "especialista";
 	const isPaciente = user?.rol === "paciente";
+	const isModerador = user?.rol === "moderador";
 
 	const fetchPerfil = useCallback(async () => {
 		if (!token) return;
-		if (!isPaciente && !isEspecialista) return;
+		if (!isPaciente && !isEspecialista && !isModerador) return;
 		setLoading(true);
 		setError(null);
 		try {
-			const endpoint = isEspecialista ? "/medicos/mi-perfil" : "/pacientes/mi-perfil";
+			let endpoint = "";
+			if (isEspecialista) {
+				endpoint = "/medicos/mi-perfil";
+			} else if (isPaciente) {
+				endpoint = "/pacientes/mi-perfil";
+			} else if (isModerador) {
+				endpoint = "/moderadores/mi-perfil";
+			}
 			const response = await apiClient.get<{ ok: boolean; data: PerfilData }>(
 				endpoint,
 			);
@@ -47,7 +55,7 @@ const ConfiguracionPage = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [isEspecialista, isPaciente, token]);
+	}, [isEspecialista, isPaciente, isModerador, token]);
 
 	useEffect(() => {
 		fetchPerfil();
@@ -57,8 +65,8 @@ const ConfiguracionPage = () => {
 		event.preventDefault();
 		setError(null);
 
-		if (!isPaciente && !isEspecialista) {
-			setError("Esta sección está disponible para pacientes y especialistas.");
+		if (!isPaciente && !isEspecialista && !isModerador) {
+			setError("Esta sección está disponible para pacientes, especialistas y moderadores.");
 			return;
 		}
 
@@ -82,7 +90,14 @@ const ConfiguracionPage = () => {
 
 		setSaving(true);
 		try {
-			const endpoint = isEspecialista ? "/medicos/mi-perfil" : "/pacientes/mi-perfil";
+			let endpoint = "";
+			if (isEspecialista) {
+				endpoint = "/medicos/mi-perfil";
+			} else if (isPaciente) {
+				endpoint = "/pacientes/mi-perfil";
+			} else if (isModerador) {
+				endpoint = "/moderadores/mi-perfil";
+			}
 			await apiClient.patch(endpoint, payload);
 			setContrasena("");
 			setConfirmar("");

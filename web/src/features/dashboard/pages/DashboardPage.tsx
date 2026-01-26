@@ -7,13 +7,33 @@ import {
 import { useAuth } from "../../../shared";
 import { useGetMisCitasQuery } from "../../especialista/especialistaApi";
 import type { CitaEspecialista } from "../../especialista/types";
+import { useGetCitasPendientesPagoQuery } from "../../citas/citasApi";
+import { useGetDisponibilidadPendientesQuery } from "../../disponibilidad/disponibilidadApi";
+import { useGetCitasSinResultadoQuery } from "../../resultados/resultadosApi";
 
 const DashboardPage = () => {
 	const { user } = useAuth();
 	const isEspecialista = user?.rol === "especialista";
+	const isModerador = user?.rol === "moderador";
+	
 	const { data: rawCitas = [], isLoading } = useGetMisCitasQuery(undefined, {
 		skip: !isEspecialista,
 	});
+	
+	const { data: citasPendientesPago = [], isLoading: loadingPagos } =
+		useGetCitasPendientesPagoQuery(undefined, {
+			skip: !isModerador,
+		});
+	
+	const { data: disponibilidadPendiente = [], isLoading: loadingDisponibilidad } =
+		useGetDisponibilidadPendientesQuery(undefined, {
+			skip: !isModerador,
+		});
+	
+	const { data: citasSinResultado = [], isLoading: loadingResultados } =
+		useGetCitasSinResultadoQuery(undefined, {
+			skip: !isModerador,
+		});
 
 	const citas = rawCitas.map((cita) => ({
 		...cita,
@@ -131,6 +151,160 @@ const DashboardPage = () => {
 		)}`,
 	}));
 
+	// Dashboard para moderador
+	if (isModerador) {
+		const today = new Date();
+		const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+		const toDateKey = (value: string | Date) => {
+			if (value instanceof Date) {
+				const d = value;
+				return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+			}
+			if (typeof value === "string" && value.length >= 10) {
+				return value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
+			}
+			return String(value).slice(0, 10);
+		};
+
+		const citasHoy = citasPendientesPago.filter((cita) => {
+			const citaDate = toDateKey(cita.fecha_cita);
+			return citaDate === todayKey;
+		});
+
+		const moderadorSummary = [
+			{
+				label: "Citas pendientes de pago",
+				value: String(citasPendientesPago.length),
+			},
+			{
+				label: "Citas pendientes hoy",
+				value: String(citasHoy.length),
+			},
+			{
+				label: "Disponibilidades pendientes",
+				value: String(disponibilidadPendiente.length),
+			},
+			{
+				label: "Citas sin resultado",
+				value: String(citasSinResultado.length),
+			},
+		];
+
+		const moderadorAlerts = [
+			citasPendientesPago.length
+				? {
+						id: "alert-pagos",
+						message: `${citasPendientesPago.length} citas con pago pendiente por verificar.`,
+					}
+				: null,
+			disponibilidadPendiente.length
+				? {
+						id: "alert-disponibilidad",
+						message: `${disponibilidadPendiente.length} disponibilidades pendientes de aprobar.`,
+					}
+				: null,
+			citasSinResultado.length
+				? {
+						id: "alert-resultados",
+						message: `${citasSinResultado.length} citas atendidas sin resultado.`,
+					}
+				: null,
+		].filter((alert): alert is { id: string; message: string } => Boolean(alert));
+
+		return (
+			<div className="space-y-6">
+				<div className="space-y-1">
+					<h1 className="text-2xl font-semibold text-brand-900">
+						Dashboard - Moderador
+					</h1>
+					<p className="text-sm text-brand-800">
+						Panel de control para gestión de pagos, disponibilidades y
+						resultados.
+					</p>
+				</div>
+
+				<div className="grid gap-4 lg:grid-cols-2">
+					<DaySummaryCard dateLabel="Resumen" items={moderadorSummary} />
+					<QuickAlertsCard
+						alerts={moderadorAlerts}
+						emptyMessage={
+							loadingPagos || loadingDisponibilidad || loadingResultados
+								? "Cargando alertas..."
+								: "Sin alertas pendientes."
+						}
+					/>
+				</div>
+
+				<div className="grid gap-4">
+					<div className="rounded-lg border border-brand-200 bg-paper p-4">
+						<h2 className="mb-3 text-lg font-semibold text-brand-900">
+							Acciones rápidas
+						</h2>
+						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+							<a
+								href="/pagos"
+								className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
+							>
+								<div className="text-2xl font-bold text-brand-700">
+									{citasPendientesPago.length}
+								</div>
+								<div className="text-sm text-brand-600">
+									Verificar pagos
+								</div>
+							</a>
+							<a
+								href="/disponibilidad/pendientes"
+								className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
+							>
+								<div className="text-2xl font-bold text-brand-700">
+									{disponibilidadPendiente.length}
+								</div>
+								<div className="text-sm text-brand-600">
+									Aprobar disponibilidades
+								</div>
+							</a>
+							<a
+								href="/resultados"
+								className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
+							>
+								<div className="text-2xl font-bold text-brand-700">
+									{citasSinResultado.length}
+								</div>
+								<div className="text-sm text-brand-600">
+									Subir resultados
+								</div>
+							</a>
+							<a
+								href="/inventario"
+								className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
+							>
+								<div className="text-2xl font-bold text-brand-700">
+									📦
+								</div>
+								<div className="text-sm text-brand-600">
+									Visualizar inventario
+								</div>
+							</a>
+							{user?.rol === "admin" && (
+								<a
+									href="/admin/registrar-especialista"
+									className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
+								>
+									<div className="text-2xl font-bold text-brand-700">+</div>
+									<div className="text-sm text-brand-600">
+										Registrar especialista
+									</div>
+								</a>
+							)}
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Dashboard para especialista (código original)
 	return (
 		<div className="space-y-6">
 			<div className="space-y-1">
