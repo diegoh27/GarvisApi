@@ -19,7 +19,7 @@ const config = {
 
 server.use(
 	cors({
-		origin: ["http://localhost:3001", "http://localhost:5173"],
+		origin: ["http://localhost:3001", "http://localhost:5173", "https://garvis-api.vercel.app", "https://garvis.mjeimports.store"],
 		credentials: true,
 	}),
 );
