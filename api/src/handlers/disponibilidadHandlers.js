@@ -7,6 +7,7 @@ const {
 	cancelDisponibilidadController,
 	listPublicaController,
 	closeDisponibilidadDiaController,
+	listDisponibilidadesByFechaController,
 } = require("../controllers/disponibilidadControllers");
 
 const parseTimeToMinutes = (timeStr) => {
@@ -32,7 +33,7 @@ const validateTimeBlock = (hora_inicio, hora_fin) => {
 
 const createDisponibilidadHandler = async (req, res) => {
 	try {
-		const { fecha, hora_inicio, hora_fin } = req.body;
+		const { fecha, hora_inicio, hora_fin, id_eco } = req.body;
 		if (!fecha || !hora_inicio || !hora_fin) {
 			return res.status(400).json({
 				ok: false,
@@ -53,6 +54,7 @@ const createDisponibilidadHandler = async (req, res) => {
 			hora_inicio,
 			hora_fin,
 			creado_por: req.user.id,
+			id_eco: id_eco || null,
 		});
 
 		return res.status(201).json({
@@ -63,6 +65,12 @@ const createDisponibilidadHandler = async (req, res) => {
 	} catch (err) {
 		if (err?.code === "OVERLAP") {
 			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "ECO_NOT_FOUND") {
+			return res.status(400).json({
 				ok: false,
 				message: err.message,
 			});
@@ -264,6 +272,29 @@ const closeDisponibilidadDiaHandler = async (req, res) => {
 	}
 };
 
+const listDisponibilidadesByFechaHandler = async (req, res) => {
+	try {
+		const { fecha } = req.query;
+		if (!fecha) {
+			return res.status(400).json({
+				ok: false,
+				message: "fecha es requerida",
+			});
+		}
+		const data = await listDisponibilidadesByFechaController(fecha);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	createDisponibilidadHandler,
 	listMisDisponibilidadHandler,
@@ -273,4 +304,5 @@ module.exports = {
 	cancelDisponibilidadHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
+	listDisponibilidadesByFechaHandler,
 };

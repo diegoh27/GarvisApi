@@ -4,6 +4,8 @@ const {
 	getModeradorByIdController,
 	updateModeradorController,
 	deactivateModeradorController,
+	getModeradorSelfController,
+	updateModeradorSelfController,
 } = require("../controllers/moderadoresControllers");
 
 const createModeradorHandler = async (req, res) => {
@@ -191,10 +193,79 @@ const deleteModeradorHandler = async (req, res) => {
 	}
 };
 
+const getModeradorSelfHandler = async (req, res) => {
+	try {
+		const id_moderador = req.user?.id;
+		const data = await getModeradorSelfController(id_moderador);
+		if (!data) {
+			return res.status(404).json({
+				ok: false,
+				message: "Moderador no encontrado",
+			});
+		}
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const updateModeradorSelfHandler = async (req, res) => {
+	try {
+		const { telefono, contrasena } = req.body;
+		const id_usuario = req.user?.id;
+
+		const result = await updateModeradorSelfController({
+			id_usuario,
+			telefono,
+			contrasena,
+		});
+
+		if (!result.updated) {
+			return res.status(404).json({
+				ok: false,
+				message: "Moderador no encontrado",
+			});
+		}
+
+		return res.status(200).json({
+			ok: true,
+			message: "Perfil actualizado",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: "Moderador no encontrado",
+			});
+		}
+		if (err?.code === "NO_FIELDS") {
+			return res.status(400).json({
+				ok: false,
+				message: "No hay campos para actualizar",
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	createModeradorHandler,
 	listModeradoresHandler,
 	getModeradorByIdHandler,
 	updateModeradorHandler,
 	deleteModeradorHandler,
+	getModeradorSelfHandler,
+	updateModeradorSelfHandler,
 };

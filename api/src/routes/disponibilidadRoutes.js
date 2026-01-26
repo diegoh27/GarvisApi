@@ -8,6 +8,7 @@ const {
 	cancelDisponibilidadHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
+	listDisponibilidadesByFechaHandler,
 } = require("../handlers/disponibilidadHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -62,6 +63,13 @@ disponibilidadRoutes.post(
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
 	closeDisponibilidadDiaHandler,
+);
+// Moderador/Admin: obtener disponibilidades por fecha
+disponibilidadRoutes.get(
+	"/por-fecha",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listDisponibilidadesByFechaHandler,
 );
 
 module.exports = disponibilidadRoutes;

@@ -5,6 +5,8 @@ const {
 	listInformesHandler,
 	getInformeByCitaHandler,
 	createOrUpdateInformeHandler,
+	listAllInformesHandler,
+	listCitasAtendidasSinInformeHandler,
 } = require("../handlers/informesHandlers");
 const {
 	uploadFirma,
@@ -19,6 +21,22 @@ const informesRoutes = Router();
 // Servir PDF como proxy (debe estar antes del middleware para permitir token en query)
 // El handler verifica el token manualmente
 informesRoutes.get("/pdf-proxy", servePDFProxyHandler);
+
+// Ruta para moderadores: listar todos los informes completados
+informesRoutes.get(
+	"/todos",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listAllInformesHandler,
+);
+
+// Ruta para moderadores: listar citas atendidas sin informe
+informesRoutes.get(
+	"/pendientes",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listCitasAtendidasSinInformeHandler,
+);
 
 // Rutas que requieren autenticación y rol especialista
 informesRoutes.use(authenticateToken);

@@ -21,6 +21,7 @@ const createEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			id_ecos, // Array de IDs de ecos
 		} = req.body;
 
 		const missing = [];
@@ -49,6 +50,14 @@ const createEspecialistaHandler = async (req, res) => {
 			});
 		}
 
+		// Validar que id_ecos sea un array si se proporciona
+		if (id_ecos !== undefined && !Array.isArray(id_ecos)) {
+			return res.status(400).json({
+				ok: false,
+				message: "id_ecos debe ser un array",
+			});
+		}
+
 		const created = await createEspecialistaController({
 			nombre,
 			apellido,
@@ -60,6 +69,7 @@ const createEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			id_ecos: id_ecos || [],
 		});
 
 		return res.status(201).json({
@@ -74,7 +84,7 @@ const createEspecialistaHandler = async (req, res) => {
 				message: "Ya existe un usuario con esa cédula o correo",
 			});
 		}
-		if (err?.code === "ROL_NOT_FOUND") {
+		if (err?.code === "ROL_NOT_FOUND" || err?.code === "ECO_NOT_FOUND") {
 			return res.status(400).json({
 				ok: false,
 				message: err.message,
@@ -188,6 +198,7 @@ const updateEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			id_ecos, // Array de IDs de ecos
 		} = req.body;
 
 		if (genero && !["Masculino", "Femenino", "Otro"].includes(genero)) {
@@ -207,6 +218,7 @@ const updateEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			id_ecos, // Array de IDs de ecos
 		};
 
 		const result = await updateEspecialistaController(id, payload);

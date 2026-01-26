@@ -80,9 +80,58 @@ const setUserActiveController = async ({ id_usuario, activo }) => {
 	};
 };
 
+const listUsersController = async ({ rol, activo, q }) => {
+	let sql = `
+    SELECT
+      u.id_usuario,
+      u.nombre,
+      u.apellido,
+      u.genero,
+      u.cedula,
+      u.correo,
+      u.telefono,
+      u.activo,
+      u.fecha_nacimiento,
+      u.fecha_registro,
+      r.nombre AS rol,
+      r.id_rol
+    FROM usuario u
+    INNER JOIN roles r ON r.id_rol = u.id_rol
+    WHERE 1=1
+  `;
+	const params = [];
+
+	if (rol) {
+		sql += ` AND r.nombre = ?`;
+		params.push(rol);
+	}
+
+	if (activo !== undefined && activo !== null) {
+		sql += ` AND u.activo = ?`;
+		params.push(activo);
+	}
+
+	if (q) {
+		sql += ` AND (
+      u.nombre LIKE ?
+      OR u.apellido LIKE ?
+      OR u.correo LIKE ?
+      OR u.cedula LIKE ?
+    )`;
+		const searchTerm = `%${q}%`;
+		params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+	}
+
+	sql += ` ORDER BY u.fecha_registro DESC`;
+
+	const [rows] = await pool.execute(sql, params);
+	return rows;
+};
+
 module.exports = {
 	userCreateController,
 	getUserByIdController,
 	updateUserController,
 	setUserActiveController,
+	listUsersController,
 };

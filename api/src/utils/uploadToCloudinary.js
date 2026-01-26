@@ -31,17 +31,39 @@ const uploadBufferToCloudinary = async (
 				if (error) {
 					reject(error);
 				} else {
-					// Para PDFs, asegurar que la URL tenga extensión .pdf y parámetros para visualización
-					let url = result.secure_url;
-					if (resourceType === "raw" && !url.includes(".pdf")) {
-						// Agregar extensión .pdf si no la tiene
-						url = url.replace(/\.[^.]*$/, ".pdf");
+					// Asegurar que siempre usamos secure_url (https://)
+					let url = result.secure_url || result.url;
+					
+					// Validar que la URL sea completa y válida
+					if (!url || typeof url !== 'string') {
+						reject(new Error("Cloudinary no devolvió una URL válida"));
+						return;
 					}
-					// Agregar parámetro para forzar visualización en navegador (no descarga)
-					if (resourceType === "raw") {
-						// Cloudinary con raw type puede necesitar parámetros adicionales
-						// Pero mejor manejarlo en el frontend
+					
+					// Asegurar que la URL siempre tenga el protocolo https://
+					if (!url.startsWith("http://") && !url.startsWith("https://")) {
+						url = `https://${url}`;
 					}
+					
+					// Para PDFs con resource_type "raw", Cloudinary puede devolver URLs sin extensión
+					// Verificar que la URL sea válida y completa
+					try {
+						new URL(url);
+					} catch (error) {
+						reject(new Error(`URL de Cloudinary inválida: ${url}`));
+						return;
+					}
+					
+					// Para PDFs, asegurar que la URL tenga extensión .pdf si es necesario
+					// Pero solo si realmente es un PDF y no tiene extensión
+					if (resourceType === "raw" && !url.includes(".pdf") && !url.includes("/raw/")) {
+						// Si la URL no tiene extensión y es raw, puede ser un PDF
+						// Cloudinary maneja esto automáticamente, pero podemos agregar .pdf al final si falta
+						if (!url.match(/\.(pdf|jpg|jpeg|png|webp|gif)/i)) {
+							url = `${url}.pdf`;
+						}
+					}
+					
 					resolve({
 						url,
 						public_id: result.public_id,

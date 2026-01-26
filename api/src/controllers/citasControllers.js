@@ -246,10 +246,241 @@ const markCitaAtendidaController = async ({ id_cita, id_especialista }) => {
 	}
 };
 
+// Listar citas pendientes de pago para moderador
+const listCitasPendientesPagoController = async () => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_paciente.telefono AS paciente_telefono,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    WHERE c.estado_pago = 0
+      AND c.estado_cita IN (0, 1)
+    ORDER BY c.fecha_cita ASC, c.hora_cita ASC
+  `;
+	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
+// Listar todas las citas con pagos para moderador (para verificación de pagos)
+const listCitasConPagosController = async () => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_paciente.telefono AS paciente_telefono,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    WHERE EXISTS (
+      SELECT 1 FROM pagos p WHERE p.id_cita = c.id_cita
+    )
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
+// Aprobar o rechazar pago de una cita
+const updateEstadoPagoController = async ({ id_cita, estado_pago, aprobado_por }) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [rows] = await conn.execute(
+			`SELECT estado_cita, estado_pago
+       FROM cita
+       WHERE id_cita = ?
+       FOR UPDATE`,
+			[id_cita],
+		);
+		if (!rows.length) {
+			const err = new Error("Cita no encontrada");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const cita = rows[0];
+		if (cita.estado_cita === 2) {
+			const err = new Error("No se puede actualizar el pago de una cita cancelada");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		// Si se aprueba el pago (estado_pago = 1) y la cita está pendiente (estado_cita = 0), aprobarla también
+		let nuevoEstadoCita = cita.estado_cita;
+		if (estado_pago === 1 && cita.estado_cita === 0) {
+			nuevoEstadoCita = 1; // Aprobar la cita
+		}
+
+		await conn.execute(
+			"UPDATE cita SET estado_pago = ?, estado_cita = ? WHERE id_cita = ?",
+			[estado_pago, nuevoEstadoCita, id_cita],
+		);
+
+		await conn.commit();
+		return { id_cita, estado_pago, estado_cita: nuevoEstadoCita };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+// Obtener todas las citas de un día específico (para moderador)
+const listCitasByFechaController = async (fecha) => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_paciente.telefono AS paciente_telefono,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    WHERE c.fecha_cita = ?
+    ORDER BY c.hora_cita ASC
+  `;
+	const [rows] = await pool.execute(sql, [fecha]);
+	return rows;
+};
+
+// Obtener una cita por ID con todos los datos relacionados
+const getCitaByIdController = async (id_cita) => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      c.creada_en,
+      -- Datos del paciente
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_paciente.telefono AS paciente_telefono,
+      u_paciente.correo AS paciente_correo,
+      u_paciente.fecha_nacimiento AS paciente_fecha_nacimiento,
+      p.tipo_sangre AS paciente_tipo_sangre,
+      p.rif AS paciente_rif,
+      p.contacto_emergencia_nombre AS paciente_contacto_nombre,
+      p.contacto_emergencia_telefono AS paciente_contacto_telefono,
+      -- Datos del especialista
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      u_especialista.cedula AS especialista_cedula,
+      u_especialista.telefono AS especialista_telefono,
+      u_especialista.correo AS especialista_correo,
+      esp.codigo_colegiatura AS especialista_codigo_colegiatura,
+      es.nombre AS especialidad_nombre,
+      -- Datos del eco
+      e.nombre AS eco_nombre,
+      e.precio AS eco_precio,
+      e.duracion_min AS eco_duracion_min,
+      -- Datos del representado (si existe)
+      r.nombre AS representado_nombre,
+      r.apellido AS representado_apellido,
+      r.cedula AS representado_cedula,
+      r.fecha_nacimiento AS representado_fecha_nacimiento,
+      r.parentesco AS representado_parentesco,
+      -- Datos del pago (si existe)
+      pag.id_pago,
+      pag.metodo AS pago_metodo,
+      pag.imagen AS pago_imagen,
+      pag.banco_origen AS pago_banco_origen,
+      pag.banco_destino AS pago_banco_destino,
+      pag.monto AS pago_monto,
+      pag.cedula_pagador AS pago_cedula_pagador,
+      pag.telefono_pagador AS pago_telefono_pagador,
+      pag.referencia AS pago_referencia,
+      pag.estado_pago AS pago_estado_pago,
+      pag.fecha_pago AS pago_fecha_pago,
+      pag.fecha_validacion AS pago_fecha_validacion,
+      pag.validado_por AS pago_validado_por,
+      u_validador.nombre AS pago_validado_por_nombre,
+      u_validador.apellido AS pago_validado_por_apellido
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN paciente p ON p.id_paciente = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN representado r ON r.id_representado = c.id_representado
+    LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
+    LEFT JOIN usuario u_validador ON u_validador.id_usuario = pag.validado_por
+    WHERE c.id_cita = ?
+    LIMIT 1
+  `;
+	const [rows] = await pool.execute(sql, [id_cita]);
+	return rows.length > 0 ? rows[0] : null;
+};
+
 module.exports = {
 	createCitaFromDisponibilidadController,
 	listCitasByPacienteController,
 	listCitasByEspecialistaController,
 	cancelCitaController,
 	markCitaAtendidaController,
+	listCitasPendientesPagoController,
+	listCitasConPagosController,
+	updateEstadoPagoController,
+	listCitasByFechaController,
+	getCitaByIdController,
 };

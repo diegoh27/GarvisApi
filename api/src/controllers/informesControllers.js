@@ -244,8 +244,69 @@ const createOrUpdateInformeController = async ({
 	}
 };
 
+// Listar todos los informes completados (para moderadores)
+const listAllInformesController = async () => {
+	const sql = `
+    SELECT 
+      i.id_informe,
+      i.id_cita,
+      i.id_especialista,
+      i.reseña,
+      i.recomendaciones,
+      i.firma_url,
+      i.informe_pdf_url,
+      i.fecha_creacion,
+      i.fecha_actualizacion,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre
+    FROM informe i
+    INNER JOIN cita c ON c.id_cita = i.id_cita
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = i.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
+// Listar citas atendidas sin informe (para moderadores)
+const listCitasAtendidasSinInformeController = async () => {
+	const sql = `
+    SELECT 
+      c.id_cita,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN informe i ON i.id_cita = c.id_cita
+    WHERE c.estado_cita = 3 AND i.id_informe IS NULL
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
 module.exports = {
 	listInformesByEspecialistaController,
 	getInformeByCitaController,
 	createOrUpdateInformeController,
+	listAllInformesController,
+	listCitasAtendidasSinInformeController,
 };

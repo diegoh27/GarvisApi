@@ -31,26 +31,26 @@ medicosRoutes.patch(
 );
 // GET /medicos/:id (publico)
 medicosRoutes.get("/:id", getEspecialistaByIdHandler);
-// POST /medicos (admin/moderador)
+// POST /medicos (solo admin)
 medicosRoutes.post(
 	"/",
 	authenticateToken,
-	authorizeRoles("admin", "moderador"),
+	authorizeRoles("admin"),
 	createEspecialistaHandler,
 );
-// DELETE /medicos/:id (admin/moderador)
+// DELETE /medicos/:id (solo admin)
 medicosRoutes.delete(
 	"/:id",
 	authenticateToken,
-	authorizeRoles("admin", "moderador"),
+	authorizeRoles("admin"),
 	deleteEspecialistaHandler,
 );
 
-// PUT /medicos/:id (admin/moderador)
+// PUT /medicos/:id (solo admin)
 medicosRoutes.put(
 	"/:id",
 	authenticateToken,
-	authorizeRoles("admin", "moderador"),
+	authorizeRoles("admin"),
 	updateEspecialistaHandler,
 );
 

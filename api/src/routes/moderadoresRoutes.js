@@ -5,6 +5,8 @@ const {
 	getModeradorByIdHandler,
 	updateModeradorHandler,
 	deleteModeradorHandler,
+	getModeradorSelfHandler,
+	updateModeradorSelfHandler,
 } = require("../handlers/moderadoresHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -17,6 +19,20 @@ moderadoresRoutes.get(
 	authenticateToken,
 	authorizeRoles("admin"),
 	listModeradoresHandler,
+);
+// GET /moderadores/mi-perfil (moderador)
+moderadoresRoutes.get(
+	"/mi-perfil",
+	authenticateToken,
+	authorizeRoles("moderador"),
+	getModeradorSelfHandler,
+);
+// PATCH /moderadores/mi-perfil (moderador)
+moderadoresRoutes.patch(
+	"/mi-perfil",
+	authenticateToken,
+	authorizeRoles("moderador"),
+	updateModeradorSelfHandler,
 );
 // GET /moderadores/:id (solo admin)
 moderadoresRoutes.get(
