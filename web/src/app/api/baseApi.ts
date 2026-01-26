@@ -35,10 +35,36 @@ const baseQuery = async (args: any, api: any, extraOptions: any) => {
 	return result;
 };
 
+// Base query que maneja FormData correctamente
+const baseQueryWithFormData = async (args: any, api: any, extraOptions: any) => {
+	// Si el body es FormData, usar un baseQuery sin Content-Type
+	if (
+		typeof args === "object" &&
+		args !== null &&
+		"body" in args &&
+		args.body instanceof FormData
+	) {
+		const formDataQuery = fetchBaseQuery({
+			baseUrl: baseUrl.replace(/\/$/, ""),
+			prepareHeaders: (headers) => {
+				const token = getToken();
+				if (token) {
+					headers.set("Authorization", `Bearer ${token}`);
+				}
+				// No establecer Content-Type para FormData - el navegador lo hará automáticamente
+				return headers;
+			},
+		});
+		return formDataQuery(args, api, extraOptions);
+	}
+	// Para otros casos, usar el baseQuery normal
+	return baseQuery(args, api, extraOptions);
+};
+
 const baseApi = createApi({
 	reducerPath: "api",
-	baseQuery,
-	tagTypes: ["Citas", "Disponibilidad", "Informes"],
+	baseQuery: baseQueryWithFormData,
+	tagTypes: ["Citas", "Disponibilidad", "Informes", "Resultados", "Especialidades", "Ecos", "Usuarios"],
 	endpoints: () => ({}),
 });
 

@@ -1,3 +1,7 @@
 export { default as ResultadosPage } from "./pages/ResultadosPage";
-export { resultadosApi } from "./resultadosApi";
-export type { ResultadosState } from "./types";
+export {
+	resultadosApi,
+	useGetCitasSinResultadoQuery,
+	useUploadResultadoMutation,
+} from "./resultadosApi";
+export type { ResultadosState, CitaSinResultado } from "./resultadosApi";

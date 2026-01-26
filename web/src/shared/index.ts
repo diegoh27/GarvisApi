@@ -4,6 +4,7 @@ export { useAuth } from "./hooks/useAuth";
 export { useAppDispatch, useAppSelector } from "./hooks/useStore";
 export { getToken, parseToken, saveToken, clearToken } from "./utils/token";
 export { getHomeByRole, getAuthedHome } from "./utils/redirects";
+export { calculateRIF } from "./utils/calculateRIF";
 export type {
 	AuthUser,
 	LoginPayload,

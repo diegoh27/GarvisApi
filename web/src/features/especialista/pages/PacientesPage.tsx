@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { PageShell, useAuth } from "../../../shared";
@@ -14,6 +14,8 @@ import ContactoModal, {
 } from "../components/ContactoModal";
 import HistorialModal from "../components/HistorialModal";
 import PDFViewerModal from "../components/PDFViewerModal";
+import SubirResultadoModal from "../components/SubirResultadoModal";
+import VerResultadosModal from "../components/VerResultadosModal";
 
 const estadoCitaLabel: Record<number, string> = {
 	0: "Pendiente",
@@ -74,6 +76,8 @@ const PacientesPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [query, setQuery] = useState("");
 	const [estado, setEstado] = useState("todos");
+	const [filtroResultado, setFiltroResultado] = useState("todos"); // "todos", "sin-resultado", "con-resultado"
+	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedPaciente, setSelectedPaciente] = useState<{
 		id: string;
 		name: string;
@@ -82,6 +86,12 @@ const PacientesPage = () => {
 		useState<ContactoPaciente | null>(null);
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
+		archivos: string[];
+		pacienteNombre: string;
+		ecoNombre: string;
+		idCita: string;
+	} | null>(null);
 
 	const { data: rawCitas = [], isFetching: loading } = useGetMisCitasQuery(
 		undefined,
@@ -199,10 +209,36 @@ const PacientesPage = () => {
 		}
 	};
 
+	// Función para parsear el archivo (puede ser string simple o JSON array)
+	const parseResultadoArchivo = (archivo: string | null | undefined): string[] => {
+		if (!archivo) return [];
+		try {
+			const parsed = JSON.parse(archivo);
+			const urls = Array.isArray(parsed) ? parsed : [archivo];
+			// Validar y corregir URLs que no tengan protocolo
+			return urls.map((url) => {
+				if (!url) return url;
+				const trimmedUrl = url.trim();
+				// Si la URL no tiene protocolo pero parece ser de Cloudinary, agregar https://
+				if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+					return `https://${trimmedUrl}`;
+				}
+				return trimmedUrl;
+			});
+		} catch {
+			// Si no es JSON, tratar como string simple
+			const trimmedUrl = archivo.trim();
+			if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+				return [`https://${trimmedUrl}`];
+			}
+			return [trimmedUrl];
+		}
+	};
+
 	const filteredCitas = useMemo(() => {
 		const normalized = query.trim().toLowerCase();
 		const today = new Date().toISOString().slice(0, 10);
-		return citas.filter((cita) => {
+		const filtered = citas.filter((cita) => {
 			const citaDateKey = getDateKey(cita.fecha_cita);
 			let matchesEstado = true;
 			switch (estado) {
@@ -221,12 +257,42 @@ const PacientesPage = () => {
 				default:
 					matchesEstado = true;
 			}
-			if (!normalized) return matchesEstado;
+
+			// Filtro por resultado
+			let matchesResultado = true;
+			if (filtroResultado === "sin-resultado") {
+				matchesResultado = !cita.resultado_archivo || cita.resultado_archivo === "" || cita.resultado_archivo === "[]";
+			} else if (filtroResultado === "con-resultado") {
+				const archivos = parseResultadoArchivo(cita.resultado_archivo);
+				matchesResultado = archivos.length > 0;
+			}
+
+			if (!normalized) return matchesEstado && matchesResultado;
 			const haystack =
 				`${cita.paciente_nombre} ${cita.paciente_apellido} ${cita.eco_nombre} ${citaDateKey}`.toLowerCase();
-			return matchesEstado && haystack.includes(normalized);
+			return matchesEstado && matchesResultado && haystack.includes(normalized);
 		});
-	}, [citas, estado, query]);
+		
+		// Ordenar por fecha más reciente primero (descendente)
+		return filtered.sort((a, b) => {
+			const dateA = new Date(`${getDateKey(a.fecha_cita)}T${a.hora_cita}`).getTime();
+			const dateB = new Date(`${getDateKey(b.fecha_cita)}T${b.hora_cita}`).getTime();
+			return dateB - dateA; // Más reciente primero
+		});
+	}, [citas, estado, query, filtroResultado]);
+
+	// Paginación: máximo 5 pacientes por página
+	const itemsPerPage = 5;
+	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
+	const paginatedCitas = useMemo(() => {
+		const startIndex = (currentPage - 1) * itemsPerPage;
+		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
+	}, [filteredCitas, currentPage, itemsPerPage]);
+
+	// Resetear a página 1 cuando cambia el filtro o la búsqueda
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [estado, query, filtroResultado]);
 
 	const pacientesAtendidos = useMemo(() => {
 		const ids = new Set(citas.map((cita) => cita.id_paciente));
@@ -276,7 +342,10 @@ const PacientesPage = () => {
 						Resultados disponibles
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
-						{citas.filter((cita) => cita.resultado_archivo).length}
+						{citas.filter((cita) => {
+							const archivos = parseResultadoArchivo(cita.resultado_archivo);
+							return archivos.length > 0;
+						}).length}
 					</p>
 				</div>
 			</div>
@@ -309,6 +378,15 @@ const PacientesPage = () => {
 							<option value="pendientes">Pendientes</option>
 							<option value="canceladas">Canceladas</option>
 						</select>
+						<select
+							value={filtroResultado}
+							onChange={(event) => setFiltroResultado(event.target.value)}
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+						>
+							<option value="todos">Todos los resultados</option>
+							<option value="sin-resultado">Sin resultados</option>
+							<option value="con-resultado">Con resultados</option>
+						</select>
 					</div>
 				</div>
 
@@ -335,8 +413,8 @@ const PacientesPage = () => {
 								</tr>
 							</thead>
 							<tbody>
-								{filteredCitas.length ? (
-									filteredCitas.map((cita) => {
+								{paginatedCitas.length ? (
+									paginatedCitas.map((cita) => {
 										const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
 										const estadoLabel = getEstadoCitaLabel(cita);
 										const pagoLabel =
@@ -401,24 +479,47 @@ const PacientesPage = () => {
 													</button>
 												</td>
 												<td className="px-3 py-3 text-center">
-													{cita.resultado_archivo ? (
-														<button
-															type="button"
-															onClick={() =>
-																handleDownload(
-																	cita.resultado_archivo!,
-																	`${fullName}-${cita.fecha_cita}-resultado`,
+													{(() => {
+														const archivos = parseResultadoArchivo(cita.resultado_archivo);
+														if (archivos.length > 0) {
+															return (
+																archivos.length === 1 ? (
+																	<button
+																		type="button"
+																		onClick={() =>
+																			handleDownload(
+																				archivos[0],
+																				`${fullName}-${cita.fecha_cita}-resultado`,
+																			)
+																		}
+																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																	>
+																		Ver resultado
+																	</button>
+																) : (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setSelectedCitaForResultados({
+																				archivos,
+																				pacienteNombre: fullName,
+																				ecoNombre: cita.eco_nombre,
+																				idCita: cita.id_cita,
+																			});
+																		}}
+																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																	>
+																		Ver {archivos.length} resultados
+																	</button>
 																)
-															}
-															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
-														>
-															Descargar
-														</button>
-													) : (
-														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-															{resultadoLabel}
-														</span>
-													)}
+															);
+														}
+														return (
+															<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+																{resultadoLabel}
+															</span>
+														);
+													})()}
 												</td>
 												<td className="px-3 py-3 text-center">
 													{(() => {
@@ -513,6 +614,38 @@ const PacientesPage = () => {
 						</table>
 					</div>
 				)}
+
+				{/* Paginación */}
+				{filteredCitas.length > 0 && (
+					<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
+						<div className="text-xs text-brand-800">
+							Mostrando {paginatedCitas.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
+							{Math.min(currentPage * itemsPerPage, filteredCitas.length)} de{" "}
+							{filteredCitas.length} pacientes
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+								disabled={currentPage === 1}
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Anterior
+							</button>
+							<span className="text-xs text-brand-800">
+								Página {currentPage} de {totalPages}
+							</span>
+							<button
+								type="button"
+								onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+								disabled={currentPage === totalPages}
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Siguiente
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 
 			{selectedPaciente ? (
@@ -542,6 +675,15 @@ const PacientesPage = () => {
 						setPdfViewerUrl(null);
 						setPdfFileName(null);
 					}}
+				/>
+			)}
+			{selectedCitaForResultados && (
+				<VerResultadosModal
+					archivos={selectedCitaForResultados.archivos}
+					pacienteNombre={selectedCitaForResultados.pacienteNombre}
+					ecoNombre={selectedCitaForResultados.ecoNombre}
+					idCita={selectedCitaForResultados.idCita}
+					onClose={() => setSelectedCitaForResultados(null)}
 				/>
 			)}
 		</div>

@@ -1,10 +1,12 @@
 import { baseApi } from "../../app/api/baseApi";
 import type { ApiResponse, CitaEspecialista, Disponibilidad } from "./types";
+import type { CitaData } from "../moderadores/moderadoresApi";
 
 type CrearDisponibilidadPayload = {
 	fecha: string;
 	hora_inicio: string;
 	hora_fin: string;
+	id_eco?: string;
 };
 
 const especialistaApi = baseApi.injectEndpoints({
@@ -43,6 +45,11 @@ const especialistaApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Citas"],
 		}),
+		getCitaById: builder.query<CitaData, string>({
+			query: (id) => `/citas/${id}`,
+			transformResponse: (response: ApiResponse<CitaData>) => response.data,
+			providesTags: ["Citas"],
+		}),
 	}),
 });
 
@@ -52,6 +59,7 @@ const {
 	useCrearDisponibilidadMutation,
 	useCancelarDisponibilidadMutation,
 	useMarcarAtendidaMutation,
+	useGetCitaByIdQuery,
 } = especialistaApi;
 
 export {
@@ -61,5 +69,6 @@ export {
 	useCrearDisponibilidadMutation,
 	useCancelarDisponibilidadMutation,
 	useMarcarAtendidaMutation,
+	useGetCitaByIdQuery,
 };
 export type { CrearDisponibilidadPayload };

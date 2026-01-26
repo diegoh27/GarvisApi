@@ -19,6 +19,7 @@ import {
 	useGetMisCitasQuery,
 	useMarcarAtendidaMutation,
 } from "../especialistaApi";
+import { useGetEcosQuery } from "../../ecos/ecosApi";
 
 const estadoLabel: Record<number, string> = {
 	0: "Propuesta",
@@ -100,6 +101,7 @@ const CalendarioPage = () => {
 	const { user, token } = useAuth();
 	const [fecha, setFecha] = useState("");
 	const [horaInicio, setHoraInicio] = useState("");
+	const [idEco, setIdEco] = useState("");
 	const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
 	const [busyCell, setBusyCell] = useState<string | null>(null);
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
@@ -109,6 +111,7 @@ const CalendarioPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState("todas");
 	const [page, setPage] = useState(1);
+	const [selectedCell, setSelectedCell] = useState<string | null>(null);
 
 	const isEspecialista = user?.rol === "especialista";
 	const minFecha = useMemo(() => getLocalDateKey(new Date()), []);
@@ -125,6 +128,7 @@ const CalendarioPage = () => {
 	const [crearDisponibilidad] = useCrearDisponibilidadMutation();
 	const [cancelarDisponibilidad] = useCancelarDisponibilidadMutation();
 	const [marcarAtendida] = useMarcarAtendidaMutation();
+	const { data: ecos = [] } = useGetEcosQuery();
 
 	const timeOptions = useMemo<TimeOption[]>(
 		() =>
@@ -148,10 +152,15 @@ const CalendarioPage = () => {
 	const submitDisponibilidad = async (payload: {
 		fecha: string;
 		hora_inicio: string;
+		id_eco?: string;
 	}) => {
 		setError(null);
 		if (!payload.fecha || !payload.hora_inicio) {
 			setError("Completa fecha y hora de inicio");
+			return;
+		}
+		if (!payload.id_eco) {
+			setError("Selecciona un tipo de eco");
 			return;
 		}
 		const hora_fin = computeHoraFin(payload.hora_inicio);
@@ -165,8 +174,23 @@ const CalendarioPage = () => {
 				fecha: payload.fecha,
 				hora_inicio: payload.hora_inicio,
 				hora_fin,
+				id_eco: payload.id_eco,
 			}).unwrap();
 			setSubmitStatus("done");
+			setSelectedCell(null);
+			
+			// Obtener el nombre del eco
+			const ecoSeleccionado = ecos.find((eco) => eco.id_eco === payload.id_eco);
+			const ecoNombre = ecoSeleccionado?.nombre || "Eco seleccionado";
+			
+			await Swal.fire({
+				icon: "success",
+				title: "Disponibilidad agregada",
+				text: `La disponibilidad para el ${formatFecha(payload.fecha)} a las ${formatHora(payload.hora_inicio)} con el eco "${ecoNombre}" ha sido agregada exitosamente.`,
+				timer: 3000,
+				showConfirmButton: false,
+				confirmButtonColor: "#1C837F",
+			});
 		} catch (err) {
 			setError((err as Error).message ?? "No se pudo enviar disponibilidad");
 		} finally {
@@ -176,9 +200,15 @@ const CalendarioPage = () => {
 
 	const handleSubmitDisponibilidad = async (event: FormEvent) => {
 		event.preventDefault();
-		await submitDisponibilidad({ fecha, hora_inicio: horaInicio });
+		await submitDisponibilidad({
+			fecha,
+			hora_inicio: horaInicio,
+			id_eco: idEco,
+		});
 		setFecha("");
 		setHoraInicio("");
+		setIdEco("");
+		setSelectedCell(null);
 	};
 
 	const days = useMemo(() => {
@@ -328,9 +358,11 @@ const CalendarioPage = () => {
 			}
 			return;
 		}
-		setBusyCell(cellKey);
-		await submitDisponibilidad({ fecha: dateKey, hora_inicio: hourValue });
-		setBusyCell(null);
+		// Mostrar formulario para seleccionar eco y marcar celda como seleccionada
+		setFecha(dateKey);
+		setHoraInicio(hourValue);
+		setIdEco("");
+		setSelectedCell(cellKey);
 	};
 
 	const mergedBloques = useMemo(() => {
@@ -403,8 +435,8 @@ const CalendarioPage = () => {
 	}, [filter]);
 
 	return (
-		<div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-			<section className="space-y-6">
+		<div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+			<section className="space-y-6 min-w-0">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold text-brand-900">Calendario</h1>
 					<p className="text-sm text-brand-800">
@@ -446,6 +478,7 @@ const CalendarioPage = () => {
 						minFecha={minFecha}
 						busyCell={busyCell}
 						cancelingId={cancelingId}
+						selectedCell={selectedCell}
 						estadoColor={estadoColor}
 						estadoLabel={estadoLabel}
 						formatHora={formatHora}
@@ -455,11 +488,12 @@ const CalendarioPage = () => {
 				</div>
 			</section>
 
-			<aside className="space-y-4">
+			<aside className="space-y-4 min-w-0">
 				{isEspecialista ? (
 					<DisponibilidadForm
 						fecha={fecha}
 						horaInicio={horaInicio}
+						idEco={idEco}
 						minFecha={minFecha}
 						timeOptions={timeOptions}
 						error={
@@ -471,7 +505,18 @@ const CalendarioPage = () => {
 						submitStatus={submitStatus}
 						onFechaChange={setFecha}
 						onHoraInicioChange={setHoraInicio}
+						onIdEcoChange={setIdEco}
 						onSubmit={handleSubmitDisponibilidad}
+						onCancel={
+							fecha || horaInicio || idEco
+								? () => {
+										setFecha("");
+										setHoraInicio("");
+										setIdEco("");
+										setSelectedCell(null);
+									}
+								: undefined
+						}
 					/>
 				) : (
 					<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">

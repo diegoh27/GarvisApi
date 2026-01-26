@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PasswordField, useAuth } from "../../../shared";
+import { PasswordField, useAuth, calculateRIF } from "../../../shared";
 
 const AuthRegisterForm = () => {
 	const navigate = useNavigate();
@@ -10,20 +10,186 @@ const AuthRegisterForm = () => {
 		nombre: "",
 		apellido: "",
 		correo: "",
-		genero: "Femenino",
+		genero: "",
 		fecha_nacimiento: "",
 		cedula: "",
-		telefono: "",
+		telefono_prefijo: "0412",
+		telefono_numero: "",
 		direccion: "",
 		tipo_sangre: "",
 		descripcion: "",
 		contrasena: "",
+		confirmar_contrasena: "",
+		rif: "",
+		tipo_rif: "V", // Tipo de RIF: V (persona natural), E, J, P, G
 	});
 	const [localError, setLocalError] = useState("");
+	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+	const [rifManuallyEdited, setRifManuallyEdited] = useState(false);
 	const isLoading = status === "loading";
+
+	// Tipos de sangre disponibles
+	const tiposSangre = [
+		"A+",
+		"A-",
+		"B+",
+		"B-",
+		"AB+",
+		"AB-",
+		"O+",
+		"O-",
+	];
+
+	// Prefijos telefónicos venezolanos (móviles)
+	const prefijosTelefonicos = [
+		"0412",
+		"0414",
+		"0416",
+		"0421",
+		"0422",
+		"0424",
+		"0426",
+	];
+
+	// Calcular RIF automáticamente cuando cambia la cédula o el tipo de RIF
+	useEffect(() => {
+		if (!rifManuallyEdited && form.cedula && form.cedula.length >= 6) {
+			const calculatedRIF = calculateRIF(form.tipo_rif, form.cedula);
+			if (calculatedRIF) {
+				setForm((prev) => ({ ...prev, rif: calculatedRIF }));
+			} else {
+				// Si no se puede calcular (cédula inválida), limpiar el RIF
+				setForm((prev) => ({ ...prev, rif: "" }));
+			}
+		} else if (!form.cedula || form.cedula.length < 6) {
+			// Si la cédula es muy corta, limpiar el RIF
+			setForm((prev) => ({ ...prev, rif: "" }));
+		}
+	}, [form.cedula, form.tipo_rif, rifManuallyEdited]);
+
+	// Validaciones
+	const validateField = (field: keyof typeof form, value: string): string => {
+		switch (field) {
+			case "nombre":
+				if (!value.trim()) return "El nombre es requerido";
+				if (value.length > 30) return "El nombre no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El nombre solo puede contener letras";
+				return "";
+			case "apellido":
+				if (!value.trim()) return "El apellido es requerido";
+				if (value.length > 30) return "El apellido no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El apellido solo puede contener letras";
+				return "";
+			case "correo":
+				if (!value.trim()) return "El correo es requerido";
+				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+				if (!emailRegex.test(value)) return "Correo electrónico inválido";
+				return "";
+			case "fecha_nacimiento":
+				if (!value) return "La fecha de nacimiento es requerida";
+				const fechaNac = new Date(value);
+				const hoy = new Date();
+				const edad = hoy.getFullYear() - fechaNac.getFullYear();
+				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+				if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fechaNac.getDate())) {
+					if (edad - 1 < 18) return "Debes ser mayor de 18 años";
+				} else if (edad < 18) {
+					return "Debes ser mayor de 18 años";
+				}
+				return "";
+			case "genero":
+				if (!value || value === "") return "El género es requerido";
+				return "";
+			case "cedula":
+				if (!value.trim()) return "La cédula es requerida";
+				if (!/^\d{6,8}$/.test(value)) return "La cédula debe tener entre 6 y 8 dígitos";
+				// Validar que la cédula corresponda a alguien mayor de 18 años
+				// Cédulas venezolanas: millones 1-30 aprox = nacidos antes de 2006 (mayores de 18 en 2024)
+				const cedulaNum = parseInt(value);
+				if (cedulaNum < 1000000) return "Cédula inválida";
+				// Si la cédula es muy alta (millones altos), podría ser de alguien menor de 18
+				// Aproximación: cédulas > 30 millones podrían ser menores de 18
+				if (cedulaNum > 30000000) {
+					return "Verifica que la cédula corresponda a una persona mayor de 18 años";
+				}
+				return "";
+			case "telefono_numero":
+				if (!value.trim()) return "El número de teléfono es requerido";
+				if (!/^\d{7}$/.test(value)) return "El número debe tener 7 dígitos";
+				return "";
+			case "rif":
+				if (!value.trim()) return "El RIF es requerido";
+				// Verificar que el RIF coincida con la cédula (al menos los primeros 8 dígitos después de la letra)
+				if (form.cedula && value.length > 1) {
+					const rifCedula = value.substring(1, 9); // Extraer los 8 dígitos después de la letra
+					const cedulaPadded = form.cedula.padStart(8, "0");
+					if (rifCedula !== cedulaPadded) {
+						return "El RIF no coincide con la cédula ingresada";
+					}
+				}
+				return "";
+			case "tipo_sangre":
+				if (!value) return "El tipo de sangre es requerido";
+				return "";
+			case "direccion":
+				if (value && value.length > 200) return "La dirección no puede exceder 200 caracteres";
+				if (value && !/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,.#-]+$/.test(value)) {
+					return "La dirección contiene caracteres inválidos";
+				}
+				return "";
+			case "descripcion":
+				if (!value.trim()) return "La descripción es requerida";
+				if (value.length > 500) return "La descripción no puede exceder 500 caracteres";
+				return "";
+			case "contrasena":
+				if (!value) return "La contraseña es requerida";
+				if (value.length < 6) return "La contraseña debe tener al menos 6 caracteres";
+				if (value.length > 20) return "La contraseña no puede exceder 20 caracteres";
+				if (!/[A-Z]/.test(value)) return "La contraseña debe contener al menos una mayúscula";
+				if (!/[0-9]/.test(value)) return "La contraseña debe contener al menos un número";
+				if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+					return "La contraseña debe contener al menos un carácter especial";
+				}
+				return "";
+			case "confirmar_contrasena":
+				if (!value) return "Confirma tu contraseña";
+				if (value !== form.contrasena) return "Las contraseñas no coinciden";
+				return "";
+			default:
+				return "";
+		}
+	};
 
 	const updateField = (field: keyof typeof form, value: string) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
+		
+		// Validar el campo
+		const error = validateField(field, value);
+		setFieldErrors((prev) => ({ ...prev, [field]: error }));
+		
+		// Si se edita el RIF manualmente, marcar como editado
+		if (field === "rif") {
+			setRifManuallyEdited(true);
+		}
+		
+		// Si se cambia la cédula o el tipo de RIF, permitir recalcular
+		if (field === "cedula" || field === "tipo_rif") {
+			setRifManuallyEdited(false);
+		}
+
+		// Si se cambia la contraseña, revalidar confirmar_contrasena
+		if (field === "contrasena") {
+			if (form.confirmar_contrasena) {
+				const confirmError = validateField("confirmar_contrasena", form.confirmar_contrasena);
+				setFieldErrors((prev) => ({ ...prev, confirmar_contrasena: confirmError }));
+			}
+		}
+
+		// Validar telefono_numero cuando cambia telefono_prefijo
+		if (field === "telefono_prefijo" && form.telefono_numero) {
+			const telefonoError = validateField("telefono_numero", form.telefono_numero);
+			setFieldErrors((prev) => ({ ...prev, telefono_numero: telefonoError }));
+		}
 	};
 
 	const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -31,38 +197,39 @@ const AuthRegisterForm = () => {
 		setLocalError("");
 		resetError();
 
-		const required = [
-			"nombre",
-			"apellido",
-			"correo",
-			"genero",
-			"fecha_nacimiento",
-			"cedula",
-			"telefono",
-			"tipo_sangre",
-			"descripcion",
-			"contrasena",
-		];
-		const missing = required.filter((field) => !form[field as keyof typeof form]);
+		// Validar todos los campos
+		const errors: Record<string, string> = {};
+		Object.keys(form).forEach((field) => {
+			// Saltar campos que no se validan directamente
+			if (field === "telefono_prefijo") return;
+			
+			const error = validateField(field as keyof typeof form, form[field as keyof typeof form]);
+			if (error) {
+				errors[field] = error;
+			}
+		});
 
-		if (missing.length) {
-			setLocalError("Completa los campos obligatorios.");
+		setFieldErrors(errors);
+
+		if (Object.keys(errors).length > 0) {
+			setLocalError("Por favor, corrige los errores en el formulario.");
 			return;
 		}
 
 		try {
 			await register({
-				nombre: form.nombre,
-				apellido: form.apellido,
-				correo: form.correo,
+				nombre: form.nombre.trim(),
+				apellido: form.apellido.trim(),
+				correo: form.correo.trim(),
 				genero: form.genero as "Masculino" | "Femenino" | "Otro",
 				fecha_nacimiento: form.fecha_nacimiento,
 				cedula: form.cedula,
-				telefono: form.telefono,
+				telefono: `${form.telefono_prefijo}${form.telefono_numero}`,
 				tipo_sangre: form.tipo_sangre,
-				descripcion: form.descripcion,
+				descripcion: form.descripcion.trim(),
 				contrasena: form.contrasena,
-				direccion: form.direccion || undefined,
+				direccion: form.direccion.trim() || undefined,
+				rif: form.rif.trim() || undefined,
 			});
 			navigate("/auth/login");
 		} catch {
@@ -73,90 +240,253 @@ const AuthRegisterForm = () => {
 	return (
 		<div className="pt-8">
 			<h1 className="text-2xl font-semibold text-emerald-700">Registrarse</h1>
-			<form className="mt-6 space-y-4" onSubmit={onSubmit}>
-				<input
-					type="text"
-					placeholder="Nombre"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-					value={form.nombre}
-					onChange={(event) => updateField("nombre", event.target.value)}
-				/>
-				<input
-					type="text"
-					placeholder="Apellido"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-					value={form.apellido}
-					onChange={(event) => updateField("apellido", event.target.value)}
-				/>
-				<input
-					type="email"
-					placeholder="Correo"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-					value={form.correo}
-					onChange={(event) => updateField("correo", event.target.value)}
-				/>
-				<div className="grid gap-3 sm:grid-cols-2">
-					<input
-						type="date"
-						placeholder="Fecha de nacimiento"
-						className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-						value={form.fecha_nacimiento}
-						onChange={(event) =>
-							updateField("fecha_nacimiento", event.target.value)
-						}
-					/>
-					<select
-						className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm text-slate-500 outline-none focus:border-emerald-500"
-						value={form.genero}
-						onChange={(event) => updateField("genero", event.target.value)}
-					>
-						<option>Femenino</option>
-						<option>Masculino</option>
-						<option>Otro</option>
-					</select>
-				</div>
-				<div className="grid gap-3 sm:grid-cols-2">
+			<form className="mt-6 space-y-5" onSubmit={onSubmit}>
+				<div>
 					<input
 						type="text"
-						placeholder="Cédula de identidad"
-						className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-						value={form.cedula}
-						onChange={(event) => updateField("cedula", event.target.value)}
+						placeholder="Nombre"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.nombre}
+						onChange={(event) => updateField("nombre", event.target.value)}
+						maxLength={30}
 					/>
-					<input
-						type="tel"
-						placeholder="Teléfono"
-						className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-						value={form.telefono}
-						onChange={(event) => updateField("telefono", event.target.value)}
-					/>
+					{fieldErrors.nombre && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>
+					)}
 				</div>
-				<input
-					type="text"
-					placeholder="Dirección"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-					value={form.direccion}
-					onChange={(event) => updateField("direccion", event.target.value)}
-				/>
-				<input
-					type="text"
-					placeholder="Tipo de sangre"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
-					value={form.tipo_sangre}
-					onChange={(event) => updateField("tipo_sangre", event.target.value)}
-				/>
-				<textarea
-					placeholder="Descripción (padecimientos o notas)"
-					className="min-h-[90px] w-full rounded-[24px] border border-emerald-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"
-					value={form.descripcion}
-					onChange={(event) => updateField("descripcion", event.target.value)}
-				/>
-				<PasswordField
-					value={form.contrasena}
-					onChange={(value) => updateField("contrasena", value)}
-					placeholder="Contraseña"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-sm outline-none focus:border-emerald-500"
-				/>
+				<div>
+					<input
+						type="text"
+						placeholder="Apellido"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.apellido}
+						onChange={(event) => updateField("apellido", event.target.value)}
+						maxLength={30}
+					/>
+					{fieldErrors.apellido && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>
+					)}
+				</div>
+				<div>
+					<input
+						type="email"
+						placeholder="Correo"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.correo ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.correo}
+						onChange={(event) => updateField("correo", event.target.value)}
+					/>
+					{fieldErrors.correo && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>
+					)}
+				</div>
+				<div className="grid gap-5 sm:grid-cols-2">
+					<div>
+						<input
+							type="date"
+							placeholder="Fecha de nacimiento"
+							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+								fieldErrors.fecha_nacimiento ? "border-red-500" : "border-emerald-200"
+							}`}
+							value={form.fecha_nacimiento}
+							max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
+							onChange={(event) =>
+								updateField("fecha_nacimiento", event.target.value)
+							}
+						/>
+						{fieldErrors.fecha_nacimiento && (
+							<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+						)}
+					</div>
+					<div>
+						<select
+							className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
+								fieldErrors.genero ? "border-red-500" : "border-emerald-200"
+							}`}
+							value={form.genero}
+							onChange={(event) => updateField("genero", event.target.value)}
+						>
+							<option value="">Selecciona género</option>
+							<option>Femenino</option>
+							<option>Masculino</option>
+							<option>Otro</option>
+						</select>
+						{fieldErrors.genero && (
+							<p className="mt-1 text-xs text-red-500">{fieldErrors.genero}</p>
+						)}
+					</div>
+				</div>
+				<div className="flex gap-2">
+					<select
+						className="h-11 w-20 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
+						value={form.tipo_rif}
+						onChange={(event) => updateField("tipo_rif", event.target.value)}
+					>
+						<option value="V">V</option>
+						<option value="E">E</option>
+						<option value="J">J</option>
+						<option value="P">P</option>
+						<option value="G">G</option>
+					</select>
+					<div className="flex-1">
+						<input
+							type="text"
+							placeholder="Cédula de identidad"
+							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+								fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
+							}`}
+							value={form.cedula}
+							onChange={(event) => updateField("cedula", event.target.value.replace(/\D/g, ""))}
+							maxLength={8}
+						/>
+						{fieldErrors.cedula && (
+							<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
+						)}
+					</div>
+				</div>
+				<div>
+					<input
+						type="text"
+						placeholder="RIF (se calcula automáticamente desde la cédula)"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.rif ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.rif}
+						onChange={(event) => updateField("rif", event.target.value.toUpperCase())}
+					/>
+					{fieldErrors.rif && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.rif}</p>
+					)}
+					{form.rif && !fieldErrors.rif && (
+						<div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2">
+							<svg
+								className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
+								fill="currentColor"
+								viewBox="0 0 20 20"
+							>
+								<path
+									fillRule="evenodd"
+									d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+									clipRule="evenodd"
+								/>
+							</svg>
+							<p className="text-xs text-amber-800">
+								Por favor, verifica que tus datos sean correctos antes de continuar.
+							</p>
+						</div>
+					)}
+				</div>
+				<div>
+					<div className="flex gap-2">
+						<select
+							className="h-11 w-24 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
+							value={form.telefono_prefijo}
+							onChange={(event) => updateField("telefono_prefijo", event.target.value)}
+						>
+							{prefijosTelefonicos.map((prefijo) => (
+								<option key={prefijo} value={prefijo}>
+									{prefijo}
+								</option>
+							))}
+						</select>
+						<div className="flex-1">
+							<input
+								type="tel"
+								placeholder="Número (7 dígitos)"
+								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+									fieldErrors.telefono_numero ? "border-red-500" : "border-emerald-200"
+								}`}
+								value={form.telefono_numero}
+								onChange={(event) =>
+									updateField("telefono_numero", event.target.value.replace(/\D/g, ""))
+								}
+								maxLength={7}
+							/>
+							{fieldErrors.telefono_numero && (
+								<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono_numero}</p>
+							)}
+						</div>
+					</div>
+				</div>
+				<div>
+					<input
+						type="text"
+						placeholder="Dirección"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.direccion ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.direccion}
+						onChange={(event) => updateField("direccion", event.target.value)}
+						maxLength={200}
+					/>
+					{fieldErrors.direccion && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.direccion}</p>
+					)}
+				</div>
+				<div>
+					<select
+						className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
+							fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.tipo_sangre}
+						onChange={(event) => updateField("tipo_sangre", event.target.value)}
+					>
+						<option value="">Selecciona tipo de sangre</option>
+						{tiposSangre.map((tipo) => (
+							<option key={tipo} value={tipo}>
+								{tipo}
+							</option>
+						))}
+					</select>
+					{fieldErrors.tipo_sangre && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.tipo_sangre}</p>
+					)}
+				</div>
+				<div>
+					<textarea
+						placeholder="Descripción (padecimientos o notas)"
+						className={`min-h-[90px] w-full rounded-[24px] border px-4 py-3 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.descripcion ? "border-red-500" : "border-emerald-200"
+						}`}
+						value={form.descripcion}
+						onChange={(event) => updateField("descripcion", event.target.value)}
+						maxLength={500}
+					/>
+					{fieldErrors.descripcion && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.descripcion}</p>
+					)}
+				</div>
+				<div>
+					<PasswordField
+						value={form.contrasena}
+						onChange={(value) => updateField("contrasena", value)}
+						placeholder="Contraseña"
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.contrasena ? "border-red-500" : "border-emerald-200"
+						}`}
+					/>
+					{fieldErrors.contrasena && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
+					)}
+				</div>
+				<div>
+					<PasswordField
+						value={form.confirmar_contrasena}
+						onChange={(value) => updateField("confirmar_contrasena", value)}
+						placeholder="Confirmar contraseña"
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${
+							fieldErrors.confirmar_contrasena ? "border-red-500" : "border-emerald-200"
+						}`}
+					/>
+					{fieldErrors.confirmar_contrasena && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>
+					)}
+				</div>
 				{localError ? <p className="text-sm text-rose-500">{localError}</p> : null}
 				{error ? <p className="text-sm text-rose-500">{error}</p> : null}
 				<button

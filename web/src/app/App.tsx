@@ -3,7 +3,10 @@ import AppLayout from "../layouts/AppLayout";
 import { AuthForgot, AuthLogin, AuthRegister } from "../features/auth";
 import { CitasPage } from "../features/citas";
 import { DashboardPage } from "../features/dashboard";
-import { DisponibilidadPublicaPage } from "../features/disponibilidad";
+import {
+	DisponibilidadPublicaPage,
+	DisponibilidadPendientesPage,
+} from "../features/disponibilidad";
 import { EcosPage } from "../features/ecos";
 import { EmpleadosPage } from "../features/empleados";
 import { EntesLegalesPage } from "../features/entesLegales";
@@ -19,6 +22,8 @@ import {
 	EspecialistaDetallePage,
 	EspecialistasListPage,
 } from "../features/especialistas";
+import { CalendarioModeradorPage, PacientesPage as ModeradoresPacientesPage } from "../features/moderadores";
+import { RegistrarEspecialistaPage, RegistrarModeradorPage } from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
 import { ModeradoresPage } from "../features/moderadores";
@@ -81,7 +86,19 @@ const App = () => {
 						path="calendario"
 						element={
 							<ProtectedRoute>
-								<CalendarioPage />
+								<RoleRoute allowed={["especialista"]}>
+									<CalendarioPage />
+								</RoleRoute>
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="calendario-moderador"
+						element={
+							<ProtectedRoute>
+								<RoleRoute allowed={["moderador", "admin"]}>
+									<CalendarioModeradorPage />
+								</RoleRoute>
 							</ProtectedRoute>
 						}
 					/>
@@ -90,6 +107,22 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
 								<EspecialistasListPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="admin/registrar-especialista"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<RegistrarEspecialistaPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="admin/registrar-moderador"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<RegistrarModeradorPage />
 							</RoleRoute>
 						}
 					/>
@@ -110,9 +143,27 @@ const App = () => {
 						}
 					/>
 					<Route
+						path="disponibilidad/pendientes"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<DisponibilidadPendientesPage />
+							</RoleRoute>
+						}
+					/>
+					{/* Ruta de pacientes para moderadores y admin */}
+					<Route
 						path="pacientes"
 						element={
-							<RoleRoute allowed={["admin", "moderador", "especialista"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<ModeradoresPacientesPage />
+							</RoleRoute>
+						}
+					/>
+					{/* Ruta de pacientes para especialistas */}
+					<Route
+						path="pacientes-especialista"
+						element={
+							<RoleRoute allowed={["especialista"]}>
 								<PacientesPage />
 							</RoleRoute>
 						}
@@ -125,8 +176,22 @@ const App = () => {
 							</RoleRoute>
 						}
 					/>
-					<Route path="especialidades" element={<EspecialidadesPage />} />
-					<Route path="ecos" element={<EcosPage />} />
+					<Route
+						path="especialidades"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<EspecialidadesPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="ecos"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<EcosPage />
+							</RoleRoute>
+						}
+					/>
 					<Route
 						path="informes"
 						element={

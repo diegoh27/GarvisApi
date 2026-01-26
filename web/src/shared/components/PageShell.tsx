@@ -1,16 +1,22 @@
+import { type ReactNode } from "react";
+
 type PageShellProps = {
 	title: string;
 	description?: string;
+	children?: ReactNode;
 };
 
-const PageShell = ({ title, description }: PageShellProps) => {
+const PageShell = ({ title, description, children }: PageShellProps) => {
 	return (
-		<section className="space-y-2">
-			<h1 className="text-2xl font-bold">{title}</h1>
-			{description ? (
-				<p className="text-sm text-base-content/70">{description}</p>
-			) : null}
-		</section>
+		<div className="space-y-6">
+			<div className="space-y-1">
+				<h1 className="text-2xl font-semibold text-brand-900">{title}</h1>
+				{description ? (
+					<p className="text-sm text-brand-800">{description}</p>
+				) : null}
+			</div>
+			{children}
+		</div>
 	);
 };
 

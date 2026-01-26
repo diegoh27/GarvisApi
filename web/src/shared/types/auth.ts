@@ -15,6 +15,7 @@ type RegisterPayload = {
 	tipo_sangre: string;
 	descripcion: string;
 	direccion?: string;
+	rif?: string;
 	contacto_emergencia_nombre?: string;
 	contacto_emergencia_telefono?: string;
 };
