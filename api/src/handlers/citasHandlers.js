@@ -4,6 +4,11 @@ const {
 	listCitasByEspecialistaController,
 	cancelCitaController,
 	markCitaAtendidaController,
+	listCitasPendientesPagoController,
+	listCitasConPagosController,
+	updateEstadoPagoController,
+	listCitasByFechaController,
+	getCitaByIdController,
 } = require("../controllers/citasControllers");
 
 const createCitaHandler = async (req, res) => {
@@ -205,6 +210,173 @@ const markCitaAtendidaHandler = async (req, res) => {
 	}
 };
 
+const listCitasPendientesPagoHandler = async (req, res) => {
+	try {
+		const data = await listCitasPendientesPagoController();
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const listCitasConPagosHandler = async (req, res) => {
+	try {
+		const data = await listCitasConPagosController();
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const updateEstadoPagoHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { estado_pago } = req.body;
+		const aprobado_por = req.user?.id;
+
+		if (!aprobado_por) {
+			return res.status(401).json({
+				ok: false,
+				message: "Token inválido",
+			});
+		}
+
+		if (estado_pago === undefined || ![0, 1, 2].includes(Number(estado_pago))) {
+			return res.status(400).json({
+				ok: false,
+				message: "estado_pago debe ser 0 (Pendiente), 1 (Aprobado) o 2 (Rechazado)",
+			});
+		}
+
+		const data = await updateEstadoPagoController({
+			id_cita: id,
+			estado_pago: Number(estado_pago),
+			aprobado_por,
+		});
+
+		return res.status(200).json({
+			ok: true,
+			message:
+				estado_pago === 1
+					? "Pago aprobado y cita confirmada"
+					: estado_pago === 2
+						? "Pago rechazado"
+						: "Estado de pago actualizado",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const listCitasByFechaHandler = async (req, res) => {
+	try {
+		const { fecha } = req.query;
+		if (!fecha) {
+			return res.status(400).json({
+				ok: false,
+				message: "fecha es requerida",
+			});
+		}
+		const data = await listCitasByFechaController(fecha);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const getCitaByIdHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { rol, id: id_usuario } = req.user; // Información del usuario autenticado (el campo es 'id' no 'id_usuario')
+		
+		if (!id) {
+			return res.status(400).json({
+				ok: false,
+				message: "id es requerido",
+			});
+		}
+		const data = await getCitaByIdController(id);
+		if (!data) {
+			return res.status(404).json({
+				ok: false,
+				message: "Cita no encontrada",
+			});
+		}
+		
+		// Si es especialista, solo puede ver sus propias citas
+		// En la tabla cita, id_especialista hace referencia a especialista(id_especialista)
+		// Y en la tabla especialista, id_especialista = id_usuario
+		if (rol === "especialista") {
+			// Convertir a string y comparar para evitar problemas de tipo
+			const citaEspecialistaId = String(data.id_especialista || "").trim();
+			const usuarioId = String(id_usuario || "").trim();
+			
+			if (citaEspecialistaId !== usuarioId) {
+				console.log("🔒 Acceso denegado - Especialista intentando ver cita de otro:", {
+					usuarioId,
+					citaEspecialistaId,
+					citaId: id,
+					rol,
+					comparison: citaEspecialistaId === usuarioId,
+				});
+				return res.status(403).json({
+					ok: false,
+					message: "No tienes permiso para ver esta cita. Esta cita pertenece a otro especialista.",
+				});
+			}
+		}
+		
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	listCitasByPacienteHandler,
@@ -212,4 +384,9 @@ module.exports = {
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
 	markCitaAtendidaHandler,
+	listCitasPendientesPagoHandler,
+	listCitasConPagosHandler,
+	updateEstadoPagoHandler,
+	listCitasByFechaHandler,
+	getCitaByIdHandler,
 };

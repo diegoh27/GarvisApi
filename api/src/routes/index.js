@@ -10,6 +10,7 @@ const disponibilidadRoutes = require("./disponibilidadRoutes");
 
 const especialidadesRoutes = require("./especialidadesRoutes");
 const ecosRoutes = require("./ecosRoutes");
+const especialistaEcosRoutes = require("./especialistaEcosRoutes");
 
 const citasRoutes = require("./citasRoutes");
 const resultadosRoutes = require("./resultadosRoutes");
@@ -33,6 +34,7 @@ router.use("/disponibilidad", disponibilidadRoutes);
 
 router.use("/especialidades", especialidadesRoutes);
 router.use("/ecos", ecosRoutes);
+router.use("/especialista-ecos", especialistaEcosRoutes);
 
 router.use("/citas", citasRoutes);
 router.use("/resultados", resultadosRoutes);

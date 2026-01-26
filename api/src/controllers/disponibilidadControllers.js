@@ -23,10 +23,25 @@ const createDisponibilidadController = async ({
 	hora_inicio,
 	hora_fin,
 	creado_por,
+	id_eco,
 }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
+		
+		// Validar que el eco existe si se proporciona
+		if (id_eco) {
+			const [ecoRows] = await conn.execute(
+				"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
+				[id_eco]
+			);
+			if (!ecoRows.length) {
+				const err = new Error("Eco no encontrado o inactivo");
+				err.code = "ECO_NOT_FOUND";
+				throw err;
+			}
+		}
+
 		const overlap = await hasOverlap(conn, {
 			id_especialista,
 			fecha,
@@ -43,9 +58,9 @@ const createDisponibilidadController = async ({
 		const id_disponibilidad = crypto.randomUUID();
 		const sql = `
       INSERT INTO disponibilidad
-        (id_disponibilidad, id_especialista, fecha, hora_inicio, hora_fin, estado, creado_por)
+        (id_disponibilidad, id_especialista, fecha, hora_inicio, hora_fin, id_eco, estado, creado_por)
       VALUES
-        (?, ?, ?, ?, ?, 0, ?)
+        (?, ?, ?, ?, ?, ?, 0, ?)
     `;
 		await conn.execute(sql, [
 			id_disponibilidad,
@@ -53,6 +68,7 @@ const createDisponibilidadController = async ({
 			fecha,
 			hora_inicio,
 			hora_fin,
+			id_eco || null,
 			creado_por,
 		]);
 
@@ -63,6 +79,7 @@ const createDisponibilidadController = async ({
 			fecha,
 			hora_inicio,
 			hora_fin,
+			id_eco: id_eco || null,
 			estado: 0,
 		};
 	} catch (err) {
@@ -80,10 +97,13 @@ const listMisDisponibilidadController = async ({ id_especialista, estado }) => {
       d.fecha,
       d.hora_inicio,
       d.hora_fin,
+      d.id_eco,
       d.estado,
       d.creado_en,
-      d.actualizado_en
+      d.actualizado_en,
+      e.nombre AS eco_nombre
     FROM disponibilidad d
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
     WHERE d.id_especialista = ?
   `;
 	const params = [id_especialista];
@@ -104,14 +124,17 @@ const listPendientesController = async () => {
       d.fecha,
       d.hora_inicio,
       d.hora_fin,
+      d.id_eco,
       d.estado,
       u.nombre,
       u.apellido,
-      es.nombre AS especialidad
+      es.nombre AS especialidad,
+      e.nombre AS eco_nombre
     FROM disponibilidad d
     INNER JOIN usuario u ON u.id_usuario = d.id_especialista
-    INNER JOIN especialista e ON e.id_especialista = d.id_especialista
-    INNER JOIN especialidad es ON es.id_especialidad = e.id_especialidad
+    INNER JOIN especialista esp ON esp.id_especialista = d.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
     WHERE d.estado = 0
     ORDER BY d.fecha ASC, d.hora_inicio ASC
   `;
@@ -215,8 +238,11 @@ const listPublicaController = async ({ id_especialista, fecha }) => {
       d.id_disponibilidad,
       d.fecha,
       d.hora_inicio,
-      d.hora_fin
+      d.hora_fin,
+      d.id_eco,
+      e.nombre AS eco_nombre
     FROM disponibilidad d
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
     WHERE d.estado = 1
       AND d.id_especialista = ?
   `;
@@ -260,6 +286,33 @@ const closeDisponibilidadDiaController = async ({
 	return { updated: result.affectedRows, id_especialista, fecha };
 };
 
+// Obtener todas las disponibilidades de un día específico (para moderador)
+const listDisponibilidadesByFechaController = async (fecha) => {
+	const sql = `
+    SELECT
+      d.id_disponibilidad,
+      d.id_especialista,
+      d.fecha,
+      d.hora_inicio,
+      d.hora_fin,
+      d.id_eco,
+      d.estado,
+      u.nombre,
+      u.apellido,
+      es.nombre AS especialidad,
+      e.nombre AS eco_nombre
+    FROM disponibilidad d
+    INNER JOIN usuario u ON u.id_usuario = d.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = d.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
+    WHERE d.fecha = ?
+    ORDER BY d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, [fecha]);
+	return rows;
+};
+
 module.exports = {
 	createDisponibilidadController,
 	listMisDisponibilidadController,
@@ -269,4 +322,5 @@ module.exports = {
 	cancelDisponibilidadController,
 	listPublicaController,
 	closeDisponibilidadDiaController,
+	listDisponibilidadesByFechaController,
 };

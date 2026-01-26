@@ -45,6 +45,32 @@ const createEspecialistaController = async (payload) => {
 			payload.codigo_colegiatura ?? null,
 		]);
 
+		// Asignar ecos al especialista si se proporcionaron
+		if (payload.id_ecos && Array.isArray(payload.id_ecos) && payload.id_ecos.length > 0) {
+			const sqlEco = `
+				INSERT INTO especialista_eco (id_especialista, id_eco)
+				VALUES (?, ?)
+			`;
+			// Verificar que todos los ecos existan y estén activos
+			for (const id_eco of payload.id_ecos) {
+				const [ecoRows] = await conn.execute(
+					"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
+					[id_eco]
+				);
+				if (!ecoRows.length) {
+					throw new Error(`Eco ${id_eco} no encontrado o inactivo`);
+				}
+				// Verificar que no esté ya asignado
+				const [relRows] = await conn.execute(
+					"SELECT id_especialista FROM especialista_eco WHERE id_especialista = ? AND id_eco = ?",
+					[id_usuario, id_eco]
+				);
+				if (relRows.length === 0) {
+					await conn.execute(sqlEco, [id_usuario, id_eco]);
+				}
+			}
+		}
+
 		await conn.commit();
 
 		return {
@@ -101,7 +127,13 @@ const getEspecialistaByIdController = async (id_especialista) => {
       u.id_usuario AS id_especialista,
       u.nombre,
       u.apellido,
+      u.genero,
+      u.cedula,
+      u.correo,
+      u.telefono,
+      u.fecha_nacimiento,
       e.id_especialidad,
+      e.codigo_colegiatura,
       es.nombre AS especialidad
     FROM especialista e
     INNER JOIN usuario u ON u.id_usuario = e.id_especialista
@@ -211,7 +243,35 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 			await conn.execute(sqlEsp, [...espParams, id_especialista]);
 		}
 
-		if (!userUpdates.length && !espUpdates.length) {
+		// Actualizar ecos si se proporcionaron
+		if (payload.id_ecos && Array.isArray(payload.id_ecos)) {
+			// Eliminar todas las relaciones existentes
+			await conn.execute(
+				"DELETE FROM especialista_eco WHERE id_especialista = ?",
+				[id_especialista]
+			);
+
+			// Insertar las nuevas relaciones
+			if (payload.id_ecos.length > 0) {
+				const sqlEco = `
+					INSERT INTO especialista_eco (id_especialista, id_eco)
+					VALUES (?, ?)
+				`;
+				// Verificar que todos los ecos existan y estén activos
+				for (const id_eco of payload.id_ecos) {
+					const [ecoRows] = await conn.execute(
+						"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
+						[id_eco]
+					);
+					if (!ecoRows.length) {
+						throw new Error(`Eco ${id_eco} no encontrado o inactivo`);
+					}
+					await conn.execute(sqlEco, [id_especialista, id_eco]);
+				}
+			}
+		}
+
+		if (!userUpdates.length && !espUpdates.length && !payload.id_ecos) {
 			const err = new Error("No hay campos para actualizar");
 			err.code = "NO_FIELDS";
 			throw err;

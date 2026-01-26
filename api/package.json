@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "insert-test-pago": "node src/utils/insert_test_pago.js",
+    "insert-pagos-all": "node src/utils/insert_pagos_all_citas.js",
+    "update-rif": "node src/utils/update_pacientes_rif.js"
   },
   "keywords": [],
   "author": "",

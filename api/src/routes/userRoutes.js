@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const {
 	userCreateHandler,
-	prueba,
+	listUsersHandler,
 	getUserByIdHandler,
 	updateUserHandler,
 	setUserActiveHandler,
@@ -11,7 +11,13 @@ const { authorizeRoles } = require("../middleware/authorizeRoles");
 
 const userRoutes = Router();
 
-userRoutes.get("/", prueba);
+// GET /users (solo admin) - Listar usuarios con filtros
+userRoutes.get(
+	"/",
+	authenticateToken,
+	authorizeRoles("admin"),
+	listUsersHandler,
+);
 userRoutes.post("/", userCreateHandler);
 // GET /users/:id (solo admin)
 userRoutes.get(

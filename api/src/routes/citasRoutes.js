@@ -6,6 +6,11 @@ const {
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
 	markCitaAtendidaHandler,
+	listCitasPendientesPagoHandler,
+	listCitasConPagosHandler,
+	updateEstadoPagoHandler,
+	listCitasByFechaHandler,
+	getCitaByIdHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -54,5 +59,40 @@ citasRoutes.patch(
 	authorizeRoles("especialista"),
 	markCitaAtendidaHandler,
 );
+// GET /citas/pendientes-pago (moderador/admin)
+	citasRoutes.get(
+		"/pendientes-pago",
+		authenticateToken,
+		authorizeRoles("moderador", "admin"),
+		listCitasPendientesPagoHandler,
+	);
+// GET /citas/con-pagos (moderador/admin) - Todas las citas con pagos para verificación
+	citasRoutes.get(
+		"/con-pagos",
+		authenticateToken,
+		authorizeRoles("moderador", "admin"),
+		listCitasConPagosHandler,
+	);
+// PATCH /citas/:id/estado-pago (moderador/admin)
+citasRoutes.patch(
+	"/:id/estado-pago",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	updateEstadoPagoHandler,
+);
+// GET /citas/por-fecha?fecha=YYYY-MM-DD (moderador/admin)
+citasRoutes.get(
+	"/por-fecha",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listCitasByFechaHandler,
+);
+// GET /citas/:id (moderador/admin/especialista)
+	citasRoutes.get(
+		"/:id",
+		authenticateToken,
+		authorizeRoles("moderador", "admin", "especialista"),
+		getCitaByIdHandler,
+	);
 
 module.exports = citasRoutes;

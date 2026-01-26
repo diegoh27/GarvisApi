@@ -48,9 +48,9 @@ const createPacienteController = async (payload) => {
 		// 2) Insert paciente (hereda de usuario: id_paciente = id_usuario)
 		const sqlPaciente = `
       INSERT INTO paciente
-        (id_paciente, tipo_sangre, descripcion, direccion, contacto_emergencia_nombre, contacto_emergencia_telefono)
+        (id_paciente, tipo_sangre, descripcion, direccion, rif, contacto_emergencia_nombre, contacto_emergencia_telefono)
       VALUES
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?)
     `;
 
 		await conn.execute(sqlPaciente, [
@@ -58,6 +58,7 @@ const createPacienteController = async (payload) => {
 			payload.tipo_sangre,
 			payload.descripcion,
 			payload.direccion ?? null,
+			payload.rif ?? null,
 			payload.contacto_emergencia_nombre ?? null,
 			payload.contacto_emergencia_telefono ?? null,
 		]);

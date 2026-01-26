@@ -21,6 +21,7 @@ const createPacienteHandler = async (req, res) => {
 			tipo_sangre,
 			descripcion,
 			direccion,
+			rif,
 			contacto_emergencia_nombre,
 			contacto_emergencia_telefono,
 		} = req.body;
@@ -66,6 +67,7 @@ const createPacienteHandler = async (req, res) => {
 			tipo_sangre,
 			descripcion,
 			direccion,
+			rif,
 			contacto_emergencia_nombre,
 			contacto_emergencia_telefono,
 		});

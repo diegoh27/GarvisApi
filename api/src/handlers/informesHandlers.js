@@ -2,6 +2,8 @@ const {
 	listInformesByEspecialistaController,
 	getInformeByCitaController,
 	createOrUpdateInformeController,
+	listAllInformesController,
+	listCitasAtendidasSinInformeController,
 } = require("../controllers/informesControllers");
 
 const listInformesHandler = async (req, res) => {
@@ -113,8 +115,42 @@ const createOrUpdateInformeHandler = async (req, res) => {
 	}
 };
 
+const listAllInformesHandler = async (req, res) => {
+	try {
+		const data = await listAllInformesController();
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const listCitasAtendidasSinInformeHandler = async (req, res) => {
+	try {
+		const data = await listCitasAtendidasSinInformeController();
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	listInformesHandler,
 	getInformeByCitaHandler,
 	createOrUpdateInformeHandler,
+	listAllInformesHandler,
+	listCitasAtendidasSinInformeHandler,
 };

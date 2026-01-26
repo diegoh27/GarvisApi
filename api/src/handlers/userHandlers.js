@@ -3,6 +3,7 @@ const {
 	getUserByIdController,
 	updateUserController,
 	setUserActiveController,
+	listUsersController,
 } = require("../controllers/usersControllers");
 
 const userCreateHandler = (req, res) => {
@@ -15,8 +16,25 @@ const userCreateHandler = (req, res) => {
 	});
 };
 
-const prueba = (req, res) => {
-	res.send("Ruta de prueba");
+const listUsersHandler = async (req, res) => {
+	try {
+		const { rol, activo, q } = req.query;
+		const users = await listUsersController({
+			rol: rol || null,
+			activo: activo !== undefined ? Number(activo) : undefined,
+			q: q || null,
+		});
+		return res.status(200).json({
+			ok: true,
+			data: users,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
 };
 
 const getUserByIdHandler = async (req, res) => {
@@ -135,7 +153,7 @@ const setUserActiveHandler = async (req, res) => {
 
 module.exports = {
 	userCreateHandler,
-	prueba,
+	listUsersHandler,
 	getUserByIdHandler,
 	updateUserHandler,
 	setUserActiveHandler,
