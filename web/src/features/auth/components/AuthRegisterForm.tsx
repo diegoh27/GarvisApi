@@ -82,8 +82,9 @@ const AuthRegisterForm = () => {
 				return "";
 			case "correo":
 				if (!value.trim()) return "El correo es requerido";
-				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-				if (!emailRegex.test(value)) return "Correo electrónico inválido";
+				// Regex más robusto para validar correos electrónicos
+				const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+				if (!emailRegex.test(value.trim())) return "Correo electrónico inválido";
 				return "";
 			case "fecha_nacimiento":
 				if (!value) return "La fecha de nacimiento es requerida";
@@ -242,6 +243,9 @@ const AuthRegisterForm = () => {
 			<h1 className="text-2xl font-semibold text-emerald-700">Registrarse</h1>
 			<form className="mt-6 space-y-5" onSubmit={onSubmit}>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Nombre
+					</label>
 					<input
 						type="text"
 						placeholder="Nombre"
@@ -257,6 +261,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Apellido
+					</label>
 					<input
 						type="text"
 						placeholder="Apellido"
@@ -272,6 +279,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Correo electrónico
+					</label>
 					<input
 						type="email"
 						placeholder="Correo"
@@ -287,7 +297,7 @@ const AuthRegisterForm = () => {
 				</div>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1 block text-sm font-medium text-slate-700">
+						<label className="mb-1.5 block text-xs font-medium text-slate-500">
 							Fecha de nacimiento
 						</label>
 						<input
@@ -307,7 +317,7 @@ const AuthRegisterForm = () => {
 						)}
 					</div>
 					<div>
-						<label className="mb-1 block text-sm font-medium text-slate-700">
+						<label className="mb-1.5 block text-xs font-medium text-slate-500">
 							Género
 						</label>
 						<select
@@ -327,35 +337,43 @@ const AuthRegisterForm = () => {
 						)}
 					</div>
 				</div>
-				<div className="flex gap-2">
-					<select
-						className="h-11 w-20 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
-						value={form.tipo_rif}
-						onChange={(event) => updateField("tipo_rif", event.target.value)}
-					>
-						<option value="V">V</option>
-						<option value="E">E</option>
-						<option value="J">J</option>
-						<option value="P">P</option>
-						<option value="G">G</option>
-					</select>
-					<div className="flex-1">
-						<input
-							type="text"
-							placeholder="Cédula de identidad"
-							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-								fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
-							}`}
-							value={form.cedula}
-							onChange={(event) => updateField("cedula", event.target.value.replace(/\D/g, ""))}
-							maxLength={8}
-						/>
-						{fieldErrors.cedula && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
-						)}
+				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Cédula de identidad
+					</label>
+					<div className="flex gap-2">
+						<select
+							className="h-11 w-20 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
+							value={form.tipo_rif}
+							onChange={(event) => updateField("tipo_rif", event.target.value)}
+						>
+							<option value="V">V</option>
+							<option value="E">E</option>
+							<option value="J">J</option>
+							<option value="P">P</option>
+							<option value="G">G</option>
+						</select>
+						<div className="flex-1">
+							<input
+								type="text"
+								placeholder="Cédula de identidad"
+								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
+									fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
+								}`}
+								value={form.cedula}
+								onChange={(event) => updateField("cedula", event.target.value.replace(/\D/g, ""))}
+								maxLength={8}
+							/>
+							{fieldErrors.cedula && (
+								<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
+							)}
+						</div>
 					</div>
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						RIF <span className="text-slate-400 font-normal">(se calcula automáticamente)</span>
+					</label>
 					<input
 						type="text"
 						placeholder="RIF (se calcula automáticamente desde la cédula)"
@@ -388,6 +406,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Teléfono
+					</label>
 					<div className="flex gap-2">
 						<select
 							className="h-11 w-24 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
@@ -420,6 +441,9 @@ const AuthRegisterForm = () => {
 					</div>
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Dirección <span className="text-slate-400 font-normal">(opcional)</span>
+					</label>
 					<input
 						type="text"
 						placeholder="Dirección"
@@ -435,6 +459,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Tipo de sangre
+					</label>
 					<select
 						className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
 							fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
@@ -468,6 +495,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Contraseña
+					</label>
 					<PasswordField
 						value={form.contrasena}
 						onChange={(value) => updateField("contrasena", value)}
@@ -481,6 +511,9 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
+					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						Confirmar contraseña
+					</label>
 					<PasswordField
 						value={form.confirmar_contrasena}
 						onChange={(value) => updateField("confirmar_contrasena", value)}
