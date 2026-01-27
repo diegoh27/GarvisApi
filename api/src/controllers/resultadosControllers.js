@@ -88,14 +88,19 @@ const createOrUpdateResultadoController = async ({
 			}
 		}
 
+		// Determinar el estado según si hay archivos
+		// 0: Pendiente, 1: Vacío, 2: Con resultados (resultado_archivo)
+		const tieneArchivos = archivoToSave && archivoToSave !== "[]" && archivoToSave.trim() !== "";
+		const nuevoEstado = tieneArchivos ? 2 : 1;
+
 		if (existingRows.length > 0) {
 			// Actualizar resultado existente
 			const sql = `
         UPDATE resultado
-        SET archivo = ?, nombre = ?, fecha_emision = CURRENT_TIMESTAMP
+        SET archivo = ?, nombre = ?, fecha_emision = CURRENT_TIMESTAMP, estado_resultado = ?
         WHERE id_cita = ?
       `;
-			await conn.execute(sql, [archivoToSave, nombre || null, id_cita]);
+			await conn.execute(sql, [archivoToSave, nombre || null, nuevoEstado, id_cita]);
 			await conn.commit();
 			return {
 				id_resultado: existingRows[0].id_resultado,
@@ -111,7 +116,7 @@ const createOrUpdateResultadoController = async ({
         INSERT INTO resultado
           (id_resultado, id_cita, id_especialista, nombre, archivo, estado_resultado)
         VALUES
-          (?, ?, ?, ?, ?, 1)
+          (?, ?, ?, ?, ?, ?)
       `;
 			await conn.execute(sql, [
 				id_resultado,
@@ -119,6 +124,7 @@ const createOrUpdateResultadoController = async ({
 				cita.id_especialista,
 				nombre || null,
 				archivoToSave,
+				nuevoEstado,
 			]);
 			await conn.commit();
 			return {
@@ -138,8 +144,8 @@ const createOrUpdateResultadoController = async ({
 };
 
 // Listar citas atendidas sin resultado (para moderador)
-const listCitasSinResultadoController = async () => {
-	const sql = `
+const listCitasSinResultadoController = async (id_especialista = null) => {
+	let sql = `
     SELECT
       c.id_cita,
       c.id_paciente,
@@ -161,9 +167,17 @@ const listCitasSinResultadoController = async () => {
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
     WHERE c.estado_cita = 3
       AND (r.archivo IS NULL OR r.archivo = '' OR r.archivo = '[]')
-    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
-	const [rows] = await pool.execute(sql);
+	
+	// Si se proporciona id_especialista, filtrar solo sus citas
+	if (id_especialista) {
+		sql += ` AND c.id_especialista = ?`;
+	}
+	
+	sql += ` ORDER BY c.fecha_cita DESC, c.hora_cita DESC`;
+	
+	const params = id_especialista ? [id_especialista] : [];
+	const [rows] = await pool.execute(sql, params);
 	return rows;
 };
 
@@ -194,6 +208,36 @@ const listCitasAtendidasConResultadosController = async () => {
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
+// Obtener resultados del paciente autenticado
+const listResultadosByPacienteController = async (id_paciente) => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      e.nombre AS eco_nombre,
+      r.archivo AS resultado_archivo,
+      r.estado_resultado AS resultado_estado
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN resultado r ON r.id_cita = c.id_cita
+    WHERE c.id_paciente = ? AND c.estado_cita = 3 AND r.archivo IS NOT NULL
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql, [id_paciente]);
 	return rows;
 };
 
@@ -263,9 +307,12 @@ const deleteArchivoFromResultadoController = async ({
 				? archivosFiltrados[0] 
 				: JSON.stringify(archivosFiltrados);
 
+		// Actualizar estado: 1 Vacío si no hay archivos, 2 Con resultados si hay archivos
+		const nuevoEstado = archivosFiltrados.length === 0 ? 1 : 2;
+
 		await conn.execute(
-			"UPDATE resultado SET archivo = ? WHERE id_cita = ?",
-			[nuevoArchivo, id_cita],
+			"UPDATE resultado SET archivo = ?, estado_resultado = ? WHERE id_cita = ?",
+			[nuevoArchivo, nuevoEstado, id_cita],
 		);
 
 		await conn.commit();
@@ -286,5 +333,6 @@ module.exports = {
 	createOrUpdateResultadoController,
 	listCitasSinResultadoController,
 	listCitasAtendidasConResultadosController,
+	listResultadosByPacienteController,
 	deleteArchivoFromResultadoController,
 };

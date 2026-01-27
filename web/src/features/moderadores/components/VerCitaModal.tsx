@@ -53,6 +53,16 @@ const formatMonto = (monto: number | string | null) => {
 	}).format(num);
 };
 
+const formatMontoVES = (monto: number | string | null) => {
+	if (monto === null || monto === undefined) return "N/A";
+	const num = typeof monto === "string" ? parseFloat(monto) : monto;
+	if (Number.isNaN(num)) return "N/A";
+	return `Bs. ${num.toLocaleString("es-VE", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	})}`;
+};
+
 const getEstadoCitaLabel = (estado: number) => {
 	switch (estado) {
 		case 0:
@@ -345,18 +355,22 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 									<div className="space-y-4">
 										<div className="grid gap-4 sm:grid-cols-2">
 											<div>
+												<p className="text-xs font-semibold text-brand-700">ID del pago</p>
+												<p className="mt-1 break-all text-sm font-mono text-brand-900">{cita.pago_id_pago}</p>
+											</div>
+											<div>
+												<p className="text-xs font-semibold text-brand-700">Referencia</p>
+												<p className="mt-1 text-sm text-brand-900">{cita.pago_referencia || "N/A"}</p>
+											</div>
+											<div>
 												<p className="text-xs font-semibold text-brand-700">Método de pago</p>
 												<p className="mt-1 text-sm text-brand-900">{cita.pago_metodo}</p>
 											</div>
 											<div>
-												<p className="text-xs font-semibold text-brand-700">Monto</p>
+												<p className="text-xs font-semibold text-brand-700">Monto (VES)</p>
 												<p className="mt-1 text-sm font-semibold text-brand-900">
-													{formatMonto(cita.pago_monto)}
+													{formatMontoVES(cita.pago_monto)}
 												</p>
-											</div>
-											<div>
-												<p className="text-xs font-semibold text-brand-700">Referencia</p>
-												<p className="mt-1 text-sm text-brand-900">{cita.pago_referencia}</p>
 											</div>
 											<div>
 												<p className="text-xs font-semibold text-brand-700">Estado</p>

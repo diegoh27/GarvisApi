@@ -5,7 +5,7 @@ import { PasswordField, useAuth, calculateRIF } from "../../../shared";
 
 const AuthRegisterForm = () => {
 	const navigate = useNavigate();
-	const { register, status, error, resetError } = useAuth();
+	const { register, login, status, error, resetError } = useAuth();
 	const [form, setForm] = useState({
 		nombre: "",
 		apellido: "",
@@ -218,6 +218,7 @@ const AuthRegisterForm = () => {
 		}
 
 		try {
+			// Registrar paciente (el registro público solo crea pacientes)
 			await register({
 				nombre: form.nombre.trim(),
 				apellido: form.apellido.trim(),
@@ -232,7 +233,16 @@ const AuthRegisterForm = () => {
 				direccion: form.direccion.trim() || undefined,
 				rif: form.rif.trim() || undefined,
 			});
-			navigate("/auth/login");
+
+			// Iniciar sesión automáticamente después del registro
+			// (siempre será paciente, así que redirigimos a /disponibilidad)
+			await login({
+				correo: form.correo.trim(),
+				contrasena: form.contrasena,
+			});
+
+			// Redirigir al home de pacientes
+			navigate("/disponibilidad", { replace: true });
 		} catch {
 			// error ya guardado en store
 		}

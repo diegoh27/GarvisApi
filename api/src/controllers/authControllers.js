@@ -9,6 +9,53 @@ const registerPaciente = async (payload) => {
 	try {
 		await conn.beginTransaction();
 
+		// Validar duplicados antes de insertar
+		// 1. Verificar correo duplicado
+		const [correoExists] = await conn.execute(
+			"SELECT id_usuario FROM usuario WHERE correo = ? LIMIT 1",
+			[payload.correo]
+		);
+		if (correoExists.length > 0) {
+			const err = new Error("Ya existe un usuario con este correo electrónico");
+			err.code = "DUPLICATE_EMAIL";
+			throw err;
+		}
+
+		// 2. Verificar cédula duplicada
+		const [cedulaExists] = await conn.execute(
+			"SELECT id_usuario FROM usuario WHERE cedula = ? LIMIT 1",
+			[payload.cedula]
+		);
+		if (cedulaExists.length > 0) {
+			const err = new Error("Ya existe un usuario con esta cédula");
+			err.code = "DUPLICATE_CEDULA";
+			throw err;
+		}
+
+		// 3. Verificar RIF duplicado (si se proporciona)
+		if (payload.rif) {
+			const [rifExists] = await conn.execute(
+				"SELECT id_paciente FROM paciente WHERE rif = ? LIMIT 1",
+				[payload.rif]
+			);
+			if (rifExists.length > 0) {
+				const err = new Error("Ya existe un paciente con este RIF");
+				err.code = "DUPLICATE_RIF";
+				throw err;
+			}
+		}
+
+		// 4. Verificar nombre + apellido duplicado
+		const [nombreApellidoExists] = await conn.execute(
+			"SELECT id_usuario FROM usuario WHERE nombre = ? AND apellido = ? LIMIT 1",
+			[payload.nombre, payload.apellido]
+		);
+		if (nombreApellidoExists.length > 0) {
+			const err = new Error("Ya existe un usuario con este nombre y apellido");
+			err.code = "DUPLICATE_NAME";
+			throw err;
+		}
+
 		const id_usuario = crypto.randomUUID();
 		const id_rol = await getRolIdByName(conn, "paciente");
 		const hashedPassword = await bcrypt.hash(payload.contrasena, 10);
@@ -35,9 +82,9 @@ const registerPaciente = async (payload) => {
 
 		const sqlPaciente = `
       INSERT INTO paciente
-        (id_paciente, tipo_sangre, descripcion, direccion, contacto_emergencia_nombre, contacto_emergencia_telefono)
+        (id_paciente, tipo_sangre, descripcion, direccion, rif, contacto_emergencia_nombre, contacto_emergencia_telefono)
       VALUES
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?)
     `;
 
 		await conn.execute(sqlPaciente, [
@@ -45,6 +92,7 @@ const registerPaciente = async (payload) => {
 			payload.tipo_sangre,
 			payload.descripcion,
 			payload.direccion ?? null,
+			payload.rif ?? null,
 			payload.contacto_emergencia_nombre ?? null,
 			payload.contacto_emergencia_telefono ?? null,
 		]);

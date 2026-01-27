@@ -18,6 +18,17 @@ const listEcosController = async () => {
 };
 
 const createEcoController = async ({ nombre, precio, duracion_min }) => {
+	// Validar que no exista un eco con el mismo nombre (case-insensitive)
+	const [existingRows] = await pool.execute(
+		"SELECT id_eco FROM eco WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) LIMIT 1",
+		[nombre]
+	);
+	if (existingRows.length > 0) {
+		const err = new Error("Ya existe un eco con ese nombre");
+		err.code = "DUPLICATE_NAME";
+		throw err;
+	}
+
 	const id_eco = crypto.randomUUID();
 	const sql = `
     INSERT INTO eco (id_eco, nombre, precio, duracion_min, activo)
@@ -28,6 +39,19 @@ const createEcoController = async ({ nombre, precio, duracion_min }) => {
 };
 
 const updateEcoController = async ({ id_eco, nombre, precio, duracion_min, activo }) => {
+	// Si se está actualizando el nombre, validar que no exista otro eco con el mismo nombre
+	if (nombre !== undefined) {
+		const [existingRows] = await pool.execute(
+			"SELECT id_eco FROM eco WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) AND id_eco != ? LIMIT 1",
+			[nombre, id_eco]
+		);
+		if (existingRows.length > 0) {
+			const err = new Error("Ya existe un eco con ese nombre");
+			err.code = "DUPLICATE_NAME";
+			throw err;
+		}
+	}
+
 	const updates = [];
 	const params = [];
 

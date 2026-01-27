@@ -1,4 +1,4 @@
-const {
+	const {
 	createDisponibilidadController,
 	listMisDisponibilidadController,
 	listPendientesController,
@@ -8,6 +8,7 @@ const {
 	listPublicaController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
+	listDisponibilidadesByEspecialistaController,
 } = require("../controllers/disponibilidadControllers");
 
 const parseTimeToMinutes = (timeStr) => {
@@ -135,6 +136,15 @@ const listPendientesHandler = async (req, res) => {
 const approveDisponibilidadHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
+		
+		// Validar que el usuario esté autenticado y tenga un ID válido
+		if (!req.user || !req.user.id) {
+			return res.status(401).json({
+				ok: false,
+				message: "Usuario no autenticado",
+			});
+		}
+
 		const result = await approveDisponibilidadController({
 			id_disponibilidad: id,
 			aprobado_por: req.user.id,
@@ -155,6 +165,19 @@ const approveDisponibilidadHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: err.message,
+			});
+		}
+		if (err?.code === "USER_NOT_FOUND") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		// Manejar error de foreign key constraint
+		if (err?.code === "ER_NO_REFERENCED_ROW_2" || err?.errno === 1452) {
+			return res.status(400).json({
+				ok: false,
+				message: "El usuario autenticado no existe en la base de datos. Por favor, inicia sesión nuevamente.",
 			});
 		}
 		console.error(err);
@@ -295,6 +318,29 @@ const listDisponibilidadesByFechaHandler = async (req, res) => {
 	}
 };
 
+const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
+	try {
+		const { id_especialista } = req.query;
+		if (!id_especialista) {
+			return res.status(400).json({
+				ok: false,
+				message: "id_especialista es requerido",
+			});
+		}
+		const data = await listDisponibilidadesByEspecialistaController(id_especialista);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	createDisponibilidadHandler,
 	listMisDisponibilidadHandler,
@@ -305,4 +351,5 @@ module.exports = {
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,
+	listDisponibilidadesByEspecialistaHandler,
 };

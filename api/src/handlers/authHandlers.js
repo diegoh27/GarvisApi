@@ -70,10 +70,36 @@ const registerPacienteHandler = async (req, res) => {
 			data: created,
 		});
 	} catch (err) {
+		// Errores de duplicados con mensajes específicos
+		if (err?.code === "DUPLICATE_EMAIL") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_CEDULA") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_RIF") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_NAME") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		// Fallback para otros errores de duplicado de MySQL
 		if (err?.code === "ER_DUP_ENTRY") {
 			return res.status(409).json({
 				ok: false,
-				message: "Ya existe un usuario con esa cédula o correo",
+				message: "Ya existe un usuario con esos datos",
 			});
 		}
 		if (err?.code === "ROL_NOT_FOUND") {

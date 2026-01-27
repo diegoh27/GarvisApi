@@ -10,6 +10,7 @@ import { useGetCitaByIdQuery } from "../moderadoresApi";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import VerCitaModal from "../components/VerCitaModal";
 import VerResultadosModal from "../components/VerResultadosModal";
+import HistorialCitasModal from "../components/HistorialCitasModal";
 
 const formatFecha = (value: string) => {
 	if (!value) return "";
@@ -75,6 +76,11 @@ const PacientesPage = () => {
 		ecoNombre: string;
 		idCita: string;
 	} | null>(null);
+	const [selectedPacienteForHistorial, setSelectedPacienteForHistorial] = useState<{
+		id_paciente: string;
+		nombre: string;
+		apellido: string;
+	} | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
 	const itemsPerPage = 5;
@@ -96,35 +102,63 @@ const PacientesPage = () => {
 
 	// Filtrar citas según el filtro seleccionado
 	const filteredCitas = useMemo(() => {
-		if (filter === "todas") {
-			return citas;
-		}
+		let citasFiltradas = citas;
 		if (filter === "sin-resultado") {
-			return citas.filter((cita) => {
+			citasFiltradas = citas.filter((cita) => {
 				const archivos = parseResultadoArchivo(cita.resultado_archivo);
 				return archivos.length === 0;
 			});
 		}
 		if (filter === "con-resultado") {
-			return citas.filter((cita) => {
+			citasFiltradas = citas.filter((cita) => {
 				const archivos = parseResultadoArchivo(cita.resultado_archivo);
 				return archivos.length > 0;
 			});
 		}
-		return citas;
+		return citasFiltradas;
 	}, [citas, filter]);
 
-	// Paginación
-	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
-	const paginatedCitas = useMemo(() => {
+	// Agrupar citas por paciente
+	const pacientesAgrupados = useMemo(() => {
+		const pacientesMap = new Map<string, {
+			id_paciente: string;
+			nombre: string;
+			apellido: string;
+			citas: CitaAtendidaConResultado[];
+		}>();
+
+		filteredCitas.forEach((cita) => {
+			const key = cita.id_paciente;
+			if (!pacientesMap.has(key)) {
+				pacientesMap.set(key, {
+					id_paciente: cita.id_paciente,
+					nombre: cita.paciente_nombre,
+					apellido: cita.paciente_apellido,
+					citas: [],
+				});
+			}
+			pacientesMap.get(key)!.citas.push(cita);
+		});
+
+		// Ordenar pacientes por nombre
+		return Array.from(pacientesMap.values()).sort((a, b) => {
+			const nombreA = `${a.nombre} ${a.apellido}`.toLowerCase();
+			const nombreB = `${b.nombre} ${b.apellido}`.toLowerCase();
+			return nombreA.localeCompare(nombreB);
+		});
+	}, [filteredCitas]);
+
+	// Paginación de pacientes
+	const totalPages = Math.max(1, Math.ceil(pacientesAgrupados.length / itemsPerPage));
+	const paginatedPacientes = useMemo(() => {
 		const startIndex = (currentPage - 1) * itemsPerPage;
-		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
-	}, [filteredCitas, currentPage, itemsPerPage]);
+		return pacientesAgrupados.slice(startIndex, startIndex + itemsPerPage);
+	}, [pacientesAgrupados, currentPage, itemsPerPage]);
 
 	// Resetear a página 1 cuando cambian los datos o el filtro
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filter]);
+	}, [pacientesAgrupados.length, filter]);
 
 	const handleSubirResultado = async (id_cita: string, archivos: File[]) => {
 		try {
@@ -180,94 +214,49 @@ const PacientesPage = () => {
 					<div className="text-center py-8 text-brand-600">
 						Cargando citas atendidas...
 					</div>
-				) : filteredCitas.length === 0 ? (
+				) : pacientesAgrupados.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							No hay citas atendidas {filter !== "todas" ? `con el filtro seleccionado` : ""}.
+							No hay pacientes {filter !== "todas" ? `con el filtro seleccionado` : ""}.
 						</p>
 					</div>
 				) : (
 					<div className="space-y-3">
-						{paginatedCitas.map((cita) => {
-							const archivos = parseResultadoArchivo(cita.resultado_archivo);
-							const tieneResultado = archivos.length > 0;
-							const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-							const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
+						{paginatedPacientes.map((paciente) => {
+							const fullName = `${paciente.nombre} ${paciente.apellido}`;
+							const totalCitas = paciente.citas.length;
+							const citasConResultado = paciente.citas.filter((cita) => {
+								const archivos = parseResultadoArchivo(cita.resultado_archivo);
+								return archivos.length > 0;
+							}).length;
 
 							return (
 								<div
-									key={cita.id_cita}
+									key={paciente.id_paciente}
 									className="rounded-lg border border-brand-200 bg-paper p-4"
 								>
-									<div className="space-y-4">
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<h3 className="font-semibold text-brand-900">
-													{fullName}
-												</h3>
-												<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
-													{cita.eco_nombre}
-												</span>
-												{tieneResultado && (
-													<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
-														{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
-													</span>
-												)}
-											</div>
-										</div>
-										<div className="grid gap-2 text-sm text-brand-600 sm:grid-cols-2">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-3">
 											<div>
-												<span className="font-medium">Especialista:</span>{" "}
-												{especialistaFullName}
-											</div>
-											<div>
-												<span className="font-medium">Fecha y hora:</span>{" "}
-												{formatFecha(cita.fecha_cita)} a las{" "}
-												{formatHora(cita.hora_cita)}
+												<h3 className="font-semibold text-brand-900">{fullName}</h3>
+												<p className="text-sm text-brand-600 mt-1">
+													{totalCitas} cita{totalCitas !== 1 ? "s" : ""} • {citasConResultado} con resultado{citasConResultado !== 1 ? "s" : ""}
+												</p>
 											</div>
 										</div>
-										<div className="flex items-center gap-2 flex-wrap">
-											<button
-												type="button"
-												onClick={() => setSelectedCitaIdForView(cita.id_cita)}
-												className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-											>
-												Ver cita
-											</button>
-											{tieneResultado ? (
-												<>
-													<button
-														type="button"
-														onClick={() => {
-															setSelectedCitaForResultados({
-																archivos,
-																pacienteNombre: fullName,
-																ecoNombre: cita.eco_nombre,
-																idCita: cita.id_cita,
-															});
-														}}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-													>
-														Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
-													</button>
-													<button
-														type="button"
-														onClick={() => setSelectedCita(cita)}
-														className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-													>
-														Subir más archivos
-													</button>
-												</>
-											) : (
-												<button
-													type="button"
-													onClick={() => setSelectedCita(cita)}
-													className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-												>
-													Subir resultados
-												</button>
-											)}
-										</div>
+										<button
+											type="button"
+											onClick={() =>
+												setSelectedPacienteForHistorial({
+													id_paciente: paciente.id_paciente,
+													nombre: paciente.nombre,
+													apellido: paciente.apellido,
+												})
+											}
+											className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+										>
+											Ver historial de citas
+										</button>
 									</div>
 								</div>
 							);
@@ -276,12 +265,12 @@ const PacientesPage = () => {
 				)}
 
 				{/* Paginación */}
-				{filteredCitas.length > 0 && (
+				{pacientesAgrupados.length > 0 && (
 					<div className="flex items-center justify-between border-t border-mist pt-4">
 						<div className="text-sm text-brand-800">
-							Mostrando {paginatedCitas.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-							{Math.min(currentPage * itemsPerPage, filteredCitas.length)} de{" "}
-							{filteredCitas.length} citas
+							Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
+							{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
+							{pacientesAgrupados.length} paciente{pacientesAgrupados.length !== 1 ? "s" : ""}
 						</div>
 						<div className="flex items-center gap-2">
 							<button
@@ -343,21 +332,39 @@ const PacientesPage = () => {
 					onClose={() => setSelectedCitaForResultados(null)}
 					onArchivoDeleted={async () => {
 						// Refrescar los datos del servidor
-						const { data: nuevasCitas = [] } = await refetch();
+						await refetch();
 						// Buscar la cita actualizada en los nuevos datos
-						const citaActualizada = nuevasCitas.find((c) => c.id_cita === selectedCitaForResultados.idCita);
-						if (citaActualizada) {
-							const nuevosArchivos = parseResultadoArchivo(citaActualizada.resultado_archivo);
-							if (nuevosArchivos.length === 0) {
-								// Si no quedan archivos, cerrar el modal
-								setSelectedCitaForResultados(null);
-							} else {
-								// Actualizar el estado con los nuevos archivos
-								setSelectedCitaForResultados((prev) => 
-									prev ? { ...prev, archivos: nuevosArchivos } : null
-								);
+						const nuevasCitas = await refetch();
+						if (nuevasCitas.data) {
+							const citaActualizada = nuevasCitas.data.find((c) => c.id_cita === selectedCitaForResultados.idCita);
+							if (citaActualizada) {
+								const nuevosArchivos = parseResultadoArchivo(citaActualizada.resultado_archivo);
+								if (nuevosArchivos.length === 0) {
+									// Si no quedan archivos, cerrar el modal
+									setSelectedCitaForResultados(null);
+								} else {
+									// Actualizar el estado con los nuevos archivos
+									setSelectedCitaForResultados((prev) => 
+										prev ? { ...prev, archivos: nuevosArchivos } : null
+									);
+								}
 							}
 						}
+					}}
+				/>
+			)}
+
+			{/* Modal para ver historial de citas */}
+			{selectedPacienteForHistorial && (
+				<HistorialCitasModal
+					paciente={selectedPacienteForHistorial}
+					citas={filteredCitas.filter((c) => c.id_paciente === selectedPacienteForHistorial.id_paciente)}
+					formatFecha={formatFecha}
+					formatHora={formatHora}
+					parseResultadoArchivo={parseResultadoArchivo}
+					onClose={() => setSelectedPacienteForHistorial(null)}
+					onRefetch={async () => {
+						await refetch();
 					}}
 				/>
 			)}

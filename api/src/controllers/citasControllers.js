@@ -120,6 +120,54 @@ const listCitasByPacienteController = async (id_paciente) => {
 	return rows;
 };
 
+// Obtener todas las citas del paciente con información completa (pago, informe, resultado, orden)
+const listCitasCompletasByPacienteController = async (id_paciente) => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      e.nombre AS eco_nombre,
+      -- Datos del resultado
+      r.archivo AS resultado_archivo,
+      r.estado_resultado AS resultado_estado,
+      r.fecha_publicacion AS resultado_publicado,
+      -- Datos del informe
+      inf.id_informe,
+      inf.informe_pdf_url AS informe_pdf_url,
+      -- Datos del pago
+      pag.id_pago,
+      pag.metodo AS pago_metodo,
+      pag.imagen AS pago_imagen,
+      pag.monto AS pago_monto,
+      pag.referencia AS pago_referencia,
+      pag.estado_pago AS pago_estado_pago
+    FROM cita c
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN resultado r ON r.id_cita = c.id_cita
+    LEFT JOIN informe inf ON inf.id_cita = c.id_cita
+    LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
+    WHERE c.id_paciente = ?
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql, [id_paciente]);
+	return rows;
+};
+
 const listCitasByEspecialistaController = async (id_especialista) => {
 	const sql = `
     SELECT
@@ -394,6 +442,68 @@ const listCitasByFechaController = async (fecha) => {
 	return rows;
 };
 
+// Posponer cita (actualizar fecha y hora)
+const posponerCitaController = async ({ id_cita, fecha_cita, hora_cita }) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Verificar que la cita existe y no está cancelada o atendida
+		const [rows] = await conn.execute(
+			`SELECT estado_cita, estado_pago, fecha_cita, hora_cita
+       FROM cita
+       WHERE id_cita = ?
+       FOR UPDATE`,
+			[id_cita],
+		);
+		if (!rows.length) {
+			const err = new Error("Cita no encontrada");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+
+		const cita = rows[0];
+		if (cita.estado_cita === 2) {
+			const err = new Error("No se puede posponer una cita cancelada");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+		if (cita.estado_cita === 3) {
+			const err = new Error("No se puede posponer una cita ya atendida");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		// Validar que la nueva fecha no sea en el pasado
+		const today = new Date().toISOString().slice(0, 10);
+		const nowTime = new Date().toTimeString().slice(0, 8);
+		if (fecha_cita < today) {
+			const err = new Error("No se puede posponer una cita a una fecha pasada");
+			err.code = "PAST_DATE";
+			throw err;
+		}
+		if (fecha_cita === today && hora_cita <= nowTime) {
+			const err = new Error("No se puede posponer una cita a una hora pasada");
+			err.code = "PAST_DATE";
+			throw err;
+		}
+
+		// Actualizar fecha y hora de la cita
+		await conn.execute(
+			"UPDATE cita SET fecha_cita = ?, hora_cita = ? WHERE id_cita = ?",
+			[fecha_cita, hora_cita, id_cita],
+		);
+
+		await conn.commit();
+		return { id_cita, fecha_cita, hora_cita };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 // Obtener una cita por ID con todos los datos relacionados
 const getCitaByIdController = async (id_cita) => {
 	const sql = `
@@ -472,9 +582,92 @@ const getCitaByIdController = async (id_cita) => {
 	return rows.length > 0 ? rows[0] : null;
 };
 
+// Obtener todas las citas con toda la información (para vista general)
+const getAllCitasController = async () => {
+	const sql = `
+    SELECT
+      c.id_cita,
+      c.id_paciente,
+      c.id_representado,
+      c.id_especialista,
+      c.id_eco,
+      c.fecha_cita,
+      c.hora_cita,
+      c.estado_cita,
+      c.estado_pago,
+      c.id_disponibilidad,
+      c.orden,
+      c.creada_en,
+      -- Datos del paciente
+      u_paciente.nombre AS paciente_nombre,
+      u_paciente.apellido AS paciente_apellido,
+      u_paciente.cedula AS paciente_cedula,
+      u_paciente.telefono AS paciente_telefono,
+      u_paciente.correo AS paciente_correo,
+      -- Datos del especialista
+      u_especialista.nombre AS especialista_nombre,
+      u_especialista.apellido AS especialista_apellido,
+      u_especialista.cedula AS especialista_cedula,
+      u_especialista.telefono AS especialista_telefono,
+      esp.codigo_colegiatura AS especialista_codigo_colegiatura,
+      es.nombre AS especialidad_nombre,
+      -- Datos del eco
+      e.nombre AS eco_nombre,
+      e.precio AS eco_precio,
+      e.duracion_min AS eco_duracion_min,
+      -- Datos del representado (si existe)
+      r_rep.nombre AS representado_nombre,
+      r_rep.apellido AS representado_apellido,
+      r_rep.cedula AS representado_cedula,
+      r_rep.fecha_nacimiento AS representado_fecha_nacimiento,
+      r_rep.parentesco AS representado_parentesco,
+      -- Datos del resultado (si existe)
+      res.archivo AS resultado_archivo,
+      res.estado_resultado AS resultado_estado,
+      res.fecha_publicacion AS resultado_fecha_publicacion,
+      -- Datos del informe (si existe)
+      inf.id_informe,
+      inf.reseña AS informe_reseña,
+      inf.recomendaciones AS informe_recomendaciones,
+      inf.informe_pdf_url AS informe_pdf_url,
+      inf.fecha_creacion AS informe_fecha_creacion,
+      -- Datos del pago (si existe)
+      pag.id_pago,
+      pag.metodo AS pago_metodo,
+      pag.imagen AS pago_imagen,
+      pag.banco_origen AS pago_banco_origen,
+      pag.banco_destino AS pago_banco_destino,
+      pag.monto AS pago_monto,
+      pag.cedula_pagador AS pago_cedula_pagador,
+      pag.telefono_pagador AS pago_telefono_pagador,
+      pag.referencia AS pago_referencia,
+      pag.fecha_pago AS pago_fecha_pago,
+      pag.fecha_validacion AS pago_fecha_validacion,
+      pag.validado_por AS pago_validado_por,
+      u_validador.nombre AS pago_validado_por_nombre,
+      u_validador.apellido AS pago_validado_por_apellido
+    FROM cita c
+    INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    INNER JOIN paciente p ON p.id_paciente = c.id_paciente
+    INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN representado r_rep ON r_rep.id_representado = c.id_representado
+    LEFT JOIN resultado res ON res.id_cita = c.id_cita
+    LEFT JOIN informe inf ON inf.id_cita = c.id_cita
+    LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
+    LEFT JOIN usuario u_validador ON u_validador.id_usuario = pag.validado_por
+    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
+  `;
+	const [rows] = await pool.execute(sql);
+	return rows;
+};
+
 module.exports = {
 	createCitaFromDisponibilidadController,
 	listCitasByPacienteController,
+	listCitasCompletasByPacienteController,
 	listCitasByEspecialistaController,
 	cancelCitaController,
 	markCitaAtendidaController,
@@ -483,4 +676,6 @@ module.exports = {
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,
+	posponerCitaController,
+	getAllCitasController,
 };

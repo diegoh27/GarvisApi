@@ -1,6 +1,6 @@
-import { useState, type FormEvent, useEffect } from "react";
+import { useState, type FormEvent, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
-import { useCreateEcoMutation, useUpdateEcoMutation } from "../ecosApi";
+import { useCreateEcoMutation, useUpdateEcoMutation, useGetEcosQuery } from "../ecosApi";
 import type { Eco } from "../ecosApi";
 
 type EcoFormProps = {
@@ -12,6 +12,7 @@ type EcoFormProps = {
 const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 	const [createEco, { isLoading: isCreating }] = useCreateEcoMutation();
 	const [updateEco, { isLoading: isUpdating }] = useUpdateEcoMutation();
+	const { data: ecos = [] } = useGetEcosQuery();
 	const [form, setForm] = useState({
 		nombre: eco?.nombre || "",
 		precio: eco?.precio ? String(eco.precio) : "",
@@ -19,6 +20,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 		activo: eco?.activo !== undefined ? eco.activo : 1,
 	});
 	const [error, setError] = useState("");
+	const [nombreError, setNombreError] = useState("");
 
 	useEffect(() => {
 		if (eco) {
@@ -34,17 +36,39 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 	const isLoading = isCreating || isUpdating;
 	const isEditing = !!eco;
 
+	// Validar si el nombre ya existe (case-insensitive)
+	const nombreExists = useMemo(() => {
+		if (!form.nombre.trim()) return false;
+		const nombreNormalized = form.nombre.trim().toLowerCase();
+		return ecos.some(
+			(e) =>
+				e.nombre.toLowerCase() === nombreNormalized &&
+				(!isEditing || e.id_eco !== eco?.id_eco)
+		);
+	}, [form.nombre, ecos, isEditing, eco?.id_eco]);
+
 	const updateField = (field: keyof typeof form, value: string | number) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
 		setError("");
+		if (field === "nombre") {
+			setNombreError("");
+		}
 	};
 
 	const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError("");
+		setNombreError("");
 
 		if (!form.nombre.trim()) {
 			setError("El nombre es requerido.");
+			return;
+		}
+
+		// Validar que el nombre no esté duplicado
+		if (nombreExists) {
+			setNombreError("Ya existe un eco con ese nombre.");
+			setError("Ya existe un eco con ese nombre.");
 			return;
 		}
 
@@ -110,11 +134,23 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				<input
 					type="text"
 					required
-					className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+					className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+						nombreError || nombreExists
+							? "border-red-500 focus:border-red-500"
+							: "border-brand-300"
+					}`}
 					value={form.nombre}
 					onChange={(e) => updateField("nombre", e.target.value)}
+					onBlur={() => {
+						if (nombreExists) {
+							setNombreError("Ya existe un eco con ese nombre.");
+						}
+					}}
 					placeholder="Ej: Eco abdominal, Eco cardíaco..."
 				/>
+				{(nombreError || nombreExists) && (
+					<p className="mt-1 text-xs text-red-600">{nombreError || "Ya existe un eco con ese nombre."}</p>
+				)}
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">

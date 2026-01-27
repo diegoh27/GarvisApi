@@ -12,41 +12,63 @@ import {
 	Stethoscope,
 	UserPlus,
 	Users,
+	ListChecks,
 } from "lucide-react";
 import { useAuth } from "../shared";
 import Sidebar, { type NavItem } from "../components/layout/Sidebar";
 import Topbar from "../components/layout/Topbar";
+import DolarInfoBanner from "../components/dolar/DolarInfoBanner";
 
 const navByRole: Record<string, NavItem[]> = {
 	admin: [
+		// Navegación principal
 		{ label: "Home", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
-		{ label: "Pacientes", to: "/pacientes", icon: Users },
-		{ label: "Informes", to: "/informes", icon: FileText },
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		{ label: "Inventario", to: "/inventario", icon: Package },
+		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
 		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
+		// Gestión de pacientes
+		{ label: "Pacientes", to: "/pacientes", icon: Users },
+		// Resultados e informes
+		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
+		{ label: "Informes", to: "/informes", icon: FileText },
+		// Gestión de inventario
+		{ label: "Inventario", to: "/inventario", icon: Package },
+		// Administración de usuarios
 		{ label: "Usuarios", to: "/usuarios", icon: Users },
 		{ label: "Registrar especialista", to: "/admin/registrar-especialista", icon: UserPlus },
 		{ label: "Registrar moderador", to: "/admin/registrar-moderador", icon: UserPlus },
+		// Configuración del sistema
 		{ label: "Especialidades", to: "/especialidades", icon: Stethoscope },
 		{ label: "Ecos", to: "/ecos", icon: FileCheck },
+		// Notificaciones (penúltimo)
+		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
+		// Configuración (último)
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	moderador: [
+		// Navegación principal
 		{ label: "Home", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
-		{ label: "Pacientes", to: "/pacientes", icon: Users },
-		{ label: "Informes", to: "/informes", icon: FileText },
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		{ label: "Inventario", to: "/inventario", icon: Package },
+		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
 		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
+		// Gestión de pacientes
+		{ label: "Pacientes", to: "/pacientes", icon: Users },
+		// Resultados e informes
+		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
+		{ label: "Informes", to: "/informes", icon: FileText },
+		// Gestión de inventario
+		{ label: "Inventario", to: "/inventario", icon: Package },
+		// Notificaciones (penúltimo)
+		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
+		// Configuración (último)
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	especialista: [
 		{ label: "Home", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario", icon: CalendarDays },
 		{ label: "Pacientes", to: "/pacientes-especialista", icon: Users },
+		// COMENTADO: Por los momentos especialista no sube resultados
+		// { label: "Subir resultados", to: "/resultados", icon: FileCheck },
 		{ label: "Informes", to: "/informes", icon: FileText },
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
@@ -55,7 +77,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Home", to: "/disponibilidad", icon: Home },
 		{ label: "Calendario", to: "/citas", icon: CalendarDays },
 		{ label: "Especialistas", to: "/especialistas", icon: Stethoscope },
-		{ label: "Resultados", to: "/resultados", icon: FileCheck },
+		{ label: "Citas", to: "/resultados", icon: CalendarDays },
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
@@ -120,6 +142,10 @@ const AppLayout = () => {
 						onToggleSidebar={toggleSidebar}
 					/>
 					<main className="flex-1 p-4 sm:p-6">
+						{/* Banner informativo de tasa del dólar */}
+						{(role === "admin" || role === "moderador" || role === "paciente") && (
+							<DolarInfoBanner />
+						)}
 						<Outlet />
 					</main>
 				</div>

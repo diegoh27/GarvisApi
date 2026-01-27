@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS paciente (
 
   PRIMARY KEY (id_paciente),
   KEY idx_paciente_rif (rif),
+  UNIQUE KEY uk_paciente_rif (rif),
   CONSTRAINT fk_paciente_usuario
     FOREIGN KEY (id_paciente) REFERENCES usuario(id_usuario)
     ON UPDATE CASCADE
@@ -263,7 +264,7 @@ CREATE TABLE IF NOT EXISTS resultado (
   id_especialista CHAR(36) NOT NULL,
   nombre VARCHAR(255) NULL,
   archivo TEXT NULL, -- TEXT para almacenar arrays JSON de múltiples URLs
-  estado_resultado TINYINT NOT NULL DEFAULT 0, -- 0 Borrador, 1 Listo, 2 Publicado
+  estado_resultado TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Vacío, 2 Con resultados (resultado_archivo)
   fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_publicacion TIMESTAMP NULL DEFAULT NULL,
 
@@ -291,7 +292,7 @@ CREATE TABLE IF NOT EXISTS informe (
   id_especialista CHAR(36) NOT NULL,
   reseña TEXT NULL,
   recomendaciones TEXT NULL,
-  firma_url VARCHAR(255) NULL,
+  firma_url TEXT NULL,
   informe_pdf_url VARCHAR(255) NULL,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -458,6 +459,24 @@ CREATE TABLE IF NOT EXISTS obligacion_bitacora (
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   CONSTRAINT fk_bitacora_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- Tabla de prueba para el sistema de migraciones
+CREATE TABLE IF NOT EXISTS prueba (
+  id_prueba CHAR(36) NOT NULL,
+  nombre VARCHAR(100) NOT NULL,
+  descripcion TEXT NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  id_usuario CHAR(36) NOT NULL,
+  
+  PRIMARY KEY (id_prueba),
+  KEY idx_prueba_id_usuario (id_usuario),
+  CONSTRAINT fk_prueba_usuario
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
     ON UPDATE CASCADE
     ON DELETE RESTRICT

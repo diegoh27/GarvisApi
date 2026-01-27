@@ -30,9 +30,9 @@ const estadoPagoLabel: Record<number, string> = {
 };
 
 const estadoResultadoLabel: Record<number, string> = {
-	0: "Borrador",
-	1: "Listo",
-	2: "Publicado",
+	0: "Pendiente",
+	1: "Vacío",
+	2: "Con resultados",
 };
 
 const getDateKey = (value: string | Date): string => {

@@ -24,6 +24,7 @@ const entesLegalesRoutes = require("./entesLegalesRoutes");
 const empleadosRoutes = require("./empleadosRoutes");
 
 const rolesRoutes = require("./rolesRoutes");
+const dolarRoutes = require("./dolarRoutes");
 
 router.use("/medicos", medicosRoutes);
 router.use("/users", userRoutes);
@@ -48,6 +49,7 @@ router.use("/entes-legales", entesLegalesRoutes);
 router.use("/empleados", empleadosRoutes);
 
 router.use("/roles", rolesRoutes);
+router.use("/dolar", dolarRoutes);
 
 const loginRoutes = require("./loginRoutes");
 router.use("/auth", loginRoutes);

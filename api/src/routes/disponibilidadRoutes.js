@@ -9,6 +9,7 @@ const {
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,
+	listDisponibilidadesByEspecialistaHandler,
 } = require("../handlers/disponibilidadHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -70,6 +71,13 @@ disponibilidadRoutes.get(
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
 	listDisponibilidadesByFechaHandler,
+);
+// Moderador/Admin: obtener disponibilidades por especialista (aprobadas y pendientes)
+disponibilidadRoutes.get(
+	"/por-especialista",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listDisponibilidadesByEspecialistaHandler,
 );
 
 module.exports = disponibilidadRoutes;
