@@ -147,6 +147,21 @@ const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por
 	try {
 		await conn.beginTransaction();
 
+		// Validar que el usuario que aprueba existe en la base de datos
+		let aprobadoPorFinal = aprobado_por;
+		if (aprobado_por) {
+			const [userRows] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[aprobado_por],
+			);
+			if (!userRows.length) {
+				// Si el usuario no existe, establecer como NULL en lugar de fallar
+				// Esto puede pasar si el token tiene un ID inválido
+				console.warn(`Usuario con ID ${aprobado_por} no encontrado en la base de datos. Aprobando sin registrar aprobado_por.`);
+				aprobadoPorFinal = null;
+			}
+		}
+
 		const [rows] = await conn.execute(
 			"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
 			[id_disponibilidad],
@@ -178,7 +193,7 @@ const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por
 
 		await conn.execute(
 			"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
-			[aprobado_por, id_disponibilidad],
+			[aprobadoPorFinal, id_disponibilidad],
 		);
 
 		await conn.commit();
@@ -286,6 +301,35 @@ const closeDisponibilidadDiaController = async ({
 	return { updated: result.affectedRows, id_especialista, fecha };
 };
 
+// Obtener todas las disponibilidades de un especialista (aprobadas y pendientes) - para moderador/admin
+const listDisponibilidadesByEspecialistaController = async (id_especialista) => {
+	const sql = `
+    SELECT
+      d.id_disponibilidad,
+      d.fecha,
+      d.hora_inicio,
+      d.hora_fin,
+      d.id_eco,
+      d.estado,
+      e.nombre AS eco_nombre
+    FROM disponibilidad d
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
+    WHERE d.id_especialista = ?
+      AND d.estado IN (0, 1) -- Solo pendientes y aprobadas
+      AND (
+        d.fecha > CURDATE()
+        OR (
+          d.fecha = CURDATE()
+          AND CURTIME() < '17:00:00'
+          AND d.hora_inicio > CURTIME()
+        )
+      )
+    ORDER BY d.fecha ASC, d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, [id_especialista]);
+	return rows;
+};
+
 // Obtener todas las disponibilidades de un día específico (para moderador)
 const listDisponibilidadesByFechaController = async (fecha) => {
 	const sql = `
@@ -323,4 +367,5 @@ module.exports = {
 	listPublicaController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
+	listDisponibilidadesByEspecialistaController,
 };

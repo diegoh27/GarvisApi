@@ -2,6 +2,7 @@ const { Router } = require("express");
 const {
 	createCitaHandler,
 	listCitasByPacienteHandler,
+	listMisCitasCompletasHandler,
 	listCitasByEspecialistaHandler,
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
@@ -11,6 +12,8 @@ const {
 	updateEstadoPagoHandler,
 	listCitasByFechaHandler,
 	getCitaByIdHandler,
+	posponerCitaHandler,
+	getAllCitasHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -52,6 +55,13 @@ citasRoutes.patch(
 	authorizeRoles("admin", "moderador"),
 	cancelCitaHandler,
 );
+// PATCH /citas/:id/posponer (admin/moderador)
+citasRoutes.patch(
+	"/:id/posponer",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	posponerCitaHandler,
+);
 // PATCH /citas/:id/atender (especialista)
 citasRoutes.patch(
 	"/:id/atender",
@@ -87,11 +97,25 @@ citasRoutes.get(
 	authorizeRoles("moderador", "admin"),
 	listCitasByFechaHandler,
 );
-// GET /citas/:id (moderador/admin/especialista)
+// GET /citas/todas (moderador/admin) - Todas las citas con información completa
+citasRoutes.get(
+	"/todas",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	getAllCitasHandler,
+);
+// GET /citas/mis-citas (paciente) - Todas las citas del paciente con información completa
+citasRoutes.get(
+	"/mis-citas",
+	authenticateToken,
+	authorizeRoles("paciente"),
+	listMisCitasCompletasHandler,
+);
+// GET /citas/:id (moderador/admin/especialista/paciente)
 	citasRoutes.get(
 		"/:id",
 		authenticateToken,
-		authorizeRoles("moderador", "admin", "especialista"),
+		authorizeRoles("moderador", "admin", "especialista", "paciente"),
 		getCitaByIdHandler,
 	);
 

@@ -22,7 +22,7 @@ import {
 	EspecialistaDetallePage,
 	EspecialistasListPage,
 } from "../features/especialistas";
-import { CalendarioModeradorPage, PacientesPage as ModeradoresPacientesPage } from "../features/moderadores";
+import { CalendarioModeradorPage, PacientesPage as ModeradoresPacientesPage, TodasLasCitasPage } from "../features/moderadores";
 import { RegistrarEspecialistaPage, RegistrarModeradorPage } from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
@@ -229,6 +229,14 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["admin", "moderador"]}>
 								<PagosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="todas-las-citas"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<TodasLasCitasPage />
 							</RoleRoute>
 						}
 					/>

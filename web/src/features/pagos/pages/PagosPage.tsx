@@ -10,6 +10,7 @@ import type { CitaPendientePago } from "../../citas/citasApi";
 import { useGetPagoByCitaQuery, useGetCitaByIdQuery } from "../../moderadores/moderadoresApi";
 import VerPagoModal from "../../moderadores/components/VerPagoModal";
 import VerCitaModal from "../../moderadores/components/VerCitaModal";
+import PosponerCitaModal from "../../moderadores/components/PosponerCitaModal";
 
 const formatFecha = (value: string) => {
 	if (!value) return "";
@@ -46,6 +47,7 @@ const PagosPage = () => {
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
 	const [selectedCitaId, setSelectedCitaId] = useState<string | null>(null);
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
+	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
 	const itemsPerPage = 5;
@@ -342,6 +344,14 @@ const PagosPage = () => {
 											</button>
 											{cita.estado_cita !== 2 && cita.estado_cita !== 3 && (
 												<button
+													onClick={() => setSelectedCitaForPosponer(cita)}
+													className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+												>
+													Posponer cita
+												</button>
+											)}
+											{cita.estado_cita !== 2 && cita.estado_cita !== 3 && cita.estado_pago !== 1 && (
+												<button
 													onClick={() =>
 														handleCancelarCita(
 															cita.id_cita,
@@ -409,6 +419,18 @@ const PagosPage = () => {
 					pago={loadingPago ? null : pagoData || null}
 					error={pagoError ? "No se pudo cargar la información del pago" : null}
 					onClose={() => setSelectedCitaId(null)}
+				/>
+			)}
+
+			{/* Modal de posponer cita */}
+			{selectedCitaForPosponer && (
+				<PosponerCitaModal
+					cita={selectedCitaForPosponer}
+					onClose={() => setSelectedCitaForPosponer(null)}
+					onSuccess={() => {
+						refetch();
+						setSelectedCitaForPosponer(null);
+					}}
 				/>
 			)}
 		</PageShell>

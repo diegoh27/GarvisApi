@@ -21,6 +21,102 @@ export type CitaPendientePago = {
 	eco_nombre: string;
 };
 
+export type CitaCompleta = {
+	id_cita: string;
+	id_paciente: string;
+	id_representado: string | null;
+	id_especialista: string;
+	id_eco: string;
+	fecha_cita: string;
+	hora_cita: string;
+	estado_cita: number;
+	estado_pago: number;
+	id_disponibilidad: string;
+	orden: string;
+	creada_en: string;
+	// Datos del paciente
+	paciente_nombre: string;
+	paciente_apellido: string;
+	paciente_cedula: string;
+	paciente_telefono: string;
+	paciente_correo: string | null;
+	// Datos del especialista
+	especialista_nombre: string;
+	especialista_apellido: string;
+	especialista_cedula: string;
+	especialista_telefono: string;
+	especialista_codigo_colegiatura: string | null;
+	especialidad_nombre: string;
+	// Datos del eco
+	eco_nombre: string;
+	eco_precio: number | string;
+	eco_duracion_min: number | null;
+	// Datos del representado
+	representado_nombre: string | null;
+	representado_apellido: string | null;
+	representado_cedula: string | null;
+	representado_fecha_nacimiento: string | null;
+	representado_parentesco: string | null;
+	// Datos del resultado
+	resultado_archivo: string | null;
+	resultado_estado: number | null;
+	resultado_fecha_publicacion: string | null;
+	// Datos del informe
+	id_informe: string | null;
+	informe_reseña: string | null;
+	informe_recomendaciones: string | null;
+	informe_pdf_url: string | null;
+	informe_fecha_creacion: string | null;
+	// Datos del pago
+	id_pago: string | null;
+	pago_metodo: string | null;
+	pago_imagen: string | null;
+	pago_banco_origen: string | null;
+	pago_banco_destino: string | null;
+	pago_monto: number | string | null;
+	pago_cedula_pagador: string | null;
+	pago_telefono_pagador: string | null;
+	pago_referencia: string | null;
+	pago_fecha_pago: string | null;
+	pago_fecha_validacion: string | null;
+	pago_validado_por: string | null;
+	pago_validado_por_nombre: string | null;
+	pago_validado_por_apellido: string | null;
+};
+
+export type CitaPacienteCompleta = {
+	id_cita: string;
+	id_paciente: string;
+	id_representado: string | null;
+	id_especialista: string;
+	id_eco: string;
+	fecha_cita: string;
+	hora_cita: string;
+	estado_cita: number;
+	estado_pago: number;
+	id_disponibilidad: string;
+	orden: string;
+	especialista_nombre: string;
+	especialista_apellido: string;
+	paciente_nombre: string;
+	paciente_apellido: string;
+	eco_nombre: string;
+	// Datos del resultado
+	resultado_archivo: string | null;
+	resultado_estado: number | null;
+	resultado_publicado: string | null;
+	// Datos del informe
+	id_informe: string | null;
+	informe_pdf_url: string | null;
+	// Datos del pago
+	id_pago: string | null;
+	pago_metodo: string | null;
+	pago_imagen: string | null;
+	pago_monto: number | string | null;
+	pago_referencia: string | null;
+	pago_estado_pago: number | null;
+};
+
 const citasApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
 		getCitasPendientesPago: builder.query<CitaPendientePago[], void>({
@@ -56,6 +152,29 @@ const citasApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Citas"],
 		}),
+		posponerCita: builder.mutation<
+			{ id_cita: string; fecha_cita: string; hora_cita: string },
+			{ id_cita: string; fecha_cita: string; hora_cita: string }
+		>({
+			query: ({ id_cita, fecha_cita, hora_cita }) => ({
+				url: `/citas/${id_cita}/posponer`,
+				method: "PATCH",
+				body: { fecha_cita, hora_cita },
+			}),
+			invalidatesTags: ["Citas"],
+		}),
+		getAllCitas: builder.query<CitaCompleta[], void>({
+			query: () => "/citas/todas",
+			transformResponse: (response: { ok: boolean; data: CitaCompleta[] }) =>
+				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
+		getMisCitasCompletas: builder.query<CitaPacienteCompleta[], void>({
+			query: () => "/citas/mis-citas",
+			transformResponse: (response: { ok: boolean; data: CitaPacienteCompleta[] }) =>
+				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -65,6 +184,9 @@ export const {
 	useGetCitasConPagosQuery,
 	useUpdateEstadoPagoMutation,
 	useCancelCitaMutation,
+	usePosponerCitaMutation,
+	useGetAllCitasQuery,
+	useGetMisCitasCompletasQuery,
 } = citasApi;
 
 export { citasApi };

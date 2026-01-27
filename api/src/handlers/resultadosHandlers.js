@@ -2,6 +2,7 @@ const {
 	createOrUpdateResultadoController,
 	listCitasSinResultadoController,
 	listCitasAtendidasConResultadosController,
+	listResultadosByPacienteController,
 	deleteArchivoFromResultadoController,
 } = require("../controllers/resultadosControllers");
 const { uploadMulterFileToCloudinary } = require("../utils/uploadToCloudinary");
@@ -108,7 +109,9 @@ const uploadResultadoHandler = async (req, res) => {
 
 const listCitasSinResultadoHandler = async (req, res) => {
 	try {
-		const data = await listCitasSinResultadoController();
+		// Si es especialista, pasar su ID para filtrar solo sus citas
+		const id_especialista = req.user.rol === "especialista" ? req.user.id : null;
+		const data = await listCitasSinResultadoController(id_especialista);
 		return res.status(200).json({
 			ok: true,
 			data,
@@ -188,10 +191,28 @@ const deleteArchivoFromResultadoHandler = async (req, res) => {
 	}
 };
 
+const listResultadosByPacienteHandler = async (req, res) => {
+	try {
+		const id_paciente = req.user.id;
+		const data = await listResultadosByPacienteController(id_paciente);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (error) {
+		console.error("Error al obtener resultados del paciente:", error);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
 module.exports = {
 	uploadResultado,
 	uploadResultadoHandler,
 	listCitasSinResultadoHandler,
 	listCitasAtendidasConResultadosHandler,
+	listResultadosByPacienteHandler,
 	deleteArchivoFromResultadoHandler,
 };

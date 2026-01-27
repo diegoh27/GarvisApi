@@ -47,6 +47,12 @@ const resultadosApi = baseApi.injectEndpoints({
 				response.data ?? [],
 			providesTags: ["Citas"],
 		}),
+		getMisResultados: builder.query<CitaAtendidaConResultado[], void>({
+			query: () => "/resultados/mis-resultados",
+			transformResponse: (response: { ok: boolean; data: CitaAtendidaConResultado[] }) =>
+				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
 		uploadResultado: builder.mutation<
 			{
 				id_resultado: string;
@@ -97,6 +103,7 @@ const resultadosApi = baseApi.injectEndpoints({
 export const {
 	useGetCitasSinResultadoQuery,
 	useGetCitasAtendidasConResultadosQuery,
+	useGetMisResultadosQuery,
 	useUploadResultadoMutation,
 	useDeleteArchivoFromResultadoMutation,
 } = resultadosApi;

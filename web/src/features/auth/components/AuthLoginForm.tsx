@@ -40,12 +40,14 @@ const AuthLoginForm = () => {
 			<h1 className="text-2xl font-semibold text-emerald-700">
 				Iniciar sesión
 			</h1>
+			{/* Botón de Google comentado temporalmente
 			<button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
 				<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">
 					G
 				</span>
 				Iniciar sesión con Google
 			</button>
+			*/}
 			<p className="mt-4 text-sm text-slate-500">
 				Si no posees una cuenta regístrate{" "}
 				<Link to="/auth/register" className="font-semibold text-emerald-700">

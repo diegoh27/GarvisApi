@@ -1,6 +1,7 @@
 const {
 	createCitaFromDisponibilidadController,
 	listCitasByPacienteController,
+	listCitasCompletasByPacienteController,
 	listCitasByEspecialistaController,
 	cancelCitaController,
 	markCitaAtendidaController,
@@ -9,6 +10,8 @@ const {
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,
+	posponerCitaController,
+	getAllCitasController,
 } = require("../controllers/citasControllers");
 
 const createCitaHandler = async (req, res) => {
@@ -87,6 +90,23 @@ const listCitasByPacienteHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const data = await listCitasByPacienteController(id);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const listMisCitasCompletasHandler = async (req, res) => {
+	try {
+		const id_paciente = req.user.id;
+		const data = await listCitasCompletasByPacienteController(id_paciente);
 		return res.status(200).json({
 			ok: true,
 			data,
@@ -362,8 +382,105 @@ const getCitaByIdHandler = async (req, res) => {
 					message: "No tienes permiso para ver esta cita. Esta cita pertenece a otro especialista.",
 				});
 			}
+		} else if (rol === "paciente") {
+			// Los pacientes solo pueden ver sus propias citas
+			const citaPacienteId = String(data.id_paciente || "").trim();
+			const usuarioId = String(id_usuario || "").trim();
+			
+			if (citaPacienteId !== usuarioId) {
+				return res.status(403).json({
+					ok: false,
+					message: "No tienes permiso para ver esta cita. Esta cita pertenece a otro paciente.",
+				});
+			}
 		}
 		
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const posponerCitaHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { fecha_cita, hora_cita } = req.body;
+
+		const missing = [];
+		if (!fecha_cita) missing.push("fecha_cita");
+		if (!hora_cita) missing.push("hora_cita");
+
+		if (missing.length) {
+			return res.status(400).json({
+				ok: false,
+				message: "Faltan campos requeridos",
+				missing,
+			});
+		}
+
+		// Validar formato de fecha (YYYY-MM-DD)
+		if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_cita)) {
+			return res.status(400).json({
+				ok: false,
+				message: "fecha_cita debe tener el formato YYYY-MM-DD",
+			});
+		}
+
+		// Validar formato de hora (HH:MM:SS o HH:MM)
+		if (!/^\d{2}:\d{2}(:\d{2})?$/.test(hora_cita)) {
+			return res.status(400).json({
+				ok: false,
+				message: "hora_cita debe tener el formato HH:MM o HH:MM:SS",
+			});
+		}
+
+		// Normalizar hora a HH:MM:SS
+		const horaNormalizada = hora_cita.includes(":") && hora_cita.split(":").length === 2
+			? `${hora_cita}:00`
+			: hora_cita;
+
+		const data = await posponerCitaController({
+			id_cita: id,
+			fecha_cita,
+			hora_cita: horaNormalizada,
+		});
+
+		return res.status(200).json({
+			ok: true,
+			message: "Cita pospuesta exitosamente",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "INVALID_STATE" || err?.code === "PAST_DATE") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const getAllCitasHandler = async (req, res) => {
+	try {
+		const data = await getAllCitasController();
 		return res.status(200).json({
 			ok: true,
 			data,
@@ -380,6 +497,7 @@ const getCitaByIdHandler = async (req, res) => {
 module.exports = {
 	createCitaHandler,
 	listCitasByPacienteHandler,
+	listMisCitasCompletasHandler,
 	listCitasByEspecialistaHandler,
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
@@ -389,4 +507,6 @@ module.exports = {
 	updateEstadoPagoHandler,
 	listCitasByFechaHandler,
 	getCitaByIdHandler,
+	posponerCitaHandler,
+	getAllCitasHandler,
 };

@@ -28,6 +28,8 @@ export type PagoData = {
 	validado_por_nombre?: string | null;
 	validado_por_apellido?: string | null;
 	paciente_rif?: string | null;
+	eco_precio?: number | string | null;
+	eco_nombre?: string | null;
 };
 
 export type CitaData = {
@@ -96,6 +98,18 @@ const moderadoresApi = baseApi.injectEndpoints({
 			query: (fecha) => ({
 				url: "/disponibilidad/por-fecha",
 				params: { fecha },
+			}),
+			transformResponse: (response: { ok: boolean; data: DisponibilidadConFecha[] }) =>
+				response.data ?? [],
+			providesTags: ["Disponibilidad"],
+		}),
+		getDisponibilidadesByEspecialista: builder.query<
+			DisponibilidadConFecha[],
+			string
+		>({
+			query: (id_especialista) => ({
+				url: "/disponibilidad/por-especialista",
+				params: { id_especialista },
 			}),
 			transformResponse: (response: { ok: boolean; data: DisponibilidadConFecha[] }) =>
 				response.data ?? [],
@@ -211,6 +225,7 @@ const moderadoresApi = baseApi.injectEndpoints({
 
 export const {
 	useGetDisponibilidadesByFechaQuery,
+	useGetDisponibilidadesByEspecialistaQuery,
 	useGetCitasByFechaQuery,
 	useGetPagoByCitaQuery,
 	useGetCitaByIdQuery,

@@ -56,6 +56,12 @@ const createEcoHandler = async (req, res) => {
 			data: created,
 		});
 	} catch (err) {
+		if (err?.code === "DUPLICATE_NAME") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
 		if (err?.code === "ER_DUP_ENTRY") {
 			return res.status(409).json({
 				ok: false,
@@ -105,6 +111,12 @@ const updateEcoHandler = async (req, res) => {
 	} catch (err) {
 		if (err?.code === "NO_FIELDS") {
 			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_NAME") {
+			return res.status(409).json({
 				ok: false,
 				message: err.message,
 			});

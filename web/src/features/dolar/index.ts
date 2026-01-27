@@ -1,0 +1,2 @@
+export { useGetDolarOficialQuery } from "./dolarApi";
+export type { DolarOficial } from "./dolarApi";

@@ -18,6 +18,20 @@ const getPagoByCitaHandler = async (req, res) => {
 			});
 		}
 
+		// Validar permisos: los pacientes solo pueden ver pagos de sus propias citas
+		const userRole = req.user.rol;
+		const userId = req.user.id;
+		
+		if (userRole === "paciente") {
+			// Verificar que el pago pertenezca a una cita del paciente
+			if (pago.id_paciente !== userId) {
+				return res.status(403).json({
+					ok: false,
+					message: "No tienes permiso para ver este pago. Este pago pertenece a otra cita.",
+				});
+			}
+		}
+
 		return res.status(200).json({
 			ok: true,
 			data: pago,
