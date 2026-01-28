@@ -10,29 +10,52 @@ const ContactanosSection = () => {
 	return (
 		<section
 			id="contactanos"
-			className="flex min-h-screen items-center justify-center bg-white px-6 py-12 md:py-16 lg:py-20"
+			className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#F0F8F7] to-[#E0F7FA] px-6 py-16 md:py-20 lg:py-24"
 		>
 			<div className="mx-auto w-full max-w-7xl">
+				<div className="mb-10 overflow-visible text-center md:mb-14">
+					<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+						Estamos para ayudarte
+					</p>
+					<div className="overflow-visible py-1">
+						<h2
+							className="pt-1 pb-2 leading-relaxed bg-gradient-to-r from-[#5EEAD4] via-[#14B8A6] to-[#0E7490] bg-clip-text text-3xl font-bold text-transparent md:text-4xl lg:text-5xl [box-decoration-break:clone]"
+							style={{ WebkitBoxDecorationBreak: "clone" }}
+						>
+							Contáctanos y agenda tu estudio
+						</h2>
+					</div>
+					<p className="mx-auto mt-3 max-w-2xl text-sm text-[#4A5568] md:text-base">
+						Escríbenos por el canal que prefieras y coordinamos tu cita de forma rápida y sencilla.
+					</p>
+				</div>
+
 				<div className="grid gap-8 md:grid-cols-2 lg:gap-12">
 					{/* Columna izquierda - Tarjeta de contacto */}
-					<div className="mx-auto w-full max-w-md rounded-2xl bg-[#E0F2F1] p-8 shadow-lg md:mx-0 md:max-w-none">
-						<h2 className="mb-4 text-3xl font-bold text-[#1C837F] md:text-4xl">
-							CONTÁCTANOS
+					<div className="mx-auto w-full max-w-md rounded-3xl bg-gradient-to-br from-[#E0F7FA] via-[#E0F2F1] to-white p-8 shadow-xl ring-1 ring-[#B2DFDB]/60 md:mx-0 md:max-w-none md:p-10">
+						<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+							Canales de contacto
+						</h3>
+						<h2 className="mb-4 text-2xl font-bold text-[#1C837F] md:text-3xl">
+							Escríbenos y te orientamos
 						</h2>
-						<p className="mb-6 text-base text-[#4A5568] md:text-lg">
-							Puedes escribirnos a través de nuestras redes sociales.
+						<p className="mb-6 text-sm text-[#4A5568] md:text-base">
+							Resolvemos tus dudas, te indicamos la preparación para tu estudio y coordinamos el mejor
+							horario para tu cita.
 						</p>
 
 						<div className="space-y-4">
 							{/* Dirección */}
 							<div className="flex items-center gap-4">
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F] shadow-md">
 									<MapPin className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A5568] md:text-base">
-										Urbanización Caña de Azúcar, Sector 1, Casa Nro. 6, a 50 Mts. del Seguro Social,
-										El limón
+									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+										Dirección
+									</p>
+									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+										Urbanización Caña de Azúcar, Sector 1, Casa Nro. 6, a 50 Mts. del Seguro Social, El limón.
 									</p>
 								</div>
 							</div>
@@ -42,9 +65,9 @@ const ContactanosSection = () => {
 								href="https://wa.me/584124238603"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-4 transition-opacity hover:opacity-80"
+								className="flex items-center gap-4 rounded-2xl bg-white/60 p-3 transition-all hover:bg-white hover:shadow-md"
 							>
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F] shadow-md">
 									<svg
 										className="h-5 w-5 text-white"
 										fill="currentColor"
@@ -55,7 +78,10 @@ const ContactanosSection = () => {
 									</svg>
 								</div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+										WhatsApp
+									</p>
+									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
 										+58 412-423-86-03
 									</p>
 								</div>
@@ -66,13 +92,16 @@ const ContactanosSection = () => {
 								href="https://instagram.com/unidadecografiagarbis"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-4 transition-opacity hover:opacity-80"
+								className="flex items-center gap-4 rounded-2xl bg-white/60 p-3 transition-all hover:bg-white hover:shadow-md"
 							>
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F] shadow-md">
 									<Instagram className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+										Instagram
+									</p>
+									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
 										@unidadecografiagarbis
 									</p>
 								</div>
@@ -83,13 +112,16 @@ const ContactanosSection = () => {
 								href="https://facebook.com/unidadecografiagarbis"
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-4 transition-opacity hover:opacity-80"
+								className="flex items-center gap-4 rounded-2xl bg-white/60 p-3 transition-all hover:bg-white hover:shadow-md"
 							>
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F] shadow-md">
 									<Facebook className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+										Facebook
+									</p>
+									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
 										Unidad de Ecografía Garbis
 									</p>
 								</div>
@@ -98,13 +130,16 @@ const ContactanosSection = () => {
 							{/* Correo electrónico */}
 							<a
 								href="mailto:unidadecografiagarbis1@gmail.com"
-								className="flex items-center gap-4 transition-opacity hover:opacity-80"
+								className="flex items-center gap-4 rounded-2xl bg-white/60 p-3 transition-all hover:bg-white hover:shadow-md"
 							>
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F]">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C837F] shadow-md">
 									<Mail className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+										Correo electrónico
+									</p>
+									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
 										unidadecografiagarbis1@gmail.com
 									</p>
 								</div>
@@ -116,10 +151,13 @@ const ContactanosSection = () => {
 					<div className="mx-auto w-full max-w-md space-y-8 md:mx-0 md:max-w-none">
 						{/* Ubícanos */}
 						<div>
-							<h3 className="mb-4 text-2xl font-bold text-[#1C837F] md:text-3xl">
-								Ubícanos
+							<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+								Ubicación
 							</h3>
-							<p className="mb-2 text-base text-[#4A5568] md:text-lg">
+							<h2 className="mb-3 text-2xl font-bold text-[#1C837F] md:text-3xl">
+								Ubícanos
+							</h2>
+							<p className="mb-1 text-base text-[#4A5568] md:text-lg">
 								Urbanización Caña de Azúcar Sector 1, Casa Nro. 6
 							</p>
 							<p className="mb-6 text-sm text-[#4A5568] md:text-base">
@@ -142,13 +180,20 @@ const ContactanosSection = () => {
 						</div>
 
 						{/* Horario */}
-						<div>
-							<h3 className="mb-4 text-2xl font-bold text-[#1C837F] md:text-3xl">Horario</h3>
-							<p className="text-base text-[#4A5568] md:text-lg">
-								Trabajamos de Lunes a viernes
+						<div className="rounded-2xl bg-white/80 p-6 shadow-md ring-1 ring-slate-100">
+							<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+								Horario
+							</h3>
+							<p className="text-sm text-[#4A5568] md:text-base">
+								Trabajamos de <span className="font-semibold text-[#1C837F]">lunes a viernes</span> en el
+								siguiente horario:
 							</p>
-							<p className="text-base font-semibold text-[#1C837F] md:text-lg">
+							<p className="mt-3 text-base font-semibold text-[#1C837F] md:text-lg">
 								De 8:00 a 11:00 am
+							</p>
+							<p className="mt-2 text-xs text-[#718096] md:text-sm">
+								Te recomendamos escribirnos previamente para confirmar disponibilidad y recibir
+								indicaciones específicas según tu estudio.
 							</p>
 						</div>
 					</div>

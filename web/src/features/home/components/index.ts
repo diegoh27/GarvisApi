@@ -3,3 +3,4 @@ export { default as HeroSection } from "./HeroSection";
 export { default as SobreNosotrosSection } from "./SobreNosotrosSection";
 export { default as ContactanosSection } from "./ContactanosSection";
 export { default as ServiciosSection } from "./ServiciosSection";
+export { default as FooterLanding } from "./FooterLanding";

@@ -523,7 +523,7 @@ const CalendarioPage = () => {
 					</p>
 				</div>
 
-				<div className="rounded-2xl bg-paper p-4 shadow-sm max-h-[70vh] overflow-y-auto">
+				<div className="rounded-2xl bg-paper p-4 shadow-sm max-h-[60vh] overflow-y-auto">
 					<CalendarHeader
 						weekRangeLabel={weekRangeLabel}
 						onPrevWeek={() => {
