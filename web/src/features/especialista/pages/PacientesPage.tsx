@@ -122,25 +122,20 @@ const PacientesPage = () => {
 		[rawCitas],
 	);
 
-	const handleDownload = (orden: string, label: string) => {
+	const handleViewOrdenMedica = (orden: string | null) => {
 		if (!orden) return;
 		if (isLikelyUrl(orden)) {
 			window.open(orden, "_blank", "noopener,noreferrer");
 			return;
 		}
-		const blob = new Blob([orden], { type: "text/plain" });
-		const url = URL.createObjectURL(blob);
-		const link = document.createElement("a");
-		link.href = url;
-		link.download = `${label}.txt`;
-		link.click();
-		URL.revokeObjectURL(url);
+		// Si no es una URL, intentar abrirla como URL de todas formas
+		window.open(orden, "_blank", "noopener,noreferrer");
 	};
 
 	const getResultadoLabel = (cita: CitaEspecialista) =>
 		cita.resultado_estado !== null && cita.resultado_estado !== undefined
 			? estadoResultadoLabel[cita.resultado_estado] ??
-				`Estado ${cita.resultado_estado}`
+			`Estado ${cita.resultado_estado}`
 			: "Pendiente";
 
 	const handleMarcarAtendida = async (cita: CitaEspecialista) => {
@@ -272,7 +267,7 @@ const PacientesPage = () => {
 				`${cita.paciente_nombre} ${cita.paciente_apellido} ${cita.eco_nombre} ${citaDateKey}`.toLowerCase();
 			return matchesEstado && matchesResultado && haystack.includes(normalized);
 		});
-		
+
 		// Ordenar por fecha más reciente primero (descendente)
 		return filtered.sort((a, b) => {
 			const dateA = new Date(`${getDateKey(a.fecha_cita)}T${a.hora_cita}`).getTime();
@@ -281,13 +276,28 @@ const PacientesPage = () => {
 		});
 	}, [citas, estado, query, filtroResultado]);
 
+	// Agrupar por paciente: una fila por paciente usando su cita más reciente
+	const pacientesAgrupados = useMemo(() => {
+		const seen = new Set<string>();
+		const result: CitaEspecialista[] = [];
+
+		for (const cita of filteredCitas) {
+			if (!seen.has(cita.id_paciente)) {
+				seen.add(cita.id_paciente);
+				result.push(cita); // filteredCitas ya está ordenado por fecha desc, así que esta es la última cita
+			}
+		}
+
+		return result;
+	}, [filteredCitas]);
+
 	// Paginación: máximo 5 pacientes por página
 	const itemsPerPage = 5;
-	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
-	const paginatedCitas = useMemo(() => {
+	const totalPages = Math.max(1, Math.ceil(pacientesAgrupados.length / itemsPerPage));
+	const paginatedPacientes = useMemo(() => {
 		const startIndex = (currentPage - 1) * itemsPerPage;
-		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
-	}, [filteredCitas, currentPage, itemsPerPage]);
+		return pacientesAgrupados.slice(startIndex, startIndex + itemsPerPage);
+	}, [pacientesAgrupados, currentPage, itemsPerPage]);
 
 	// Resetear a página 1 cuando cambia el filtro o la búsqueda
 	useEffect(() => {
@@ -395,175 +405,359 @@ const PacientesPage = () => {
 				) : error ? (
 					<p className="mt-4 text-sm text-brand-900">{error}</p>
 				) : (
-					<div className="mt-4 overflow-x-auto">
-						<table className="w-full text-left text-xs text-brand-800">
-							<thead>
-								<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
-									<th className="px-3 py-2">Paciente</th>
-									<th className="px-3 py-2">Eco</th>
-									<th className="px-3 py-2">Fecha</th>
-									<th className="px-3 py-2">Hora</th>
-									<th className="px-3 py-2">Estado</th>
-									<th className="px-3 py-2">Pago</th>
-									<th className="px-3 py-2 text-center">Orden</th>
-									<th className="px-3 py-2 text-center">Resultado</th>
-									<th className="px-3 py-2 text-center">Informe</th>
-									<th className="px-3 py-2 text-center">Contacto</th>
-									<th className="px-3 py-2 text-center">Historial</th>
-								</tr>
-							</thead>
-							<tbody>
-								{paginatedCitas.length ? (
-									paginatedCitas.map((cita) => {
-										const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-										const estadoLabel = getEstadoCitaLabel(cita);
-										const pagoLabel =
-											estadoPagoLabel[cita.estado_pago] ??
-											`Pago ${cita.estado_pago}`;
-										const resultadoLabel = getResultadoLabel(cita);
-										const todayKey = new Date().toISOString().slice(0, 10);
-										const citaDateKey = getDateKey(cita.fecha_cita);
-										const showAtenderButton =
-											cita.estado_cita === 1 && citaDateKey <= todayKey;
-										return (
-											<tr
-												key={cita.id_cita}
-												className="border-b border-mist/70"
-											>
-												<td className="px-3 py-3 font-semibold text-brand-900">
-													{fullName}
-												</td>
-												<td className="px-3 py-3">{cita.eco_nombre}</td>
-												<td className="px-3 py-3">
-													{formatFecha(cita.fecha_cita)}
-												</td>
-												<td className="px-3 py-3">
-													{formatHora(cita.hora_cita)}
-												</td>
-												<td className="px-3 py-3">
-													<div className="flex flex-col items-center gap-2">
+					<>
+						{/* Versión tabla - solo en pantallas medianas en adelante */}
+						<div className="mt-4 hidden overflow-x-auto sm:block">
+							<table className="w-full text-left text-xs text-brand-800">
+								<thead>
+									<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
+										<th className="px-3 py-2">Paciente</th>
+										<th className="px-3 py-2">Eco</th>
+										<th className="px-3 py-2">Fecha</th>
+										<th className="px-3 py-2">Hora</th>
+										<th className="px-3 py-2">Estado</th>
+										<th className="px-3 py-2">Pago</th>
+										<th className="px-3 py-2 text-center">Orden Médica</th>
+										<th className="px-3 py-2 text-center">Resultado</th>
+										<th className="px-3 py-2 text-center">Informe</th>
+										<th className="px-3 py-2 text-center">Contacto</th>
+										<th className="px-3 py-2 text-center">Historial</th>
+									</tr>
+								</thead>
+								<tbody>
+									{paginatedPacientes.length ? (
+										paginatedPacientes.map((cita) => {
+											const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+											const estadoLabel = getEstadoCitaLabel(cita);
+											const pagoLabel =
+												estadoPagoLabel[cita.estado_pago] ??
+												`Pago ${cita.estado_pago}`;
+											const resultadoLabel = getResultadoLabel(cita);
+											const todayKey = new Date().toISOString().slice(0, 10);
+											const citaDateKey = getDateKey(cita.fecha_cita);
+											const showAtenderButton =
+												cita.estado_cita === 1 && citaDateKey <= todayKey;
+											return (
+												<tr
+													key={cita.id_cita}
+													className="border-b border-mist/70"
+												>
+													<td className="px-3 py-3 font-semibold text-brand-900">
+														{fullName}
+													</td>
+													<td className="px-3 py-3">{cita.eco_nombre}</td>
+													<td className="px-3 py-3">
+														{formatFecha(cita.fecha_cita)}
+													</td>
+													<td className="px-3 py-3">
+														{formatHora(cita.hora_cita)}
+													</td>
+													<td className="px-3 py-3">
+														<div className="flex flex-col items-center gap-2">
+															<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+																{estadoLabel}
+															</span>
+															{showAtenderButton ? (
+																<button
+																	type="button"
+																	onClick={() => handleMarcarAtendida(cita)}
+																	className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
+																>
+																	Marcar atendida
+																</button>
+															) : null}
+														</div>
+													</td>
+													<td className="px-3 py-3">
 														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-															{estadoLabel}
+															{pagoLabel}
 														</span>
-														{showAtenderButton ? (
-															<button
-																type="button"
-																onClick={() => handleMarcarAtendida(cita)}
-																className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
-															>
-																Marcar atendida
-															</button>
-														) : null}
-													</div>
-												</td>
-												<td className="px-3 py-3">
-													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-														{pagoLabel}
-													</span>
-												</td>
-												<td className="px-3 py-3 text-center">
-													<button
-														type="button"
-														disabled={!cita.orden}
-														onClick={() =>
-															cita.orden
-																? handleDownload(
-																		cita.orden,
-																		`${fullName}-${cita.fecha_cita}`,
+													</td>
+													<td className="px-3 py-3 text-center">
+														<button
+															type="button"
+															disabled={!cita.orden}
+															onClick={() => handleViewOrdenMedica(cita.orden)}
+															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
+														>
+															Ver
+														</button>
+													</td>
+													<td className="px-3 py-3 text-center">
+														{(() => {
+															const archivos = parseResultadoArchivo(cita.resultado_archivo);
+															if (archivos.length > 0) {
+																return (
+																	archivos.length === 1 ? (
+																		<button
+																			type="button"
+																			onClick={() =>
+																				handleDownload(
+																					archivos[0],
+																					`${fullName}-${cita.fecha_cita}-resultado`,
+																				)
+																			}
+																			className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																		>
+																			Ver resultado
+																		</button>
+																	) : (
+																		<button
+																			type="button"
+																			onClick={() => {
+																				setSelectedCitaForResultados({
+																					archivos,
+																					pacienteNombre: fullName,
+																					ecoNombre: cita.eco_nombre,
+																					idCita: cita.id_cita,
+																				});
+																			}}
+																			className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																		>
+																			Ver {archivos.length} resultados
+																		</button>
 																	)
-																: null
-														}
-														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
-													>
-														Descargar
-													</button>
-												</td>
-												<td className="px-3 py-3 text-center">
-													{(() => {
-														const archivos = parseResultadoArchivo(cita.resultado_archivo);
-														if (archivos.length > 0) {
+																);
+															}
 															return (
-																archivos.length === 1 ? (
+																<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+																	{resultadoLabel}
+																</span>
+															);
+														})()}
+													</td>
+													<td className="px-3 py-3 text-center">
+														{(() => {
+															const informe = informesMap.get(cita.id_cita);
+															if (informe?.informe_pdf_url) {
+																return (
 																	<button
 																		type="button"
-																		onClick={() =>
-																			handleDownload(
-																				archivos[0],
-																				`${fullName}-${cita.fecha_cita}-resultado`,
-																			)
-																		}
-																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																		onClick={(e) => {
+																			e.stopPropagation();
+																			const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+																			const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-");
+																			setPdfFileName(fileName);
+																			setPdfViewerUrl(informe.informe_pdf_url!);
+																		}}
+																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
 																	>
-																		Ver resultado
+																		Ver PDF
 																	</button>
-																) : (
+																);
+															}
+															if (cita.estado_cita === 3) {
+																return (
 																	<button
 																		type="button"
 																		onClick={() => {
-																			setSelectedCitaForResultados({
-																				archivos,
-																				pacienteNombre: fullName,
-																				ecoNombre: cita.eco_nombre,
-																				idCita: cita.id_cita,
+																			navigate("/informes", {
+																				state: { selectedCitaId: cita.id_cita },
 																			});
 																		}}
-																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																		className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper transition-colors hover:bg-brand-800"
 																	>
-																		Ver {archivos.length} resultados
+																		Llenar
 																	</button>
-																)
-															);
-														}
-														return (
-															<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-																{resultadoLabel}
-															</span>
-														);
-													})()}
-												</td>
-												<td className="px-3 py-3 text-center">
-													{(() => {
-														const informe = informesMap.get(cita.id_cita);
-														if (informe?.informe_pdf_url) {
+																);
+															}
 															return (
-																<button
-																	type="button"
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-																		const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-");
-																		setPdfFileName(fileName);
-																		setPdfViewerUrl(informe.informe_pdf_url!);
-																	}}
-																	className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
-																>
-																	Ver PDF
-																</button>
+																<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+																	Pendiente
+																</span>
 															);
-														}
-														if (cita.estado_cita === 3) {
-															return (
-																<button
-																	type="button"
-																	onClick={() => {
-																		navigate("/informes", {
-																			state: { selectedCitaId: cita.id_cita },
-																		});
-																	}}
-																	className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper transition-colors hover:bg-brand-800"
-																>
-																	Llenar
-																</button>
-															);
-														}
-														return (
-															<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-																Pendiente
-															</span>
-														);
-													})()}
-												</td>
-												<td className="px-3 py-3 text-center">
+														})()}
+													</td>
+													<td className="px-3 py-3 text-center">
+														<button
+															type="button"
+															onClick={() =>
+																setContactoPaciente({
+																	name: fullName,
+																	telefono: cita.paciente_telefono,
+																	cedula: cita.paciente_cedula,
+																	correo: cita.paciente_correo,
+																	tipo_sangre: cita.paciente_tipo_sangre,
+																	contacto_nombre:
+																		cita.paciente_contacto_nombre,
+																	contacto_telefono:
+																		cita.paciente_contacto_telefono,
+																})
+															}
+															className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
+														>
+															Ver
+														</button>
+													</td>
+													<td className="px-3 py-3 text-center">
+														<button
+															type="button"
+															onClick={() =>
+																setSelectedPaciente({
+																	id: cita.id_paciente,
+																	name: fullName,
+																})
+															}
+															className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
+														>
+															Ver historial
+														</button>
+													</td>
+												</tr>
+											);
+										})
+									) : (
+										<tr>
+											<td
+												colSpan={11}
+												className="px-3 py-6 text-center text-sm text-brand-800"
+											>
+												No hay registros para mostrar.
+											</td>
+										</tr>
+									)}
+								</tbody>
+							</table>
+						</div>
+
+						{/* Versión cards - solo móvil */}
+						<div className="mt-4 space-y-3 sm:hidden">
+							{paginatedPacientes.length ? (
+								paginatedPacientes.map((cita) => {
+									const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+									const estadoLabel = getEstadoCitaLabel(cita);
+									const pagoLabel =
+										estadoPagoLabel[cita.estado_pago] ?? `Pago ${cita.estado_pago}`;
+									const resultadoLabel = getResultadoLabel(cita);
+									const todayKey = new Date().toISOString().slice(0, 10);
+									const citaDateKey = getDateKey(cita.fecha_cita);
+									const showAtenderButton =
+										cita.estado_cita === 1 && citaDateKey <= todayKey;
+
+									const archivos = parseResultadoArchivo(cita.resultado_archivo);
+									const informe = informesMap.get(cita.id_cita);
+
+									return (
+										<div
+											key={cita.id_cita}
+											className="rounded-2xl border border-brand-200 bg-paper p-4"
+										>
+											<div className="flex items-start justify-between gap-3">
+												<div className="space-y-1">
+													<p className="text-sm font-semibold text-brand-900">
+														{fullName}
+													</p>
+													<p className="text-xs text-brand-700">
+														<span className="font-medium">Eco:</span>{" "}
+														{cita.eco_nombre}
+													</p>
+													<p className="text-xs text-brand-700">
+														<span className="font-medium">Fecha:</span>{" "}
+														{formatFecha(cita.fecha_cita)} a las{" "}
+														{formatHora(cita.hora_cita)}
+													</p>
+												</div>
+												<div className="flex flex-col items-end gap-1">
+													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+														{estadoLabel}
+													</span>
+													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+														{pagoLabel}
+													</span>
+												</div>
+											</div>
+
+											<div className="mt-3 space-y-2 text-[11px] text-brand-800">
+												<div className="flex items-center justify-between">
+													<span className="font-medium">Orden médica</span>
+													<button
+														type="button"
+														disabled={!cita.orden}
+														onClick={() => handleViewOrdenMedica(cita.orden)}
+														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
+													>
+														Ver
+													</button>
+												</div>
+
+												<div className="flex items-center justify-between">
+													<span className="font-medium">Resultado</span>
+													{archivos.length > 0 ? (
+														archivos.length === 1 ? (
+															<button
+																type="button"
+																onClick={() =>
+																	handleDownload(
+																		archivos[0],
+																		`${fullName}-${cita.fecha_cita}-resultado`,
+																	)
+																}
+																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+															>
+																Ver resultado
+															</button>
+														) : (
+															<button
+																type="button"
+																onClick={() => {
+																	setSelectedCitaForResultados({
+																		archivos,
+																		pacienteNombre: fullName,
+																		ecoNombre: cita.eco_nombre,
+																		idCita: cita.id_cita,
+																	});
+																}}
+																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+															>
+																Ver {archivos.length} resultados
+															</button>
+														)
+													) : (
+														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+															{resultadoLabel}
+														</span>
+													)}
+												</div>
+
+												<div className="flex items-center justify-between">
+													<span className="font-medium">Informe</span>
+													{informe?.informe_pdf_url ? (
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(
+																	/\s+/g,
+																	"-",
+																);
+																setPdfFileName(fileName);
+																setPdfViewerUrl(informe.informe_pdf_url!);
+															}}
+															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
+														>
+															Ver PDF
+														</button>
+													) : cita.estado_cita === 3 ? (
+														<button
+															type="button"
+															onClick={() => {
+																navigate("/informes", {
+																	state: { selectedCitaId: cita.id_cita },
+																});
+															}}
+															className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper transition-colors hover:bg-brand-800"
+														>
+															Llenar
+														</button>
+													) : (
+														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+															Pendiente
+														</span>
+													)}
+												</div>
+
+												<div className="flex items-center justify-between">
+													<span className="font-medium">Contacto</span>
 													<button
 														type="button"
 														onClick={() =>
@@ -571,6 +765,7 @@ const PacientesPage = () => {
 																name: fullName,
 																telefono: cita.paciente_telefono,
 																cedula: cita.paciente_cedula,
+																correo: cita.paciente_correo,
 																tipo_sangre: cita.paciente_tipo_sangre,
 																contacto_nombre:
 																	cita.paciente_contacto_nombre,
@@ -582,8 +777,10 @@ const PacientesPage = () => {
 													>
 														Ver
 													</button>
-												</td>
-												<td className="px-3 py-3 text-center">
+												</div>
+
+												<div className="flex items-center justify-between">
+													<span className="font-medium">Historial</span>
 													<button
 														type="button"
 														onClick={() =>
@@ -596,32 +793,39 @@ const PacientesPage = () => {
 													>
 														Ver historial
 													</button>
-												</td>
-											</tr>
-										);
-									})
-								) : (
-									<tr>
-										<td
-											colSpan={11}
-											className="px-3 py-6 text-center text-sm text-brand-800"
-										>
-											No hay registros para mostrar.
-										</td>
-									</tr>
-								)}
-							</tbody>
-						</table>
-					</div>
+												</div>
+
+												{showAtenderButton && (
+													<div className="pt-2">
+														<button
+															type="button"
+															onClick={() => handleMarcarAtendida(cita)}
+															className="w-full rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
+														>
+															Marcar atendida
+														</button>
+													</div>
+												)}
+											</div>
+										</div>
+									);
+								})
+							) : (
+								<div className="rounded-2xl border border-brand-200 bg-paper p-6 text-center text-sm text-brand-800">
+									No hay registros para mostrar.
+								</div>
+							)}
+						</div>
+					</>
 				)}
 
 				{/* Paginación */}
-				{filteredCitas.length > 0 && (
+				{pacientesAgrupados.length > 0 && (
 					<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
 						<div className="text-xs text-brand-800">
-							Mostrando {paginatedCitas.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-							{Math.min(currentPage * itemsPerPage, filteredCitas.length)} de{" "}
-							{filteredCitas.length} pacientes
+							Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
+							{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
+							{pacientesAgrupados.length} pacientes
 						</div>
 						<div className="flex items-center gap-2">
 							<button
@@ -656,7 +860,7 @@ const PacientesPage = () => {
 					formatHora={formatHora}
 					getEstadoLabel={getEstadoCitaLabel}
 					getResultadoLabel={getResultadoLabel}
-					onDownload={handleDownload}
+					onDownload={() => { }} // Ya no se usa, pero se mantiene para compatibilidad
 					onClose={() => setSelectedPaciente(null)}
 				/>
 			) : null}

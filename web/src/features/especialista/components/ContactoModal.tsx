@@ -2,6 +2,7 @@ type ContactoPaciente = {
 	name: string;
 	telefono?: string | null;
 	cedula?: string | null;
+	correo?: string | null;
 	tipo_sangre?: string | null;
 	contacto_nombre?: string | null;
 	contacto_telefono?: string | null;
@@ -40,6 +41,10 @@ const ContactoModal = ({ contactoPaciente, onClose }: ContactoModalProps) => (
 				<div className="rounded-xl bg-cloud p-3">
 					<p className="font-semibold text-brand-900">Cédula</p>
 					<p>{contactoPaciente.cedula || "No disponible"}</p>
+				</div>
+				<div className="rounded-xl bg-cloud p-3">
+					<p className="font-semibold text-brand-900">Correo</p>
+					<p>{contactoPaciente.correo || "No disponible"}</p>
 				</div>
 				<div className="rounded-xl bg-cloud p-3">
 					<p className="font-semibold text-brand-900">Tipo de sangre</p>

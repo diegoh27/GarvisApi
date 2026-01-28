@@ -50,6 +50,7 @@ const PagosPage = () => {
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
+	const [query, setQuery] = useState("");
 	const itemsPerPage = 5;
 
 	// Obtener datos del pago cuando se selecciona una cita
@@ -77,17 +78,40 @@ const PagosPage = () => {
 		{ id: "rechazado", label: "Rechazado", estado: 2 },
 	];
 
-	// Filtrar citas según el filtro seleccionado
+	// Filtrar citas según el filtro seleccionado y búsqueda
 	const filteredCitas = useMemo(() => {
-		if (filter === "todas") {
-			return citas;
+		let citasFiltradas = citas;
+
+		// Filtro por estado de pago
+		if (filter !== "todas") {
+			const filterOption = filterOptions.find((opt) => opt.id === filter);
+			if (filterOption?.estado !== undefined) {
+				citasFiltradas = citasFiltradas.filter((cita) => cita.estado_pago === filterOption.estado);
+			}
 		}
-		const filterOption = filterOptions.find((opt) => opt.id === filter);
-		if (filterOption?.estado !== undefined) {
-			return citas.filter((cita) => cita.estado_pago === filterOption.estado);
+
+		// Filtro por búsqueda
+		if (query.trim()) {
+			const searchLower = query.toLowerCase().trim();
+			citasFiltradas = citasFiltradas.filter((cita) => {
+				const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
+				const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`.toLowerCase();
+				return (
+					fullName.includes(searchLower) ||
+					cita.paciente_nombre.toLowerCase().includes(searchLower) ||
+					cita.paciente_apellido.toLowerCase().includes(searchLower) ||
+					cita.paciente_cedula.toLowerCase().includes(searchLower) ||
+					cita.paciente_telefono.toLowerCase().includes(searchLower) ||
+					especialistaFullName.includes(searchLower) ||
+					cita.especialista_nombre.toLowerCase().includes(searchLower) ||
+					cita.especialista_apellido.toLowerCase().includes(searchLower) ||
+					cita.eco_nombre.toLowerCase().includes(searchLower)
+				);
+			});
 		}
-		return citas;
-	}, [citas, filter, filterOptions]);
+
+		return citasFiltradas;
+	}, [citas, filter, filterOptions, query]);
 
 	// Paginación
 	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
@@ -96,10 +120,10 @@ const PagosPage = () => {
 		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
 	}, [filteredCitas, currentPage, itemsPerPage]);
 
-	// Resetear a página 1 cuando cambian los datos o el filtro
+	// Resetear a página 1 cuando cambian los datos, el filtro o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filter]);
+	}, [citas.length, filter, query]);
 
 	const handleAprobarPago = async (id_cita: string) => {
 		const confirmResult = await Swal.fire({
@@ -231,17 +255,27 @@ const PagosPage = () => {
 			description="Revisar y aprobar pagos de citas. Ver detalles de citas y pagos."
 		>
 			<div className="space-y-4">
+				{/* Barra de búsqueda */}
+				<div className="rounded-lg border border-brand-300 bg-paper p-4">
+					<input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Buscar por nombre, apellido, cédula, teléfono, especialista o eco..."
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
+				</div>
+
 				{/* Filtros */}
 				<div className="flex flex-wrap gap-2">
 					{filterOptions.map((option) => (
 						<button
 							key={option.id}
 							onClick={() => setFilter(option.id)}
-							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-								filter === option.id
+							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
 									? "bg-brand-700 text-paper"
 									: "bg-cloud text-brand-800 hover:bg-mist"
-							}`}
+								}`}
 						>
 							{option.label}
 						</button>
@@ -255,7 +289,7 @@ const PagosPage = () => {
 				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							No hay citas {filter !== "todas" ? `con estado ${filterOptions.find((opt) => opt.id === filter)?.label.toLowerCase()}` : "con pagos"}.
+							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filter !== "todas" ? `con estado ${filterOptions.find((opt) => opt.id === filter)?.label.toLowerCase()}` : "con pagos"}.`}
 						</p>
 					</div>
 				) : (

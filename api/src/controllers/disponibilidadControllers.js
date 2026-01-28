@@ -1,7 +1,10 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
 
-const hasOverlap = async (conn, { id_especialista, fecha, hora_inicio, hora_fin, estados }) => {
+const hasOverlap = async (
+	conn,
+	{ id_especialista, fecha, hora_inicio, hora_fin, estados },
+) => {
 	const placeholders = estados.map(() => "?").join(", ");
 	const sql = `
     SELECT id_disponibilidad
@@ -28,12 +31,12 @@ const createDisponibilidadController = async ({
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
-		
+
 		// Validar que el eco existe si se proporciona
 		if (id_eco) {
 			const [ecoRows] = await conn.execute(
 				"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
-				[id_eco]
+				[id_eco],
 			);
 			if (!ecoRows.length) {
 				const err = new Error("Eco no encontrado o inactivo");
@@ -42,17 +45,31 @@ const createDisponibilidadController = async ({
 			}
 		}
 
-		const overlap = await hasOverlap(conn, {
-			id_especialista,
-			fecha,
-			hora_inicio,
-			hora_fin,
-			estados: [0, 1, 4],
-		});
-		if (overlap) {
-			const err = new Error("Bloque se solapa con otro existente");
-			err.code = "OVERLAP";
-			throw err;
+		// Validar solapamiento:
+		// - No permitir solaparse con bloques aprobados o con cita (estado 1 o 4)
+		// - No permitir otro bloque propuesto (estado 0) con el mismo eco en ese horario
+		const [overlapRows] = await conn.execute(
+			`SELECT id_disponibilidad, estado, id_eco
+       FROM disponibilidad
+       WHERE id_especialista = ?
+         AND fecha = ?
+         AND NOT (hora_fin <= ? OR hora_inicio >= ?)
+         AND estado IN (0, 1, 4)
+       LIMIT 1`,
+			[id_especialista, fecha, hora_inicio, hora_fin],
+		);
+		if (overlapRows.length) {
+			const existing = overlapRows[0];
+			const isAprobadaOCita = existing.estado === 1 || existing.estado === 4;
+			const isMismoEcoPropuesto =
+				existing.estado === 0 && existing.id_eco && existing.id_eco === id_eco;
+
+			if (isAprobadaOCita || isMismoEcoPropuesto) {
+				const err = new Error("Bloque se solapa con otro existente");
+				err.code = "OVERLAP";
+				throw err;
+			}
+			// Si llega aquí es un bloque propuesto con eco distinto: lo permitimos.
 		}
 
 		const id_disponibilidad = crypto.randomUUID();
@@ -142,7 +159,10 @@ const listPendientesController = async () => {
 	return rows;
 };
 
-const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por }) => {
+const approveDisponibilidadController = async ({
+	id_disponibilidad,
+	aprobado_por,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -157,7 +177,9 @@ const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por
 			if (!userRows.length) {
 				// Si el usuario no existe, establecer como NULL en lugar de fallar
 				// Esto puede pasar si el token tiene un ID inválido
-				console.warn(`Usuario con ID ${aprobado_por} no encontrado en la base de datos. Aprobando sin registrar aprobado_por.`);
+				console.warn(
+					`Usuario con ID ${aprobado_por} no encontrado en la base de datos. Aprobando sin registrar aprobado_por.`,
+				);
 				aprobadoPorFinal = null;
 			}
 		}
@@ -173,7 +195,9 @@ const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por
 		}
 		const bloque = rows[0];
 		if (bloque.estado !== 0) {
-			const err = new Error("Solo se puede aprobar si está en estado propuesto");
+			const err = new Error(
+				"Solo se puede aprobar si está en estado propuesto",
+			);
 			err.code = "INVALID_STATE";
 			throw err;
 		}
@@ -206,7 +230,10 @@ const approveDisponibilidadController = async ({ id_disponibilidad, aprobado_por
 	}
 };
 
-const rejectDisponibilidadController = async ({ id_disponibilidad, aprobado_por }) => {
+const rejectDisponibilidadController = async ({
+	id_disponibilidad,
+	aprobado_por,
+}) => {
 	const sql = `
     UPDATE disponibilidad
     SET estado = 2, aprobado_por = ?
@@ -216,7 +243,10 @@ const rejectDisponibilidadController = async ({ id_disponibilidad, aprobado_por 
 	return { updated: result.affectedRows, id_disponibilidad, estado: 2 };
 };
 
-const cancelDisponibilidadController = async ({ id_disponibilidad, id_especialista }) => {
+const cancelDisponibilidadController = async ({
+	id_disponibilidad,
+	id_especialista,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		const [rows] = await conn.execute(
@@ -240,7 +270,10 @@ const cancelDisponibilidadController = async ({ id_disponibilidad, id_especialis
         AND id_especialista = ?
         AND estado IN (0, 1)
     `;
-		const [result] = await conn.execute(sql, [id_disponibilidad, id_especialista]);
+		const [result] = await conn.execute(sql, [
+			id_disponibilidad,
+			id_especialista,
+		]);
 		return { updated: result.affectedRows, id_disponibilidad, estado: 3 };
 	} finally {
 		conn.release();
@@ -302,7 +335,9 @@ const closeDisponibilidadDiaController = async ({
 };
 
 // Obtener todas las disponibilidades de un especialista (aprobadas y pendientes) - para moderador/admin
-const listDisponibilidadesByEspecialistaController = async (id_especialista) => {
+const listDisponibilidadesByEspecialistaController = async (
+	id_especialista,
+) => {
 	const sql = `
     SELECT
       d.id_disponibilidad,

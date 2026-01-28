@@ -174,8 +174,24 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 										</div>
 									)}
 									<div>
-										<p className="text-xs font-semibold text-brand-700">Orden</p>
-										<p className="mt-1 text-sm text-brand-900">{cita.orden}</p>
+										<p className="text-xs font-semibold text-brand-700">Orden Médica</p>
+										{cita.orden ? (
+											<div className="mt-1">
+												<button
+													type="button"
+													onClick={() => {
+														if (cita.orden) {
+															window.open(cita.orden, "_blank", "noopener,noreferrer");
+														}
+													}}
+													className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-paper hover:bg-brand-800 transition-colors"
+												>
+													Ver
+												</button>
+											</div>
+										) : (
+											<p className="mt-1 text-sm text-brand-500">No disponible</p>
+										)}
 									</div>
 									<div>
 										<p className="text-xs font-semibold text-brand-700">Fecha de creación</p>

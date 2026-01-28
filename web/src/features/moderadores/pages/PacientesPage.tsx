@@ -6,11 +6,12 @@ import {
 	useUploadResultadoMutation,
 } from "../../resultados/resultadosApi";
 import type { CitaAtendidaConResultado } from "../../resultados/resultadosApi";
-import { useGetCitaByIdQuery } from "../moderadoresApi";
+import { useGetCitaByIdQuery, useGetAllPacientesQuery, type PacienteData } from "../moderadoresApi";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import VerCitaModal from "../components/VerCitaModal";
 import VerResultadosModal from "../components/VerResultadosModal";
 import HistorialCitasModal from "../components/HistorialCitasModal";
+import AsignarCitaModal from "../components/AsignarCitaModal";
 
 const formatFecha = (value: string) => {
 	if (!value) return "";
@@ -66,7 +67,8 @@ type FilterOption = {
 };
 
 const PacientesPage = () => {
-	const { data: citas = [], isLoading, refetch } = useGetCitasAtendidasConResultadosQuery();
+	const { data: citas = [], isLoading: loadingCitas, refetch: refetchCitas } = useGetCitasAtendidasConResultadosQuery();
+	const { data: todosPacientes = [], isLoading: loadingPacientes, refetch: refetchPacientes } = useGetAllPacientesQuery();
 	const [uploadResultado, { isLoading: isUploading }] = useUploadResultadoMutation();
 	const [selectedCita, setSelectedCita] = useState<CitaAtendidaConResultado | null>(null);
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
@@ -81,8 +83,10 @@ const PacientesPage = () => {
 		nombre: string;
 		apellido: string;
 	} | null>(null);
+	const [selectedPacienteForAsignar, setSelectedPacienteForAsignar] = useState<PacienteData | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
+	const [search, setSearch] = useState("");
 	const itemsPerPage = 5;
 
 	// Obtener datos completos de la cita cuando se selecciona para ver
@@ -118,8 +122,8 @@ const PacientesPage = () => {
 		return citasFiltradas;
 	}, [citas, filter]);
 
-	// Agrupar citas por paciente
-	const pacientesAgrupados = useMemo(() => {
+	// Crear mapa de pacientes con sus citas
+	const pacientesConCitas = useMemo(() => {
 		const pacientesMap = new Map<string, {
 			id_paciente: string;
 			nombre: string;
@@ -140,25 +144,57 @@ const PacientesPage = () => {
 			pacientesMap.get(key)!.citas.push(cita);
 		});
 
-		// Ordenar pacientes por nombre
-		return Array.from(pacientesMap.values()).sort((a, b) => {
+		return pacientesMap;
+	}, [filteredCitas]);
+
+	// Combinar todos los pacientes con información de citas
+	const pacientesAgrupados = useMemo(() => {
+		return todosPacientes.map((paciente) => {
+			const pacienteConCitas = pacientesConCitas.get(paciente.id_paciente);
+			return {
+				id_paciente: paciente.id_paciente,
+				nombre: paciente.nombre,
+				apellido: paciente.apellido,
+				cedula: paciente.cedula,
+				correo: paciente.correo,
+				citas: pacienteConCitas?.citas || [],
+			};
+		}).sort((a, b) => {
 			const nombreA = `${a.nombre} ${a.apellido}`.toLowerCase();
 			const nombreB = `${b.nombre} ${b.apellido}`.toLowerCase();
 			return nombreA.localeCompare(nombreB);
 		});
-	}, [filteredCitas]);
+	}, [todosPacientes, pacientesConCitas]);
+
+	// Aplicar búsqueda por nombre, apellido, cédula o correo
+	const pacientesFiltrados = useMemo(() => {
+		const term = search.trim().toLowerCase();
+		if (!term) return pacientesAgrupados;
+
+		return pacientesAgrupados.filter((paciente) => {
+			const nombreCompleto = `${paciente.nombre} ${paciente.apellido}`.toLowerCase();
+			const cedula = (paciente.cedula || "").toLowerCase();
+			const correo = (paciente.correo || "").toLowerCase();
+
+			return (
+				nombreCompleto.includes(term) ||
+				cedula.includes(term) ||
+				correo.includes(term)
+			);
+		});
+	}, [pacientesAgrupados, search]);
 
 	// Paginación de pacientes
-	const totalPages = Math.max(1, Math.ceil(pacientesAgrupados.length / itemsPerPage));
+	const totalPages = Math.max(1, Math.ceil(pacientesFiltrados.length / itemsPerPage));
 	const paginatedPacientes = useMemo(() => {
 		const startIndex = (currentPage - 1) * itemsPerPage;
-		return pacientesAgrupados.slice(startIndex, startIndex + itemsPerPage);
-	}, [pacientesAgrupados, currentPage, itemsPerPage]);
+		return pacientesFiltrados.slice(startIndex, startIndex + itemsPerPage);
+	}, [pacientesFiltrados, currentPage, itemsPerPage]);
 
 	// Resetear a página 1 cuando cambian los datos o el filtro
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [pacientesAgrupados.length, filter]);
+	}, [pacientesFiltrados.length, filter, search]);
 
 	const handleSubirResultado = async (id_cita: string, archivos: File[]) => {
 		try {
@@ -193,26 +229,34 @@ const PacientesPage = () => {
 			description="Subir resultados (ecos) para citas atendidas. Ver y gestionar archivos de resultados."
 		>
 			<div className="space-y-4">
-				{/* Filtros */}
-				<div className="flex flex-wrap gap-2">
-					{filterOptions.map((option) => (
-						<button
-							key={option.id}
-							onClick={() => setFilter(option.id)}
-							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-								filter === option.id
-									? "bg-brand-700 text-paper"
-									: "bg-cloud text-brand-800 hover:bg-brand-100"
-							}`}
-						>
-							{option.label}
-						</button>
-					))}
+				{/* Filtros y búsqueda */}
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex flex-wrap gap-2">
+						{filterOptions.map((option) => (
+							<button
+								key={option.id}
+								onClick={() => setFilter(option.id)}
+								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-brand-100"
+									}`}
+							>
+								{option.label}
+							</button>
+						))}
+					</div>
+					<input
+						type="text"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						placeholder="Buscar por nombre, apellido, cédula o correo..."
+						className="h-10 w-full max-w-xs rounded-lg border border-mist bg-cloud px-3 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
 				</div>
 
-				{isLoading ? (
+				{(loadingPacientes || loadingCitas) ? (
 					<div className="text-center py-8 text-brand-600">
-						Cargando citas atendidas...
+						Cargando pacientes...
 					</div>
 				) : pacientesAgrupados.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
@@ -244,19 +288,45 @@ const PacientesPage = () => {
 												</p>
 											</div>
 										</div>
-										<button
-											type="button"
-											onClick={() =>
-												setSelectedPacienteForHistorial({
-													id_paciente: paciente.id_paciente,
-													nombre: paciente.nombre,
-													apellido: paciente.apellido,
-												})
-											}
-											className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-										>
-											Ver historial de citas
-										</button>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() =>
+													setSelectedPacienteForAsignar({
+														id_paciente: paciente.id_paciente,
+														nombre: paciente.nombre,
+														apellido: paciente.apellido,
+														genero: paciente.genero,
+														cedula: paciente.cedula,
+														correo: paciente.correo,
+														telefono: paciente.telefono,
+														activo: paciente.activo,
+														fecha_nacimiento: paciente.fecha_nacimiento,
+														tipo_sangre: paciente.tipo_sangre,
+														descripcion: paciente.descripcion,
+														direccion: paciente.direccion,
+														contacto_emergencia_nombre: paciente.contacto_emergencia_nombre,
+														contacto_emergencia_telefono: paciente.contacto_emergencia_telefono,
+													})
+												}
+												className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-green-700"
+											>
+												Asignar cita
+											</button>
+											<button
+												type="button"
+												onClick={() =>
+													setSelectedPacienteForHistorial({
+														id_paciente: paciente.id_paciente,
+														nombre: paciente.nombre,
+														apellido: paciente.apellido,
+													})
+												}
+												className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+											>
+												Ver historial de citas
+											</button>
+										</div>
 									</div>
 								</div>
 							);
@@ -265,12 +335,12 @@ const PacientesPage = () => {
 				)}
 
 				{/* Paginación */}
-				{pacientesAgrupados.length > 0 && (
+				{pacientesFiltrados.length > 0 && (
 					<div className="flex items-center justify-between border-t border-mist pt-4">
 						<div className="text-sm text-brand-800">
 							Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-							{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
-							{pacientesAgrupados.length} paciente{pacientesAgrupados.length !== 1 ? "s" : ""}
+							{Math.min(currentPage * itemsPerPage, pacientesFiltrados.length)} de{" "}
+							{pacientesFiltrados.length} paciente{pacientesFiltrados.length !== 1 ? "s" : ""}
 						</div>
 						<div className="flex items-center gap-2">
 							<button
@@ -344,12 +414,24 @@ const PacientesPage = () => {
 									setSelectedCitaForResultados(null);
 								} else {
 									// Actualizar el estado con los nuevos archivos
-									setSelectedCitaForResultados((prev) => 
+									setSelectedCitaForResultados((prev) =>
 										prev ? { ...prev, archivos: nuevosArchivos } : null
 									);
 								}
 							}
 						}
+					}}
+				/>
+			)}
+
+			{/* Modal para asignar cita */}
+			{selectedPacienteForAsignar && (
+				<AsignarCitaModal
+					pacientePreSeleccionado={selectedPacienteForAsignar}
+					onClose={() => setSelectedPacienteForAsignar(null)}
+					onSuccess={async () => {
+						await refetchPacientes();
+						await refetchCitas();
 					}}
 				/>
 			)}

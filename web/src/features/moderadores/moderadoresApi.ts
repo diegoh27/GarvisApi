@@ -92,8 +92,82 @@ export type CitaData = {
 	pago_validado_por_apellido: string | null;
 };
 
+export type PacienteData = {
+	id_paciente: string;
+	nombre: string;
+	apellido: string;
+	genero: string;
+	cedula: string;
+	correo: string;
+	telefono: string;
+	activo: number;
+	fecha_nacimiento: string;
+	tipo_sangre: string | null;
+	descripcion: string | null;
+	direccion: string | null;
+	contacto_emergencia_nombre: string | null;
+	contacto_emergencia_telefono: string | null;
+};
+
+export type EspecialistaData = {
+	id_especialista: string;
+	nombre: string;
+	apellido: string;
+	id_especialidad: string;
+	especialidad: string;
+};
+
 const moderadoresApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
+		getAllPacientes: builder.query<PacienteData[], void>({
+			query: () => "/pacientes",
+			transformResponse: (response: { ok: boolean; data: PacienteData[] }) =>
+				response.data ?? [],
+			providesTags: ["Pacientes"],
+		}),
+		getAllEspecialistas: builder.query<EspecialistaData[], void>({
+			query: () => "/medicos",
+			transformResponse: (response: { ok: boolean; data: EspecialistaData[] }) =>
+				response.data ?? [],
+			providesTags: ["Especialistas"],
+		}),
+		asignarCitaCompleta: builder.mutation<
+			{
+				id_cita: string;
+				id_pago: string;
+				id_resultado: string;
+				id_paciente: string;
+				id_especialista: string;
+				id_eco: string;
+				fecha_cita: string;
+				hora_cita: string;
+				monto: number;
+				eco_precio: number;
+			},
+			{
+				id_paciente: string;
+				id_representado?: string | null;
+				id_eco: string;
+				id_especialista: string;
+				id_disponibilidad: string;
+				orden_medica?: string; // URL de la orden médica subida
+				metodo: "Transferencia" | "PagoMovil";
+				imagen?: string;
+				banco_origen: string;
+				banco_destino: string;
+				monto: number;
+				cedula_pagador: string;
+				telefono_pagador: string;
+				referencia: string;
+			}
+		>({
+			query: (body) => ({
+				url: "/citas/asignar",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Citas", "Pacientes", "Disponibilidad"],
+		}),
 		getDisponibilidadesByFecha: builder.query<DisponibilidadConFecha[], string>({
 			query: (fecha) => ({
 				url: "/disponibilidad/por-fecha",
@@ -224,6 +298,9 @@ const moderadoresApi = baseApi.injectEndpoints({
 });
 
 export const {
+	useGetAllPacientesQuery,
+	useGetAllEspecialistasQuery,
+	useAsignarCitaCompletaMutation,
 	useGetDisponibilidadesByFechaQuery,
 	useGetDisponibilidadesByEspecialistaQuery,
 	useGetCitasByFechaQuery,

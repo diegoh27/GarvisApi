@@ -1,5 +1,6 @@
 const {
 	createCitaFromDisponibilidadController,
+	asignarCitaCompletaController,
 	listCitasByPacienteController,
 	listCitasCompletasByPacienteController,
 	listCitasByEspecialistaController,
@@ -494,8 +495,98 @@ const getAllCitasHandler = async (req, res) => {
 	}
 };
 
+const asignarCitaCompletaHandler = async (req, res) => {
+	try {
+		const {
+			id_paciente,
+			id_representado,
+			id_eco,
+			id_especialista,
+			id_disponibilidad,
+			orden_medica, // URL de la orden médica subida
+			metodo,
+			imagen,
+			banco_origen,
+			banco_destino,
+			monto,
+			cedula_pagador,
+			telefono_pagador,
+			referencia,
+		} = req.body;
+
+		const missing = [];
+		if (!id_paciente) missing.push("id_paciente");
+		if (!id_eco) missing.push("id_eco");
+		if (!id_especialista) missing.push("id_especialista");
+		if (!id_disponibilidad) missing.push("id_disponibilidad");
+		if (!metodo) missing.push("metodo");
+		if (!banco_origen) missing.push("banco_origen");
+		if (!banco_destino) missing.push("banco_destino");
+		if (!monto) missing.push("monto");
+		if (!cedula_pagador) missing.push("cedula_pagador");
+		if (!telefono_pagador) missing.push("telefono_pagador");
+		if (!referencia) missing.push("referencia");
+
+		if (missing.length) {
+			return res.status(400).json({
+				ok: false,
+				message: `Faltan campos requeridos: ${missing.join(", ")}`,
+			});
+		}
+
+		const data = await asignarCitaCompletaController({
+			id_paciente,
+			id_representado,
+			id_eco,
+			id_especialista,
+			id_disponibilidad,
+			orden: orden_medica || "", // Usar orden_medica como orden (URL de la orden médica)
+			aprobado_por: req.user.id, // ID del admin/moderador que está asignando
+			metodo,
+			imagen,
+			banco_origen,
+			banco_destino,
+			monto,
+			cedula_pagador,
+			telefono_pagador,
+			referencia,
+		});
+
+		return res.status(201).json({
+			ok: true,
+			message: "Cita asignada exitosamente con pago y resultado",
+			data,
+		});
+	} catch (err) {
+		if (err.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err.code === "ECO_NOT_AVAILABLE") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error("Error al asignar cita completa:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
+	asignarCitaCompletaHandler,
 	listCitasByPacienteHandler,
 	listMisCitasCompletasHandler,
 	listCitasByEspecialistaHandler,

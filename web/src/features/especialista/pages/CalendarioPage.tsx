@@ -101,7 +101,7 @@ const CalendarioPage = () => {
 	const { user, token } = useAuth();
 	const [fecha, setFecha] = useState("");
 	const [horaInicio, setHoraInicio] = useState("");
-	const [idEco, setIdEco] = useState("");
+	const [idEcos, setIdEcos] = useState<string[]>([]);
 	const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
 	const [busyCell, setBusyCell] = useState<string | null>(null);
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
@@ -152,50 +152,89 @@ const CalendarioPage = () => {
 	const submitDisponibilidad = async (payload: {
 		fecha: string;
 		hora_inicio: string;
-		id_eco?: string;
+		id_ecos: string[];
 	}) => {
 		setError(null);
 		if (!payload.fecha || !payload.hora_inicio) {
 			setError("Completa fecha y hora de inicio");
 			return;
 		}
-		if (!payload.id_eco) {
-			setError("Selecciona un tipo de eco");
+		if (!payload.id_ecos || payload.id_ecos.length === 0) {
+			setError("Selecciona al menos un tipo de eco");
 			return;
 		}
 		const hora_fin = computeHoraFin(payload.hora_inicio);
 		if (!hora_fin) {
-			setError("Hora invalida");
+			setError("Hora inválida");
 			return;
 		}
+
 		setSubmitStatus("loading");
-		try {
-			await crearDisponibilidad({
-				fecha: payload.fecha,
-				hora_inicio: payload.hora_inicio,
-				hora_fin,
-				id_eco: payload.id_eco,
-			}).unwrap();
+		setError(null);
+
+		const exitosos: string[] = [];
+		let lastError: unknown = null;
+
+		for (const id_eco of payload.id_ecos) {
+			try {
+				await crearDisponibilidad({
+					fecha: payload.fecha,
+					hora_inicio: payload.hora_inicio,
+					hora_fin,
+					id_eco,
+				}).unwrap();
+				exitosos.push(id_eco);
+			} catch (err) {
+				lastError = err;
+			}
+		}
+
+		if (exitosos.length > 0) {
 			setSubmitStatus("done");
 			setSelectedCell(null);
-			
-			// Obtener el nombre del eco
-			const ecoSeleccionado = ecos.find((eco) => eco.id_eco === payload.id_eco);
-			const ecoNombre = ecoSeleccionado?.nombre || "Eco seleccionado";
-			
+
+			// Obtener los nombres solo de los ecos creados correctamente
+			const ecosSeleccionados = ecos.filter((eco) =>
+				exitosos.includes(eco.id_eco),
+			);
+			const nombresEcos = ecosSeleccionados.map((eco) => eco.nombre);
+			const ecosTexto =
+				nombresEcos.length === 1
+					? `con el eco "${nombresEcos[0]}"`
+					: `con los ecos: ${nombresEcos.join(", ")}`;
+
 			await Swal.fire({
 				icon: "success",
 				title: "Disponibilidad agregada",
-				text: `La disponibilidad para el ${formatFecha(payload.fecha)} a las ${formatHora(payload.hora_inicio)} con el eco "${ecoNombre}" ha sido agregada exitosamente.`,
+				text: `La disponibilidad para el ${formatFecha(
+					payload.fecha,
+				)} a las ${formatHora(payload.hora_inicio)} ${ecosTexto} ha sido agregada exitosamente.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
 			});
-		} catch (err) {
-			setError((err as Error).message ?? "No se pudo enviar disponibilidad");
-		} finally {
-			setSubmitStatus("idle");
 		}
+
+		if (lastError) {
+			const err: any = lastError;
+			const apiMessage =
+				err?.data?.message ||
+				err?.error ||
+				(err as Error).message ||
+				"No se pudo enviar una o más disponibilidades";
+
+			// Si es conflicto (409), mostrar mensaje más claro
+			if (err?.status === 409) {
+				setError(
+					apiMessage ||
+					"Ya existe un bloque aprobado o con cita en ese horario. Ajusta la hora o edita la disponibilidad existente.",
+				);
+			} else {
+				setError(apiMessage);
+			}
+		}
+
+		setSubmitStatus("idle");
 	};
 
 	const handleSubmitDisponibilidad = async (event: FormEvent) => {
@@ -203,11 +242,11 @@ const CalendarioPage = () => {
 		await submitDisponibilidad({
 			fecha,
 			hora_inicio: horaInicio,
-			id_eco: idEco,
+			id_ecos: idEcos,
 		});
 		setFecha("");
 		setHoraInicio("");
-		setIdEco("");
+		setIdEcos([]);
 		setSelectedCell(null);
 	};
 
@@ -243,19 +282,43 @@ const CalendarioPage = () => {
 
 	const bloquesMap = useMemo(() => {
 		const map = new Map<string, Disponibilidad>();
+		const counts = new Map<string, number>();
+
+		// Mapear bloques de disponibilidad (propuestas / aprobadas)
 		bloques.forEach((bloque) => {
 			const dateKey = getDateKey(bloque.fecha);
 			const hourKey =
 				bloque.hora_inicio.length === 5
 					? `${bloque.hora_inicio}:00`
 					: bloque.hora_inicio;
+			const cellKey = `${dateKey}|${hourKey}`;
+
 			// Convertir al tipo Disponibilidad del calendario (fecha debe ser string)
 			const disponibilidad: Disponibilidad = {
 				...bloque,
-				fecha: typeof bloque.fecha === "string" ? bloque.fecha : bloque.fecha.toISOString().split("T")[0],
+				fecha:
+					typeof bloque.fecha === "string"
+						? bloque.fecha
+						: bloque.fecha.toISOString().split("T")[0],
 			};
-			map.set(`${dateKey}|${hourKey}`, disponibilidad);
+
+			const existing = map.get(cellKey);
+			if (!existing) {
+				map.set(cellKey, disponibilidad);
+				counts.set(cellKey, 1);
+			} else {
+				const newCount = (counts.get(cellKey) || 1) + 1;
+				counts.set(cellKey, newCount);
+
+				// Si hay más de un eco para este horario, mostrar un label genérico
+				map.set(cellKey, {
+					...existing,
+					eco_nombre: newCount > 1 ? "Varios ecos" : existing.eco_nombre,
+				});
+			}
 		});
+
+		// Mapear citas (tienen prioridad visual sobre bloques de disponibilidad)
 		citas.forEach((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
@@ -272,6 +335,7 @@ const CalendarioPage = () => {
 				estado_cita: Number(cita.estado_cita),
 			});
 		});
+
 		return map;
 	}, [bloques, citas]);
 
@@ -361,7 +425,7 @@ const CalendarioPage = () => {
 		// Mostrar formulario para seleccionar eco y marcar celda como seleccionada
 		setFecha(dateKey);
 		setHoraInicio(hourValue);
-		setIdEco("");
+		setIdEcos([]);
 		setSelectedCell(cellKey);
 	};
 
@@ -493,7 +557,7 @@ const CalendarioPage = () => {
 					<DisponibilidadForm
 						fecha={fecha}
 						horaInicio={horaInicio}
-						idEco={idEco}
+						idEcos={idEcos}
 						minFecha={minFecha}
 						timeOptions={timeOptions}
 						error={
@@ -505,16 +569,16 @@ const CalendarioPage = () => {
 						submitStatus={submitStatus}
 						onFechaChange={setFecha}
 						onHoraInicioChange={setHoraInicio}
-						onIdEcoChange={setIdEco}
+						onIdEcosChange={setIdEcos}
 						onSubmit={handleSubmitDisponibilidad}
 						onCancel={
-							fecha || horaInicio || idEco
+							fecha || horaInicio || idEcos.length
 								? () => {
-										setFecha("");
-										setHoraInicio("");
-										setIdEco("");
-										setSelectedCell(null);
-									}
+									setFecha("");
+									setHoraInicio("");
+									setIdEcos([]);
+									setSelectedCell(null);
+								}
 								: undefined
 						}
 					/>

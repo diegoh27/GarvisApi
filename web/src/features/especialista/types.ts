@@ -21,6 +21,7 @@ type CitaEspecialista = {
 	paciente_apellido: string;
 	paciente_telefono?: string | null;
 	paciente_cedula?: string | null;
+	paciente_correo?: string | null;
 	paciente_tipo_sangre?: string | null;
 	paciente_contacto_nombre?: string | null;
 	paciente_contacto_telefono?: string | null;

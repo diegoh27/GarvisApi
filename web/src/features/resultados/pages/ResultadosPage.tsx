@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Swal from "sweetalert2";
-import { FileText, Receipt, Calendar, FileCheck, Download } from "lucide-react";
+import { FileText, Receipt, Calendar, FileCheck, Download, Eye } from "lucide-react";
 import { PageShell, useAuth } from "../../../shared";
 import {
 	useGetCitasSinResultadoQuery,
@@ -63,6 +63,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 const ResultadosPage = () => {
 	const { user } = useAuth();
 	const isPaciente = user?.rol === "paciente";
+	const [query, setQuery] = useState("");
 
 	// Para pacientes: obtener todas sus citas con información completa
 	const {
@@ -210,30 +211,16 @@ const ResultadosPage = () => {
 	};
 
 
-	const handleDownloadOrden = (orden: string, nombre: string) => {
+	const handleViewOrdenMedica = (orden: string | null) => {
 		if (!orden) {
 			Swal.fire({
 				icon: "warning",
-				title: "Sin orden",
-				text: "Esta cita no tiene orden disponible.",
+				title: "Sin orden médica",
+				text: "Esta cita no tiene orden médica disponible.",
 			});
 			return;
 		}
-		try {
-			const link = document.createElement("a");
-			link.href = orden;
-			link.download = `${nombre}-orden.pdf`;
-			link.target = "_blank";
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-		} catch (error) {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "No se pudo descargar la orden",
-			});
-		}
+		window.open(orden, "_blank", "noopener,noreferrer");
 	};
 
 	const getEstadoCitaLabel = (estado: number) => {
@@ -414,15 +401,15 @@ const ResultadosPage = () => {
 												{tieneOrden ? (
 													<button
 														type="button"
-														onClick={() => handleDownloadOrden(cita.orden, `${cita.eco_nombre}_${cita.fecha_cita}`)}
+														onClick={() => handleViewOrdenMedica(cita.orden)}
 														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
 													>
-														<Download className="h-4 w-4" />
-														Ver orden
+														<Eye className="h-4 w-4" />
+														Ver orden médica
 													</button>
 												) : (
 													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
-														Sin orden
+														Sin orden médica
 													</span>
 												)}
 											</div>
@@ -475,6 +462,25 @@ const ResultadosPage = () => {
 		);
 	}
 
+	// Filtrar citas por búsqueda (solo para moderadores/admin)
+	const filteredCitas = useMemo(() => {
+		if (!query.trim()) return citas;
+		const searchLower = query.toLowerCase().trim();
+		return citas.filter((cita: CitaSinResultado) => {
+			const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
+			const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`.toLowerCase();
+			return (
+				fullName.includes(searchLower) ||
+				cita.paciente_nombre.toLowerCase().includes(searchLower) ||
+				cita.paciente_apellido.toLowerCase().includes(searchLower) ||
+				especialistaFullName.includes(searchLower) ||
+				cita.especialista_nombre.toLowerCase().includes(searchLower) ||
+				cita.especialista_apellido.toLowerCase().includes(searchLower) ||
+				cita.eco_nombre.toLowerCase().includes(searchLower)
+			);
+		});
+	}, [citas, query]);
+
 	// Vista para moderadores/admin: subir resultados
 	return (
 		<PageShell
@@ -482,19 +488,30 @@ const ResultadosPage = () => {
 			description="Subir archivos de resultados (ecos) para citas atendidas."
 		>
 			<div className="space-y-4">
+				{/* Barra de búsqueda */}
+				<div className="rounded-lg border border-brand-300 bg-paper p-4">
+					<input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Buscar por nombre, apellido, especialista o eco..."
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
+				</div>
+
 				{isLoading ? (
 					<div className="text-center py-8 text-brand-600">
 						Cargando citas sin resultado...
 					</div>
-				) : citas.length === 0 ? (
+				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							No hay citas atendidas sin resultado.
+							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : "No hay citas atendidas sin resultado."}
 						</p>
 					</div>
 				) : (
 					<div className="space-y-3">
-						{citas.map((cita: CitaSinResultado) => (
+						{filteredCitas.map((cita: CitaSinResultado) => (
 							<div
 								key={cita.id_cita}
 								className="rounded-lg border border-brand-200 bg-paper p-4"
