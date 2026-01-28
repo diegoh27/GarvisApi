@@ -45,12 +45,12 @@ const CalendarGrid = ({
 					</div>
 				))}
 			</div>
-			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-xs">
+			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-[11px]">
 				{timeOptions.map((hour) => (
 					<React.Fragment key={hour.value}>
 						{/* Columna de horas fija */}
 						<div
-							className="border-b border-mist p-2 sm:p-3 text-brand-800 sticky left-0 z-10 bg-paper"
+							className="border-b border-mist py-1.5 px-2 sm:py-2 sm:px-3 text-brand-800 sticky left-0 z-10 bg-paper"
 						>
 							{hour.label}
 						</div>
