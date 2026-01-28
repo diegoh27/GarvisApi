@@ -104,7 +104,7 @@ const DisponibilidadForm = ({
 				<h3 className="text-sm font-semibold text-brand-900">
 					Solicitar disponibilidad
 				</h3>
-				<span className="text-[10px] text-brand-800">60 min</span>
+				<span className="text-[10px] text-brand-800">Bloques de 20 minutos</span>
 			</div>
 			<form className="mt-3 space-y-3" onSubmit={onSubmit}>
 				<div className="space-y-1 text-xs text-brand-800">
@@ -184,8 +184,8 @@ const DisponibilidadForm = ({
 													>
 														<div
 															className={`flex h-3 w-3 items-center justify-center rounded border ${isSelected
-																	? "border-brand-700 bg-brand-700"
-																	: "border-brand-300 bg-paper"
+																? "border-brand-700 bg-brand-700"
+																: "border-brand-300 bg-paper"
 																}`}
 														>
 															{isSelected && (
@@ -202,8 +202,7 @@ const DisponibilidadForm = ({
 						)}
 					</div>
 					<p className="text-[10px] text-brand-700">
-						Puedes seleccionar uno o varios ecos desde el desplegable.
-					</p>
+						Puedes seleccionar uno o varios ecos desde el desplegable.</p>
 				</div>
 				{error ? (
 					<p className="text-[11px] font-semibold text-brand-900">{error}</p>

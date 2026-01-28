@@ -37,10 +37,10 @@ const estadoColor: Record<number, string> = {
 	4: "bg-sky-500 text-paper",
 };
 
-const buildHourLabel = (hour24: number) => {
+const buildTimeLabel = (hour24: number, minute: number) => {
 	const period = hour24 >= 12 ? "PM" : "AM";
 	const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-	return `${hour12}:00 ${period}`;
+	return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 };
 
 const getLocalDateKey = (date: Date) => {
@@ -131,22 +131,37 @@ const CalendarioPage = () => {
 	const { data: ecos = [] } = useGetEcosQuery();
 
 	const timeOptions = useMemo<TimeOption[]>(
-		() =>
-			Array.from({ length: 14 }, (_, idx) => {
-				const hour = 6 + idx;
-				return {
-					value: `${String(hour).padStart(2, "0")}:00:00`,
-					label: buildHourLabel(hour),
-				};
-			}),
+		() => {
+			const options: TimeOption[] = [];
+			// Desde 06:00 hasta 19:40 en intervalos de 20 minutos
+			for (let hour = 6; hour < 20; hour += 1) {
+				for (let minute = 0; minute < 60; minute += 20) {
+					const value = `${String(hour).padStart(2, "0")}:${String(
+						minute,
+					).padStart(2, "0")}:00`;
+					options.push({
+						value,
+						label: buildTimeLabel(hour, minute),
+					});
+				}
+			}
+			return options;
+		},
 		[],
 	);
 
 	const computeHoraFin = (hora: string) => {
-		const [h, m] = hora.split(":").map(Number);
+		const [hStr, mStr] = hora.split(":");
+		const h = Number(hStr);
+		const m = Number(mStr);
 		if (Number.isNaN(h) || Number.isNaN(m)) return "";
-		const nextHour = h + 1;
-		return `${String(nextHour).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+		const totalMinutes = h * 60 + m + 20;
+		const endHour = Math.floor(totalMinutes / 60);
+		const endMinute = totalMinutes % 60;
+		return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(
+			2,
+			"0",
+		)}:00`;
 	};
 
 	const submitDisponibilidad = async (payload: {
@@ -508,7 +523,7 @@ const CalendarioPage = () => {
 					</p>
 				</div>
 
-				<div className="rounded-2xl bg-paper p-4 shadow-sm">
+				<div className="rounded-2xl bg-paper p-4 shadow-sm max-h-[70vh] overflow-y-auto">
 					<CalendarHeader
 						weekRangeLabel={weekRangeLabel}
 						onPrevWeek={() => {

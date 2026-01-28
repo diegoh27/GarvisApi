@@ -132,7 +132,7 @@ const FormularioPago = ({
 		// Comprimir imagen antes de subir
 		try {
 			setUploadingImage(true);
-			
+
 			const options = {
 				maxSizeMB: 0.15, // Objetivo: máximo 150KB (entre 100-200KB)
 				maxWidthOrHeight: 1920, // Redimensionar si es muy grande
@@ -142,12 +142,12 @@ const FormularioPago = ({
 			};
 
 			const compressedFile = await imageCompression(file, options);
-			
+
 			// Mostrar información de compresión
 			const originalSize = (file.size / 1024).toFixed(0);
 			const compressedSize = (compressedFile.size / 1024).toFixed(0);
 			const reduction = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
-			
+
 			console.log(`Imagen comprimida: ${originalSize}KB → ${compressedSize}KB (${reduction}% reducción)`);
 
 			setSelectedImage(compressedFile);
@@ -212,7 +212,7 @@ const FormularioPago = ({
 		// Comprimir imagen antes de subir
 		try {
 			setUploadingOrdenMedica(true);
-			
+
 			const options = {
 				maxSizeMB: 0.15, // Objetivo: máximo 150KB (entre 100-200KB)
 				maxWidthOrHeight: 1920, // Redimensionar si es muy grande
@@ -222,12 +222,12 @@ const FormularioPago = ({
 			};
 
 			const compressedFile = await imageCompression(file, options);
-			
+
 			// Mostrar información de compresión
 			const originalSize = (file.size / 1024).toFixed(0);
 			const compressedSize = (compressedFile.size / 1024).toFixed(0);
 			const reduction = ((1 - compressedFile.size / file.size) * 100).toFixed(0);
-			
+
 			console.log(`Orden médica comprimida: ${originalSize}KB → ${compressedSize}KB (${reduction}% reducción)`);
 
 			setSelectedOrdenMedica(compressedFile);
@@ -624,7 +624,7 @@ const FormularioPago = ({
 			{/* Imagen del comprobante */}
 			<div>
 				<label className="block text-sm font-medium text-brand-900 mb-1">
-					Imagen del comprobante (opcional)
+					Imagen del comprobante *
 				</label>
 				{!formData.imagen && !imagePreview ? (
 					<div>
