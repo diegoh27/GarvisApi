@@ -101,7 +101,7 @@ const listPacientesController = async ({ q }) => {
       p.contacto_emergencia_telefono
     FROM paciente p
     INNER JOIN usuario u ON u.id_usuario = p.id_paciente
-    WHERE 1=1
+    WHERE u.activo = 1
   `;
 	const params = [];
 	if (q) {

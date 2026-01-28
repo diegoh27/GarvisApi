@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const {
 	createCitaHandler,
+	asignarCitaCompletaHandler,
 	listCitasByPacienteHandler,
 	listMisCitasCompletasHandler,
 	listCitasByEspecialistaHandler,
@@ -17,6 +18,7 @@ const {
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
+const { uploadOrdenMedica, uploadOrdenMedicaHandler } = require("../handlers/uploadHandlers");
 
 const citasRoutes = Router();
 
@@ -26,6 +28,21 @@ citasRoutes.post(
 	authenticateToken,
 	authorizeRoles("paciente"),
 	createCitaHandler,
+);
+// POST /citas/asignar (admin/moderador) - Asignar cita completa con pago y resultado
+citasRoutes.post(
+	"/asignar",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	asignarCitaCompletaHandler,
+);
+// POST /citas/upload-orden-medica (admin/moderador/paciente) - Subir orden médica
+citasRoutes.post(
+	"/upload-orden-medica",
+	authenticateToken,
+	authorizeRoles("moderador", "admin", "paciente"),
+	uploadOrdenMedica,
+	uploadOrdenMedicaHandler,
 );
 // GET /citas/paciente/:id (admin/moderador)
 citasRoutes.get(

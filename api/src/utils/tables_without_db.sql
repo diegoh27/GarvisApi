@@ -471,6 +471,7 @@ CREATE TABLE IF NOT EXISTS prueba (
   correo_electronico VARCHAR(150) NULL,
   cantidad INT NOT NULL DEFAULT 10,
   precio DECIMAL(10,2) NULL,
+  orden_medica VARCHAR(255) NULL,
   
   PRIMARY KEY (id_prueba),
   KEY idx_prueba_id_usuario (id_usuario),

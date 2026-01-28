@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TimeOption } from "./types";
 import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../features/ecos/ecosApi";
 import { useAuth } from "../../shared";
@@ -6,14 +7,14 @@ import { useAuth } from "../../shared";
 type DisponibilidadFormProps = {
 	fecha: string;
 	horaInicio: string;
-	idEco: string;
+	idEcos: string[];
 	minFecha: string;
 	timeOptions: TimeOption[];
 	error: string | null;
 	submitStatus: "idle" | "loading" | "done";
 	onFechaChange: (value: string) => void;
 	onHoraInicioChange: (value: string) => void;
-	onIdEcoChange: (value: string) => void;
+	onIdEcosChange: (value: string[]) => void;
 	onSubmit: (event: FormEvent) => void;
 	onCancel?: () => void;
 };
@@ -21,14 +22,14 @@ type DisponibilidadFormProps = {
 const DisponibilidadForm = ({
 	fecha,
 	horaInicio,
-	idEco,
+	idEcos,
 	minFecha,
 	timeOptions,
 	error,
 	submitStatus,
 	onFechaChange,
 	onHoraInicioChange,
-	onIdEcoChange,
+	onIdEcosChange,
 	onSubmit,
 	onCancel,
 }: DisponibilidadFormProps) => {
@@ -37,14 +38,65 @@ const DisponibilidadForm = ({
 	const idEspecialista = user?.id_usuario || "";
 
 	// Si es especialista, obtener solo sus ecos asignados; si es admin/moderador, todos los ecos
-	const { data: ecosEspecialista = [], isLoading: loadingEcosEspecialista } = 
+	const { data: ecosEspecialista = [], isLoading: loadingEcosEspecialista } =
 		useGetEcosByEspecialistaQuery(idEspecialista, { skip: !isEspecialista || !idEspecialista });
-	const { data: ecosTodos = [], isLoading: loadingEcosTodos } = 
+	const { data: ecosTodos = [], isLoading: loadingEcosTodos } =
 		useGetEcosQuery(undefined, { skip: isEspecialista });
 
 	// Usar los ecos correspondientes según el rol
 	const ecos = isEspecialista ? ecosEspecialista : ecosTodos;
 	const loadingEcos = isEspecialista ? loadingEcosEspecialista : loadingEcosTodos;
+
+	// Dropdown estilo creación de especialista (admin)
+	const [isEcosDropdownOpen, setIsEcosDropdownOpen] = useState(false);
+	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">("bottom");
+	const ecosDropdownRef = useRef<HTMLDivElement | null>(null);
+	const ecosButtonRef = useRef<HTMLButtonElement | null>(null);
+
+	const toggleEco = (idEco: string) => {
+		const isSelected = idEcos.includes(idEco);
+		if (isSelected) {
+			onIdEcosChange(idEcos.filter((id) => id !== idEco));
+		} else {
+			onIdEcosChange([...idEcos, idEco]);
+		}
+	};
+
+	const handleToggleDropdown = () => {
+		if (!isEcosDropdownOpen && ecosButtonRef.current) {
+			const rect = ecosButtonRef.current.getBoundingClientRect();
+			const spaceBelow = window.innerHeight - rect.bottom;
+			const spaceAbove = rect.top;
+			const dropdownHeight = 240;
+
+			if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+				setDropdownPosition("top");
+			} else {
+				setDropdownPosition("bottom");
+			}
+		}
+		setIsEcosDropdownOpen((prev) => !prev);
+	};
+
+	// Cerrar dropdown al hacer click fuera
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				ecosDropdownRef.current &&
+				!ecosDropdownRef.current.contains(event.target as Node)
+			) {
+				setIsEcosDropdownOpen(false);
+			}
+		};
+
+		if (isEcosDropdownOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [isEcosDropdownOpen]);
 
 	return (
 		<div className="rounded-2xl bg-paper p-4 shadow-sm">
@@ -84,24 +136,74 @@ const DisponibilidadForm = ({
 					<label className="font-semibold">
 						Tipo de eco <span className="text-red-500">*</span>
 					</label>
-					<select
-						required
-						value={idEco}
-						onChange={(event) => onIdEcoChange(event.target.value)}
-						disabled={loadingEcos}
-						className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 disabled:opacity-50"
-					>
-						<option value="">
-							{loadingEcos ? "Cargando..." : "Selecciona un eco"}
-						</option>
-						{ecos
-							.filter((eco) => eco.activo === 1)
-							.map((eco) => (
-								<option key={eco.id_eco} value={eco.id_eco}>
-									{eco.nombre}
-								</option>
-							))}
-					</select>
+					<div className="relative" ref={ecosDropdownRef}>
+						<button
+							type="button"
+							ref={ecosButtonRef}
+							onClick={handleToggleDropdown}
+							disabled={loadingEcos}
+							className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-left text-xs outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between"
+						>
+							<span className="truncate">
+								{loadingEcos
+									? "Cargando ecos..."
+									: idEcos.length === 0
+										? "Selecciona los ecos"
+										: idEcos.length === 1
+											? "1 eco seleccionado"
+											: `${idEcos.length} ecos seleccionados`}
+							</span>
+							<span className="ml-2 text-[10px] text-brand-600">
+								{isEcosDropdownOpen ? "▲" : "▼"}
+							</span>
+						</button>
+						{isEcosDropdownOpen && (
+							<div
+								className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+									}`}
+							>
+								{loadingEcos ? (
+									<div className="p-3 text-xs text-brand-600">Cargando ecos...</div>
+								) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
+									<div className="p-3 text-xs text-brand-600">
+										No hay ecos disponibles
+									</div>
+								) : (
+									<div className="p-1">
+										{ecos
+											.filter((eco) => eco.activo === 1)
+											.map((eco) => {
+												const isSelected = idEcos.includes(eco.id_eco);
+												return (
+													<button
+														key={eco.id_eco}
+														type="button"
+														onClick={() => toggleEco(eco.id_eco)}
+														className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
+															}`}
+													>
+														<div
+															className={`flex h-3 w-3 items-center justify-center rounded border ${isSelected
+																	? "border-brand-700 bg-brand-700"
+																	: "border-brand-300 bg-paper"
+																}`}
+														>
+															{isSelected && (
+																<span className="block h-2 w-2 rounded-sm bg-paper" />
+															)}
+														</div>
+														<span className="flex-1 text-left">{eco.nombre}</span>
+													</button>
+												);
+											})}
+									</div>
+								)}
+							</div>
+						)}
+					</div>
+					<p className="text-[10px] text-brand-700">
+						Puedes seleccionar uno o varios ecos desde el desplegable.
+					</p>
 				</div>
 				{error ? (
 					<p className="text-[11px] font-semibold text-brand-900">{error}</p>
@@ -119,9 +221,8 @@ const DisponibilidadForm = ({
 					<button
 						type="submit"
 						disabled={submitStatus === "loading"}
-						className={`rounded-full bg-brand-700 px-3 py-2 text-xs font-semibold text-paper disabled:opacity-60 ${
-							onCancel ? "flex-1" : "w-full"
-						}`}
+						className={`rounded-full bg-brand-700 px-3 py-2 text-xs font-semibold text-paper disabled:opacity-60 ${onCancel ? "flex-1" : "w-full"
+							}`}
 					>
 						{submitStatus === "loading" ? "Enviando..." : "Enviar solicitud"}
 					</button>

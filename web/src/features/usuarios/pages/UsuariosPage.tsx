@@ -165,7 +165,7 @@ const UsuariosPage = () => {
 		>
 			<div className="space-y-4">
 				{/* Filtros */}
-				<div className="rounded-lg border border-brand-200 bg-paper p-4">
+				<div className="rounded-lg border border-brand-300 bg-paper p-4">
 					<div className="flex flex-col gap-3 sm:flex-row">
 						<select
 							value={filtroRol}
@@ -192,14 +192,14 @@ const UsuariosPage = () => {
 							type="text"
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Buscar por nombre, correo o cédula..."
+							placeholder="Buscar por cédula, nombre, apellido o correo..."
 							className="h-10 flex-1 rounded-lg border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 						/>
 					</div>
 				</div>
 
-				{/* Tabla */}
-				<div className="rounded-lg border border-brand-200 bg-paper overflow-hidden">
+				{/* Lista de usuarios */}
+				<div className="rounded-lg border border-brand-200 bg-paper">
 					{isLoading ? (
 						<div className="p-8 text-center text-brand-600">
 							Cargando usuarios...
@@ -210,8 +210,9 @@ const UsuariosPage = () => {
 						</div>
 					) : (
 						<>
-							<div className="overflow-x-auto">
-								<table className="w-full">
+							{/* Versión tabla - solo escritorio/tablet */}
+							<div className="hidden md:block overflow-x-auto">
+								<table className="min-w-[900px] w-full">
 									<thead className="bg-cloud border-b border-mist">
 										<tr>
 											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
@@ -282,11 +283,10 @@ const UsuariosPage = () => {
 															type="button"
 															onClick={() => handleToggleActive(usuario)}
 															disabled={isToggling}
-															className={`rounded-lg p-1.5 transition-colors ${
-																usuario.activo === 1
-																	? "text-red-600 hover:bg-red-50"
-																	: "text-green-600 hover:bg-green-50"
-															}`}
+															className={`rounded-lg p-1.5 transition-colors ${usuario.activo === 1
+																? "text-red-600 hover:bg-red-50"
+																: "text-green-600 hover:bg-green-50"
+																}`}
 															title={usuario.activo === 1 ? "Desactivar" : "Activar"}
 														>
 															{usuario.activo === 1 ? (
@@ -303,12 +303,89 @@ const UsuariosPage = () => {
 								</table>
 							</div>
 
+							{/* Versión cards - solo móvil */}
+							<div className="block divide-y divide-mist md:hidden">
+								{paginatedUsuarios.map((usuario) => (
+									<div
+										key={usuario.id_usuario}
+										className="p-4 space-y-2 hover:bg-cloud/60 transition-colors"
+									>
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<p className="text-sm font-semibold text-brand-900">
+													{usuario.nombre} {usuario.apellido}
+												</p>
+												<p className="text-xs text-brand-700">
+													CI: <span className="font-medium">{usuario.cedula}</span>
+												</p>
+												<p className="text-xs text-brand-700 truncate max-w-[230px]">
+													Correo:{" "}
+													<span className="font-medium break-all">{usuario.correo}</span>
+												</p>
+											</div>
+											<div className="flex flex-col items-end gap-1">
+												<span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">
+													{usuario.rol.charAt(0).toUpperCase() + usuario.rol.slice(1)}
+												</span>
+												{usuario.activo === 1 ? (
+													<span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
+														Activo
+													</span>
+												) : (
+													<span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700">
+														Desactivado
+													</span>
+												)}
+											</div>
+										</div>
+
+										<div className="flex items-center justify-between pt-1">
+											<p className="text-[11px] text-brand-700">
+												Registrado:{" "}
+												<span className="font-medium">
+													{formatFecha(usuario.fecha_registro)}
+												</span>
+											</p>
+											<div className="flex items-center gap-2">
+												<button
+													type="button"
+													onClick={() => handleEdit(usuario)}
+													className="rounded-full border border-mist bg-paper p-1.5 text-brand-600 hover:bg-brand-50 transition-colors"
+													title="Editar"
+												>
+													<Edit className="h-4 w-4" />
+												</button>
+												<button
+													type="button"
+													onClick={() => handleToggleActive(usuario)}
+													disabled={isToggling}
+													className={`rounded-full border border-mist bg-paper p-1.5 transition-colors ${usuario.activo === 1
+														? "text-red-600 hover:bg-red-50"
+														: "text-green-600 hover:bg-green-50"
+														}`}
+													title={usuario.activo === 1 ? "Desactivar" : "Activar"}
+												>
+													{usuario.activo === 1 ? (
+														<X className="h-4 w-4" />
+													) : (
+														<Check className="h-4 w-4" />
+													)}
+												</button>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+
 							{/* Paginación */}
 							{filteredUsuarios.length > itemsPerPage && (
-								<div className="flex items-center justify-between border-t border-mist bg-cloud px-4 py-3">
-									<p className="text-xs text-brand-800">
-										Mostrando {paginatedUsuarios.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-										{Math.min(currentPage * itemsPerPage, filteredUsuarios.length)} de{" "}
+								<div className="flex flex-col gap-2 border-t border-mist bg-cloud px-4 py-3 text-xs text-brand-800 sm:flex-row sm:items-center sm:justify-between">
+									<p>
+										Mostrando{" "}
+										{paginatedUsuarios.length > 0
+											? (currentPage - 1) * itemsPerPage + 1
+											: 0}{" "}
+										- {Math.min(currentPage * itemsPerPage, filteredUsuarios.length)} de{" "}
 										{filteredUsuarios.length} usuarios
 									</p>
 									<div className="flex items-center gap-2">
@@ -320,7 +397,7 @@ const UsuariosPage = () => {
 										>
 											Anterior
 										</button>
-										<span className="text-xs text-brand-800">
+										<span>
 											Página {currentPage} de {totalPages}
 										</span>
 										<button
@@ -351,7 +428,7 @@ const UsuariosPage = () => {
 					/>
 				)}
 			</div>
-		</PageShell>
+		</PageShell >
 	);
 };
 
@@ -375,7 +452,7 @@ type EditUserModalProps = {
 
 const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalProps) => {
 	const isEspecialista = usuario.rol === "especialista";
-	
+
 	// Obtener información adicional del especialista
 	const { data: especialistaData, isLoading: loadingEspecialista } = useGetEspecialistaByIdQuery(
 		usuario.id_usuario,
@@ -383,10 +460,10 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 	);
 
 	// Obtener ecos asignados y todos los ecos disponibles
-	const { data: ecosAsignados = [], isLoading: loadingEcosAsignados } = 
+	const { data: ecosAsignados = [], isLoading: loadingEcosAsignados } =
 		useGetEcosByEspecialistaQuery(usuario.id_usuario, { skip: !isEspecialista });
 	const { data: todosEcos = [], isLoading: loadingTodosEcos } = useGetEcosQuery(undefined, { skip: !isEspecialista });
-	const { data: especialidades = [], isLoading: loadingEspecialidades } = 
+	const { data: especialidades = [], isLoading: loadingEspecialidades } =
 		useGetEspecialidadesQuery(undefined, { skip: !isEspecialista });
 
 	const [isEcosDropdownOpen, setIsEcosDropdownOpen] = useState(false);
@@ -473,7 +550,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 			const spaceBelow = window.innerHeight - rect.bottom;
 			const spaceAbove = rect.top;
 			const dropdownHeight = 240;
-			
+
 			if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
 				setDropdownPosition("top");
 			} else {
@@ -492,14 +569,14 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 	const loadingEcos = loadingTodosEcos || loadingEcosAsignados;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="w-full max-w-2xl rounded-lg bg-paper shadow-lg">
-				<div className="border-b border-mist p-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+			<div className="w-full max-w-sm sm:max-w-2xl rounded-lg bg-paper shadow-lg max-h-[90vh] overflow-y-auto">
+				<div className="border-b border-mist p-3 sm:p-4">
 					<h2 className="text-lg font-semibold text-brand-900">
 						Editar usuario: {usuario.nombre} {usuario.apellido}
 					</h2>
 				</div>
-				<form onSubmit={handleSubmit} className="p-4 space-y-4">
+				<form onSubmit={handleSubmit} className="p-3 space-y-4 sm:p-4">
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
 							<label className="mb-1 block text-sm font-medium text-brand-700">
@@ -651,22 +728,20 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 											{loadingEcos
 												? "Cargando ecos..."
 												: form.id_ecos.length === 0
-												? "Selecciona los ecos"
-												: form.id_ecos.length === 1
-												? "1 eco seleccionado"
-												: `${form.id_ecos.length} ecos seleccionados`}
+													? "Selecciona los ecos"
+													: form.id_ecos.length === 1
+														? "1 eco seleccionado"
+														: `${form.id_ecos.length} ecos seleccionados`}
 										</span>
 										<ChevronDown
-											className={`h-4 w-4 text-brand-600 transition-transform ${
-												isEcosDropdownOpen ? "rotate-180" : ""
-											}`}
+											className={`h-4 w-4 text-brand-600 transition-transform ${isEcosDropdownOpen ? "rotate-180" : ""
+												}`}
 										/>
 									</button>
 									{isEcosDropdownOpen && (
 										<div
-											className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${
-												dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
-											}`}
+											className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+												}`}
 										>
 											{loadingEcos ? (
 												<div className="p-3 text-sm text-brand-600">Cargando ecos...</div>
@@ -683,16 +758,14 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 																	key={eco.id_eco}
 																	type="button"
 																	onClick={() => toggleEco(eco.id_eco)}
-																	className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-brand-50 transition-colors ${
-																		isSelected ? "bg-brand-50" : ""
-																	}`}
+																	className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
+																		}`}
 																>
 																	<div
-																		className={`flex h-4 w-4 items-center justify-center rounded border ${
-																			isSelected
-																				? "border-brand-700 bg-brand-700"
-																				: "border-brand-300 bg-paper"
-																		}`}
+																		className={`flex h-4 w-4 items-center justify-center rounded border ${isSelected
+																			? "border-brand-700 bg-brand-700"
+																			: "border-brand-300 bg-paper"
+																			}`}
 																	>
 																		{isSelected && <Check className="h-3 w-3 text-paper" />}
 																	</div>

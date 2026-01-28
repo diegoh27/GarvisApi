@@ -14,7 +14,7 @@ import VerResultadosModal from "../components/VerResultadosModal";
 import VerPagoModal from "../components/VerPagoModal";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import PosponerCitaModal from "../components/PosponerCitaModal";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Eye } from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
 const formatFecha = (value: string) => {
@@ -94,7 +94,7 @@ const TodasLasCitasPage = () => {
 	const [selectedCitaForUpload, setSelectedCitaForUpload] = useState<CitaCompleta | null>(null);
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
-	
+
 	// Obtener datos del pago cuando se selecciona una cita
 	const {
 		data: pagoData,
@@ -108,6 +108,7 @@ const TodasLasCitasPage = () => {
 	const [filterResultado, setFilterResultado] = useState("todas");
 	const [filterInforme, setFilterInforme] = useState("todas");
 	const [ordenFecha, setOrdenFecha] = useState<"reciente" | "antigua">("reciente");
+	const [query, setQuery] = useState("");
 	const itemsPerPage = 10;
 
 	// Obtener datos completos de la cita cuando se selecciona para ver
@@ -139,9 +140,30 @@ const TodasLasCitasPage = () => {
 		{ id: "sin-informe", label: "Sin informe" },
 	];
 
-	// Filtrar citas según los filtros seleccionados
+	// Filtrar citas según los filtros seleccionados y búsqueda
 	const filteredCitas = useMemo(() => {
 		let citasFiltradas = citas;
+
+		// Filtro por búsqueda
+		if (query.trim()) {
+			const searchLower = query.toLowerCase().trim();
+			citasFiltradas = citasFiltradas.filter((cita) => {
+				const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
+				const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`.toLowerCase();
+				return (
+					fullName.includes(searchLower) ||
+					cita.paciente_nombre.toLowerCase().includes(searchLower) ||
+					cita.paciente_apellido.toLowerCase().includes(searchLower) ||
+					cita.paciente_cedula.toLowerCase().includes(searchLower) ||
+					(cita.paciente_correo && cita.paciente_correo.toLowerCase().includes(searchLower)) ||
+					cita.paciente_telefono.toLowerCase().includes(searchLower) ||
+					especialistaFullName.includes(searchLower) ||
+					cita.especialista_nombre.toLowerCase().includes(searchLower) ||
+					cita.especialista_apellido.toLowerCase().includes(searchLower) ||
+					cita.eco_nombre.toLowerCase().includes(searchLower)
+				);
+			});
+		}
 
 		// Filtro por estado de pago o canceladas
 		if (filterPago !== "todas") {
@@ -187,24 +209,24 @@ const TodasLasCitasPage = () => {
 			const fechaBStr = b.fecha_cita.includes("T") ? b.fecha_cita.split("T")[0] : b.fecha_cita;
 			const horaAStr = a.hora_cita || "00:00:00";
 			const horaBStr = b.hora_cita || "00:00:00";
-			
+
 			// Asegurar formato correcto de hora (HH:MM:SS)
 			const horaA = horaAStr.length === 5 ? `${horaAStr}:00` : horaAStr;
 			const horaB = horaBStr.length === 5 ? `${horaBStr}:00` : horaBStr;
-			
+
 			// Crear objetos Date para comparar
 			const fechaA = new Date(`${fechaAStr}T${horaA}`);
 			const fechaB = new Date(`${fechaBStr}T${horaB}`);
-			
+
 			// Si alguna fecha es inválida, mantener el orden original
 			if (Number.isNaN(fechaA.getTime()) || Number.isNaN(fechaB.getTime())) {
 				return 0;
 			}
-			
+
 			// Comparar fechas
 			const timeA = fechaA.getTime();
 			const timeB = fechaB.getTime();
-			
+
 			// Más reciente primero: orden descendente (timeB - timeA)
 			// Más antigua primero: orden ascendente (timeA - timeB)
 			if (ordenFecha === "reciente") {
@@ -217,7 +239,7 @@ const TodasLasCitasPage = () => {
 		});
 
 		return citasFiltradas;
-	}, [citas, filterPago, filterResultado, filterInforme, ordenFecha, filterOptionsPago]);
+	}, [citas, filterPago, filterResultado, filterInforme, ordenFecha, filterOptionsPago, query]);
 
 	// Paginación
 	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
@@ -226,10 +248,10 @@ const TodasLasCitasPage = () => {
 		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
 	}, [filteredCitas, currentPage, itemsPerPage]);
 
-	// Resetear a página 1 cuando cambian los datos o los filtros
+	// Resetear a página 1 cuando cambian los datos, los filtros o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filterPago, filterResultado, filterInforme, ordenFecha]);
+	}, [citas.length, filterPago, filterResultado, filterInforme, ordenFecha, query]);
 
 	const handleAprobarPago = async (id_cita: string) => {
 		const confirmResult = await Swal.fire({
@@ -357,23 +379,16 @@ const TodasLasCitasPage = () => {
 		}
 	};
 
-	const handleDownloadOrden = (orden: string, nombre: string) => {
-		if (!orden) return;
-		try {
-			const link = document.createElement("a");
-			link.href = orden;
-			link.download = `${nombre}-orden.pdf`;
-			link.target = "_blank";
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-		} catch (error) {
+	const handleViewOrdenMedica = (orden: string | null) => {
+		if (!orden) {
 			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "No se pudo descargar la orden",
+				icon: "warning",
+				title: "Sin orden médica",
+				text: "Esta cita no tiene orden médica disponible.",
 			});
+			return;
 		}
+		window.open(orden, "_blank", "noopener,noreferrer");
 	};
 
 	const handleViewInforme = (informePdfUrl: string | null) => {
@@ -450,6 +465,17 @@ const TodasLasCitasPage = () => {
 			description="Vista general de todas las citas. Filtrar por estado de pago, resultados e informes."
 		>
 			<div className="space-y-4">
+				{/* Barra de búsqueda */}
+				<div className="rounded-lg border border-brand-300 bg-paper p-4">
+					<input
+						type="text"
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Buscar por nombre, apellido, cédula, correo, teléfono, especialista o eco..."
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
+				</div>
+
 				{/* Filtros */}
 				<div className="space-y-3">
 					<div>
@@ -459,11 +485,10 @@ const TodasLasCitasPage = () => {
 								<button
 									key={option.id}
 									onClick={() => setFilterPago(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-										filterPago === option.id
+									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterPago === option.id
 											? "bg-brand-700 text-paper"
 											: "bg-cloud text-brand-800 hover:bg-mist"
-									}`}
+										}`}
 								>
 									{option.label}
 								</button>
@@ -477,11 +502,10 @@ const TodasLasCitasPage = () => {
 								<button
 									key={option.id}
 									onClick={() => setFilterResultado(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-										filterResultado === option.id
+									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterResultado === option.id
 											? "bg-brand-700 text-paper"
 											: "bg-cloud text-brand-800 hover:bg-mist"
-									}`}
+										}`}
 								>
 									{option.label}
 								</button>
@@ -495,11 +519,10 @@ const TodasLasCitasPage = () => {
 								<button
 									key={option.id}
 									onClick={() => setFilterInforme(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-										filterInforme === option.id
+									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterInforme === option.id
 											? "bg-brand-700 text-paper"
 											: "bg-cloud text-brand-800 hover:bg-mist"
-									}`}
+										}`}
 								>
 									{option.label}
 								</button>
@@ -511,21 +534,19 @@ const TodasLasCitasPage = () => {
 						<div className="flex flex-wrap gap-2">
 							<button
 								onClick={() => setOrdenFecha("reciente")}
-								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-									ordenFecha === "reciente"
+								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "reciente"
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
-								}`}
+									}`}
 							>
 								Más reciente primero
 							</button>
 							<button
 								onClick={() => setOrdenFecha("antigua")}
-								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-									ordenFecha === "antigua"
+								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "antigua"
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
-								}`}
+									}`}
 							>
 								Más antigua primero
 							</button>
@@ -540,7 +561,7 @@ const TodasLasCitasPage = () => {
 				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							No hay citas {filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" ? `con los filtros seleccionados` : ""}.
+							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" ? `con los filtros seleccionados` : ""}.`}
 						</p>
 					</div>
 				) : (
@@ -700,16 +721,17 @@ const TodasLasCitasPage = () => {
 														Sin informe
 													</span>
 												)}
-												{cita.orden && (
+												{/* Botón "Ver orden médica" comentado - ya está disponible en el modal de cita */}
+												{/* {cita.orden && (
 													<button
 														type="button"
-														onClick={() => handleDownloadOrden(cita.orden, fullName)}
+														onClick={() => handleViewOrdenMedica(cita.orden)}
 														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
 													>
-														<Download className="h-4 w-4" />
-														Ver orden
+														<Eye className="h-4 w-4" />
+														Ver orden médica
 													</button>
-												)}
+												)} */}
 												{cita.estado_cita !== 2 && cita.estado_cita !== 3 && (
 													<>
 														<button

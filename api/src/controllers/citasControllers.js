@@ -13,7 +13,7 @@ const createCitaFromDisponibilidadController = async ({
 		await conn.beginTransaction();
 
 		const [rows] = await conn.execute(
-			`SELECT id_especialista, fecha, hora_inicio, estado
+			`SELECT id_especialista, fecha, hora_inicio, hora_fin, estado
        FROM disponibilidad
        WHERE id_disponibilidad = ?
        FOR UPDATE`,
@@ -65,9 +65,29 @@ const createCitaFromDisponibilidadController = async ({
 			id_disponibilidad,
 		]);
 
+		// Marcar la disponibilidad usada como "cita"
 		await conn.execute(
 			"UPDATE disponibilidad SET estado = 4 WHERE id_disponibilidad = ?",
 			[id_disponibilidad],
+		);
+
+		// Bloquear (cancelar) otros bloques del mismo especialista en la misma franja horaria
+		// para evitar que se reserven ecos distintos en el mismo horario.
+		await conn.execute(
+			`UPDATE disponibilidad
+       SET estado = 3
+       WHERE id_especialista = ?
+         AND fecha = ?
+         AND estado IN (0, 1)
+         AND NOT (hora_fin <= ? OR hora_inicio >= ?)
+         AND id_disponibilidad <> ?`,
+			[
+				bloque.id_especialista,
+				bloque.fecha,
+				bloque.hora_inicio,
+				bloque.hora_fin,
+				id_disponibilidad,
+			],
 		);
 
 		await conn.commit();
@@ -186,6 +206,7 @@ const listCitasByEspecialistaController = async (id_especialista) => {
       u.apellido AS paciente_apellido,
       u.telefono AS paciente_telefono,
       u.cedula AS paciente_cedula,
+      u.correo AS paciente_correo,
       p.tipo_sangre AS paciente_tipo_sangre,
       p.contacto_emergencia_nombre AS paciente_contacto_nombre,
       p.contacto_emergencia_telefono AS paciente_contacto_telefono,
@@ -222,13 +243,15 @@ const cancelCitaController = async ({ id_cita }) => {
 			throw err;
 		}
 
-		await conn.execute(
-			"UPDATE cita SET estado_cita = 2 WHERE id_cita = ?",
-			[id_cita],
-		);
+		await conn.execute("UPDATE cita SET estado_cita = 2 WHERE id_cita = ?", [
+			id_cita,
+		]);
 
 		const { id_disponibilidad, fecha_cita } = rows[0];
-		if (id_disponibilidad && fecha_cita >= new Date().toISOString().slice(0, 10)) {
+		if (
+			id_disponibilidad &&
+			fecha_cita >= new Date().toISOString().slice(0, 10)
+		) {
 			await conn.execute(
 				"UPDATE disponibilidad SET estado = 1 WHERE id_disponibilidad = ? AND estado = 4",
 				[id_disponibilidad],
@@ -279,10 +302,9 @@ const markCitaAtendidaController = async ({ id_cita, id_especialista }) => {
 			throw err;
 		}
 
-		await conn.execute(
-			"UPDATE cita SET estado_cita = 3 WHERE id_cita = ?",
-			[id_cita],
-		);
+		await conn.execute("UPDATE cita SET estado_cita = 3 WHERE id_cita = ?", [
+			id_cita,
+		]);
 
 		await conn.commit();
 		return { id_cita, estado_cita: 3 };
@@ -364,7 +386,11 @@ const listCitasConPagosController = async () => {
 };
 
 // Aprobar o rechazar pago de una cita
-const updateEstadoPagoController = async ({ id_cita, estado_pago, aprobado_por }) => {
+const updateEstadoPagoController = async ({
+	id_cita,
+	estado_pago,
+	aprobado_por,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -383,7 +409,9 @@ const updateEstadoPagoController = async ({ id_cita, estado_pago, aprobado_por }
 		}
 		const cita = rows[0];
 		if (cita.estado_cita === 2) {
-			const err = new Error("No se puede actualizar el pago de una cita cancelada");
+			const err = new Error(
+				"No se puede actualizar el pago de una cita cancelada",
+			);
 			err.code = "INVALID_STATE";
 			throw err;
 		}
@@ -664,8 +692,161 @@ const getAllCitasController = async () => {
 	return rows;
 };
 
+// Asignar cita completa: crear cita + pago + resultado en una transacción
+const asignarCitaCompletaController = async ({
+	id_paciente,
+	id_representado,
+	id_eco,
+	id_especialista,
+	id_disponibilidad,
+	orden,
+	aprobado_por, // ID del admin/moderador que está asignando
+	// Datos del pago
+	metodo,
+	imagen,
+	banco_origen,
+	banco_destino,
+	monto,
+	cedula_pagador,
+	telefono_pagador,
+	referencia,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// 1. Verificar y obtener disponibilidad
+		const [dispRows] = await conn.execute(
+			`SELECT id_especialista, fecha, hora_inicio, estado, id_eco
+       FROM disponibilidad
+       WHERE id_disponibilidad = ?
+       FOR UPDATE`,
+			[id_disponibilidad],
+		);
+		if (!dispRows.length) {
+			const err = new Error("Disponibilidad no encontrada");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const disponibilidad = dispRows[0];
+
+		// Si la disponibilidad está pendiente (estado 0), aprobarla
+		if (disponibilidad.estado === 0) {
+			await conn.execute(
+				"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
+				[aprobado_por, id_disponibilidad],
+			);
+		} else if (disponibilidad.estado !== 1) {
+			const err = new Error("Disponibilidad no disponible");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		// Verificar que el especialista tenga este eco
+		const [ecoEspecialistaRows] = await conn.execute(
+			"SELECT id_especialista FROM especialista_eco WHERE id_especialista = ? AND id_eco = ?",
+			[id_especialista, id_eco],
+		);
+		if (!ecoEspecialistaRows.length) {
+			const err = new Error("El especialista no tiene este eco disponible");
+			err.code = "ECO_NOT_AVAILABLE";
+			throw err;
+		}
+
+		// Obtener precio del eco
+		const [ecoRows] = await conn.execute(
+			"SELECT precio FROM eco WHERE id_eco = ?",
+			[id_eco],
+		);
+		if (!ecoRows.length) {
+			const err = new Error("Eco no encontrado");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const ecoPrecio = ecoRows[0].precio;
+
+		// 2. Crear la cita
+		const id_cita = crypto.randomUUID();
+		const sqlCita = `
+      INSERT INTO cita
+        (id_cita, id_paciente, id_representado, id_especialista, id_eco, fecha_cita, hora_cita, orden, id_disponibilidad, estado_cita, estado_pago)
+      VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+    `;
+		await conn.execute(sqlCita, [
+			id_cita,
+			id_paciente,
+			id_representado ?? null,
+			id_especialista,
+			id_eco,
+			disponibilidad.fecha,
+			disponibilidad.hora_inicio,
+			orden || "", // orden no puede ser null, usar string vacío si no se proporciona
+			id_disponibilidad,
+		]);
+
+		// 3. Actualizar disponibilidad a ocupada
+		await conn.execute(
+			"UPDATE disponibilidad SET estado = 4 WHERE id_disponibilidad = ?",
+			[id_disponibilidad],
+		);
+
+		// 4. Crear el pago
+		const id_pago = crypto.randomUUID();
+		const sqlPago = `
+      INSERT INTO pagos
+        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago)
+      VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `;
+		await conn.execute(sqlPago, [
+			id_pago,
+			id_cita,
+			id_paciente,
+			metodo,
+			imagen || "",
+			banco_origen,
+			banco_destino,
+			monto,
+			cedula_pagador,
+			telefono_pagador,
+			referencia,
+		]);
+
+		// 5. Crear resultado vacío (estado 0: Pendiente)
+		const id_resultado = crypto.randomUUID();
+		const sqlResultado = `
+      INSERT INTO resultado
+        (id_resultado, id_cita, id_especialista, nombre, archivo, estado_resultado)
+      VALUES
+        (?, ?, ?, NULL, NULL, 0)
+    `;
+		await conn.execute(sqlResultado, [id_resultado, id_cita, id_especialista]);
+
+		await conn.commit();
+		return {
+			id_cita,
+			id_pago,
+			id_resultado,
+			id_paciente,
+			id_especialista,
+			id_eco,
+			fecha_cita: disponibilidad.fecha,
+			hora_cita: disponibilidad.hora_inicio,
+			monto,
+			eco_precio: ecoPrecio,
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	createCitaFromDisponibilidadController,
+	asignarCitaCompletaController,
 	listCitasByPacienteController,
 	listCitasCompletasByPacienteController,
 	listCitasByEspecialistaController,

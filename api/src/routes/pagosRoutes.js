@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const { getPagoByCitaHandler } = require("../handlers/pagosHandlers");
+const { uploadComprobantePago, uploadComprobantePagoHandler } = require("../handlers/uploadHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
 
@@ -11,6 +12,15 @@ pagosRoutes.get(
 	authenticateToken,
 	authorizeRoles("moderador", "admin", "paciente"),
 	getPagoByCitaHandler,
+);
+
+// POST /pagos/upload-comprobante (moderador/admin/paciente) - Subir imagen de comprobante de pago
+pagosRoutes.post(
+	"/upload-comprobante",
+	authenticateToken,
+	authorizeRoles("moderador", "admin", "paciente"),
+	uploadComprobantePago,
+	uploadComprobantePagoHandler,
 );
 
 module.exports = pagosRoutes;

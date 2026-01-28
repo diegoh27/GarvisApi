@@ -9,7 +9,7 @@ type HistorialModalProps = {
 	formatHora: (value: string) => string;
 	getEstadoLabel: (cita: CitaEspecialista) => string;
 	getResultadoLabel: (cita: CitaEspecialista) => string;
-	onDownload: (contenido: string, label: string) => void;
+	onDownload?: (contenido: string, label: string) => void; // Opcional, ya no se usa
 	onClose: () => void;
 };
 
@@ -86,7 +86,7 @@ const HistorialModal = ({
 								<th className="px-3 py-2">Eco</th>
 								<th className="px-3 py-2">Estado</th>
 								<th className="px-3 py-2">Resultado</th>
-								<th className="px-3 py-2 text-center">Orden</th>
+								<th className="px-3 py-2 text-center">Orden Médica</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -138,17 +138,14 @@ const HistorialModal = ({
 										<button
 											type="button"
 											disabled={!cita.orden}
-											onClick={() =>
-												cita.orden
-													? onDownload(
-															cita.orden,
-															`${paciente.name}-${cita.fecha_cita}-orden`,
-														)
-													: null
-											}
+											onClick={() => {
+												if (cita.orden) {
+													window.open(cita.orden, "_blank", "noopener,noreferrer");
+												}
+											}}
 											className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
 										>
-											Descargar
+											Ver
 										</button>
 									</td>
 								</tr>
