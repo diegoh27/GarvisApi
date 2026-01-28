@@ -90,12 +90,12 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	const [selectedEco, setSelectedEco] = useState<Eco | null>(null);
 	const [selectedEspecialista, setSelectedEspecialista] = useState<EspecialistaData | null>(null);
 	const [selectedDisponibilidad, setSelectedDisponibilidad] = useState<DisponibilidadItem | null>(null);
-	
+
 	// Archivo de imagen comprimido (para subir cuando se asigne la cita)
 	const [imagenComprimida, setImagenComprimida] = useState<File | null>(null);
 	// Archivo de orden médica comprimido (para subir cuando se asigne la cita)
 	const [ordenMedicaComprimida, setOrdenMedicaComprimida] = useState<File | null>(null);
-	
+
 	// Datos del formulario de pago
 	const [pagoData, setPagoData] = useState<PagoFormData>({
 		metodo: "Transferencia",
@@ -120,6 +120,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	});
 	const [aprobarDisponibilidad, { isLoading: isAprobando }] = useAprobarDisponibilidadMutation();
 	const [asignarCita, { isLoading: isAsignando }] = useAsignarCitaCompletaMutation();
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// Estado para almacenar los ecos de cada especialista
 	const [especialistasConEcos, setEspecialistasConEcos] = useState<Map<string, Eco[]>>(new Map());
@@ -131,19 +132,19 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 			setEspecialistasConEcos(new Map());
 			return;
 		}
-		
+
 		setLoadingEcosEspecialistas(true);
 		const loadEcos = async () => {
 			const ecosMap = new Map<string, Eco[]>();
 			const token = getToken();
 			const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-			
+
 			if (!token) {
 				console.error("No hay token de autenticación");
 				setLoadingEcosEspecialistas(false);
 				return;
 			}
-			
+
 			try {
 				const promises = especialistas.map(async (esp) => {
 					try {
@@ -153,7 +154,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 								"Content-Type": "application/json",
 							},
 						});
-						
+
 						if (response.ok) {
 							const data = await response.json();
 							const ecos = data.data || [];
@@ -183,15 +184,15 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	// Filtrar especialistas que tienen el eco seleccionado
 	const especialistasFiltrados = useMemo(() => {
 		if (!selectedEco) return [];
-		
+
 		// Si aún se están cargando los ecos, retornar array vacío para evitar mostrar error prematuro
 		if (loadingEcosEspecialistas) return [];
-		
+
 		// Si el mapa está vacío pero ya terminó de cargar, puede ser que no haya ecos o hubo un error
 		if (especialistasConEcos.size === 0 && especialistas.length > 0) {
 			console.warn("El mapa de ecos está vacío después de cargar");
 		}
-		
+
 		const filtrados = especialistas.filter((esp) => {
 			const ecos = especialistasConEcos.get(esp.id_especialista) || [];
 			// Comparación estricta de IDs
@@ -208,7 +209,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 			}
 			return tieneEco;
 		});
-		
+
 		console.log(`Total especialistas: ${especialistas.length}, Filtrados para ${selectedEco.nombre}: ${filtrados.length}`);
 		if (filtrados.length === 0 && especialistas.length > 0) {
 			console.warn("No se encontraron especialistas con el eco seleccionado. Verifica que los ecos estén asignados correctamente.");
@@ -217,25 +218,40 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	}, [especialistas, especialistasConEcos, selectedEco, loadingEcosEspecialistas]);
 
 	// Filtrar disponibilidades por el eco seleccionado
-	// Mostrar TODAS las disponibilidades del especialista que tengan el mismo eco o sean genéricas (sin eco)
+	// Mostrar TODAS las disponibilidades futuras del especialista que tengan el mismo eco o sean genéricas (sin eco)
 	const disponibilidadesFiltradas = useMemo(() => {
 		if (!selectedEco || !selectedEspecialista) return [];
-		
+
 		// Si no hay disponibilidades, retornar array vacío
 		if (!disponibilidades || disponibilidades.length === 0) {
 			return [];
 		}
-		
+
+		// Normalizar "hoy" a YYYY-MM-DD en zona local
+		const todayKey = new Date().toISOString().split("T")[0];
+
 		// Mostrar TODAS las disponibilidades del especialista que:
 		// 1. Tengan el mismo id_eco que el eco seleccionado (coincidencia exacta)
 		// 2. No tengan id_eco asignado (null/undefined) - disponibilidades genéricas
 		// Esto permite ver todas las opciones relacionadas con ese tipo de eco
 		const filtradas = disponibilidades
 			.filter((disp: DisponibilidadItem) => {
+				// Normalizar fecha de la disponibilidad
+				const fechaKey = normalizeFecha(disp.fecha);
+
+				// Excluir disponibilidades en el pasado
+				if (fechaKey < todayKey) {
+					return false;
+				}
+
 				// Incluir todas las disponibilidades que:
 				// - Tengan el mismo eco que el seleccionado
 				// - O no tengan eco asignado (disponibilidades genéricas)
-				return disp.id_eco === selectedEco.id_eco || disp.id_eco === null || disp.id_eco === undefined;
+				return (
+					disp.id_eco === selectedEco.id_eco ||
+					disp.id_eco === null ||
+					disp.id_eco === undefined
+				);
 			})
 			.sort((a: DisponibilidadItem, b: DisponibilidadItem) => {
 				// Priorizar las que tienen el mismo eco del seleccionado
@@ -249,7 +265,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 				}
 				return a.hora_inicio.localeCompare(b.hora_inicio);
 			});
-		
+
 		return filtradas;
 	}, [disponibilidades, selectedEco, selectedEspecialista]);
 
@@ -279,6 +295,8 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	};
 
 	const handleAsignarCita = async () => {
+		if (isSubmitting) return;
+
 		if (!selectedPaciente || !selectedEco || !selectedEspecialista || !selectedDisponibilidad) {
 			Swal.fire({
 				icon: "error",
@@ -289,11 +307,28 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 		}
 
 		// Validar datos del pago
-		if (!pagoData.banco_origen || !pagoData.banco_destino || !pagoData.monto || !pagoData.cedula_pagador || !pagoData.telefono_pagador || !pagoData.referencia) {
+		if (
+			!pagoData.banco_origen ||
+			!pagoData.banco_destino ||
+			!pagoData.monto ||
+			!pagoData.cedula_pagador ||
+			!pagoData.telefono_pagador ||
+			!pagoData.referencia
+		) {
 			Swal.fire({
 				icon: "error",
 				title: "Error",
 				text: "Por favor complete todos los campos del pago",
+			});
+			return;
+		}
+
+		// Validar que se haya subido el comprobante de pago
+		if (!pagoData.imagen && !imagenComprimida) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "Por favor suba la imagen del comprobante de pago",
 			});
 			return;
 		}
@@ -307,6 +342,8 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 			});
 			return;
 		}
+
+		setIsSubmitting(true);
 
 		// Si hay una imagen comprimida pero aún no se ha subido, subirla primero
 		let imagenUrl = pagoData.imagen;
@@ -413,6 +450,8 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 				title: "Error",
 				text: error?.data?.message || "No se pudo asignar la cita",
 			});
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -606,11 +645,10 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 											key={disp.id_disponibilidad}
 											onClick={() => handleSelectDisponibilidad(disp)}
 											disabled={isLoading}
-											className={`w-full rounded-lg border p-4 text-left transition-colors ${
-												selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad
-													? "border-brand-700 bg-brand-100"
-													: "border-brand-200 bg-paper hover:bg-cloud"
-											} ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+											className={`w-full rounded-lg border p-4 text-left transition-colors ${selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad
+												? "border-brand-700 bg-brand-100"
+												: "border-brand-200 bg-paper hover:bg-cloud"
+												} ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
 										>
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
@@ -687,7 +725,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 						type="button"
 						onClick={onClose}
 						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
-						disabled={isLoading}
+						disabled={isLoading || isSubmitting}
 					>
 						Cancelar
 					</button>
@@ -695,10 +733,10 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 						<button
 							type="button"
 							onClick={handleAsignarCita}
-							disabled={isLoading}
+							disabled={isLoading || isSubmitting}
 							className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							{isLoading ? "Asignando..." : "Asignar cita"}
+							{isLoading || isSubmitting ? "Asignando..." : "Asignar cita"}
 						</button>
 					)}
 				</div>

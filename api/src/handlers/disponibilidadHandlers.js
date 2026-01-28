@@ -1,4 +1,4 @@
-	const {
+const {
 	createDisponibilidadController,
 	listMisDisponibilidadController,
 	listPendientesController,
@@ -20,14 +20,19 @@ const parseTimeToMinutes = (timeStr) => {
 const validateTimeBlock = (hora_inicio, hora_fin) => {
 	const start = parseTimeToMinutes(hora_inicio);
 	const end = parseTimeToMinutes(hora_fin);
-	if (start === null || end === null) return { ok: false, message: "Hora inválida" };
-	if (end <= start) return { ok: false, message: "hora_fin debe ser mayor que hora_inicio" };
-	if (end - start !== 60) {
-		return { ok: false, message: "La disponibilidad debe ser de 60 minutos" };
+	if (start === null || end === null)
+		return { ok: false, message: "Hora inválida" };
+	if (end <= start)
+		return { ok: false, message: "hora_fin debe ser mayor que hora_inicio" };
+	if (end - start !== 20) {
+		return { ok: false, message: "La disponibilidad debe ser de 20 minutos" };
 	}
 	// Limitar rango diario (06:00 a 20:00)
 	if (start < 6 * 60 || end > 20 * 60) {
-		return { ok: false, message: "Horario fuera del rango permitido (06:00-20:00)" };
+		return {
+			ok: false,
+			message: "Horario fuera del rango permitido (06:00-20:00)",
+		};
 	}
 	return { ok: true };
 };
@@ -136,7 +141,7 @@ const listPendientesHandler = async (req, res) => {
 const approveDisponibilidadHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		
+
 		// Validar que el usuario esté autenticado y tenga un ID válido
 		if (!req.user || !req.user.id) {
 			return res.status(401).json({
@@ -177,7 +182,8 @@ const approveDisponibilidadHandler = async (req, res) => {
 		if (err?.code === "ER_NO_REFERENCED_ROW_2" || err?.errno === 1452) {
 			return res.status(400).json({
 				ok: false,
-				message: "El usuario autenticado no existe en la base de datos. Por favor, inicia sesión nuevamente.",
+				message:
+					"El usuario autenticado no existe en la base de datos. Por favor, inicia sesión nuevamente.",
 			});
 		}
 		console.error(err);
@@ -327,7 +333,8 @@ const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
 				message: "id_especialista es requerido",
 			});
 		}
-		const data = await listDisponibilidadesByEspecialistaController(id_especialista);
+		const data =
+			await listDisponibilidadesByEspecialistaController(id_especialista);
 		return res.status(200).json({
 			ok: true,
 			data,

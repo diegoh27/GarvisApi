@@ -351,14 +351,6 @@ const listDisponibilidadesByEspecialistaController = async (
     LEFT JOIN eco e ON e.id_eco = d.id_eco
     WHERE d.id_especialista = ?
       AND d.estado IN (0, 1) -- Solo pendientes y aprobadas
-      AND (
-        d.fecha > CURDATE()
-        OR (
-          d.fecha = CURDATE()
-          AND CURTIME() < '17:00:00'
-          AND d.hora_inicio > CURTIME()
-        )
-      )
     ORDER BY d.fecha ASC, d.hora_inicio ASC
   `;
 	const [rows] = await pool.execute(sql, [id_especialista]);

@@ -37,7 +37,8 @@ const CalendarGrid = ({
 	return (
 		<div className="mt-4 overflow-x-auto rounded-2xl border border-mist bg-paper">
 			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] border-b border-mist text-xs text-brand-800">
-				<div className="p-2 sm:p-3" />
+				{/* Columna de horas fija (encabezado vacío) */}
+				<div className="p-2 sm:p-3 sticky left-0 z-20 bg-paper" />
 				{dayLabels.map((label) => (
 					<div key={label} className="border-l border-mist p-2 sm:p-3 font-semibold">
 						{label}
@@ -47,8 +48,9 @@ const CalendarGrid = ({
 			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-xs">
 				{timeOptions.map((hour) => (
 					<React.Fragment key={hour.value}>
+						{/* Columna de horas fija */}
 						<div
-							className="border-b border-mist p-2 sm:p-3 text-brand-800"
+							className="border-b border-mist p-2 sm:p-3 text-brand-800 sticky left-0 z-10 bg-paper"
 						>
 							{hour.label}
 						</div>
@@ -56,10 +58,19 @@ const CalendarGrid = ({
 							const cellKey = `${dateKey}|${hour.value}`;
 							const bloque = bloquesMap.get(cellKey);
 							const isPast = dateKey < minFecha;
-							const horaFin = `${String(Number(hour.value.slice(0, 2)) + 1).padStart(
+
+							// Calcular hora de fin para el tooltip: 20 minutos después
+							const [hStr, mStr] = hour.value.split(":");
+							const h = Number(hStr);
+							const m = Number(mStr);
+							const totalMinutes = h * 60 + (Number.isNaN(m) ? 0 : m) + 20;
+							const endHour = Math.floor(totalMinutes / 60);
+							const endMinute = totalMinutes % 60;
+							const horaFin = `${String(endHour).padStart(
 								2,
 								"0",
-							)}:00:00`;
+							)}:${String(endMinute).padStart(2, "0")}:00`;
+
 							const tooltip = `${formatFecha(dateKey)} • ${formatHora(
 								hour.value,
 							)} - ${formatHora(horaFin)}`;
@@ -82,13 +93,11 @@ const CalendarGrid = ({
 							return (
 								<div
 									key={cellKey}
-									className={`border-b border-l border-mist p-0 transition-colors ${
-										isEspecialista ? "cursor-pointer" : ""
-									} ${isPast ? "bg-cloud/60" : ""} ${
-										isSelected
+									className={`border-b border-l border-mist p-0 transition-colors ${isEspecialista ? "cursor-pointer" : ""
+										} ${isPast ? "bg-cloud/60" : ""} ${isSelected
 											? "bg-gray-200 border-brand-500 border-2"
 											: "hover:bg-brand-50"
-									}`}
+										}`}
 									onClick={() => onCellClick(dateKey, hour.value)}
 									title={tooltip}
 								>
