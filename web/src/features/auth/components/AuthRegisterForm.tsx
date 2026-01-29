@@ -119,14 +119,11 @@ const AuthRegisterForm = () => {
 				if (!/^\d{7}$/.test(value)) return "El número debe tener 7 dígitos";
 				return "";
 			case "rif":
-				if (!value.trim()) return "El RIF es requerido";
-				// Verificar que el RIF coincida con la cédula (al menos los primeros 8 dígitos después de la letra)
-				if (form.cedula && value.length > 1) {
-					const rifCedula = value.substring(1, 9); // Extraer los 8 dígitos después de la letra
-					const cedulaPadded = form.cedula.padStart(8, "0");
-					if (rifCedula !== cedulaPadded) {
-						return "El RIF no coincide con la cédula ingresada";
-					}
+				// Si el usuario no coloca RIF, es válido: en el backend se usará la cédula como fallback.
+				if (!value.trim()) return "";
+				// Si coloca un RIF, validar formato básico (una letra seguida de 8 dígitos)
+				if (!/^[VEJPG]\d{8}$/.test(value)) {
+					return "El RIF debe tener formato V12345678";
 				}
 				return "";
 			case "tipo_sangre":
@@ -163,16 +160,16 @@ const AuthRegisterForm = () => {
 
 	const updateField = (field: keyof typeof form, value: string) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
-		
+
 		// Validar el campo
 		const error = validateField(field, value);
 		setFieldErrors((prev) => ({ ...prev, [field]: error }));
-		
+
 		// Si se edita el RIF manualmente, marcar como editado
 		if (field === "rif") {
 			setRifManuallyEdited(true);
 		}
-		
+
 		// Si se cambia la cédula o el tipo de RIF, permitir recalcular
 		if (field === "cedula" || field === "tipo_rif") {
 			setRifManuallyEdited(false);
@@ -203,7 +200,7 @@ const AuthRegisterForm = () => {
 		Object.keys(form).forEach((field) => {
 			// Saltar campos que no se validan directamente
 			if (field === "telefono_prefijo") return;
-			
+
 			const error = validateField(field as keyof typeof form, form[field as keyof typeof form]);
 			if (error) {
 				errors[field] = error;
@@ -218,6 +215,15 @@ const AuthRegisterForm = () => {
 		}
 
 		try {
+			// Asegurar que siempre se envía un RIF:
+			// - Preferimos el RIF calculado / ingresado
+			// - Si por alguna razón viene vacío, usamos tipo_rif + cédula rellenada a 8 dígitos
+			let rifToSend = form.rif.trim();
+			if (!rifToSend && form.cedula) {
+				const cedulaPadded = form.cedula.padStart(8, "0");
+				rifToSend = `${form.tipo_rif}${cedulaPadded}`;
+			}
+
 			// Registrar paciente (el registro público solo crea pacientes)
 			await register({
 				nombre: form.nombre.trim(),
@@ -231,7 +237,7 @@ const AuthRegisterForm = () => {
 				descripcion: form.descripcion.trim(),
 				contrasena: form.contrasena,
 				direccion: form.direccion.trim() || undefined,
-				rif: form.rif.trim() || undefined,
+				rif: rifToSend,
 			});
 
 			// Iniciar sesión automáticamente después del registro
@@ -259,9 +265,8 @@ const AuthRegisterForm = () => {
 					<input
 						type="text"
 						placeholder="Nombre"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.nombre}
 						onChange={(event) => updateField("nombre", event.target.value)}
 						maxLength={30}
@@ -277,9 +282,8 @@ const AuthRegisterForm = () => {
 					<input
 						type="text"
 						placeholder="Apellido"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.apellido}
 						onChange={(event) => updateField("apellido", event.target.value)}
 						maxLength={30}
@@ -295,9 +299,8 @@ const AuthRegisterForm = () => {
 					<input
 						type="email"
 						placeholder="Correo"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.correo ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.correo ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.correo}
 						onChange={(event) => updateField("correo", event.target.value)}
 					/>
@@ -313,9 +316,8 @@ const AuthRegisterForm = () => {
 						<input
 							type="date"
 							placeholder="Fecha de nacimiento"
-							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-								fieldErrors.fecha_nacimiento ? "border-red-500" : "border-emerald-200"
-							}`}
+							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-emerald-200"
+								}`}
 							value={form.fecha_nacimiento}
 							max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
 							onChange={(event) =>
@@ -331,9 +333,8 @@ const AuthRegisterForm = () => {
 							Género
 						</label>
 						<select
-							className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
-								fieldErrors.genero ? "border-red-500" : "border-emerald-200"
-							}`}
+							className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.genero ? "border-red-500" : "border-emerald-200"
+								}`}
 							value={form.genero}
 							onChange={(event) => updateField("genero", event.target.value)}
 						>
@@ -367,9 +368,8 @@ const AuthRegisterForm = () => {
 							<input
 								type="text"
 								placeholder="Cédula de identidad"
-								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-									fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
-								}`}
+								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
+									}`}
 								value={form.cedula}
 								onChange={(event) => updateField("cedula", event.target.value.replace(/\D/g, ""))}
 								maxLength={8}
@@ -381,15 +381,21 @@ const AuthRegisterForm = () => {
 					</div>
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
-						RIF <span className="text-slate-400 font-normal">(se calcula automáticamente)</span>
+					<label className="mb-1.5 flex items-center gap-1 text-xs font-medium text-slate-500">
+						RIF
+						<span
+							className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-amber-400 bg-amber-50 text-[9px] font-bold text-amber-600"
+							title="Si no posees RIF, se utilizará tu cédula para generar uno automáticamente."
+						>
+							!
+						</span>
+						<span className="text-slate-400 font-normal">(se calcula automáticamente)</span>
 					</label>
 					<input
 						type="text"
-						placeholder="RIF (se calcula automáticamente desde la cédula)"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.rif ? "border-red-500" : "border-emerald-200"
-						}`}
+						placeholder="Ej: V12345678"
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.rif ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.rif}
 						onChange={(event) => updateField("rif", event.target.value.toUpperCase())}
 					/>
@@ -435,9 +441,8 @@ const AuthRegisterForm = () => {
 							<input
 								type="tel"
 								placeholder="Número (7 dígitos)"
-								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-									fieldErrors.telefono_numero ? "border-red-500" : "border-emerald-200"
-								}`}
+								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.telefono_numero ? "border-red-500" : "border-emerald-200"
+									}`}
 								value={form.telefono_numero}
 								onChange={(event) =>
 									updateField("telefono_numero", event.target.value.replace(/\D/g, ""))
@@ -457,9 +462,8 @@ const AuthRegisterForm = () => {
 					<input
 						type="text"
 						placeholder="Dirección"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.direccion ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.direccion ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.direccion}
 						onChange={(event) => updateField("direccion", event.target.value)}
 						maxLength={200}
@@ -473,9 +477,8 @@ const AuthRegisterForm = () => {
 						Tipo de sangre
 					</label>
 					<select
-						className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${
-							fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.tipo_sangre}
 						onChange={(event) => updateField("tipo_sangre", event.target.value)}
 					>
@@ -493,9 +496,8 @@ const AuthRegisterForm = () => {
 				<div>
 					<textarea
 						placeholder="Descripción (padecimientos o notas)"
-						className={`min-h-[90px] w-full rounded-[24px] border px-4 py-3 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.descripcion ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`min-h-[90px] w-full rounded-[24px] border px-4 py-3 text-sm outline-none focus:border-emerald-500 ${fieldErrors.descripcion ? "border-red-500" : "border-emerald-200"
+							}`}
 						value={form.descripcion}
 						onChange={(event) => updateField("descripcion", event.target.value)}
 						maxLength={500}
@@ -512,9 +514,8 @@ const AuthRegisterForm = () => {
 						value={form.contrasena}
 						onChange={(value) => updateField("contrasena", value)}
 						placeholder="Contraseña"
-						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.contrasena ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${fieldErrors.contrasena ? "border-red-500" : "border-emerald-200"
+							}`}
 					/>
 					{fieldErrors.contrasena && (
 						<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
@@ -528,9 +529,8 @@ const AuthRegisterForm = () => {
 						value={form.confirmar_contrasena}
 						onChange={(value) => updateField("confirmar_contrasena", value)}
 						placeholder="Confirmar contraseña"
-						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${
-							fieldErrors.confirmar_contrasena ? "border-red-500" : "border-emerald-200"
-						}`}
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-emerald-200"
+							}`}
 					/>
 					{fieldErrors.confirmar_contrasena && (
 						<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>

@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS paciente (
   tipo_sangre VARCHAR(10) NOT NULL,
   descripcion VARCHAR(120) NOT NULL,
   direccion VARCHAR(120) NULL,
-  rif VARCHAR(15) NULL,
+  rif VARCHAR(15) NOT NULL,
   contacto_emergencia_nombre VARCHAR(80) NULL,
   contacto_emergencia_telefono VARCHAR(20) NULL,
 
