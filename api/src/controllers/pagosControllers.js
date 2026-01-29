@@ -19,6 +19,7 @@ const getPagoByCitaController = async (id_cita) => {
       p.fecha_pago,
       p.fecha_validacion,
       p.validado_por,
+      p.tasa_dia_bcv,
       u.nombre AS validado_por_nombre,
       u.apellido AS validado_por_apellido,
       pac.rif AS paciente_rif,

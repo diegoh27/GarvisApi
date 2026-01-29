@@ -5,6 +5,12 @@ type VerPagoModalProps = {
 	pago: PagoData | null;
 	error?: string | null;
 	onClose: () => void;
+	/** Si es true y el pago está pendiente, se muestran botones Aprobar/Rechazar (Verificación de pagos) */
+	showAcciones?: boolean;
+	id_cita?: string;
+	onAprobar?: (id_cita: string) => void;
+	onRechazar?: (id_cita: string) => void;
+	isUpdating?: boolean;
 };
 
 const formatFecha = (value: string | null) => {
@@ -38,7 +44,17 @@ const formatUSD = (monto: number | string | null | undefined) => {
 	})}`;
 };
 
-const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
+const VerPagoModal = ({
+	pago,
+	error,
+	onClose,
+	showAcciones = false,
+	id_cita,
+	onAprobar,
+	onRechazar,
+	isUpdating = false,
+}: VerPagoModalProps) => {
+	const puedeVerificar = showAcciones && id_cita && pago?.estado_pago === 0 && onAprobar && onRechazar;
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div className="relative w-full max-w-lg rounded-xl bg-paper shadow-lg flex flex-col max-h-[85vh]">
@@ -81,10 +97,10 @@ const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
 									<p className="mt-0.5">
 										<span
 											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${pago.estado_pago === 0
-													? "bg-amber-400 text-brand-900"
-													: pago.estado_pago === 1
-														? "bg-brand-700 text-paper"
-														: "bg-red-500 text-paper"
+												? "bg-amber-400 text-brand-900"
+												: pago.estado_pago === 1
+													? "bg-brand-700 text-paper"
+													: "bg-red-500 text-paper"
 												}`}
 										>
 											{pago.estado_pago === 0
@@ -116,6 +132,21 @@ const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
 											{formatMonto(pago.monto)}
 										</p>
 										<p className="mt-0.5 text-xs text-emerald-600">Monto recibido</p>
+									</div>
+									<div>
+										<p className="text-xs font-medium text-emerald-700">Tasa del día</p>
+										<p className="mt-0.5 text-sm font-bold text-emerald-900">
+											{pago.tasa_dia_bcv != null &&
+												pago.tasa_dia_bcv !== "" &&
+												Number(pago.tasa_dia_bcv) > 0
+												? formatMonto(
+													typeof pago.tasa_dia_bcv === "string"
+														? parseFloat(pago.tasa_dia_bcv)
+														: pago.tasa_dia_bcv
+												)
+												: "No registrada"}
+										</p>
+										<p className="mt-0.5 text-xs text-emerald-600">Tasa BCV al momento del pago</p>
 									</div>
 								</div>
 							</div>
@@ -196,7 +227,27 @@ const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
 				</div>
 
 				{/* Footer */}
-				<div className="border-t border-mist p-3 flex justify-end flex-shrink-0">
+				<div className="border-t border-mist p-3 flex flex-wrap items-center justify-end gap-2 flex-shrink-0">
+					{puedeVerificar && (
+						<>
+							<button
+								type="button"
+								onClick={() => onAprobar(id_cita)}
+								disabled={isUpdating}
+								className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-paper hover:bg-brand-800 disabled:opacity-50"
+							>
+								{isUpdating ? "Procesando..." : "Aprobar pago"}
+							</button>
+							<button
+								type="button"
+								onClick={() => onRechazar(id_cita)}
+								disabled={isUpdating}
+								className="rounded-lg border border-red-500 bg-paper px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+							>
+								Rechazar
+							</button>
+						</>
+					)}
 					<button
 						onClick={onClose}
 						className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-paper hover:bg-brand-800"

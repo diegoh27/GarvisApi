@@ -31,6 +31,8 @@ export type PagoData = {
 	paciente_cedula?: string | null;
 	eco_precio?: number | string | null;
 	eco_nombre?: string | null;
+	/** Tasa BCV del día al registrar el pago (Bs. por USD) */
+	tasa_dia_bcv?: number | string | null;
 };
 
 export type CitaData = {
