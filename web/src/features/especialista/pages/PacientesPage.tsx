@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import Swal from "sweetalert2";
-import "sweetalert2/dist/sweetalert2.min.css";
 import { PageShell, useAuth } from "../../../shared";
 import type { CitaEspecialista } from "../types";
-import {
-	useGetMisCitasQuery,
-	useMarcarAtendidaMutation,
-} from "../especialistaApi";
+import { useGetMisCitasQuery } from "../especialistaApi";
 import { useGetMisInformesQuery } from "../informesApi";
 import { useNavigate } from "react-router-dom";
 import ContactoModal, {
@@ -15,18 +10,12 @@ import ContactoModal, {
 import HistorialModal from "../components/HistorialModal";
 import PDFViewerModal from "../components/PDFViewerModal";
 import SubirResultadoModal from "../components/SubirResultadoModal";
-import VerResultadosModal from "../components/VerResultadosModal";
 
 const estadoCitaLabel: Record<number, string> = {
 	0: "Pendiente",
 	1: "Confirmada",
 	2: "Cancelada",
 	3: "Atendida",
-};
-
-const estadoPagoLabel: Record<number, string> = {
-	0: "Pendiente",
-	1: "Pagado",
 };
 
 const estadoResultadoLabel: Record<number, string> = {
@@ -78,21 +67,17 @@ const PacientesPage = () => {
 	const [estado, setEstado] = useState("todos");
 	const [filtroResultado, setFiltroResultado] = useState("todos"); // "todos", "sin-resultado", "con-resultado"
 	const [currentPage, setCurrentPage] = useState(1);
+	const [citasPage, setCitasPage] = useState(1);
 	const [selectedPaciente, setSelectedPaciente] = useState<{
 		id: string;
 		name: string;
 	} | null>(null);
+	/** Cita desde la que se abrió "Ver historial"; se marcará como atendida al abrir si aplica */
+	const [citaParaMarcarAtendida, setCitaParaMarcarAtendida] = useState<CitaEspecialista | null>(null);
 	const [contactoPaciente, setContactoPaciente] =
 		useState<ContactoPaciente | null>(null);
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
-	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
-		archivos: string[];
-		pacienteNombre: string;
-		ecoNombre: string;
-		idCita: string;
-	} | null>(null);
-
 	const { data: rawCitas = [], isFetching: loading } = useGetMisCitasQuery(
 		undefined,
 		{
@@ -102,7 +87,6 @@ const PacientesPage = () => {
 	const { data: informes = [] } = useGetMisInformesQuery(undefined, {
 		skip: !shouldFetch,
 	});
-	const [marcarAtendida] = useMarcarAtendidaMutation();
 
 	// Crear mapa de informes por id_cita
 	const informesMap = useMemo(() => {
@@ -128,7 +112,6 @@ const PacientesPage = () => {
 			window.open(orden, "_blank", "noopener,noreferrer");
 			return;
 		}
-		// Si no es una URL, intentar abrirla como URL de todas formas
 		window.open(orden, "_blank", "noopener,noreferrer");
 	};
 
@@ -137,72 +120,6 @@ const PacientesPage = () => {
 			? estadoResultadoLabel[cita.resultado_estado] ??
 			`Estado ${cita.resultado_estado}`
 			: "Pendiente";
-
-	const handleMarcarAtendida = async (cita: CitaEspecialista) => {
-		if (cita.estado_pago === 0) {
-			await Swal.fire({
-				title: "Pago pendiente",
-				text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
-				icon: "info",
-				confirmButtonText: "Entendido",
-				confirmButtonColor: "#1C837F",
-			});
-			return;
-		}
-		if (cita.estado_cita === 3) {
-			await Swal.fire({
-				title: "Cita ya atendida",
-				icon: "info",
-				confirmButtonText: "Listo",
-				confirmButtonColor: "#1C837F",
-			});
-			return;
-		}
-		if (cita.estado_cita === 2) {
-			await Swal.fire({
-				title: "Cita cancelada",
-				text: "No puedes marcar como atendida una cita cancelada.",
-				icon: "info",
-				confirmButtonText: "Entendido",
-				confirmButtonColor: "#1C837F",
-			});
-			return;
-		}
-		const today = new Date().toISOString().slice(0, 10);
-		const citaDateKey = getDateKey(cita.fecha_cita);
-		if (citaDateKey > today) {
-			await Swal.fire({
-				title: "Aún no puedes marcar esta cita",
-				text: "Solo puedes marcar como atendida cuando llegue el día.",
-				icon: "info",
-				confirmButtonText: "Entendido",
-				confirmButtonColor: "#1C837F",
-			});
-			return;
-		}
-		const confirmResult = await Swal.fire({
-			title: "¿Marcar cita como atendida?",
-			text: "Esta acción confirma que el paciente fue atendido.",
-			icon: "question",
-			showCancelButton: true,
-			confirmButtonText: "Sí, atender",
-			cancelButtonText: "No",
-			confirmButtonColor: "#1C837F",
-			cancelButtonColor: "#9FD8E1",
-		});
-		if (!confirmResult.isConfirmed) return;
-		try {
-			await marcarAtendida(cita.id_cita).unwrap();
-		} catch (err) {
-			await Swal.fire({
-				title: "No se pudo marcar",
-				text: (err as Error).message ?? "No se pudo marcar como atendida la cita.",
-				icon: "error",
-				confirmButtonText: "Entendido",
-				confirmButtonColor: "#1C837F",
-			});
-		}
-	};
 
 	// Función para parsear el archivo (puede ser string simple o JSON array)
 	const parseResultadoArchivo = (archivo: string | null | undefined): string[] => {
@@ -276,22 +193,28 @@ const PacientesPage = () => {
 		});
 	}, [citas, estado, query, filtroResultado]);
 
-	// Agrupar por paciente: una fila por paciente usando su cita más reciente
+	// Izquierda: agrupar por paciente desde TODAS las citas (sin filtros)
+	const citasOrdenadas = useMemo(() => {
+		return [...citas].sort((a, b) => {
+			const dateA = new Date(`${getDateKey(a.fecha_cita)}T${a.hora_cita}`).getTime();
+			const dateB = new Date(`${getDateKey(b.fecha_cita)}T${b.hora_cita}`).getTime();
+			return dateB - dateA;
+		});
+	}, [citas]);
+
 	const pacientesAgrupados = useMemo(() => {
 		const seen = new Set<string>();
 		const result: CitaEspecialista[] = [];
-
-		for (const cita of filteredCitas) {
+		for (const cita of citasOrdenadas) {
 			if (!seen.has(cita.id_paciente)) {
 				seen.add(cita.id_paciente);
-				result.push(cita); // filteredCitas ya está ordenado por fecha desc, así que esta es la última cita
+				result.push(cita);
 			}
 		}
-
 		return result;
-	}, [filteredCitas]);
+	}, [citasOrdenadas]);
 
-	// Paginación: máximo 5 pacientes por página
+	// Paginación izquierda (pacientes): 5 por página
 	const itemsPerPage = 5;
 	const totalPages = Math.max(1, Math.ceil(pacientesAgrupados.length / itemsPerPage));
 	const paginatedPacientes = useMemo(() => {
@@ -299,9 +222,16 @@ const PacientesPage = () => {
 		return pacientesAgrupados.slice(startIndex, startIndex + itemsPerPage);
 	}, [pacientesAgrupados, currentPage, itemsPerPage]);
 
-	// Resetear a página 1 cuando cambia el filtro o la búsqueda
+	// Derecha: lista de citas filtrada; paginación
+	const itemsPerPageCitas = 10;
+	const totalPagesCitas = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPageCitas));
+	const paginatedCitas = useMemo(() => {
+		const start = (citasPage - 1) * itemsPerPageCitas;
+		return filteredCitas.slice(start, start + itemsPerPageCitas);
+	}, [filteredCitas, citasPage, itemsPerPageCitas]);
+
 	useEffect(() => {
-		setCurrentPage(1);
+		setCitasPage(1);
 	}, [estado, query, filtroResultado]);
 
 	const pacientesAtendidos = useMemo(() => {
@@ -360,215 +290,47 @@ const PacientesPage = () => {
 				</div>
 			</div>
 
-			<div className="rounded-2xl bg-paper p-6 shadow-sm">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div>
+			{/* Altura fija: mismo tamaño siempre (no se achica en página 2, 3, etc.) */}
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[32rem] lg:min-h-[32rem]">
+				{/* Columna izquierda: Listado de pacientes (sin filtros) */}
+				<div className="rounded-2xl bg-paper p-6 shadow-sm flex flex-col min-w-0 lg:h-[32rem] lg:min-h-[32rem] lg:max-h-[32rem] lg:overflow-hidden">
+					<div className="shrink-0">
 						<h2 className="text-base font-semibold text-brand-900">
-							Listado de pacientes atendidos
+							Listado de pacientes
 						</h2>
-						<p className="text-xs text-brand-800">
-							Busca por nombre, eco o fecha.
+						<p className="text-xs text-brand-800 mt-0.5">
+							Pacientes con citas registradas.
 						</p>
 					</div>
-					<div className="flex flex-col gap-2 sm:flex-row">
-						<input
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-							placeholder="Buscar paciente"
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
-						/>
-						<select
-							value={estado}
-							onChange={(event) => setEstado(event.target.value)}
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
-						>
-							<option value="todos">Todos</option>
-							<option value="atendidas">Atendidas</option>
-							<option value="confirmadas">Confirmadas (por atender)</option>
-							<option value="pendientes">Pendientes</option>
-							<option value="canceladas">Canceladas</option>
-						</select>
-						<select
-							value={filtroResultado}
-							onChange={(event) => setFiltroResultado(event.target.value)}
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
-						>
-							<option value="todos">Todos los resultados</option>
-							<option value="sin-resultado">Sin resultados</option>
-							<option value="con-resultado">Con resultados</option>
-						</select>
-					</div>
-				</div>
 
-				{loading ? (
-					<p className="mt-4 text-sm text-brand-800">Cargando pacientes...</p>
-				) : error ? (
-					<p className="mt-4 text-sm text-brand-900">{error}</p>
-				) : (
-					<>
-						{/* Versión tabla - solo en pantallas medianas en adelante */}
-						<div className="mt-4 hidden overflow-x-auto sm:block">
-							<table className="w-full text-left text-xs text-brand-800">
-								<thead>
-									<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
-										<th className="px-3 py-2">Paciente</th>
-										<th className="px-3 py-2">Eco</th>
-										<th className="px-3 py-2">Fecha</th>
-										<th className="px-3 py-2">Hora</th>
-										<th className="px-3 py-2">Estado</th>
-										<th className="px-3 py-2">Pago</th>
-										<th className="px-3 py-2 text-center">Orden Médica</th>
-										<th className="px-3 py-2 text-center">Resultado</th>
-										<th className="px-3 py-2 text-center">Informe</th>
-										<th className="px-3 py-2 text-center">Contacto</th>
-										<th className="px-3 py-2 text-center">Historial</th>
-									</tr>
-								</thead>
-								<tbody>
+					{loading ? (
+						<p className="mt-4 text-sm text-brand-800">Cargando pacientes...</p>
+					) : error ? (
+						<p className="mt-4 text-sm text-brand-900">{error}</p>
+					) : (
+						<>
+							{/* Lista con filas que reparten el espacio: primero arriba, último abajo */}
+							<div className="mt-4 hidden sm:flex flex-col flex-1 min-h-0 border border-mist/50 rounded-xl overflow-hidden">
+								{/* Cabecera */}
+								<div className="grid grid-cols-[1fr_5rem_6rem] gap-1 shrink-0 border-b border-mist bg-cloud/50 px-3 py-2 text-[11px] font-semibold uppercase text-brand-700">
+									<div className="truncate">Paciente</div>
+									<div className="text-center">Contacto</div>
+									<div className="text-center">Historial</div>
+								</div>
+								{/* Filas que ocupan todo el alto disponible por igual (primero arriba, último abajo) */}
+								<div className="flex-1 flex flex-col min-h-0">
 									{paginatedPacientes.length ? (
 										paginatedPacientes.map((cita) => {
 											const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-											const estadoLabel = getEstadoCitaLabel(cita);
-											const pagoLabel =
-												estadoPagoLabel[cita.estado_pago] ??
-												`Pago ${cita.estado_pago}`;
-											const resultadoLabel = getResultadoLabel(cita);
-											const todayKey = new Date().toISOString().slice(0, 10);
-											const citaDateKey = getDateKey(cita.fecha_cita);
-											const showAtenderButton =
-												cita.estado_cita === 1 && citaDateKey <= todayKey;
 											return (
-												<tr
+												<div
 													key={cita.id_cita}
-													className="border-b border-mist/70"
+													className="grid grid-cols-[1fr_5rem_6rem] gap-1 flex-1 min-h-[3.5rem] items-center border-b border-mist/70 px-3 py-2 text-brand-800"
 												>
-													<td className="px-3 py-3 font-semibold text-brand-900">
+													<div className="font-semibold text-brand-900 truncate text-sm" title={fullName}>
 														{fullName}
-													</td>
-													<td className="px-3 py-3">{cita.eco_nombre}</td>
-													<td className="px-3 py-3">
-														{formatFecha(cita.fecha_cita)}
-													</td>
-													<td className="px-3 py-3">
-														{formatHora(cita.hora_cita)}
-													</td>
-													<td className="px-3 py-3">
-														<div className="flex flex-col items-center gap-2">
-															<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-																{estadoLabel}
-															</span>
-															{showAtenderButton ? (
-																<button
-																	type="button"
-																	onClick={() => handleMarcarAtendida(cita)}
-																	className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
-																>
-																	Marcar atendida
-																</button>
-															) : null}
-														</div>
-													</td>
-													<td className="px-3 py-3">
-														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-															{pagoLabel}
-														</span>
-													</td>
-													<td className="px-3 py-3 text-center">
-														<button
-															type="button"
-															disabled={!cita.orden}
-															onClick={() => handleViewOrdenMedica(cita.orden)}
-															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
-														>
-															Ver
-														</button>
-													</td>
-													<td className="px-3 py-3 text-center">
-														{(() => {
-															const archivos = parseResultadoArchivo(cita.resultado_archivo);
-															if (archivos.length > 0) {
-																return (
-																	archivos.length === 1 ? (
-																		<button
-																			type="button"
-																			onClick={() =>
-																				handleDownload(
-																					archivos[0],
-																					`${fullName}-${cita.fecha_cita}-resultado`,
-																				)
-																			}
-																			className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-																		>
-																			Ver resultado
-																		</button>
-																	) : (
-																		<button
-																			type="button"
-																			onClick={() => {
-																				setSelectedCitaForResultados({
-																					archivos,
-																					pacienteNombre: fullName,
-																					ecoNombre: cita.eco_nombre,
-																					idCita: cita.id_cita,
-																				});
-																			}}
-																			className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-																		>
-																			Ver {archivos.length} resultados
-																		</button>
-																	)
-																);
-															}
-															return (
-																<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-																	{resultadoLabel}
-																</span>
-															);
-														})()}
-													</td>
-													<td className="px-3 py-3 text-center">
-														{(() => {
-															const informe = informesMap.get(cita.id_cita);
-															if (informe?.informe_pdf_url) {
-																return (
-																	<button
-																		type="button"
-																		onClick={(e) => {
-																			e.stopPropagation();
-																			const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-																			const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-");
-																			setPdfFileName(fileName);
-																			setPdfViewerUrl(informe.informe_pdf_url!);
-																		}}
-																		className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
-																	>
-																		Ver PDF
-																	</button>
-																);
-															}
-															if (cita.estado_cita === 3) {
-																return (
-																	<button
-																		type="button"
-																		onClick={() => {
-																			navigate("/informes", {
-																				state: { selectedCitaId: cita.id_cita },
-																			});
-																		}}
-																		className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper transition-colors hover:bg-brand-800"
-																	>
-																		Llenar
-																	</button>
-																);
-															}
-															return (
-																<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-																	Pendiente
-																</span>
-															);
-														})()}
-													</td>
-													<td className="px-3 py-3 text-center">
+													</div>
+													<div className="flex justify-center">
 														<button
 															type="button"
 															onClick={() =>
@@ -584,180 +346,51 @@ const PacientesPage = () => {
 																		cita.paciente_contacto_telefono,
 																})
 															}
-															className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
+															className="rounded-full border border-mint px-2.5 py-1 text-xs text-brand-800 shrink-0"
 														>
 															Ver
 														</button>
-													</td>
-													<td className="px-3 py-3 text-center">
-														<button
-															type="button"
-															onClick={() =>
-																setSelectedPaciente({
-																	id: cita.id_paciente,
-																	name: fullName,
-																})
-															}
-															className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
-														>
-															Ver historial
-														</button>
-													</td>
-												</tr>
-											);
-										})
-									) : (
-										<tr>
-											<td
-												colSpan={11}
-												className="px-3 py-6 text-center text-sm text-brand-800"
-											>
-												No hay registros para mostrar.
-											</td>
-										</tr>
-									)}
-								</tbody>
-							</table>
-						</div>
-
-						{/* Versión cards - solo móvil */}
-						<div className="mt-4 space-y-3 sm:hidden">
-							{paginatedPacientes.length ? (
-								paginatedPacientes.map((cita) => {
-									const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-									const estadoLabel = getEstadoCitaLabel(cita);
-									const pagoLabel =
-										estadoPagoLabel[cita.estado_pago] ?? `Pago ${cita.estado_pago}`;
-									const resultadoLabel = getResultadoLabel(cita);
-									const todayKey = new Date().toISOString().slice(0, 10);
-									const citaDateKey = getDateKey(cita.fecha_cita);
-									const showAtenderButton =
-										cita.estado_cita === 1 && citaDateKey <= todayKey;
-
-									const archivos = parseResultadoArchivo(cita.resultado_archivo);
-									const informe = informesMap.get(cita.id_cita);
-
-									return (
-										<div
-											key={cita.id_cita}
-											className="rounded-2xl border border-brand-200 bg-paper p-4"
-										>
-											<div className="flex items-start justify-between gap-3">
-												<div className="space-y-1">
-													<p className="text-sm font-semibold text-brand-900">
-														{fullName}
-													</p>
-													<p className="text-xs text-brand-700">
-														<span className="font-medium">Eco:</span>{" "}
-														{cita.eco_nombre}
-													</p>
-													<p className="text-xs text-brand-700">
-														<span className="font-medium">Fecha:</span>{" "}
-														{formatFecha(cita.fecha_cita)} a las{" "}
-														{formatHora(cita.hora_cita)}
-													</p>
-												</div>
-												<div className="flex flex-col items-end gap-1">
-													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-														{estadoLabel}
-													</span>
-													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-														{pagoLabel}
-													</span>
-												</div>
-											</div>
-
-											<div className="mt-3 space-y-2 text-[11px] text-brand-800">
-												<div className="flex items-center justify-between">
-													<span className="font-medium">Orden médica</span>
-													<button
-														type="button"
-														disabled={!cita.orden}
-														onClick={() => handleViewOrdenMedica(cita.orden)}
-														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
-													>
-														Ver
-													</button>
-												</div>
-
-												<div className="flex items-center justify-between">
-													<span className="font-medium">Resultado</span>
-													{archivos.length > 0 ? (
-														archivos.length === 1 ? (
-															<button
-																type="button"
-																onClick={() =>
-																	handleDownload(
-																		archivos[0],
-																		`${fullName}-${cita.fecha_cita}-resultado`,
-																	)
-																}
-																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-															>
-																Ver resultado
-															</button>
-														) : (
-															<button
-																type="button"
-																onClick={() => {
-																	setSelectedCitaForResultados({
-																		archivos,
-																		pacienteNombre: fullName,
-																		ecoNombre: cita.eco_nombre,
-																		idCita: cita.id_cita,
-																	});
-																}}
-																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-															>
-																Ver {archivos.length} resultados
-															</button>
-														)
-													) : (
-														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-															{resultadoLabel}
-														</span>
-													)}
-												</div>
-
-												<div className="flex items-center justify-between">
-													<span className="font-medium">Informe</span>
-													{informe?.informe_pdf_url ? (
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(
-																	/\s+/g,
-																	"-",
-																);
-																setPdfFileName(fileName);
-																setPdfViewerUrl(informe.informe_pdf_url!);
-															}}
-															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper"
-														>
-															Ver PDF
-														</button>
-													) : cita.estado_cita === 3 ? (
+													</div>
+													<div className="flex justify-center">
 														<button
 															type="button"
 															onClick={() => {
-																navigate("/informes", {
-																	state: { selectedCitaId: cita.id_cita },
+																setSelectedPaciente({
+																	id: cita.id_paciente,
+																	name: fullName,
 																});
+																setCitaParaMarcarAtendida(cita);
 															}}
-															className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper transition-colors hover:bg-brand-800"
+															className="rounded-full border border-mint px-2.5 py-1 text-xs text-brand-800 shrink-0"
 														>
-															Llenar
+															Ver historial
 														</button>
-													) : (
-														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-															Pendiente
-														</span>
-													)}
+													</div>
 												</div>
+											);
+										})
+									) : (
+										<div className="flex-1 flex items-center justify-center px-3 py-6 text-sm text-brand-800">
+											No hay registros para mostrar.
+										</div>
+									)}
+								</div>
+							</div>
 
-												<div className="flex items-center justify-between">
-													<span className="font-medium">Contacto</span>
+							{/* Versión cards - solo móvil */}
+							<div className="mt-4 space-y-3 sm:hidden">
+								{paginatedPacientes.length ? (
+									paginatedPacientes.map((cita) => {
+										const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+										return (
+											<div
+												key={cita.id_cita}
+												className="rounded-2xl border border-brand-200 bg-paper p-4"
+											>
+												<p className="text-sm font-semibold text-brand-900">
+													{fullName}
+												</p>
+												<div className="mt-3 flex flex-wrap gap-2 text-[11px] text-brand-800">
 													<button
 														type="button"
 														onClick={() =>
@@ -775,93 +408,222 @@ const PacientesPage = () => {
 														}
 														className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
 													>
-														Ver
+														Contacto
 													</button>
-												</div>
-
-												<div className="flex items-center justify-between">
-													<span className="font-medium">Historial</span>
 													<button
 														type="button"
-														onClick={() =>
+														onClick={() => {
 															setSelectedPaciente({
 																id: cita.id_paciente,
 																name: fullName,
-															})
-														}
+															});
+															setCitaParaMarcarAtendida(cita);
+														}}
 														className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
 													>
 														Ver historial
 													</button>
 												</div>
-
-												{showAtenderButton && (
-													<div className="pt-2">
-														<button
-															type="button"
-															onClick={() => handleMarcarAtendida(cita)}
-															className="w-full rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800"
-														>
-															Marcar atendida
-														</button>
-													</div>
-												)}
 											</div>
-										</div>
-									);
-								})
-							) : (
-								<div className="rounded-2xl border border-brand-200 bg-paper p-6 text-center text-sm text-brand-800">
-									No hay registros para mostrar.
+										);
+									})
+								) : (
+									<div className="rounded-2xl border border-brand-200 bg-paper p-6 text-center text-sm text-brand-800">
+										No hay registros para mostrar.
+									</div>
+								)}
+							</div>
+						</>
+					)}
+
+					{/* Paginación izquierda */}
+					{pacientesAgrupados.length > 0 && (
+						<div className="mt-4 shrink-0 flex items-center justify-between border-t border-mist pt-4">
+							<div className="text-xs text-brand-800">
+								Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
+								{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
+								{pacientesAgrupados.length} pacientes
+							</div>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+									disabled={currentPage === 1}
+									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Anterior
+								</button>
+								<span className="text-xs text-brand-800">
+									Página {currentPage} de {totalPages}
+								</span>
+								<button
+									type="button"
+									onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+									disabled={currentPage === totalPages}
+									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Siguiente
+								</button>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* Columna derecha: Todas las citas (con búsqueda y filtros) — misma altura fija que la izquierda */}
+				<div className="rounded-2xl bg-paper p-6 shadow-sm flex flex-col min-w-0 lg:h-[32rem] lg:min-h-[32rem] lg:max-h-[32rem] lg:overflow-hidden">
+					<div className="shrink-0">
+						<h2 className="text-base font-semibold text-brand-900">
+							Todas las citas
+						</h2>
+						<p className="text-xs text-brand-800 mt-0.5">
+							Busca por nombre, eco o fecha. Filtra por estado y resultados.
+						</p>
+					</div>
+					<div className="mt-3 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
+						<input
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Buscar paciente, eco o fecha"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700 flex-1 min-w-0 sm:max-w-xs"
+						/>
+						<select
+							value={estado}
+							onChange={(e) => setEstado(e.target.value)}
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+						>
+							<option value="todos">Todos</option>
+							<option value="atendidas">Atendidas</option>
+							<option value="confirmadas">Confirmadas (por atender)</option>
+							<option value="pendientes">Pendientes</option>
+							<option value="canceladas">Canceladas</option>
+						</select>
+						<select
+							value={filtroResultado}
+							onChange={(e) => setFiltroResultado(e.target.value)}
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+						>
+							<option value="todos">Todos los resultados</option>
+							<option value="sin-resultado">Sin resultados</option>
+							<option value="con-resultado">Con resultados</option>
+						</select>
+					</div>
+
+					{loading ? (
+						<p className="mt-4 text-sm text-brand-800">Cargando citas...</p>
+					) : (
+						<>
+							<div className="mt-4 overflow-auto flex-1 min-h-0">
+								<table className="w-full text-left text-xs text-brand-800">
+									<thead>
+										<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
+											<th className="px-2 py-2 whitespace-nowrap">Fecha</th>
+											<th className="px-2 py-2 whitespace-nowrap">Hora</th>
+											<th className="px-2 py-2 whitespace-nowrap">Paciente</th>
+											<th className="px-2 py-2 whitespace-nowrap">Eco</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Estado</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Pago</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Historial</th>
+										</tr>
+									</thead>
+									<tbody>
+										{paginatedCitas.length > 0 ? (
+											paginatedCitas.map((cita) => {
+												const fullName = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim();
+												return (
+													<tr key={cita.id_cita} className="border-b border-mist/70">
+														<td className="px-2 py-2 whitespace-nowrap">{formatFecha(cita.fecha_cita)}</td>
+														<td className="px-2 py-2 whitespace-nowrap">{formatHora(cita.hora_cita)}</td>
+														<td className="px-2 py-2 font-medium text-brand-900">{fullName || "—"}</td>
+														<td className="px-2 py-2">{cita.eco_nombre}</td>
+														<td className="px-2 py-2 text-center">
+															<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+																{getEstadoCitaLabel(cita)}
+															</span>
+														</td>
+														<td className="px-2 py-2 text-center">
+															<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+																{cita.estado_pago === 1 ? "Pagado" : cita.estado_pago === 0 ? "Pendiente" : "Negado"}
+															</span>
+														</td>
+														<td className="px-2 py-2 text-center">
+															<button
+																type="button"
+																onClick={() => {
+																	setSelectedPaciente({ id: cita.id_paciente, name: fullName || "Paciente" });
+																	setCitaParaMarcarAtendida(cita);
+																}}
+																className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+															>
+																Ver historial
+															</button>
+														</td>
+													</tr>
+												);
+											})
+										) : (
+											<tr>
+												<td colSpan={7} className="px-2 py-6 text-center text-sm text-brand-800">
+													No hay citas que coincidan con los filtros.
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+							</div>
+							{filteredCitas.length > 0 && (
+								<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
+									<div className="text-xs text-brand-800">
+										Mostrando {(citasPage - 1) * itemsPerPageCitas + 1} -{" "}
+										{Math.min(citasPage * itemsPerPageCitas, filteredCitas.length)} de{" "}
+										{filteredCitas.length} citas
+									</div>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setCitasPage((p) => Math.max(1, p - 1))}
+											disabled={citasPage === 1}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Anterior
+										</button>
+										<span className="text-xs text-brand-800">
+											Página {citasPage} de {totalPagesCitas}
+										</span>
+										<button
+											type="button"
+											onClick={() => setCitasPage((p) => Math.min(totalPagesCitas, p + 1))}
+											disabled={citasPage === totalPagesCitas}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Siguiente
+										</button>
+									</div>
 								</div>
 							)}
-						</div>
-					</>
-				)}
-
-				{/* Paginación */}
-				{pacientesAgrupados.length > 0 && (
-					<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
-						<div className="text-xs text-brand-800">
-							Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-							{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
-							{pacientesAgrupados.length} pacientes
-						</div>
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-								disabled={currentPage === 1}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								Anterior
-							</button>
-							<span className="text-xs text-brand-800">
-								Página {currentPage} de {totalPages}
-							</span>
-							<button
-								type="button"
-								onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-								disabled={currentPage === totalPages}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								Siguiente
-							</button>
-						</div>
-					</div>
-				)}
+						</>
+					)}
+				</div>
 			</div>
 
 			{selectedPaciente ? (
 				<HistorialModal
 					paciente={selectedPaciente}
 					citas={historialPaciente}
+					citaParaMarcarAtendida={citaParaMarcarAtendida}
+					informesMap={informesMap}
 					formatFecha={formatFecha}
 					formatHora={formatHora}
 					getEstadoLabel={getEstadoCitaLabel}
 					getResultadoLabel={getResultadoLabel}
-					onDownload={() => { }} // Ya no se usa, pero se mantiene para compatibilidad
-					onClose={() => setSelectedPaciente(null)}
+					onVerPdf={(url, fileName) => {
+						setPdfFileName(fileName);
+						setPdfViewerUrl(url);
+					}}
+					onDownload={() => { }}
+					onClose={() => {
+						setSelectedPaciente(null);
+						setCitaParaMarcarAtendida(null);
+					}}
 				/>
 			) : null}
 
@@ -879,15 +641,6 @@ const PacientesPage = () => {
 						setPdfViewerUrl(null);
 						setPdfFileName(null);
 					}}
-				/>
-			)}
-			{selectedCitaForResultados && (
-				<VerResultadosModal
-					archivos={selectedCitaForResultados.archivos}
-					pacienteNombre={selectedCitaForResultados.pacienteNombre}
-					ecoNombre={selectedCitaForResultados.ecoNombre}
-					idCita={selectedCitaForResultados.idCita}
-					onClose={() => setSelectedCitaForResultados(null)}
 				/>
 			)}
 		</div>

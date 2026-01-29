@@ -175,6 +175,13 @@ const citasApi = baseApi.injectEndpoints({
 				response.data ?? [],
 			providesTags: ["Citas"],
 		}),
+		marcarAtendida: builder.mutation<{ id_cita: string; estado_cita: number }, string>({
+			query: (id_cita) => ({
+				url: `/citas/${id_cita}/atender`,
+				method: "PATCH",
+			}),
+			invalidatesTags: ["Citas"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -187,6 +194,7 @@ export const {
 	usePosponerCitaMutation,
 	useGetAllCitasQuery,
 	useGetMisCitasCompletasQuery,
+	useMarcarAtendidaMutation,
 } = citasApi;
 
 export { citasApi };

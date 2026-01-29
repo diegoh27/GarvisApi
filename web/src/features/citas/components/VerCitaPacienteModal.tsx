@@ -1,11 +1,26 @@
 import { useState } from "react";
-import { X, FileText, FileCheck, Receipt, Banknote, Download } from "lucide-react";
+import { X, FileText, Banknote, FileCheck, Images } from "lucide-react";
 import type { CitaPacienteCompleta } from "../citasApi";
 import PDFViewerModal from "../../especialista/components/PDFViewerModal";
-import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import VerPagoModal from "../../moderadores/components/VerPagoModal";
+import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import { useGetPagoByCitaQuery } from "../../moderadores/moderadoresApi";
-import { getToken } from "../../../shared/utils/token";
+
+const parseResultadoArchivos = (value: string | null): string[] => {
+	if (!value || value.trim() === "") return [];
+	const trimmed = value.trim();
+	if (trimmed.startsWith("[")) {
+		try {
+			const arr = JSON.parse(trimmed) as unknown;
+			if (Array.isArray(arr)) return arr.filter((u): u is string => typeof u === "string" && u.trim() !== "");
+		} catch {
+			// ignore
+		}
+	}
+	return trimmed ? [trimmed] : [];
+};
+
+const isLikelyUrl = (value: string) => /^https?:\/\//i.test(value) || value.startsWith("data:");
 
 type VerCitaPacienteModalProps = {
 	cita: CitaPacienteCompleta | null;
@@ -61,37 +76,10 @@ const getEstadoPagoLabel = (estado: number) => {
 	}
 };
 
-const buildProxyUrl = (url: string) => {
-	const apiBaseUrl =
-		import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:3001";
-	const token = getToken();
-	return `${apiBaseUrl}/informes/pdf-proxy?cloudinaryUrl=${encodeURIComponent(url)}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
-};
-
-/** resultado_archivo puede venir como URL única o como JSON array ["url1", "url2"] desde la BD. Devuelve array de URLs. */
-const parseResultadoArchivos = (value: string | null): string[] => {
-	if (!value || value.trim() === "") return [];
-	const trimmed = value.trim();
-	if (trimmed.startsWith("[")) {
-		try {
-			const arr = JSON.parse(trimmed) as unknown;
-			if (Array.isArray(arr)) {
-				return arr.filter((u): u is string => typeof u === "string" && u.trim() !== "");
-			}
-		} catch {
-			// ignore
-		}
-	}
-	return trimmed ? [trimmed] : [];
-};
-
-const isOrdenPdf = (url: string) => /\.pdf(\?|$)/i.test(url) || url.toLowerCase().includes("/raw/");
-
 const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 	const [pdfViewer, setPdfViewer] = useState<{ url: string; title: string } | null>(null);
-	const [ordenViewer, setOrdenViewer] = useState<string | null>(null);
-	const [showResultados, setShowResultados] = useState(false);
 	const [showVerPago, setShowVerPago] = useState(false);
+	const [showResultados, setShowResultados] = useState(false);
 
 	const { data: pago, error: pagoError, isLoading: pagoLoading } = useGetPagoByCitaQuery(cita?.id_cita ?? "", {
 		skip: !showVerPago || !cita?.id_cita,
@@ -99,14 +87,6 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 
 	const openPdf = (url: string, title: string) => {
 		setPdfViewer({ url, title });
-	};
-
-	const openOrdenMedica = (url: string) => {
-		if (isOrdenPdf(url)) {
-			setPdfViewer({ url, title: "Orden médica" });
-		} else {
-			setOrdenViewer(url);
-		}
 	};
 
 	if (!cita) {
@@ -190,25 +170,10 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 							</div>
 						</div>
 
-						{/* Documentos */}
+						{/* Documentos: pago, orden médica, informe médico y resultados (igual que admin/moderador) */}
 						<div>
 							<h3 className="mb-3 text-sm font-semibold text-brand-900">Documentos</h3>
 							<div className="flex flex-wrap gap-3">
-								{cita.orden ? (
-									<button
-										type="button"
-										onClick={() => openOrdenMedica(cita.orden!)}
-										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
-									>
-										<Receipt className="h-4 w-4" />
-										Ver orden médica
-									</button>
-								) : (
-									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
-										<Receipt className="h-4 w-4" />
-										Orden médica no disponible
-									</span>
-								)}
 								{cita.id_pago ? (
 									<button
 										type="button"
@@ -224,19 +189,22 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 										Pago no disponible
 									</span>
 								)}
-								{parseResultadoArchivos(cita.resultado_archivo).length > 0 ? (
+								{cita.orden && cita.orden.trim() !== "" ? (
 									<button
 										type="button"
-										onClick={() => setShowResultados(true)}
+										onClick={() => {
+											const url = isLikelyUrl(cita.orden!) ? cita.orden! : cita.orden!.startsWith("http") ? cita.orden! : `https://${cita.orden!}`;
+											window.open(url, "_blank", "noopener,noreferrer");
+										}}
 										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
 									>
 										<FileCheck className="h-4 w-4" />
-										Ver resultados
+										Ver orden médica
 									</button>
 								) : (
 									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
 										<FileCheck className="h-4 w-4" />
-										Resultados no disponibles
+										Orden médica no disponible
 									</span>
 								)}
 								{cita.informe_pdf_url ? (
@@ -254,6 +222,24 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 										Informe no disponible
 									</span>
 								)}
+								{(() => {
+									const archivos = parseResultadoArchivos(cita.resultado_archivo);
+									return archivos.length > 0 ? (
+										<button
+											type="button"
+											onClick={() => setShowResultados(true)}
+											className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										>
+											<Images className="h-4 w-4" />
+											{archivos.length === 1 ? "Ver resultado" : `Ver ${archivos.length} resultados`}
+										</button>
+									) : (
+										<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+											<Images className="h-4 w-4" />
+											Resultados no disponibles
+										</span>
+									);
+								})()}
 							</div>
 						</div>
 					</div>
@@ -277,67 +263,6 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 				/>
 			)}
 
-			{ordenViewer && (
-				<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
-					<div className="relative flex h-[90vh] w-full max-w-4xl flex-col rounded-2xl bg-paper shadow-xl">
-						<div className="flex shrink-0 items-center justify-between border-b border-mist bg-paper p-4">
-							<h2 className="text-lg font-semibold text-brand-900">Orden médica</h2>
-							<div className="flex items-center gap-2">
-								<button
-									type="button"
-									onClick={async () => {
-										try {
-											const res = await fetch(buildProxyUrl(ordenViewer));
-											if (!res.ok) throw new Error("Error al descargar");
-											const blob = await res.blob();
-											const url = window.URL.createObjectURL(blob);
-											const a = document.createElement("a");
-											a.href = url;
-											a.download = `orden-medica-${new Date().getTime()}.jpg`;
-											document.body.appendChild(a);
-											a.click();
-											window.URL.revokeObjectURL(url);
-											document.body.removeChild(a);
-										} catch {
-											window.open(buildProxyUrl(ordenViewer), "_blank");
-										}
-									}}
-									className="inline-flex items-center gap-2 rounded-lg border border-brand-700 bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
-								>
-									<Download className="h-4 w-4" />
-									Descargar
-								</button>
-								<button
-									type="button"
-									onClick={() => setOrdenViewer(null)}
-									className="rounded-lg p-2 text-brand-800 hover:bg-cloud"
-									aria-label="Cerrar"
-								>
-									<X className="h-5 w-5" />
-								</button>
-							</div>
-						</div>
-						<div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-brand-100/50">
-							<img
-								src={buildProxyUrl(ordenViewer)}
-								alt="Orden médica"
-								className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-							/>
-						</div>
-					</div>
-				</div>
-			)}
-
-			{showResultados && cita && (
-				<VerResultadosModal
-					archivos={parseResultadoArchivos(cita.resultado_archivo)}
-					pacienteNombre={`${cita.paciente_nombre} ${cita.paciente_apellido}`.trim()}
-					ecoNombre={cita.eco_nombre}
-					idCita={cita.id_cita}
-					onClose={() => setShowResultados(false)}
-				/>
-			)}
-
 			{showVerPago && (
 				<VerPagoModal
 					pago={pagoLoading ? null : pago ?? null}
@@ -345,6 +270,21 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 					onClose={() => setShowVerPago(false)}
 				/>
 			)}
+
+			{showResultados && cita && (() => {
+				const archivos = parseResultadoArchivos(cita.resultado_archivo);
+				if (archivos.length === 0) return null;
+				const pacienteNombre = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim() || "Paciente";
+				return (
+					<VerResultadosModal
+						archivos={archivos}
+						pacienteNombre={pacienteNombre}
+						ecoNombre={cita.eco_nombre ?? ""}
+						idCita={cita.id_cita}
+						onClose={() => setShowResultados(false)}
+					/>
+				);
+			})()}
 		</>
 	);
 };

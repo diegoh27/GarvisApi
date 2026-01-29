@@ -4,7 +4,7 @@ import type { CitaPacienteCompleta } from "../citasApi";
 import { VerCitaPacienteModal } from "../components";
 import { CalendarDays, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 type FilterEstadoPago = "todos" | "pendiente" | "aprobado" | "negado";
 type FilterResultados = "todos" | "con_resultados" | "sin_resultados";
@@ -127,7 +127,7 @@ const CitasPage = () => {
 			</div>
 
 			{/* Listado */}
-			<div className="rounded-xl border border-mist bg-paper shadow-sm overflow-hidden">
+			<div className="rounded-xl border border-mist bg-paper shadow-sm overflow-hidden md:min-h-[26rem] flex flex-col">
 				{isLoading ? (
 					<div className="flex items-center justify-center py-16">
 						<div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
@@ -144,56 +144,106 @@ const CitasPage = () => {
 					</div>
 				) : (
 					<>
-						<div className="overflow-x-auto">
-							<table className="w-full min-w-[640px] text-left text-sm">
-								<thead className="border-b border-mist bg-cloud/50">
-									<tr>
-										<th className="px-4 py-3 font-semibold text-brand-900">Fecha</th>
-										<th className="px-4 py-3 font-semibold text-brand-900">Hora</th>
-										<th className="px-4 py-3 font-semibold text-brand-900">Especialista</th>
-										<th className="px-4 py-3 font-semibold text-brand-900">Estudio</th>
-										<th className="px-4 py-3 font-semibold text-brand-900">Estado pago</th>
-										<th className="px-4 py-3 font-semibold text-brand-900 w-24">Acción</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-mist">
-									{paginated.map((cita) => {
-										const estadoPago = cita.estado_pago ?? cita.pago_estado_pago ?? 0;
-										return (
-											<tr key={cita.id_cita} className="hover:bg-cloud/30">
-												<td className="px-4 py-3 text-brand-900">{formatFecha(cita.fecha_cita)}</td>
-												<td className="px-4 py-3 text-brand-900">{formatHora(cita.hora_cita)}</td>
-												<td className="px-4 py-3 text-brand-900">
-													{cita.especialista_nombre} {cita.especialista_apellido}
-												</td>
-												<td className="px-4 py-3 text-brand-900">{cita.eco_nombre}</td>
-												<td className="px-4 py-3">
-													<span
-														className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${estadoPago === 0
-																? "bg-amber-400 text-brand-900"
-																: estadoPago === 1
-																	? "bg-emerald-600 text-paper"
-																	: "bg-red-500 text-paper"
-															}`}
-													>
-														{getEstadoPagoLabel(estadoPago)}
-													</span>
-												</td>
-												<td className="px-4 py-3">
-													<button
-														type="button"
-														onClick={() => setSelectedCita(cita)}
-														className="inline-flex items-center gap-1 rounded-lg border border-brand-600 bg-brand-50 px-2 py-1.5 text-xs font-medium text-brand-800 hover:bg-brand-100"
-													>
-														<Eye className="h-3.5 w-3.5" />
-														Ver cita
-													</button>
-												</td>
-											</tr>
-										);
-									})}
-								</tbody>
-							</table>
+						<div className="flex-1 min-h-0">
+							{/* Tabla - solo desktop/tablet */}
+							<div className="overflow-x-auto hidden md:block h-full">
+								<table className="w-full min-w-[640px] text-left text-sm">
+									<thead className="border-b border-mist bg-cloud/50">
+										<tr>
+											<th className="px-4 py-3 font-semibold text-brand-900">Fecha</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Hora</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Especialista</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Estudio</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Estado pago</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Acciones</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-mist">
+										{paginated.map((cita) => {
+											const estadoPago = cita.estado_pago ?? cita.pago_estado_pago ?? 0;
+											return (
+												<tr key={cita.id_cita} className="hover:bg-cloud/30">
+													<td className="px-4 py-3 text-brand-900">{formatFecha(cita.fecha_cita)}</td>
+													<td className="px-4 py-3 text-brand-900">{formatHora(cita.hora_cita)}</td>
+													<td className="px-4 py-3 text-brand-900">
+														{cita.especialista_nombre} {cita.especialista_apellido}
+													</td>
+													<td className="px-4 py-3 text-brand-900">{cita.eco_nombre}</td>
+													<td className="px-4 py-3">
+														<span
+															className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${estadoPago === 0
+																	? "bg-amber-400 text-brand-900"
+																	: estadoPago === 1
+																		? "bg-emerald-600 text-paper"
+																		: "bg-red-500 text-paper"
+																}`}
+														>
+															{getEstadoPagoLabel(estadoPago)}
+														</span>
+													</td>
+													<td className="px-4 py-3">
+														<button
+															type="button"
+															onClick={() => setSelectedCita(cita)}
+															className="inline-flex items-center gap-1 rounded-lg border border-brand-600 bg-brand-50 px-2 py-1.5 text-xs font-medium text-brand-800 hover:bg-brand-100"
+														>
+															<Eye className="h-3.5 w-3.5" />
+															Ver cita
+														</button>
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+
+							{/* Cards - móvil */}
+							<div className="md:hidden space-y-3 py-3">
+								{paginated.map((cita) => {
+									const estadoPago = cita.estado_pago ?? cita.pago_estado_pago ?? 0;
+									return (
+										<div
+											key={cita.id_cita}
+											className="rounded-2xl border border-brand-200 bg-paper px-4 py-3 shadow-xs"
+										>
+											<div className="flex items-center justify-between gap-2">
+												<div>
+													<p className="text-xs font-semibold text-brand-700">
+														{formatFecha(cita.fecha_cita)} • {formatHora(cita.hora_cita)}
+													</p>
+													<p className="mt-1 text-sm font-semibold text-brand-900">
+														{cita.eco_nombre}
+													</p>
+													<p className="mt-0.5 text-xs text-brand-700">
+														{cita.especialista_nombre} {cita.especialista_apellido}
+													</p>
+												</div>
+												<span
+													className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${estadoPago === 0
+															? "bg-amber-400/90 text-brand-900"
+															: estadoPago === 1
+																? "bg-emerald-600 text-paper"
+																: "bg-red-500 text-paper"
+														}`}
+												>
+													{getEstadoPagoLabel(estadoPago)}
+												</span>
+											</div>
+											<div className="mt-3 flex justify-end">
+												<button
+													type="button"
+													onClick={() => setSelectedCita(cita)}
+													className="inline-flex items-center gap-1 rounded-full border border-brand-600 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-800 hover:bg-brand-100"
+												>
+													<Eye className="h-3.5 w-3.5" />
+													Ver cita
+												</button>
+											</div>
+										</div>
+									);
+								})}
+							</div>
 						</div>
 
 						{/* Paginación */}

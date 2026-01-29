@@ -275,12 +275,12 @@ const cancelCitaController = async ({ id_cita }) => {
 	}
 };
 
-const markCitaAtendidaController = async ({ id_cita, id_especialista }) => {
+const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
 		const [rows] = await conn.execute(
-			`SELECT id_especialista, fecha_cita, estado_cita
+			`SELECT id_especialista, id_paciente, fecha_cita, estado_cita
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
@@ -292,7 +292,11 @@ const markCitaAtendidaController = async ({ id_cita, id_especialista }) => {
 			throw err;
 		}
 		const cita = rows[0];
-		if (cita.id_especialista !== id_especialista) {
+		const autorizado =
+			role === "paciente"
+				? cita.id_paciente === userId
+				: cita.id_especialista === userId;
+		if (!autorizado) {
 			const err = new Error("No autorizado");
 			err.code = "FORBIDDEN";
 			throw err;

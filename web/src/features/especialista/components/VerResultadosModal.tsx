@@ -178,8 +178,8 @@ const VerResultadosModal = ({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-			<div className="relative w-full max-w-2xl rounded-2xl bg-paper shadow-lg">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+			<div className="relative w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-paper shadow-lg">
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-mist bg-paper p-4">
 					<div>
@@ -210,7 +210,7 @@ const VerResultadosModal = ({
 							return (
 								<div
 									key={index}
-									className="flex items-center justify-between rounded-lg border border-mist bg-cloud p-4 hover:bg-brand-50 transition-colors"
+									className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-lg border border-mist bg-cloud p-4 hover:bg-brand-50 transition-colors"
 								>
 									<div className="flex items-center gap-3 flex-1 min-w-0">
 										{fileType === "pdf" ? (
@@ -229,7 +229,7 @@ const VerResultadosModal = ({
 											</p>
 										</div>
 									</div>
-									<div className="ml-4 flex items-center gap-2 flex-shrink-0">
+									<div className="sm:ml-4 flex flex-wrap justify-end gap-2 flex-shrink-0">
 										<button
 											type="button"
 											onClick={() => handleOpenFile(url)}
