@@ -445,22 +445,22 @@ const CalendarioPage = () => {
 	};
 
 	const mergedBloques = useMemo(() => {
-		const map = new Map<string, Disponibilidad>();
-		bloques.forEach((bloque) => {
-			const dateKey = getDateKey(bloque.fecha);
-			const hourKey =
-				bloque.hora_inicio.length === 5
-					? `${bloque.hora_inicio}:00`
-					: bloque.hora_inicio;
-			map.set(`${dateKey}|${hourKey}`, bloque);
-		});
-		citas.forEach((cita) => {
+		// Normalizar bloques de disponibilidad (asegurar que fecha sea string)
+		const normalizedBloques: Disponibilidad[] = bloques.map((bloque) => ({
+			...bloque,
+			fecha:
+				typeof bloque.fecha === "string"
+					? bloque.fecha
+					: bloque.fecha.toISOString().split("T")[0],
+		}));
+
+		// Convertir citas a elementos tipo Disponibilidad independientes
+		const citaBloques: Disponibilidad[] = citas.map((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
 				cita.hora_cita.length === 5 ? `${cita.hora_cita}:00` : cita.hora_cita;
-			const key = `${dateKey}|${hourKey}`;
 			const horaFin = computeHoraFin(hourKey);
-			map.set(key, {
+			return {
 				id_disponibilidad: `cita-${cita.id_cita}`,
 				fecha: dateKey,
 				hora_inicio: hourKey,
@@ -468,9 +468,12 @@ const CalendarioPage = () => {
 				estado: 4,
 				estado_pago: Number(cita.estado_pago),
 				estado_cita: Number(cita.estado_cita),
-			});
+			} as Disponibilidad;
 		});
-		return Array.from(map.values());
+
+		// Para el listado de "Mis bloques" queremos ver cada bloque individual,
+		// por eso NO colapsamos por celda como en el calendario visual.
+		return [...normalizedBloques, ...citaBloques];
 	}, [bloques, citas]);
 
 	const filteredBloques = useMemo(() => {

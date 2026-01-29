@@ -202,15 +202,18 @@ const approveDisponibilidadController = async ({
 			throw err;
 		}
 
+		// Solo impedimos aprobar si el bloque se solapa con otro que ya tiene cita (estado 4).
+		// Es válido tener varios bloques aprobados solapados (por ejemplo, diferentes ecos en el mismo horario);
+		// cuando se genere una cita, citasControllers se encarga de marcar como cancelados los demás bloques.
 		const overlap = await hasOverlap(conn, {
 			id_especialista: bloque.id_especialista,
 			fecha: bloque.fecha,
 			hora_inicio: bloque.hora_inicio,
 			hora_fin: bloque.hora_fin,
-			estados: [1, 4],
+			estados: [4],
 		});
 		if (overlap) {
-			const err = new Error("Bloque se solapa con otro aprobado");
+			const err = new Error("Bloque se solapa con una cita existente");
 			err.code = "OVERLAP";
 			throw err;
 		}
