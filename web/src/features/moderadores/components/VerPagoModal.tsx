@@ -80,13 +80,12 @@ const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
 									<p className="text-xs font-semibold text-brand-700">Estado</p>
 									<p className="mt-0.5">
 										<span
-											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
-												pago.estado_pago === 0
+											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${pago.estado_pago === 0
 													? "bg-amber-400 text-brand-900"
 													: pago.estado_pago === 1
 														? "bg-brand-700 text-paper"
 														: "bg-red-500 text-paper"
-											}`}
+												}`}
 										>
 											{pago.estado_pago === 0
 												? "Pendiente"
@@ -142,7 +141,7 @@ const VerPagoModal = ({ pago, error, onClose }: VerPagoModalProps) => {
 								<div>
 									<p className="text-xs font-semibold text-brand-700">RIF del paciente</p>
 									<p className="mt-0.5 text-sm text-brand-900">
-										{pago.paciente_rif || "N/A"}
+										{pago.paciente_rif || pago.paciente_cedula || "N/A"}
 									</p>
 								</div>
 								<div>

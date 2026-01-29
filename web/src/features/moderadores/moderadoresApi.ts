@@ -28,6 +28,7 @@ export type PagoData = {
 	validado_por_nombre?: string | null;
 	validado_por_apellido?: string | null;
 	paciente_rif?: string | null;
+	paciente_cedula?: string | null;
 	eco_precio?: number | string | null;
 	eco_nombre?: string | null;
 };
