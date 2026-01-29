@@ -188,8 +188,9 @@ const cancelCitaHandler = async (req, res) => {
 const markCitaAtendidaHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const id_especialista = req.user?.id;
-		if (!id_especialista) {
+		const userId = req.user?.id;
+		const role = req.user?.rol;
+		if (!userId) {
 			return res.status(401).json({
 				ok: false,
 				message: "Token inválido",
@@ -197,7 +198,8 @@ const markCitaAtendidaHandler = async (req, res) => {
 		}
 		const data = await markCitaAtendidaController({
 			id_cita: id,
-			id_especialista,
+			userId,
+			role,
 		});
 		return res.status(200).json({
 			ok: true,
@@ -279,7 +281,8 @@ const updateEstadoPagoHandler = async (req, res) => {
 		if (estado_pago === undefined || ![0, 1, 2].includes(Number(estado_pago))) {
 			return res.status(400).json({
 				ok: false,
-				message: "estado_pago debe ser 0 (Pendiente), 1 (Aprobado) o 2 (Rechazado)",
+				message:
+					"estado_pago debe ser 0 (Pendiente), 1 (Aprobado) o 2 (Rechazado)",
 			});
 		}
 
@@ -347,7 +350,7 @@ const getCitaByIdHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { rol, id: id_usuario } = req.user; // Información del usuario autenticado (el campo es 'id' no 'id_usuario')
-		
+
 		if (!id) {
 			return res.status(400).json({
 				ok: false,
@@ -361,7 +364,7 @@ const getCitaByIdHandler = async (req, res) => {
 				message: "Cita no encontrada",
 			});
 		}
-		
+
 		// Si es especialista, solo puede ver sus propias citas
 		// En la tabla cita, id_especialista hace referencia a especialista(id_especialista)
 		// Y en la tabla especialista, id_especialista = id_usuario
@@ -369,33 +372,38 @@ const getCitaByIdHandler = async (req, res) => {
 			// Convertir a string y comparar para evitar problemas de tipo
 			const citaEspecialistaId = String(data.id_especialista || "").trim();
 			const usuarioId = String(id_usuario || "").trim();
-			
+
 			if (citaEspecialistaId !== usuarioId) {
-				console.log("🔒 Acceso denegado - Especialista intentando ver cita de otro:", {
-					usuarioId,
-					citaEspecialistaId,
-					citaId: id,
-					rol,
-					comparison: citaEspecialistaId === usuarioId,
-				});
+				console.log(
+					"🔒 Acceso denegado - Especialista intentando ver cita de otro:",
+					{
+						usuarioId,
+						citaEspecialistaId,
+						citaId: id,
+						rol,
+						comparison: citaEspecialistaId === usuarioId,
+					},
+				);
 				return res.status(403).json({
 					ok: false,
-					message: "No tienes permiso para ver esta cita. Esta cita pertenece a otro especialista.",
+					message:
+						"No tienes permiso para ver esta cita. Esta cita pertenece a otro especialista.",
 				});
 			}
 		} else if (rol === "paciente") {
 			// Los pacientes solo pueden ver sus propias citas
 			const citaPacienteId = String(data.id_paciente || "").trim();
 			const usuarioId = String(id_usuario || "").trim();
-			
+
 			if (citaPacienteId !== usuarioId) {
 				return res.status(403).json({
 					ok: false,
-					message: "No tienes permiso para ver esta cita. Esta cita pertenece a otro paciente.",
+					message:
+						"No tienes permiso para ver esta cita. Esta cita pertenece a otro paciente.",
 				});
 			}
 		}
-		
+
 		return res.status(200).json({
 			ok: true,
 			data,
@@ -443,9 +451,10 @@ const posponerCitaHandler = async (req, res) => {
 		}
 
 		// Normalizar hora a HH:MM:SS
-		const horaNormalizada = hora_cita.includes(":") && hora_cita.split(":").length === 2
-			? `${hora_cita}:00`
-			: hora_cita;
+		const horaNormalizada =
+			hora_cita.includes(":") && hora_cita.split(":").length === 2
+				? `${hora_cita}:00`
+				: hora_cita;
 
 		const data = await posponerCitaController({
 			id_cita: id,

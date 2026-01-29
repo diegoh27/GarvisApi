@@ -18,7 +18,10 @@ const {
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
-const { uploadOrdenMedica, uploadOrdenMedicaHandler } = require("../handlers/uploadHandlers");
+const {
+	uploadOrdenMedica,
+	uploadOrdenMedicaHandler,
+} = require("../handlers/uploadHandlers");
 
 const citasRoutes = Router();
 
@@ -79,27 +82,27 @@ citasRoutes.patch(
 	authorizeRoles("admin", "moderador"),
 	posponerCitaHandler,
 );
-// PATCH /citas/:id/atender (especialista)
+// PATCH /citas/:id/atender (especialista o paciente para marcar su propia cita al abrir historial)
 citasRoutes.patch(
 	"/:id/atender",
 	authenticateToken,
-	authorizeRoles("especialista"),
+	authorizeRoles("especialista", "paciente"),
 	markCitaAtendidaHandler,
 );
 // GET /citas/pendientes-pago (moderador/admin)
-	citasRoutes.get(
-		"/pendientes-pago",
-		authenticateToken,
-		authorizeRoles("moderador", "admin"),
-		listCitasPendientesPagoHandler,
-	);
+citasRoutes.get(
+	"/pendientes-pago",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listCitasPendientesPagoHandler,
+);
 // GET /citas/con-pagos (moderador/admin) - Todas las citas con pagos para verificación
-	citasRoutes.get(
-		"/con-pagos",
-		authenticateToken,
-		authorizeRoles("moderador", "admin"),
-		listCitasConPagosHandler,
-	);
+citasRoutes.get(
+	"/con-pagos",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	listCitasConPagosHandler,
+);
 // PATCH /citas/:id/estado-pago (moderador/admin)
 citasRoutes.patch(
 	"/:id/estado-pago",
@@ -129,11 +132,11 @@ citasRoutes.get(
 	listMisCitasCompletasHandler,
 );
 // GET /citas/:id (moderador/admin/especialista/paciente)
-	citasRoutes.get(
-		"/:id",
-		authenticateToken,
-		authorizeRoles("moderador", "admin", "especialista", "paciente"),
-		getCitaByIdHandler,
-	);
+citasRoutes.get(
+	"/:id",
+	authenticateToken,
+	authorizeRoles("moderador", "admin", "especialista", "paciente"),
+	getCitaByIdHandler,
+);
 
 module.exports = citasRoutes;
