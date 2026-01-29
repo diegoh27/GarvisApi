@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const { getDolarOficialController } = require("./dolarControllers");
 
 const createCitaFromDisponibilidadController = async ({
 	id_paciente,
@@ -243,7 +244,13 @@ const cancelCitaController = async ({ id_cita }) => {
 			throw err;
 		}
 
-		await conn.execute("UPDATE cita SET estado_cita = 2 WHERE id_cita = ?", [
+		await conn.execute(
+			"UPDATE cita SET estado_cita = 2, estado_pago = 2 WHERE id_cita = ?",
+			[id_cita],
+		);
+
+		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita
+		await conn.execute("UPDATE pagos SET estado_pago = 2 WHERE id_cita = ?", [
 			id_cita,
 		]);
 
@@ -426,6 +433,19 @@ const updateEstadoPagoController = async ({
 			"UPDATE cita SET estado_pago = ?, estado_cita = ? WHERE id_cita = ?",
 			[estado_pago, nuevoEstadoCita, id_cita],
 		);
+
+		// Sincronizar estado en la tabla pagos para que "Detalles del pago" muestre el estado correcto
+		if (estado_pago === 1 && aprobado_por) {
+			await conn.execute(
+				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
+				[estado_pago, aprobado_por, id_cita],
+			);
+		} else {
+			await conn.execute("UPDATE pagos SET estado_pago = ? WHERE id_cita = ?", [
+				estado_pago,
+				id_cita,
+			]);
+		}
 
 		await conn.commit();
 		return { id_cita, estado_pago, estado_cita: nuevoEstadoCita };
@@ -791,13 +811,24 @@ const asignarCitaCompletaController = async ({
 			[id_disponibilidad],
 		);
 
-		// 4. Crear el pago
+		// 4. Obtener tasa BCV del día para guardarla en el pago (no puede ser null en BD)
+		let tasaDiaBcv = 0;
+		try {
+			const dolarData = await getDolarOficialController();
+			if (dolarData && typeof dolarData.promedio === "number") {
+				tasaDiaBcv = dolarData.promedio;
+			}
+		} catch (err) {
+			// Si falla la API del dólar, se guarda 0
+		}
+
+		// 5. Crear el pago
 		const id_pago = crypto.randomUUID();
 		const sqlPago = `
       INSERT INTO pagos
-        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago)
+        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago, tasa_dia_bcv)
       VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
     `;
 		await conn.execute(sqlPago, [
 			id_pago,
@@ -811,9 +842,10 @@ const asignarCitaCompletaController = async ({
 			cedula_pagador,
 			telefono_pagador,
 			referencia,
+			tasaDiaBcv,
 		]);
 
-		// 5. Crear resultado vacío (estado 0: Pendiente)
+		// 6. Crear resultado vacío (estado 0: Pendiente)
 		const id_resultado = crypto.randomUUID();
 		const sqlResultado = `
       INSERT INTO resultado

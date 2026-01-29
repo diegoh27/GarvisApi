@@ -204,7 +204,9 @@ const App = () => {
 						path="citas"
 						element={
 							<ProtectedRoute>
-								<CitasPage />
+								<RoleRoute allowed={["paciente"]}>
+									<CitasPage />
+								</RoleRoute>
 							</ProtectedRoute>
 						}
 					/>

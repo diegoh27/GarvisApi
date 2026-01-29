@@ -8,25 +8,26 @@ const path = require("path");
  */
 function parseTableDefinitions(sqlContent) {
 	const tables = {};
-	
+
 	// Remover comentarios de línea (-- comentario) pero preservar estructura
 	let cleanedSQL = sqlContent.replace(/--[^\n]*/g, "");
-	
+
 	// Buscar todas las definiciones CREATE TABLE usando regex más robusto
-	const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?\s*\(/gi;
+	const createTableRegex =
+		/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?\s*\(/gi;
 	const createTableMatches = [];
 	let match;
-	
+
 	while ((match = createTableRegex.exec(cleanedSQL)) !== null) {
 		const tableName = match[1];
 		const createTableStart = match.index; // Inicio del CREATE TABLE
 		const tableStart = match.index + match[0].length - 1; // Posición del paréntesis de apertura
-		
+
 		// Buscar el cierre del paréntesis que corresponde al inicio
 		let parenCount = 1;
 		let tableEnd = tableStart;
 		let foundEnd = false;
-		
+
 		for (let i = tableStart + 1; i < cleanedSQL.length; i++) {
 			if (cleanedSQL[i] === "(") parenCount++;
 			if (cleanedSQL[i] === ")") parenCount--;
@@ -36,7 +37,7 @@ function parseTableDefinitions(sqlContent) {
 				break;
 			}
 		}
-		
+
 		if (foundEnd) {
 			const tableBody = cleanedSQL.substring(tableStart + 1, tableEnd);
 			// Buscar el ENGINE=InnoDB después del paréntesis de cierre
@@ -47,11 +48,13 @@ function parseTableDefinitions(sqlContent) {
 				fullDefinitionEnd = tableEnd + 1 + engineMatch[0].length;
 			}
 			// Guardar la definición completa del CREATE TABLE
-			const fullDefinition = cleanedSQL.substring(createTableStart, fullDefinitionEnd).trim();
+			const fullDefinition = cleanedSQL
+				.substring(createTableStart, fullDefinitionEnd)
+				.trim();
 			createTableMatches.push({ tableName, tableBody, fullDefinition });
 		}
 	}
-	
+
 	for (const { tableName, tableBody, fullDefinition } of createTableMatches) {
 		// Dividir el cuerpo de la tabla en líneas y procesar
 		const columns = {};
@@ -60,16 +63,16 @@ function parseTableDefinitions(sqlContent) {
 		let parenDepth = 0;
 		let inString = false;
 		let stringChar = null;
-		
+
 		for (let line of lines) {
 			line = line.trim();
 			if (!line) continue;
-			
+
 			// Contar paréntesis y manejar strings para evitar falsos positivos
 			for (let i = 0; i < line.length; i++) {
 				const char = line[i];
 				const prevChar = i > 0 ? line[i - 1] : null;
-				
+
 				if (!inString && (char === '"' || char === "'" || char === "`")) {
 					inString = true;
 					stringChar = char;
@@ -81,55 +84,63 @@ function parseTableDefinitions(sqlContent) {
 					if (char === ")") parenDepth--;
 				}
 			}
-			
+
 			currentDefinition += (currentDefinition ? " " : "") + line;
-			
+
 			// Si estamos fuera de paréntesis y la línea termina con coma
-			if (parenDepth === 0 && !inString && (line.endsWith(",") || /,\s*$/.test(line))) {
+			if (
+				parenDepth === 0 &&
+				!inString &&
+				(line.endsWith(",") || /,\s*$/.test(line))
+			) {
 				// Verificar PRIMERO si es una constraint/key ANTES de intentar parsear como columna
 				const trimmedDef = currentDefinition.trim();
 				const upperCurrent = trimmedDef.toUpperCase();
-				const isConstraint = upperCurrent.startsWith("PRIMARY KEY") ||
-				                     upperCurrent.startsWith("UNIQUE KEY") ||
-				                     upperCurrent.startsWith("KEY ") ||
-				                     upperCurrent.startsWith("CONSTRAINT") ||
-				                     upperCurrent.startsWith("FOREIGN KEY") ||
-				                     upperCurrent.startsWith("INDEX") ||
-				                     /^KEY\s+/.test(upperCurrent);
-				
+				const isConstraint =
+					upperCurrent.startsWith("PRIMARY KEY") ||
+					upperCurrent.startsWith("UNIQUE KEY") ||
+					upperCurrent.startsWith("KEY ") ||
+					upperCurrent.startsWith("CONSTRAINT") ||
+					upperCurrent.startsWith("FOREIGN KEY") ||
+					upperCurrent.startsWith("INDEX") ||
+					/^KEY\s+/.test(upperCurrent);
+
 				if (!isConstraint) {
 					// Intentar extraer definición de columna
 					const colMatch = trimmedDef.match(/^`?(\w+)`?\s+(.+?)(?:,\s*)?$/);
 					if (colMatch) {
 						const colName = colMatch[1].trim();
 						let colDef = colMatch[2].trim();
-						
+
 						// Remover coma final
 						colDef = colDef.replace(/,\s*$/, "").trim();
-						
+
 						// Verificar nuevamente que no sea una constraint (por si acaso)
 						const upperColDef = colDef.toUpperCase();
-						const isColConstraint = upperColDef.startsWith("PRIMARY KEY") ||
-						                         upperColDef.startsWith("UNIQUE KEY") ||
-						                         upperColDef.startsWith("KEY ") ||
-						                         upperColDef.startsWith("CONSTRAINT") ||
-						                         upperColDef.startsWith("FOREIGN KEY") ||
-						                         upperColDef.startsWith("INDEX");
-						
+						const isColConstraint =
+							upperColDef.startsWith("PRIMARY KEY") ||
+							upperColDef.startsWith("UNIQUE KEY") ||
+							upperColDef.startsWith("KEY ") ||
+							upperColDef.startsWith("CONSTRAINT") ||
+							upperColDef.startsWith("FOREIGN KEY") ||
+							upperColDef.startsWith("INDEX");
+
 						if (!isColConstraint) {
 							// Extraer tipo de dato (puede incluir paréntesis como VARCHAR(255))
 							const typeMatch = colDef.match(/^(\w+(?:\([^)]+\))?)/i);
 							if (typeMatch) {
-							// Extraer DEFAULT, puede incluir funciones como CURRENT_TIMESTAMP y ON UPDATE
-							// IMPORTANTE: Si es "DEFAULT NULL", extraer "NULL" explícitamente
-							let defaultValue = null;
-							if (colDef.toUpperCase().includes("DEFAULT NULL")) {
-								defaultValue = "NULL";
-							} else {
-								const defaultMatch = colDef.match(/DEFAULT\s+([^,\s]+(?:\([^)]+\))?)/i);
-								defaultValue = defaultMatch ? defaultMatch[1].trim() : null;
-							}
-								
+								// Extraer DEFAULT, puede incluir funciones como CURRENT_TIMESTAMP y ON UPDATE
+								// IMPORTANTE: Si es "DEFAULT NULL", extraer "NULL" explícitamente
+								let defaultValue = null;
+								if (colDef.toUpperCase().includes("DEFAULT NULL")) {
+									defaultValue = "NULL";
+								} else {
+									const defaultMatch = colDef.match(
+										/DEFAULT\s+([^,\s]+(?:\([^)]+\))?)/i,
+									);
+									defaultValue = defaultMatch ? defaultMatch[1].trim() : null;
+								}
+
 								columns[colName] = {
 									type: typeMatch[1].toUpperCase(),
 									nullable: !colDef.includes("NOT NULL"),
@@ -145,18 +156,19 @@ function parseTableDefinitions(sqlContent) {
 				inString = false;
 			}
 		}
-		
+
 		// Procesar última definición si no terminó con coma (solo si es una columna)
 		if (currentDefinition.trim() && parenDepth === 0) {
 			const upperCurrent = currentDefinition.toUpperCase().trim();
-			const isConstraint = upperCurrent.startsWith("PRIMARY KEY") ||
-			                     upperCurrent.startsWith("UNIQUE KEY") ||
-			                     upperCurrent.startsWith("KEY ") ||
-			                     upperCurrent.startsWith("CONSTRAINT") ||
-			                     upperCurrent.startsWith("FOREIGN KEY") ||
-			                     upperCurrent.startsWith("INDEX") ||
-			                     /^KEY\s+/.test(upperCurrent);
-			
+			const isConstraint =
+				upperCurrent.startsWith("PRIMARY KEY") ||
+				upperCurrent.startsWith("UNIQUE KEY") ||
+				upperCurrent.startsWith("KEY ") ||
+				upperCurrent.startsWith("CONSTRAINT") ||
+				upperCurrent.startsWith("FOREIGN KEY") ||
+				upperCurrent.startsWith("INDEX") ||
+				/^KEY\s+/.test(upperCurrent);
+
 			if (!isConstraint) {
 				const colMatch = currentDefinition.match(/^`?(\w+)`?\s+(.+?)$/);
 				if (colMatch) {
@@ -169,10 +181,12 @@ function parseTableDefinitions(sqlContent) {
 						if (colDef.toUpperCase().includes("DEFAULT NULL")) {
 							defaultValue = "NULL";
 						} else {
-							const defaultMatch = colDef.match(/DEFAULT\s+([^,\s]+(?:\([^)]+\))?)/i);
+							const defaultMatch = colDef.match(
+								/DEFAULT\s+([^,\s]+(?:\([^)]+\))?)/i,
+							);
 							defaultValue = defaultMatch ? defaultMatch[1].trim() : null;
 						}
-						
+
 						columns[colName] = {
 							type: typeMatch[1].toUpperCase(),
 							nullable: !colDef.includes("NOT NULL"),
@@ -183,10 +197,10 @@ function parseTableDefinitions(sqlContent) {
 				}
 			}
 		}
-		
+
 		tables[tableName] = { columns, fullDefinition };
 	}
-	
+
 	return tables;
 }
 
@@ -199,11 +213,11 @@ async function getCurrentSchema() {
 		`SELECT TABLE_NAME 
 		 FROM information_schema.TABLES 
 		 WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'`,
-		[dbName]
+		[dbName],
 	);
-	
+
 	const schema = {};
-	
+
 	for (const table of tables) {
 		const tableName = table.TABLE_NAME;
 		const [columns] = await pool.execute(
@@ -217,13 +231,13 @@ async function getCurrentSchema() {
 			FROM information_schema.COLUMNS
 			WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
 			ORDER BY ORDINAL_POSITION`,
-			[dbName, tableName]
+			[dbName, tableName],
 		);
-		
+
 		schema[tableName] = {
 			columns: {},
 		};
-		
+
 		for (const col of columns) {
 			schema[tableName].columns[col.COLUMN_NAME] = {
 				type: col.COLUMN_TYPE.toUpperCase(),
@@ -234,7 +248,7 @@ async function getCurrentSchema() {
 			};
 		}
 	}
-	
+
 	return schema;
 }
 
@@ -256,153 +270,194 @@ function normalizeType(type) {
 function typesMatch(expectedType, actualType) {
 	const normalizedExpected = normalizeType(expectedType);
 	const normalizedActual = normalizeType(actualType);
-	
+
 	// Comparación exacta
 	if (normalizedExpected === normalizedActual) return true;
-	
+
 	// Comparación flexible para tipos similares
 	// NOTA: VARCHAR y TEXT NO son compatibles - deben detectarse como diferentes
 	const typeMap = {
-		"TINYINT": ["TINYINT", "TINYINT(1)", "BOOLEAN"],
-		"INT": ["INT", "INTEGER", "INT(11)"],
-		"VARCHAR": (t) => t.startsWith("VARCHAR"),
-		"TEXT": ["TEXT", "MEDIUMTEXT", "LONGTEXT"],
-		"TIMESTAMP": ["TIMESTAMP", "DATETIME"],
+		TINYINT: ["TINYINT", "TINYINT(1)", "BOOLEAN"],
+		INT: ["INT", "INTEGER", "INT(11)"],
+		VARCHAR: (t) => t.startsWith("VARCHAR"),
+		TEXT: ["TEXT", "MEDIUMTEXT", "LONGTEXT"],
+		TIMESTAMP: ["TIMESTAMP", "DATETIME"],
 	};
-	
+
 	// Verificar si son tipos compatibles
 	// IMPORTANTE: VARCHAR y TEXT son diferentes, no deben considerarse compatibles
-	if (normalizedExpected.includes("VARCHAR") && normalizedActual.includes("TEXT")) {
+	if (
+		normalizedExpected.includes("VARCHAR") &&
+		normalizedActual.includes("TEXT")
+	) {
 		return false; // VARCHAR y TEXT son diferentes
 	}
-	if (normalizedExpected.includes("TEXT") && normalizedActual.includes("VARCHAR")) {
+	if (
+		normalizedExpected.includes("TEXT") &&
+		normalizedActual.includes("VARCHAR")
+	) {
 		return false; // TEXT y VARCHAR son diferentes
 	}
-	
+
 	for (const [key, values] of Object.entries(typeMap)) {
 		if (normalizedExpected.includes(key)) {
 			if (typeof values === "function") {
 				return values(normalizedActual);
 			}
-			return values.some(v => normalizedActual.includes(v));
+			return values.some((v) => normalizedActual.includes(v));
 		}
 	}
-	
+
 	return false;
 }
 
 /**
- * Genera statements ALTER TABLE para las diferencias
+ * Genera statements ALTER TABLE para las diferencias.
+ * Retorna { preStatements: string[], alterStatements: string[] }.
+ * preStatements: UPDATEs para rellenar NULLs antes de pasar una columna a NOT NULL.
  */
 function generateAlterStatements(expectedSchema, currentSchema) {
-	const statements = [];
-	
+	const preStatements = [];
+	const alterStatements = [];
+
 	for (const [tableName, expectedTable] of Object.entries(expectedSchema)) {
 		if (!currentSchema[tableName]) {
 			// Tabla no existe - generar CREATE TABLE completo
 			if (expectedTable.fullDefinition) {
-				statements.push(expectedTable.fullDefinition + ";");
+				alterStatements.push(expectedTable.fullDefinition + ";");
 			}
 			continue;
 		}
-		
+
 		const currentTable = currentSchema[tableName];
-		const alterStatements = [];
-		
+		const tableAlterStatements = [];
+
 		// Verificar columnas que faltan o son diferentes
-		for (const [colName, expectedCol] of Object.entries(expectedTable.columns)) {
+		for (const [colName, expectedCol] of Object.entries(
+			expectedTable.columns,
+		)) {
 			if (!currentTable.columns[colName]) {
 				// Columna no existe, agregarla
-				alterStatements.push(`ADD COLUMN \`${colName}\` ${expectedCol.definition}`);
+				tableAlterStatements.push(
+					`ADD COLUMN \`${colName}\` ${expectedCol.definition}`,
+				);
 			} else {
 				const currentCol = currentTable.columns[colName];
 				let needsModify = false;
 				let modifyReasons = [];
-				
+
+				// Verificar si nullable cambió (true -> false: necesitamos UPDATE antes del MODIFY)
+				const changingToNotNull = !expectedCol.nullable && currentCol.nullable;
+				if (expectedCol.nullable !== currentCol.nullable) {
+					needsModify = true;
+					modifyReasons.push(
+						`nullable: ${expectedCol.nullable} vs ${currentCol.nullable}`,
+					);
+				}
+
 				// Verificar si el tipo cambió
 				if (!typesMatch(expectedCol.type, currentCol.type)) {
 					needsModify = true;
 					modifyReasons.push(`tipo: ${expectedCol.type} vs ${currentCol.type}`);
 				}
-				
-				// Verificar si nullable cambió
-				if (expectedCol.nullable !== currentCol.nullable) {
-					needsModify = true;
-					modifyReasons.push(`nullable: ${expectedCol.nullable} vs ${currentCol.nullable}`);
-				}
-				
+
 				// Verificar si DEFAULT cambió
 				// IMPORTANTE: MySQL devuelve null cuando DEFAULT es NULL o cuando hay ON UPDATE CURRENT_TIMESTAMP
-				// Necesitamos manejar estos casos especiales
-				let expectedDefault = expectedCol.defaultValue ? expectedCol.defaultValue.toString().toUpperCase() : null;
-				let currentDefault = currentCol.defaultValue ? currentCol.defaultValue.toString().toUpperCase() : null;
-				
-				// Si el SQL tiene "DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP", esperamos NULL como default
-				// MySQL devuelve null en COLUMN_DEFAULT cuando hay ON UPDATE CURRENT_TIMESTAMP
-				const hasOnUpdate = currentCol.extra && currentCol.extra.includes("ON UPDATE CURRENT_TIMESTAMP");
-				const expectedHasOnUpdate = expectedCol.definition.toUpperCase().includes("ON UPDATE CURRENT_TIMESTAMP");
-				
-				// Si ambos tienen ON UPDATE y el esperado es NULL, entonces son equivalentes
-				if (expectedHasOnUpdate && hasOnUpdate && expectedDefault === "NULL" && currentDefault === null) {
-					// Son equivalentes, no hay cambio
+				let expectedDefault = expectedCol.defaultValue
+					? expectedCol.defaultValue.toString().toUpperCase()
+					: null;
+				let currentDefault = currentCol.defaultValue
+					? currentCol.defaultValue.toString().toUpperCase()
+					: null;
+
+				const hasOnUpdate =
+					currentCol.extra &&
+					currentCol.extra.includes("ON UPDATE CURRENT_TIMESTAMP");
+				const expectedHasOnUpdate = expectedCol.definition
+					.toUpperCase()
+					.includes("ON UPDATE CURRENT_TIMESTAMP");
+
+				if (
+					expectedHasOnUpdate &&
+					hasOnUpdate &&
+					expectedDefault === "NULL" &&
+					currentDefault === null
+				) {
 					expectedDefault = null;
 					currentDefault = null;
 				}
-				
-				// Normalizar valores especiales
+
 				const normalizeDefault = (val) => {
-					// NULL y null son equivalentes
 					if (!val || val === "NULL") return null;
 					val = val.toUpperCase();
-					// Normalizar CURRENT_TIMESTAMP y variaciones
 					if (val.includes("CURRENT_TIMESTAMP")) return "CURRENT_TIMESTAMP";
-					// Normalizar números: "0" y "0.00" son equivalentes
 					if (/^0(\.0+)?$/.test(val)) return "0";
-					// Normalizar otros números decimales
-					if (/^\d+\.\d+$/.test(val)) {
-						const num = parseFloat(val);
-						// Si es un número entero, devolver como entero
-						if (num % 1 === 0) return num.toString();
-						return num.toString();
-					}
+					if (/^\d+\.\d+$/.test(val)) return parseFloat(val).toString();
 					return val;
 				};
-				
+
 				const normalizedExpected = normalizeDefault(expectedDefault);
 				const normalizedCurrent = normalizeDefault(currentDefault);
-				
+
 				if (normalizedExpected !== normalizedCurrent) {
 					needsModify = true;
-					modifyReasons.push(`default: ${normalizedExpected} vs ${normalizedCurrent}`);
+					modifyReasons.push(
+						`default: ${normalizedExpected} vs ${normalizedCurrent}`,
+					);
 				}
-				
-				// Verificar si ON UPDATE CURRENT_TIMESTAMP cambió
-				// En el SQL esperado, está en la definición como "ON UPDATE CURRENT_TIMESTAMP"
-				// En la BD actual, está en el campo EXTRA como "on update CURRENT_TIMESTAMP" (MySQL lo devuelve en minúsculas)
-				// Ya normalizamos EXTRA a mayúsculas al leerlo, así que comparamos directamente
-				const currentHasOnUpdate = currentCol.extra ? currentCol.extra.includes("ON UPDATE CURRENT_TIMESTAMP") : false;
-				
+
+				const currentHasOnUpdate = currentCol.extra
+					? currentCol.extra.includes("ON UPDATE CURRENT_TIMESTAMP")
+					: false;
 				if (expectedHasOnUpdate !== currentHasOnUpdate) {
 					needsModify = true;
-					modifyReasons.push(`ON UPDATE: esperado=${expectedHasOnUpdate}, actual=${currentHasOnUpdate}, extra="${currentCol.extra}"`);
+					modifyReasons.push(
+						`ON UPDATE: esperado=${expectedHasOnUpdate}, actual=${currentHasOnUpdate}, extra="${currentCol.extra}"`,
+					);
 				}
-				
+
 				if (needsModify) {
-					// Log de depuración para entender por qué se detecta el cambio
 					if (modifyReasons.length > 0) {
-						console.log(`   🔍 [DEBUG] ${tableName}.${colName}: ${modifyReasons.join(", ")}`);
+						console.log(
+							`   🔍 [DEBUG] ${tableName}.${colName}: ${modifyReasons.join(", ")}`,
+						);
 					}
-					alterStatements.push(`MODIFY COLUMN \`${colName}\` ${expectedCol.definition}`);
+					// Antes de MODIFY a NOT NULL: rellenar NULLs con el valor por defecto
+					if (
+						changingToNotNull &&
+						expectedCol.defaultValue != null &&
+						expectedCol.defaultValue !== "NULL"
+					) {
+						const def = String(expectedCol.defaultValue).trim().toUpperCase();
+						let sqlDefault;
+						if (def === "0" || /^0(\.0+)?$/.test(def)) {
+							sqlDefault = "0";
+						} else if (def.includes("CURRENT_TIMESTAMP")) {
+							sqlDefault = "CURRENT_TIMESTAMP()";
+						} else if (/^\d+(\.\d+)?$/.test(def)) {
+							sqlDefault = def;
+						} else {
+							sqlDefault = `'${String(expectedCol.defaultValue).replace(/'/g, "''")}'`;
+						}
+						preStatements.push(
+							`UPDATE \`${tableName}\` SET \`${colName}\` = ${sqlDefault} WHERE \`${colName}\` IS NULL;`,
+						);
+					}
+					tableAlterStatements.push(
+						`MODIFY COLUMN \`${colName}\` ${expectedCol.definition}`,
+					);
 				}
 			}
 		}
-		
-		if (alterStatements.length > 0) {
-			statements.push(`ALTER TABLE \`${tableName}\` ${alterStatements.join(", ")};`);
+
+		if (tableAlterStatements.length > 0) {
+			alterStatements.push(
+				`ALTER TABLE \`${tableName}\` ${tableAlterStatements.join(", ")};`,
+			);
 		}
 	}
-	
-	return statements;
+
+	return { preStatements, alterStatements };
 }
 
 /**
@@ -411,30 +466,39 @@ function generateAlterStatements(expectedSchema, currentSchema) {
 async function runMigrations() {
 	try {
 		console.log("\n🔄 Verificando migraciones de esquema...");
-		
+
 		// Leer el archivo SQL esperado
 		const sqlPath = path.join(__dirname, "tables_without_db.sql");
 		if (!fs.existsSync(sqlPath)) {
 			console.log("⚠️  Archivo SQL no encontrado. Saltando migraciones.");
 			return true;
 		}
-		
+
 		console.log("📖 Leyendo archivo SQL...");
 		const sqlContent = fs.readFileSync(sqlPath, "utf8");
-		
+
 		// Parsear esquema esperado
 		console.log("🔍 Parseando definiciones de tablas...");
 		let expectedSchema;
 		try {
 			expectedSchema = parseTableDefinitions(sqlContent);
 			const tableCount = Object.keys(expectedSchema).length;
-			console.log(`   ✅ Encontradas ${tableCount} tabla(s) en el esquema esperado`);
+			console.log(
+				`   ✅ Encontradas ${tableCount} tabla(s) en el esquema esperado`,
+			);
 			if (tableCount === 0) {
-				console.warn("   ⚠️  No se encontraron tablas. Verificando contenido del archivo...");
-				const createTableCount = (sqlContent.match(/CREATE TABLE/gi) || []).length;
-				console.log(`   📊 CREATE TABLE encontrados en archivo: ${createTableCount}`);
+				console.warn(
+					"   ⚠️  No se encontraron tablas. Verificando contenido del archivo...",
+				);
+				const createTableCount = (sqlContent.match(/CREATE TABLE/gi) || [])
+					.length;
+				console.log(
+					`   📊 CREATE TABLE encontrados en archivo: ${createTableCount}`,
+				);
 				if (createTableCount > 0) {
-					console.warn("   ⚠️  El parser no está extrayendo las tablas correctamente.");
+					console.warn(
+						"   ⚠️  El parser no está extrayendo las tablas correctamente.",
+					);
 				}
 			}
 		} catch (parseError) {
@@ -442,39 +506,56 @@ async function runMigrations() {
 			console.error("   Stack:", parseError.stack);
 			return false;
 		}
-		
+
 		// Obtener esquema actual
 		console.log("🔍 Consultando esquema actual de la base de datos...");
 		let currentSchema;
 		try {
 			currentSchema = await getCurrentSchema();
-			console.log(`   ✅ Encontradas ${Object.keys(currentSchema).length} tabla(s) en la base de datos actual`);
+			console.log(
+				`   ✅ Encontradas ${Object.keys(currentSchema).length} tabla(s) en la base de datos actual`,
+			);
 		} catch (schemaError) {
-			console.error("❌ Error consultando esquema actual:", schemaError.message);
+			console.error(
+				"❌ Error consultando esquema actual:",
+				schemaError.message,
+			);
 			return false;
 		}
-		
-		// Generar statements ALTER
+
+		// Generar statements ALTER y pre-statements (UPDATE para NULLs)
 		console.log("🔍 Comparando esquemas y generando migraciones...");
-		const alterStatements = generateAlterStatements(expectedSchema, currentSchema);
+		const { preStatements, alterStatements } = generateAlterStatements(
+			expectedSchema,
+			currentSchema,
+		);
 		console.log("   ✅ Comparación completada");
-		
-		if (alterStatements.length === 0) {
+
+		const allStatements = [...preStatements, ...alterStatements];
+		if (allStatements.length === 0) {
 			console.log("✅ Esquema actualizado. No se requieren migraciones.\n");
 			return true;
 		}
-		
-		console.log(`📝 Se encontraron ${alterStatements.length} cambio(s) en el esquema:`);
+
+		if (preStatements.length > 0) {
+			console.log(
+				`📝 Pre-migraciones (rellenar NULLs): ${preStatements.length}`,
+			);
+			preStatements.forEach((stmt, idx) => {
+				console.log(`   ${idx + 1}. ${stmt.substring(0, 90)}...`);
+			});
+		}
+		console.log(`📝 Migraciones ALTER: ${alterStatements.length}`);
 		alterStatements.forEach((stmt, idx) => {
 			console.log(`   ${idx + 1}. ${stmt.substring(0, 100)}...`);
 		});
-		
-		// Ejecutar migraciones
+
+		// Ejecutar primero preStatements (UPDATE), luego alterStatements (ALTER)
 		console.log("\n🔧 Aplicando migraciones...");
 		let successCount = 0;
 		let errorCount = 0;
-		
-		for (const statement of alterStatements) {
+
+		for (const statement of allStatements) {
 			try {
 				await pool.execute(statement);
 				successCount++;
@@ -483,24 +564,28 @@ async function runMigrations() {
 				errorCount++;
 				// Mensaje de error más detallado
 				let errorMsg = err.message;
-				if (err.code === 'ER_DATA_TOO_LONG') {
+				if (err.code === "ER_DATA_TOO_LONG") {
 					errorMsg = `Datos existentes exceden el nuevo tamaño de columna. ${err.message}`;
-				} else if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+				} else if (err.code === "ER_NO_REFERENCED_ROW_2") {
 					errorMsg = `Violación de clave foránea. ${err.message}`;
-				} else if (err.code === 'ER_DUP_ENTRY') {
+				} else if (err.code === "ER_DUP_ENTRY") {
 					errorMsg = `Entrada duplicada. ${err.message}`;
 				}
 				console.warn(`   ⚠️  Error: ${errorMsg.substring(0, 120)}`);
 				// Continuar con las siguientes migraciones
 			}
 		}
-		
+
 		if (errorCount === 0) {
-			console.log(`\n✅ Migraciones aplicadas exitosamente (${successCount} cambio(s))\n`);
+			console.log(
+				`\n✅ Migraciones aplicadas exitosamente (${successCount} cambio(s))\n`,
+			);
 		} else {
-			console.warn(`\n⚠️  Migraciones completadas con advertencias (${successCount} exitosas, ${errorCount} errores)\n`);
+			console.warn(
+				`\n⚠️  Migraciones completadas con advertencias (${successCount} exitosas, ${errorCount} errores)\n`,
+			);
 		}
-		
+
 		return true;
 	} catch (error) {
 		console.error("❌ Error ejecutando migraciones:", error.message);

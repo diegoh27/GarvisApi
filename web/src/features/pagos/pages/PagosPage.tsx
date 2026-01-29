@@ -46,6 +46,7 @@ const PagosPage = () => {
 	const [cancelCita] = useCancelCitaMutation();
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
 	const [selectedCitaId, setSelectedCitaId] = useState<string | null>(null);
+	const [selectedCitaIdForVerificar, setSelectedCitaIdForVerificar] = useState<string | null>(null);
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
@@ -125,7 +126,7 @@ const PagosPage = () => {
 		setCurrentPage(1);
 	}, [citas.length, filter, query]);
 
-	const handleAprobarPago = async (id_cita: string) => {
+	const handleAprobarPago = async (id_cita: string): Promise<boolean> => {
 		const confirmResult = await Swal.fire({
 			title: "¿Aprobar pago y confirmar cita?",
 			text: "Esta acción confirmará el pago y aprobará la cita. ¿Estás seguro?",
@@ -137,7 +138,7 @@ const PagosPage = () => {
 			cancelButtonColor: "#9FD8E1",
 		});
 
-		if (!confirmResult.isConfirmed) return;
+		if (!confirmResult.isConfirmed) return false;
 
 		try {
 			await updateEstadoPago({ id_cita, estado_pago: 1 }).unwrap();
@@ -149,16 +150,18 @@ const PagosPage = () => {
 				showConfirmButton: false,
 			});
 			refetch();
+			return true;
 		} catch (error: any) {
 			Swal.fire({
 				icon: "error",
 				title: "Error",
 				text: error?.data?.message || "No se pudo aprobar el pago",
 			});
+			return false;
 		}
 	};
 
-	const handleRechazarPago = async (id_cita: string) => {
+	const handleRechazarPago = async (id_cita: string): Promise<boolean> => {
 		const result = await Swal.fire({
 			icon: "warning",
 			title: "¿Rechazar pago?",
@@ -169,7 +172,7 @@ const PagosPage = () => {
 			confirmButtonColor: "#dc2626",
 		});
 
-		if (!result.isConfirmed) return;
+		if (!result.isConfirmed) return false;
 
 		try {
 			await updateEstadoPago({ id_cita, estado_pago: 2 }).unwrap();
@@ -181,12 +184,14 @@ const PagosPage = () => {
 				showConfirmButton: false,
 			});
 			refetch();
+			return true;
 		} catch (error: any) {
 			Swal.fire({
 				icon: "error",
 				title: "Error",
 				text: error?.data?.message || "No se pudo rechazar el pago",
 			});
+			return false;
 		}
 	};
 
@@ -273,8 +278,8 @@ const PagosPage = () => {
 							key={option.id}
 							onClick={() => setFilter(option.id)}
 							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
-									? "bg-brand-700 text-paper"
-									: "bg-cloud text-brand-800 hover:bg-mist"
+								? "bg-brand-700 text-paper"
+								: "bg-cloud text-brand-800 hover:bg-mist"
 								}`}
 						>
 							{option.label}
@@ -337,44 +342,25 @@ const PagosPage = () => {
 												</div>
 											</div>
 										</div>
-										<div className="flex flex-col gap-2 sm:flex-row">
-											{cita.estado_pago === 0 && (
-												<>
-													<button
-														onClick={() => {
-															setSelectedCita(cita.id_cita);
-															handleAprobarPago(cita.id_cita);
-														}}
-														disabled={isUpdating || selectedCita === cita.id_cita}
-														className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
-													>
-														{isUpdating && selectedCita === cita.id_cita
-															? "Procesando..."
-															: "Aprobar pago"}
-													</button>
-													<button
-														onClick={() => {
-															setSelectedCita(cita.id_cita);
-															handleRechazarPago(cita.id_cita);
-														}}
-														disabled={isUpdating || selectedCita === cita.id_cita}
-														className="rounded-lg border border-red-500 bg-paper px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-													>
-														Rechazar
-													</button>
-												</>
-											)}
+										<div className="flex flex-col gap-2 sm:flex-row flex-wrap">
+											{/* Un solo botón: "Verificar pago" si está pendiente (abre modal con Aprobar/Rechazar), "Ver pago" si ya está procesado */}
+											<button
+												onClick={() => {
+													setSelectedCitaId(cita.id_cita);
+													setSelectedCitaIdForVerificar(cita.estado_pago === 0 ? cita.id_cita : null);
+												}}
+												className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${cita.estado_pago === 0
+														? "bg-amber-500 text-white hover:bg-amber-600"
+														: "border border-brand-700 bg-paper text-brand-700 hover:bg-brand-50"
+													}`}
+											>
+												{cita.estado_pago === 0 ? "Verificar pago" : "Ver pago"}
+											</button>
 											<button
 												onClick={() => setSelectedCitaIdForView(cita.id_cita)}
 												className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
 											>
 												Ver cita
-											</button>
-											<button
-												onClick={() => setSelectedCitaId(cita.id_cita)}
-												className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-											>
-												Ver pago
 											</button>
 											{cita.estado_cita !== 2 && cita.estado_cita !== 3 && (
 												<button
@@ -447,12 +433,34 @@ const PagosPage = () => {
 				/>
 			)}
 
-			{/* Modal de ver pago */}
+			{/* Modal de ver pago / verificar pago */}
 			{selectedCitaId && (
 				<VerPagoModal
 					pago={loadingPago ? null : pagoData || null}
 					error={pagoError ? "No se pudo cargar la información del pago" : null}
-					onClose={() => setSelectedCitaId(null)}
+					onClose={() => {
+						setSelectedCitaId(null);
+						setSelectedCitaIdForVerificar(null);
+					}}
+					showAcciones={!!selectedCitaIdForVerificar}
+					id_cita={selectedCitaId}
+					onAprobar={(id_cita) => {
+						handleAprobarPago(id_cita).then((ok) => {
+							if (ok) {
+								setSelectedCitaId(null);
+								setSelectedCitaIdForVerificar(null);
+							}
+						});
+					}}
+					onRechazar={(id_cita) => {
+						handleRechazarPago(id_cita).then((ok) => {
+							if (ok) {
+								setSelectedCitaId(null);
+								setSelectedCitaIdForVerificar(null);
+							}
+						});
+					}}
+					isUpdating={isUpdating}
 				/>
 			)}
 

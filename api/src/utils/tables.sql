@@ -331,6 +331,7 @@ CREATE TABLE IF NOT EXISTS pagos (
   fecha_pago TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_validacion TIMESTAMP NULL DEFAULT NULL,
   validado_por CHAR(36) NULL,
+  tasa_dia_bcv DECIMAL(12,4) NOT NULL DEFAULT 0 COMMENT 'Tasa BCV del día al registrar el pago (Bs. por USD)',
 
   PRIMARY KEY (id_pago),
   UNIQUE KEY uk_pagos_cita (id_cita),

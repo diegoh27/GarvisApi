@@ -15,8 +15,16 @@ const servePDFProxyHandler = async (req, res) => {
 			});
 		}
 
-		// Validar que la URL sea de Cloudinary
-		if (!cloudinaryUrl.includes("cloudinary.com")) {
+		// Validar que sea una URL http(s) válida (puede ser Cloudinary u otro host)
+		try {
+			const parsed = new URL(cloudinaryUrl);
+			if (!["http:", "https:"].includes(parsed.protocol)) {
+				return res.status(400).json({
+					ok: false,
+					message: "URL inválida",
+				});
+			}
+		} catch {
 			return res.status(400).json({
 				ok: false,
 				message: "URL inválida",
@@ -25,7 +33,7 @@ const servePDFProxyHandler = async (req, res) => {
 
 		// Verificar autenticación: primero intentar desde el middleware, luego desde query param
 		let id_especialista = req.user?.id;
-		
+
 		// Si no hay usuario del middleware pero hay token en query, verificar el token
 		if (!id_especialista && token) {
 			const jwt = require("jsonwebtoken");
@@ -44,18 +52,30 @@ const servePDFProxyHandler = async (req, res) => {
 			});
 		}
 
-		// Descargar el PDF desde Cloudinary
+		// Descargar el archivo desde Cloudinary (puede ser PDF o imagen: orden médica, informe, etc.)
 		const response = await axios.get(cloudinaryUrl, {
 			responseType: "stream",
 			timeout: 30000, // 30 segundos
 		});
 
-		// Configurar headers para PDF
-		res.setHeader("Content-Type", "application/pdf");
-		res.setHeader(
-			"Content-Disposition",
-			`inline; filename="informe.pdf"`
-		);
+		// Content-Type según la URL para que imágenes y PDFs se muestren correctamente
+		const urlLower = cloudinaryUrl.toLowerCase();
+		let contentType = "application/pdf";
+		let filename = "documento.pdf";
+		if (
+			urlLower.includes("/image/") ||
+			/\.(jpe?g|png|webp|gif)(\?|$)/i.test(urlLower)
+		) {
+			contentType = urlLower.includes("png")
+				? "image/png"
+				: urlLower.includes("webp")
+					? "image/webp"
+					: "image/jpeg";
+			filename = "orden-medica.jpg";
+		}
+
+		res.setHeader("Content-Type", contentType);
+		res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
 		res.setHeader("Cache-Control", "public, max-age=3600");
 
 		// Pipe del stream al response
