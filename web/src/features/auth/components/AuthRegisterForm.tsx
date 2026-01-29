@@ -121,9 +121,11 @@ const AuthRegisterForm = () => {
 			case "rif":
 				// Si el usuario no coloca RIF, es válido: en el backend se usará la cédula como fallback.
 				if (!value.trim()) return "";
-				// Si coloca un RIF, validar formato básico (una letra seguida de 8 dígitos)
-				if (!/^[VEJPG]\d{8}$/.test(value)) {
-					return "El RIF debe tener formato V12345678";
+				// Si coloca un RIF manualmente o el sistema lo calcula, aceptamos:
+				// - Letra + 8 dígitos (V12345678)
+				// - Letra + 9 dígitos (V123456789) cuando incluye dígito verificador
+				if (!/^[VEJPG]\d{8,9}$/.test(value)) {
+					return "El RIF debe tener formato V12345678 o V123456789";
 				}
 				return "";
 			case "tipo_sangre":
@@ -385,12 +387,15 @@ const AuthRegisterForm = () => {
 						RIF
 						<span
 							className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-amber-400 bg-amber-50 text-[9px] font-bold text-amber-600"
-							title="Si no posees RIF, se utilizará tu cédula para generar uno automáticamente."
+							title="Si no tienes RIF, se usará tu cédula en su lugar."
 						>
 							!
 						</span>
 						<span className="text-slate-400 font-normal">(se calcula automáticamente)</span>
 					</label>
+					<p className="mb-1 text-[10px] text-amber-600">
+						Si no tienes RIF, se usará tu cédula en su lugar.
+					</p>
 					<input
 						type="text"
 						placeholder="Ej: V12345678"
