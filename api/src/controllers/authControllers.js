@@ -13,7 +13,7 @@ const registerPaciente = async (payload) => {
 		// 1. Verificar correo duplicado
 		const [correoExists] = await conn.execute(
 			"SELECT id_usuario FROM usuario WHERE correo = ? LIMIT 1",
-			[payload.correo]
+			[payload.correo],
 		);
 		if (correoExists.length > 0) {
 			const err = new Error("Ya existe un usuario con este correo electrónico");
@@ -24,7 +24,7 @@ const registerPaciente = async (payload) => {
 		// 2. Verificar cédula duplicada
 		const [cedulaExists] = await conn.execute(
 			"SELECT id_usuario FROM usuario WHERE cedula = ? LIMIT 1",
-			[payload.cedula]
+			[payload.cedula],
 		);
 		if (cedulaExists.length > 0) {
 			const err = new Error("Ya existe un usuario con esta cédula");
@@ -32,11 +32,16 @@ const registerPaciente = async (payload) => {
 			throw err;
 		}
 
-		// 3. Verificar RIF duplicado (si se proporciona)
-		if (payload.rif) {
+		// 3. Determinar RIF final:
+		//    - Si el frontend envía un RIF, usarlo.
+		//    - Si no envía RIF, usar la cédula como fallback.
+		const rifFinal = payload.rif || payload.cedula;
+
+		//    Verificar RIF duplicado usando rifFinal
+		if (rifFinal) {
 			const [rifExists] = await conn.execute(
 				"SELECT id_paciente FROM paciente WHERE rif = ? LIMIT 1",
-				[payload.rif]
+				[rifFinal],
 			);
 			if (rifExists.length > 0) {
 				const err = new Error("Ya existe un paciente con este RIF");
@@ -48,7 +53,7 @@ const registerPaciente = async (payload) => {
 		// 4. Verificar nombre + apellido duplicado
 		const [nombreApellidoExists] = await conn.execute(
 			"SELECT id_usuario FROM usuario WHERE nombre = ? AND apellido = ? LIMIT 1",
-			[payload.nombre, payload.apellido]
+			[payload.nombre, payload.apellido],
 		);
 		if (nombreApellidoExists.length > 0) {
 			const err = new Error("Ya existe un usuario con este nombre y apellido");
@@ -92,7 +97,7 @@ const registerPaciente = async (payload) => {
 			payload.tipo_sangre,
 			payload.descripcion,
 			payload.direccion ?? null,
-			payload.rif ?? null,
+			rifFinal,
 			payload.contacto_emergencia_nombre ?? null,
 			payload.contacto_emergencia_telefono ?? null,
 		]);

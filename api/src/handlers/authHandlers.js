@@ -19,6 +19,7 @@ const registerPacienteHandler = async (req, res) => {
 			direccion,
 			contacto_emergencia_nombre,
 			contacto_emergencia_telefono,
+			rif,
 		} = req.body;
 
 		const missing = [];
@@ -62,6 +63,7 @@ const registerPacienteHandler = async (req, res) => {
 			direccion,
 			contacto_emergencia_nombre,
 			contacto_emergencia_telefono,
+			rif,
 		});
 
 		return res.status(201).json({
