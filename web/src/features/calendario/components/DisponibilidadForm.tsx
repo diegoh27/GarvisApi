@@ -1,8 +1,8 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { TimeOption } from "./types";
-import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../features/ecos/ecosApi";
-import { useAuth } from "../../shared";
+import type { TimeOption } from "../types";
+import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosApi";
+import { useAuth } from "../../../shared";
 
 type DisponibilidadFormProps = {
 	fecha: string;
@@ -37,17 +37,14 @@ const DisponibilidadForm = ({
 	const isEspecialista = user?.rol === "especialista";
 	const idEspecialista = user?.id_usuario || "";
 
-	// Si es especialista, obtener solo sus ecos asignados; si es admin/moderador, todos los ecos
 	const { data: ecosEspecialista = [], isLoading: loadingEcosEspecialista } =
 		useGetEcosByEspecialistaQuery(idEspecialista, { skip: !isEspecialista || !idEspecialista });
 	const { data: ecosTodos = [], isLoading: loadingEcosTodos } =
 		useGetEcosQuery(undefined, { skip: isEspecialista });
 
-	// Usar los ecos correspondientes según el rol
 	const ecos = isEspecialista ? ecosEspecialista : ecosTodos;
 	const loadingEcos = isEspecialista ? loadingEcosEspecialista : loadingEcosTodos;
 
-	// Dropdown estilo creación de especialista (admin)
 	const [isEcosDropdownOpen, setIsEcosDropdownOpen] = useState(false);
 	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">("bottom");
 	const ecosDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -78,7 +75,6 @@ const DisponibilidadForm = ({
 		setIsEcosDropdownOpen((prev) => !prev);
 	};
 
-	// Cerrar dropdown al hacer click fuera
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (

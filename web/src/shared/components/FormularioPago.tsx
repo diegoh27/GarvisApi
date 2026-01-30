@@ -1,3 +1,8 @@
+/**
+ * Formulario de pago (comprobante + orden médica). Usado por:
+ * - Moderador: al asignar cita (AsignarCitaModal).
+ * - Paciente: al reservar cita (flujo eco → especialistas → fechas → pago).
+ */
 import { useState, useRef, useEffect, useMemo } from "react";
 import { AlertTriangle, X, Image as ImageIcon, Search, ChevronDown } from "lucide-react";
 import { useGetDolarOficialQuery } from "../../features/dolar/dolarApi";

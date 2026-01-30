@@ -2,16 +2,16 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { useAuth } from "../../../shared";
-import type {
-	FilterOption,
-	Disponibilidad,
-	TimeOption,
-} from "../../../components/calendario/types";
-import CalendarHeader from "../../../components/calendario/CalendarHeader";
-import CalendarLegend from "../../../components/calendario/CalendarLegend";
-import CalendarGrid from "../../../components/calendario/CalendarGrid";
-import DisponibilidadForm from "../../../components/calendario/DisponibilidadForm";
-import BloquesList from "../../../components/calendario/BloquesList";
+import {
+	type FilterOption,
+	type Disponibilidad,
+	type TimeOption,
+	CalendarHeader,
+	CalendarLegend,
+	CalendarGrid,
+	DisponibilidadForm,
+	BloquesList,
+} from "../../calendario";
 import {
 	useCancelarDisponibilidadMutation,
 	useCrearDisponibilidadMutation,

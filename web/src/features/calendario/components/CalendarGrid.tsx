@@ -1,5 +1,5 @@
 import React from "react";
-import type { Disponibilidad, TimeOption } from "./types";
+import type { Disponibilidad, TimeOption } from "../types";
 
 type CalendarGridProps = {
 	dayLabels: string[];
@@ -37,7 +37,6 @@ const CalendarGrid = ({
 	return (
 		<div className="mt-4 overflow-x-auto rounded-2xl border border-mist bg-paper">
 			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] border-b border-mist text-xs text-brand-800">
-				{/* Columna de horas fija (encabezado vacío) */}
 				<div className="p-2 sm:p-3 sticky left-0 z-20 bg-paper" />
 				{dayLabels.map((label) => (
 					<div key={label} className="border-l border-mist p-2 sm:p-3 font-semibold">
@@ -48,7 +47,6 @@ const CalendarGrid = ({
 			<div className="grid min-w-[920px] grid-cols-[80px_repeat(7,minmax(120px,1fr))] text-[11px]">
 				{timeOptions.map((hour) => (
 					<React.Fragment key={hour.value}>
-						{/* Columna de horas fija */}
 						<div
 							className="border-b border-mist py-1.5 px-2 sm:py-2 sm:px-3 text-brand-800 sticky left-0 z-10 bg-paper"
 						>
@@ -59,7 +57,6 @@ const CalendarGrid = ({
 							const bloque = bloquesMap.get(cellKey);
 							const isPast = dateKey < minFecha;
 
-							// Calcular hora de fin para el tooltip: 20 minutos después
 							const [hStr, mStr] = hour.value.split(":");
 							const h = Number(hStr);
 							const m = Number(mStr);
