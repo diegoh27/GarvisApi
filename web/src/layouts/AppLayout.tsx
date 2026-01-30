@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	Bell,
+	CalendarCheck,
 	CalendarDays,
 	FileCheck,
 	FileText,
@@ -15,9 +16,9 @@ import {
 	ListChecks,
 } from "lucide-react";
 import { useAuth } from "../shared";
-import Sidebar, { type NavItem } from "../components/layout/Sidebar";
-import Topbar from "../components/layout/Topbar";
-import DolarInfoBanner from "../components/dolar/DolarInfoBanner";
+import Sidebar, { type NavItem } from "./Sidebar";
+import Topbar from "./Topbar";
+import { DolarInfoBanner } from "../features/dolar";
 
 const navByRole: Record<string, NavItem[]> = {
 	admin: [
@@ -26,6 +27,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
 		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
 		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
+		{ label: "Disponibilidad pendientes", to: "/disponibilidad/pendientes", icon: CalendarCheck },
 		// Gestión de pacientes
 		{ label: "Pacientes", to: "/pacientes", icon: Users },
 		// Resultados e informes
@@ -51,6 +53,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
 		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
 		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
+		{ label: "Disponibilidad pendientes", to: "/disponibilidad/pendientes", icon: CalendarCheck },
 		// Gestión de pacientes
 		{ label: "Pacientes", to: "/pacientes", icon: Users },
 		// Resultados e informes

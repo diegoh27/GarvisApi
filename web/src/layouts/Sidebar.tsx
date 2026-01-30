@@ -48,7 +48,6 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 							to={item.to}
 							className={linkClass}
 							onClick={() => {
-								// Cerrar sidebar en móvil al hacer click en un link
 								if (window.innerWidth < 1024) {
 									onClose();
 								}

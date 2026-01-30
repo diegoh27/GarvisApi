@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { PageShell } from "../../../shared";
-import MonthCalendar from "../../../components/calendario/MonthCalendar";
+import { MonthCalendar } from "../../calendario";
 import { useGetDisponibilidadesByFechaQuery } from "../moderadoresApi";
 import { useGetCitasByFechaQuery } from "../moderadoresApi";
 import DiaItemsList from "../components/DiaItemsList";
