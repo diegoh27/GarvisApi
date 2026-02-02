@@ -1,0 +1,270 @@
+import { useState } from "react";
+import { useAuth } from "../../../shared";
+import { FormularioPago, type PagoFormData } from "../../../shared";
+import { useAsignarCitaCompletaMutation } from "../../moderadores/moderadoresApi";
+import { getToken } from "../../../shared/utils/token";
+import Swal from "sweetalert2";
+import type { Eco } from "../../ecos/ecosApi";
+import type { DisponibilidadPublicaPorEcoItem } from "../disponibilidadApi";
+import type { Representado } from "../../representados/representadosApi";
+import { formatFecha, formatHora } from "../utils/dateUtils";
+
+const normalizeFecha = (fecha: string): string => {
+	if (!fecha) return "";
+	const fechaStr = fecha.slice(0, 10);
+	if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) return fechaStr;
+	return fechaStr;
+};
+
+type ReservarCitaParaMiFormProps = {
+	block: DisponibilidadPublicaPorEcoItem;
+	eco: Eco;
+	representado?: Representado | null;
+	onSuccess?: () => void;
+	onClose: () => void;
+	onBack?: () => void;
+};
+
+const ReservarCitaParaMiForm = ({
+	block,
+	eco,
+	representado = null,
+	onSuccess,
+	onClose,
+	onBack,
+}: ReservarCitaParaMiFormProps) => {
+	const { user } = useAuth();
+	const [pagoData, setPagoData] = useState<PagoFormData>({
+		metodo: "Transferencia",
+		imagen: "",
+		orden_medica: "",
+		banco_origen: "",
+		banco_destino: "",
+		monto: "",
+		cedula_pagador: "",
+		telefono_pagador: "",
+		referencia: "",
+	});
+	const [imagenComprimida, setImagenComprimida] = useState<File | null>(null);
+	const [ordenMedicaComprimida, setOrdenMedicaComprimida] = useState<File | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const [asignarCita, { isLoading: isAsignando }] = useAsignarCitaCompletaMutation();
+
+	const handleReservar = async () => {
+		const idPaciente = user?.id_usuario;
+		if (!idPaciente) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "Debe iniciar sesión para reservar",
+			});
+			return;
+		}
+
+		if (
+			!pagoData.banco_origen ||
+			!pagoData.banco_destino ||
+			!pagoData.monto ||
+			!pagoData.cedula_pagador ||
+			!pagoData.telefono_pagador ||
+			!pagoData.referencia
+		) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "Complete todos los campos del pago",
+			});
+			return;
+		}
+
+		if (!pagoData.imagen && !imagenComprimida) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "Suba el comprobante de pago",
+			});
+			return;
+		}
+
+		if (!pagoData.orden_medica && !ordenMedicaComprimida) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "Suba la orden médica",
+			});
+			return;
+		}
+
+		setIsSubmitting(true);
+
+		let imagenUrl = pagoData.imagen;
+		if (imagenComprimida && !pagoData.imagen) {
+			try {
+				const token = getToken();
+				const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+				const formData = new FormData();
+				formData.append("comprobante", imagenComprimida);
+				const response = await fetch(`${baseUrl}/pagos/upload-comprobante`, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}` },
+					body: formData,
+				});
+				if (!response.ok) {
+					const err = await response.json();
+					throw new Error(err.message || "Error al subir la imagen");
+				}
+				const data = await response.json();
+				imagenUrl = data.data.url;
+			} catch (err: unknown) {
+				Swal.fire({
+					icon: "error",
+					title: "Error",
+					text: err instanceof Error ? err.message : "No se pudo subir el comprobante",
+				});
+				setIsSubmitting(false);
+				return;
+			}
+		}
+
+		let ordenMedicaUrl = pagoData.orden_medica;
+		if (ordenMedicaComprimida && !pagoData.orden_medica) {
+			try {
+				const token = getToken();
+				const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+				const formData = new FormData();
+				formData.append("orden_medica", ordenMedicaComprimida);
+				const response = await fetch(`${baseUrl}/citas/upload-orden-medica`, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}` },
+					body: formData,
+				});
+				if (!response.ok) {
+					const err = await response.json();
+					throw new Error(err.message || "Error al subir la orden médica");
+				}
+				const data = await response.json();
+				ordenMedicaUrl = data.data.url;
+			} catch (err: unknown) {
+				Swal.fire({
+					icon: "error",
+					title: "Error",
+					text: err instanceof Error ? err.message : "No se pudo subir la orden médica",
+				});
+				setIsSubmitting(false);
+				return;
+			}
+		}
+
+		try {
+			await asignarCita({
+				id_paciente: idPaciente,
+				id_representado: representado?.id_representado ?? null,
+				id_eco: block.id_eco ?? eco.id_eco,
+				id_especialista: block.id_especialista,
+				id_disponibilidad: block.id_disponibilidad,
+				orden_medica: ordenMedicaUrl,
+				metodo: pagoData.metodo,
+				imagen: imagenUrl,
+				banco_origen: pagoData.banco_origen,
+				banco_destino: pagoData.banco_destino,
+				monto: parseFloat(pagoData.monto),
+				cedula_pagador: pagoData.cedula_pagador,
+				telefono_pagador: pagoData.telefono_pagador,
+				referencia: pagoData.referencia,
+			}).unwrap();
+
+			await Swal.fire({
+				icon: "success",
+				title: "Cita reservada",
+				text: "Se reportó el pago y se generó la cita. Un moderador verificará el pago.",
+				timer: 2500,
+				showConfirmButton: false,
+			});
+			onSuccess?.();
+			onClose();
+		} catch (err: unknown) {
+			const message =
+				typeof err === "object" && err !== null && "data" in err
+					? (err as { data?: { message?: string } }).data?.message
+					: "No se pudo reservar la cita";
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: message,
+			});
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const isLoading = isAsignando || isSubmitting;
+
+	return (
+		<>
+			<div className="flex-1 overflow-y-auto p-6">
+				<div className="mb-4 rounded-lg border border-brand-200 bg-brand-50 p-3 space-y-1">
+					{representado && (
+						<p className="text-sm font-medium text-brand-900">
+							Cita para: {representado.nombre} {representado.apellido}
+							{representado.parentesco ? ` (${representado.parentesco})` : ""}
+						</p>
+					)}
+					<p className="text-sm font-medium text-brand-900">
+						{formatFecha(normalizeFecha(block.fecha))} a las{" "}
+						{formatHora(block.hora_inicio)}
+					</p>
+					<p className="text-sm text-brand-600">
+						{block.especialista_nombre} {block.especialista_apellido} •{" "}
+						{block.especialidad_nombre} • {eco.nombre}
+					</p>
+				</div>
+
+				<FormularioPago
+					precioEcoUSD={eco.precio ?? null}
+					onChange={setPagoData}
+					onImageReady={setImagenComprimida}
+					onOrdenMedicaReady={setOrdenMedicaComprimida}
+					autoUpload={false}
+					isLoading={isLoading}
+					disabled={isLoading}
+				/>
+			</div>
+
+			<div className="flex items-center justify-between gap-3 border-t border-mist p-4">
+				<div>
+					{onBack && (
+						<button
+							type="button"
+							onClick={onBack}
+							className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
+							disabled={isLoading}
+						>
+							← Volver
+						</button>
+					)}
+				</div>
+				<div className="flex items-center gap-3 ml-auto">
+					<button
+						type="button"
+						onClick={onClose}
+						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
+						disabled={isLoading}
+					>
+						Cancelar
+					</button>
+					<button
+						type="button"
+						onClick={handleReservar}
+						disabled={isLoading}
+						className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{isLoading ? "Reservando..." : "Reservar cita"}
+					</button>
+				</div>
+			</div>
+		</>
+	);
+};
+
+export default ReservarCitaParaMiForm;

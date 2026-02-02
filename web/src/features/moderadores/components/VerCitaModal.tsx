@@ -141,15 +141,14 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 										<p className="text-xs font-semibold text-brand-700">Estado de la cita</p>
 										<p className="mt-1">
 											<span
-												className={`inline-flex rounded-full px-2 py-1 text-xs ${
-													cita.estado_cita === 0
+												className={`inline-flex rounded-full px-2 py-1 text-xs ${cita.estado_cita === 0
 														? "bg-amber-400 text-brand-900"
 														: cita.estado_cita === 1
 															? "bg-brand-700 text-paper"
 															: cita.estado_cita === 2
 																? "bg-red-500 text-paper"
 																: "bg-sky-500 text-paper"
-												}`}
+													}`}
 											>
 												{getEstadoCitaLabel(cita.estado_cita)}
 											</span>
@@ -160,13 +159,12 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 											<p className="text-xs font-semibold text-brand-700">Estado del pago</p>
 											<p className="mt-1">
 												<span
-													className={`inline-flex rounded-full px-2 py-1 text-xs ${
-														cita.estado_pago === 0
+													className={`inline-flex rounded-full px-2 py-1 text-xs ${cita.estado_pago === 0
 															? "bg-amber-400 text-brand-900"
 															: cita.estado_pago === 1
 																? "bg-brand-700 text-paper"
 																: "bg-red-500 text-paper"
-													}`}
+														}`}
 												>
 													{getEstadoPagoLabel(cita.estado_pago)}
 												</span>
@@ -261,42 +259,39 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 								</div>
 							</div>
 
-							{/* Información del representado (si existe) */}
-							{cita.representado_nombre && (
-								<div>
-									<h3 className="mb-3 text-sm font-semibold text-brand-900">Representado</h3>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<div>
-											<p className="text-xs font-semibold text-brand-700">Nombre completo</p>
-											<p className="mt-1 text-sm text-brand-900">
-												{cita.representado_nombre} {cita.representado_apellido}
+							{/* Representado: todos los datos si existe, o "Representado: NO" */}
+							<div>
+								<h3 className="mb-3 text-sm font-semibold text-brand-900">Representado</h3>
+								{cita.id_representado &&
+									(cita.representado_nombre ?? cita.representado_apellido) ? (
+									<div className="rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-sm text-brand-900 space-y-2">
+										<p>
+											<strong>Nombre completo:</strong>{" "}
+											{[cita.representado_nombre, cita.representado_apellido]
+												.filter(Boolean)
+												.join(" ") || "—"}
+										</p>
+										{cita.representado_cedula != null && cita.representado_cedula !== "" && (
+											<p>
+												<strong>Cédula:</strong> {cita.representado_cedula}
 											</p>
-										</div>
-										<div>
-											<p className="text-xs font-semibold text-brand-700">Cédula</p>
-											<p className="mt-1 text-sm text-brand-900">{cita.representado_cedula}</p>
-										</div>
+										)}
 										{cita.representado_fecha_nacimiento && (
-											<div>
-												<p className="text-xs font-semibold text-brand-700">
-													Fecha de nacimiento
-												</p>
-												<p className="mt-1 text-sm text-brand-900">
-													{formatFecha(cita.representado_fecha_nacimiento)}
-												</p>
-											</div>
+											<p>
+												<strong>Fecha de nacimiento:</strong>{" "}
+												{formatFecha(cita.representado_fecha_nacimiento)}
+											</p>
 										)}
 										{cita.representado_parentesco && (
-											<div>
-												<p className="text-xs font-semibold text-brand-700">Parentesco</p>
-												<p className="mt-1 text-sm text-brand-900">
-													{cita.representado_parentesco}
-												</p>
-											</div>
+											<p>
+												<strong>Parentesco:</strong> {cita.representado_parentesco}
+											</p>
 										)}
 									</div>
-								</div>
-							)}
+								) : (
+									<p className="text-sm text-brand-600">Representado: NO</p>
+								)}
+							</div>
 
 							{/* Información del especialista */}
 							<div>
@@ -392,13 +387,12 @@ const VerCitaModal = ({ cita, error, onClose, hideSensitiveData = false }: VerCi
 												<p className="text-xs font-semibold text-brand-700">Estado</p>
 												<p className="mt-1">
 													<span
-														className={`inline-flex rounded-full px-2 py-1 text-xs ${
-															cita.pago_estado_pago === 0
+														className={`inline-flex rounded-full px-2 py-1 text-xs ${cita.pago_estado_pago === 0
 																? "bg-amber-400 text-brand-900"
 																: cita.pago_estado_pago === 1
 																	? "bg-brand-700 text-paper"
 																	: "bg-red-500 text-paper"
-														}`}
+															}`}
 													>
 														{getEstadoPagoLabel(cita.pago_estado_pago)}
 													</span>

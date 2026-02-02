@@ -78,10 +78,12 @@ const createOrUpdateInformeController = async ({
 	try {
 		await conn.beginTransaction();
 
-		// Obtener todos los datos necesarios de la cita, paciente, especialista, eco y resultado
+		// Obtener todos los datos necesarios de la cita, paciente (titular), representado, especialista, eco y resultado
 		const [citaData] = await conn.execute(
 			`SELECT 
         c.id_cita,
+        c.id_paciente,
+        c.id_representado,
         c.id_especialista,
         c.estado_cita,
         DATE_FORMAT(c.fecha_cita, '%d/%m/%Y') AS fecha_cita_formatted,
@@ -97,12 +99,18 @@ const createOrUpdateInformeController = async ({
         u_especialista.nombre AS especialista_nombre,
         u_especialista.apellido AS especialista_apellido,
         u_especialista.cedula AS especialista_cedula,
-        e.nombre AS eco_nombre
+        e.nombre AS eco_nombre,
+        rep.nombre AS representado_nombre,
+        rep.apellido AS representado_apellido,
+        rep.cedula AS representado_cedula,
+        rep.fecha_nacimiento AS representado_fecha_nacimiento,
+        rep.parentesco AS representado_parentesco
       FROM cita c
       INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
       INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
       INNER JOIN eco e ON e.id_eco = c.id_eco
       LEFT JOIN resultado r ON r.id_cita = c.id_cita
+      LEFT JOIN representado rep ON rep.id_representado = c.id_representado
       WHERE c.id_cita = ?`,
 			[id_cita]
 		);
@@ -140,16 +148,42 @@ const createOrUpdateInformeController = async ({
 		const reseñaValue = reseña || null;
 		const recomendacionesValue = recomendaciones || null;
 
+		// Usuario que agendó (siempre el titular - id_paciente)
+		const usuarioQueAgendo = {
+			nombre: citaInfo.paciente_nombre,
+			apellido: citaInfo.paciente_apellido,
+		};
+		// Si hay representado, los datos del estudio son del representado; si no, del paciente titular
+		const esRepresentado =
+			citaInfo.id_representado &&
+			(citaInfo.representado_nombre || citaInfo.representado_apellido);
+		const representado = esRepresentado
+			? {
+					nombre: citaInfo.representado_nombre || "",
+					apellido: citaInfo.representado_apellido || "",
+					cedula: citaInfo.representado_cedula || null,
+					fecha_nacimiento: citaInfo.representado_fecha_nacimiento
+						? new Date(
+								citaInfo.representado_fecha_nacimiento
+						  ).toLocaleDateString("es-VE")
+						: null,
+					parentesco: citaInfo.representado_parentesco || null,
+			  }
+			: null;
+		const paciente = {
+			nombre: citaInfo.paciente_nombre,
+			apellido: citaInfo.paciente_apellido,
+			cedula: citaInfo.paciente_cedula,
+			telefono: citaInfo.paciente_telefono,
+		};
+
 		// Generar PDF con todos los datos
 		const pdfData = {
 			reseña: reseñaValue,
 			recomendaciones: recomendacionesValue,
-			paciente: {
-				nombre: citaInfo.paciente_nombre,
-				apellido: citaInfo.paciente_apellido,
-				cedula: citaInfo.paciente_cedula,
-				telefono: citaInfo.paciente_telefono,
-			},
+			usuarioQueAgendo,
+			paciente,
+			representado,
 			especialista: {
 				nombre: citaInfo.especialista_nombre,
 				apellido: citaInfo.especialista_apellido,
@@ -159,9 +193,7 @@ const createOrUpdateInformeController = async ({
 				fecha_cita:
 					citaInfo.fecha_cita_formatted ||
 					new Date(citaInfo.fecha_cita).toLocaleDateString("es-VE"),
-				hora_cita:
-					citaInfo.hora_cita_formatted ||
-					citaInfo.hora_cita,
+				hora_cita: citaInfo.hora_cita_formatted || citaInfo.hora_cita,
 				eco_nombre: citaInfo.eco_nombre,
 			},
 			ecoUrl: citaInfo.eco_archivo_url || null, // URL del archivo del eco (de Cloudinary)
@@ -169,7 +201,10 @@ const createOrUpdateInformeController = async ({
 
 		// Debug: Log para verificar si hay URL del eco
 		console.log("📄 Generando PDF para cita:", id_cita);
-		console.log("🔗 URL del eco (resultado.archivo):", citaInfo.eco_archivo_url);
+		console.log(
+			"🔗 URL del eco (resultado.archivo):",
+			citaInfo.eco_archivo_url
+		);
 		console.log("📊 Estado del resultado:", citaInfo.resultado_estado);
 		console.log("📋 Tipo de dato:", typeof citaInfo.eco_archivo_url);
 
@@ -222,7 +257,7 @@ const createOrUpdateInformeController = async ({
 		// Retornar el informe creado/actualizado usando la misma conexión
 		// (aunque ya se hizo commit, podemos usar pool.execute normalmente)
 		const informe = await getInformeByCitaController(id_cita, id_especialista);
-		
+
 		// Si no se encuentra el informe recién creado, retornar los datos básicos
 		if (!informe) {
 			return {
@@ -234,7 +269,7 @@ const createOrUpdateInformeController = async ({
 				informe_pdf_url: informePdfUrl,
 			};
 		}
-		
+
 		return informe;
 	} catch (error) {
 		await conn.rollback();

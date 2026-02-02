@@ -6,7 +6,9 @@ const { uploadBufferToCloudinary } = require("./uploadToCloudinary");
  * @param {Object} datos - Datos del informe
  * @param {string} datos.reseña - Reseña del estudio
  * @param {string} datos.recomendaciones - Recomendaciones
- * @param {Object} datos.paciente - Datos del paciente
+ * @param {Object} datos.usuarioQueAgendo - Usuario que agendó la cita (titular)
+ * @param {Object} datos.paciente - Datos del paciente titular
+ * @param {Object|null} datos.representado - Datos del representado (si la cita es para un representado)
  * @param {Object} datos.especialista - Datos del especialista
  * @param {Object} datos.cita - Datos de la cita
  * @param {string} datos.ecoUrl - URL del eco en Cloudinary
@@ -56,11 +58,7 @@ const generateInformePDF = async (datos) => {
 				.moveDown(2);
 
 			// Línea separadora
-			doc
-				.moveTo(50, doc.y)
-				.lineTo(562, doc.y)
-				.stroke()
-				.moveDown(1.5);
+			doc.moveTo(50, doc.y).lineTo(562, doc.y).stroke().moveDown(1.5);
 
 			// Título del informe
 			doc
@@ -69,17 +67,54 @@ const generateInformePDF = async (datos) => {
 				.text("INFORME MÉDICO", { align: "center" })
 				.moveDown(1.5);
 
-			// Datos del paciente
+			// Usuario que agendó la cita (siempre el titular; fallback a paciente si no viene)
+			const titular = datos.usuarioQueAgendo || datos.paciente;
+			const nombreTitular =
+				[titular?.nombre, titular?.apellido].filter(Boolean).join(" ") || "N/A";
 			doc
 				.fontSize(12)
 				.font("Helvetica-Bold")
-				.text("DATOS DEL PACIENTE", { underline: true })
+				.text("USUARIO QUE AGENDÓ", { underline: true })
 				.moveDown(0.5)
 				.font("Helvetica")
-				.text(`Nombre: ${datos.paciente.nombre} ${datos.paciente.apellido}`)
-				.text(`Cédula: ${datos.paciente.cedula || "N/A"}`)
-				.text(`Teléfono: ${datos.paciente.telefono || "N/A"}`)
+				.text(`Nombre: ${nombreTitular}`)
 				.moveDown(1);
+
+			// Datos del paciente o del representado (según corresponda)
+			if (datos.representado) {
+				doc
+					.font("Helvetica-Bold")
+					.text("DATOS DEL REPRESENTADO", { underline: true })
+					.moveDown(0.5)
+					.font("Helvetica")
+					.text(
+						`Nombre: ${
+							[datos.representado.nombre, datos.representado.apellido]
+								.filter(Boolean)
+								.join(" ") || "N/A"
+						}`
+					)
+					.text(`Cédula: ${datos.representado.cedula || "N/A"}`);
+				if (datos.representado.fecha_nacimiento) {
+					doc.text(
+						`Fecha de nacimiento: ${datos.representado.fecha_nacimiento}`
+					);
+				}
+				if (datos.representado.parentesco) {
+					doc.text(`Parentesco: ${datos.representado.parentesco}`);
+				}
+				doc.moveDown(1);
+			} else {
+				doc
+					.font("Helvetica-Bold")
+					.text("DATOS DEL PACIENTE", { underline: true })
+					.moveDown(0.5)
+					.font("Helvetica")
+					.text(`Nombre: ${datos.paciente.nombre} ${datos.paciente.apellido}`)
+					.text(`Cédula: ${datos.paciente.cedula || "N/A"}`)
+					.text(`Teléfono: ${datos.paciente.telefono || "N/A"}`)
+					.moveDown(1);
+			}
 
 			// Datos del especialista
 			doc
@@ -133,27 +168,29 @@ const generateInformePDF = async (datos) => {
 			// Link del eco (resultado)
 			console.log("🔍 Verificando ecoUrl en PDF:", datos.ecoUrl);
 			console.log("🔍 Tipo de ecoUrl:", typeof datos.ecoUrl);
-			
+
 			if (datos.ecoUrl && typeof datos.ecoUrl === "string") {
 				// Limpiar espacios en blanco
 				const ecoUrlClean = datos.ecoUrl.trim();
-				
+
 				// Verificar si es una URL válida (http:// o https://)
 				const isUrl =
 					ecoUrlClean.startsWith("http://") ||
 					ecoUrlClean.startsWith("https://");
-				
+
 				console.log("🔍 ecoUrl limpio:", ecoUrlClean);
 				console.log("🔍 Longitud:", ecoUrlClean.length);
 				console.log("🔍 ¿Es URL válida?:", isUrl);
-				
+
 				if (isUrl && ecoUrlClean.length > 0) {
 					doc
 						.font("Helvetica-Bold")
 						.text("ARCHIVO DEL ESTUDIO (ECO)", { underline: true })
 						.moveDown(0.5)
 						.font("Helvetica")
-						.text("Puede descargar el archivo del estudio desde el siguiente enlace:")
+						.text(
+							"Puede descargar el archivo del estudio desde el siguiente enlace:"
+						)
 						.moveDown(0.3)
 						.fillColor("blue")
 						.text(ecoUrlClean, { link: ecoUrlClean })
@@ -161,7 +198,9 @@ const generateInformePDF = async (datos) => {
 						.moveDown(1);
 					console.log("✅ Link del eco agregado al PDF exitosamente");
 				} else {
-					console.log("⚠️  ecoUrl no es una URL válida (debe empezar con http:// o https://)");
+					console.log(
+						"⚠️  ecoUrl no es una URL válida (debe empezar con http:// o https://)"
+					);
 					console.log("⚠️  Valor recibido:", ecoUrlClean);
 				}
 			} else {

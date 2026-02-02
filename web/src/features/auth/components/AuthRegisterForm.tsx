@@ -92,27 +92,20 @@ const AuthRegisterForm = () => {
 				const hoy = new Date();
 				const edad = hoy.getFullYear() - fechaNac.getFullYear();
 				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
-				if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fechaNac.getDate())) {
-					if (edad - 1 < 18) return "Debes ser mayor de 18 años";
-				} else if (edad < 18) {
-					return "Debes ser mayor de 18 años";
-				}
+				const diaDiff = hoy.getDate() - fechaNac.getDate();
+				// Ya cumplió años este año si el mes es mayor, o mismo mes y día >= día de nacimiento
+				const yaCumplioEsteAnio = mesDiff > 0 || (mesDiff === 0 && diaDiff >= 0);
+				const edadReal = yaCumplioEsteAnio ? edad : edad - 1;
+				if (edadReal < 18) return "Debes tener 18 años o más para registrarte";
 				return "";
 			case "genero":
 				if (!value || value === "") return "El género es requerido";
 				return "";
 			case "cedula":
-				if (!value.trim()) return "La cédula es requerida";
-				if (!/^\d{6,8}$/.test(value)) return "La cédula debe tener entre 6 y 8 dígitos";
-				// Validar que la cédula corresponda a alguien mayor de 18 años
-				// Cédulas venezolanas: millones 1-30 aprox = nacidos antes de 2006 (mayores de 18 en 2024)
-				const cedulaNum = parseInt(value);
-				if (cedulaNum < 1000000) return "Cédula inválida";
-				// Si la cédula es muy alta (millones altos), podría ser de alguien menor de 18
-				// Aproximación: cédulas > 30 millones podrían ser menores de 18
-				if (cedulaNum > 30000000) {
-					return "Verifica que la cédula corresponda a una persona mayor de 18 años";
-				}
+				if (!value.trim()) return "Debe colocar una cédula válida";
+				if (!/^\d+$/.test(value)) return "Debe colocar una cédula válida";
+				const cedulaNum = parseInt(value, 10);
+				if (cedulaNum < 1000000 || cedulaNum > 40000000) return "Debe colocar una cédula válida";
 				return "";
 			case "telefono_numero":
 				if (!value.trim()) return "El número de teléfono es requerido";

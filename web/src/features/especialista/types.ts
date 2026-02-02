@@ -13,6 +13,7 @@ type Disponibilidad = {
 type CitaEspecialista = {
 	id_cita: string;
 	id_paciente: string;
+	id_representado?: string | null;
 	fecha_cita: string | Date;
 	hora_cita: string;
 	estado_cita: number;

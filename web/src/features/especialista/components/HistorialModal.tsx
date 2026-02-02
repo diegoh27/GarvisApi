@@ -3,8 +3,10 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import type { CitaEspecialista } from "../types";
 import { useMarcarAtendidaMutation } from "../especialistaApi";
+import { Check, X } from "lucide-react";
 import VerResultadosModal from "./VerResultadosModal";
 import InformeFormModal from "./InformeFormModal";
+import VerCitaEspecialistaModal from "./VerCitaEspecialistaModal";
 
 type InformeItem = { informe_pdf_url: string | null };
 
@@ -76,6 +78,10 @@ const HistorialModal = ({
 		idCita: string;
 	} | null>(null);
 	const [selectedCitaParaInforme, setSelectedCitaParaInforme] = useState<CitaEspecialista | null>(null);
+	const [selectedCitaParaVer, setSelectedCitaParaVer] = useState<{
+		cita: CitaEspecialista;
+		informePdfUrl: string | null;
+	} | null>(null);
 
 	const [marcarAtendida] = useMarcarAtendidaMutation();
 
@@ -187,10 +193,12 @@ const HistorialModal = ({
 									<th className="px-3 py-2">Fecha</th>
 									<th className="px-3 py-2">Hora</th>
 									<th className="px-3 py-2">Eco</th>
+									<th className="px-3 py-2 text-center">Representado</th>
 									<th className="px-3 py-2 text-center">Estado</th>
 									<th className="px-3 py-2 text-center">Resultado</th>
 									<th className="px-3 py-2 text-center">Orden Médica</th>
 									<th className="px-3 py-2 text-center">Informe</th>
+									<th className="px-3 py-2 text-center">Ver cita</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -205,6 +213,17 @@ const HistorialModal = ({
 										</td>
 										<td className="px-3 py-3">{formatHora(cita.hora_cita)}</td>
 										<td className="px-3 py-3">{cita.eco_nombre}</td>
+										<td className="px-3 py-3 text-center">
+											{cita.id_representado ? (
+												<span className="inline-flex items-center justify-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-800" title="Representado">
+													<Check className="h-3.5 w-3.5" />
+												</span>
+											) : (
+												<span className="inline-flex items-center justify-center gap-0.5 rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-700" title="No representado">
+													<X className="h-3.5 w-3.5" />
+												</span>
+											)}
+										</td>
 										<td className="px-3 py-3 text-center">
 											<div className="flex flex-col items-center gap-1">
 												<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
@@ -302,6 +321,20 @@ const HistorialModal = ({
 												);
 											})()}
 										</td>
+										<td className="px-3 py-3 text-center">
+											<button
+												type="button"
+												onClick={() =>
+													setSelectedCitaParaVer({
+														cita,
+														informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
+													})
+												}
+												className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+											>
+												Ver cita
+											</button>
+										</td>
 									</tr>
 								))}
 							</tbody>
@@ -328,6 +361,16 @@ const HistorialModal = ({
 					cita={selectedCitaParaInforme}
 					onClose={() => setSelectedCitaParaInforme(null)}
 					onSuccess={() => setSelectedCitaParaInforme(null)}
+				/>
+			)}
+
+			{selectedCitaParaVer && (
+				<VerCitaEspecialistaModal
+					citaFromList={selectedCitaParaVer.cita}
+					informePdfUrl={selectedCitaParaVer.informePdfUrl}
+					pacienteName={paciente.name}
+					onClose={() => setSelectedCitaParaVer(null)}
+					onVerPdf={onVerPdf}
 				/>
 			)}
 		</div>

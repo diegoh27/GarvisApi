@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { Check, X } from "lucide-react";
 import { useAuth } from "../../../shared";
 import { useLocation } from "react-router-dom";
 import { useGetMisCitasQuery } from "../especialistaApi";
@@ -9,6 +10,7 @@ import {
 } from "../../moderadores/moderadoresApi";
 import InformeFormModal from "../components/InformeFormModal";
 import PDFViewerModal from "../components/PDFViewerModal";
+import VerCitaEspecialistaModal from "../components/VerCitaEspecialistaModal";
 import type { CitaEspecialista } from "../types";
 
 const getDateKey = (value: string | Date): string => {
@@ -50,6 +52,11 @@ const InformesPage = () => {
 	const [currentPageEspecialista, setCurrentPageEspecialista] = useState(1);
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+	const [selectedCitaForVer, setSelectedCitaForVer] = useState<{
+		cita: CitaEspecialista & { informe?: { informe_pdf_url: string | null }; tieneInforme: boolean };
+		informePdfUrl: string | null;
+		pacienteName: string;
+	} | null>(null);
 	const itemsPerPage = 5;
 
 	// Si viene desde otra página con una cita seleccionada, abrir el modal
@@ -275,105 +282,105 @@ const InformesPage = () => {
 							<div className="mt-4 space-y-3">
 								{paginatedItems.length ? (
 									paginatedItems.map((item) => {
-									const pacienteFullName = `${item.paciente_nombre} ${item.paciente_apellido}`;
-									const especialistaFullName = `${item.especialista_nombre} ${item.especialista_apellido}`;
-									const isCompletado = item.tipo === "completado";
-									const informe = isCompletado ? item as typeof allInformes[0] : null;
+										const pacienteFullName = `${item.paciente_nombre} ${item.paciente_apellido}`;
+										const especialistaFullName = `${item.especialista_nombre} ${item.especialista_apellido}`;
+										const isCompletado = item.tipo === "completado";
+										const informe = isCompletado ? item as typeof allInformes[0] : null;
 
-									return (
-										<div
-											key={isCompletado ? informe!.id_informe : item.id_cita}
-											className="rounded-lg border border-mist bg-cloud p-4"
-										>
-											<div className="flex items-center justify-between">
-												<div className="flex-1">
-													<div className="flex items-center gap-2">
-														<h3 className="font-semibold text-brand-900">
-															{pacienteFullName}
-														</h3>
-														{item.paciente_cedula && (
-															<span className="text-xs text-brand-600">
-																({item.paciente_cedula})
-															</span>
-														)}
-														{isCompletado ? (
-															<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
-																Informe completo
-															</span>
-														) : (
-															<span className="rounded-full bg-yellow-500 px-2 py-1 text-[10px] text-paper">
-																Pendiente
-															</span>
-														)}
+										return (
+											<div
+												key={isCompletado ? informe!.id_informe : item.id_cita}
+												className="rounded-lg border border-mist bg-cloud p-4"
+											>
+												<div className="flex items-center justify-between">
+													<div className="flex-1">
+														<div className="flex items-center gap-2">
+															<h3 className="font-semibold text-brand-900">
+																{pacienteFullName}
+															</h3>
+															{item.paciente_cedula && (
+																<span className="text-xs text-brand-600">
+																	({item.paciente_cedula})
+																</span>
+															)}
+															{isCompletado ? (
+																<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
+																	Informe completo
+																</span>
+															) : (
+																<span className="rounded-full bg-yellow-500 px-2 py-1 text-[10px] text-paper">
+																	Pendiente
+																</span>
+															)}
+														</div>
+														<p className="mt-1 text-xs text-brand-800">
+															<strong>Especialista:</strong> {especialistaFullName}
+														</p>
+														<p className="mt-1 text-xs text-brand-800">
+															{item.eco_nombre} · {formatFecha(item.fecha_cita)} ·{" "}
+															{formatHora(item.hora_cita)}
+														</p>
 													</div>
-													<p className="mt-1 text-xs text-brand-800">
-														<strong>Especialista:</strong> {especialistaFullName}
-													</p>
-													<p className="mt-1 text-xs text-brand-800">
-														{item.eco_nombre} · {formatFecha(item.fecha_cita)} ·{" "}
-														{formatHora(item.hora_cita)}
-													</p>
-												</div>
-												<div className="ml-4 flex gap-2">
-													{isCompletado && informe?.informe_pdf_url ? (
-														<button
-															type="button"
-															onClick={() => {
-																const fileName = `Informe-${pacienteFullName}-${item.fecha_cita}.pdf`.replace(/\s+/g, "-");
-																setPdfFileName(fileName);
-																setPdfViewerUrl(informe.informe_pdf_url!);
-															}}
-															className="rounded-full bg-brand-700 px-4 py-2 text-xs font-medium text-paper transition-colors hover:bg-brand-800"
-														>
-															Ver PDF
-														</button>
-													) : null}
+													<div className="ml-4 flex gap-2">
+														{isCompletado && informe?.informe_pdf_url ? (
+															<button
+																type="button"
+																onClick={() => {
+																	const fileName = `Informe-${pacienteFullName}-${item.fecha_cita}.pdf`.replace(/\s+/g, "-");
+																	setPdfFileName(fileName);
+																	setPdfViewerUrl(informe.informe_pdf_url!);
+																}}
+																className="rounded-full bg-brand-700 px-4 py-2 text-xs font-medium text-paper transition-colors hover:bg-brand-800"
+															>
+																Ver PDF
+															</button>
+														) : null}
+													</div>
 												</div>
 											</div>
-										</div>
-									);
-								})
-							) : (
-								<p className="py-6 text-center text-sm text-brand-800">
-									{query.trim() || filtroEstado !== "todos"
-										? "No se encontraron resultados con ese criterio."
-										: "No hay informes o citas para mostrar."}
-								</p>
-							)}
-						</div>
-
-						{/* Paginación */}
-						{filteredItems.length > itemsPerPage && (
-							<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
-								<p className="text-xs text-brand-800">
-									Mostrando {paginatedItems.length > 0 ? (currentPageModerador - 1) * itemsPerPage + 1 : 0} -{" "}
-									{Math.min(currentPageModerador * itemsPerPage, filteredItems.length)} de{" "}
-									{filteredItems.length} items
-								</p>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => setCurrentPageModerador((prev) => Math.max(1, prev - 1))}
-										disabled={currentPageModerador === 1}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										Anterior
-									</button>
-									<span className="text-xs text-brand-800">
-										Página {currentPageModerador} de {totalPagesModerador}
-									</span>
-									<button
-										type="button"
-										onClick={() => setCurrentPageModerador((prev) => Math.min(totalPagesModerador, prev + 1))}
-										disabled={currentPageModerador >= totalPagesModerador}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										Siguiente
-									</button>
-								</div>
+										);
+									})
+								) : (
+									<p className="py-6 text-center text-sm text-brand-800">
+										{query.trim() || filtroEstado !== "todos"
+											? "No se encontraron resultados con ese criterio."
+											: "No hay informes o citas para mostrar."}
+									</p>
+								)}
 							</div>
-						)}
-					</>
+
+							{/* Paginación */}
+							{filteredItems.length > itemsPerPage && (
+								<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
+									<p className="text-xs text-brand-800">
+										Mostrando {paginatedItems.length > 0 ? (currentPageModerador - 1) * itemsPerPage + 1 : 0} -{" "}
+										{Math.min(currentPageModerador * itemsPerPage, filteredItems.length)} de{" "}
+										{filteredItems.length} items
+									</p>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setCurrentPageModerador((prev) => Math.max(1, prev - 1))}
+											disabled={currentPageModerador === 1}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Anterior
+										</button>
+										<span className="text-xs text-brand-800">
+											Página {currentPageModerador} de {totalPagesModerador}
+										</span>
+										<button
+											type="button"
+											onClick={() => setCurrentPageModerador((prev) => Math.min(totalPagesModerador, prev + 1))}
+											disabled={currentPageModerador >= totalPagesModerador}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Siguiente
+										</button>
+									</div>
+								</div>
+							)}
+						</>
 					)}
 				</div>
 
@@ -478,42 +485,64 @@ const InformesPage = () => {
 						<div className="mt-4 space-y-3">
 							{paginatedCitas.length ? (
 								paginatedCitas.map((cita) => {
-								const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
-								const tieneInforme = cita.tieneInforme;
-								return (
-									<div
-										key={cita.id_cita}
-										className="cursor-pointer rounded-lg border border-mist bg-cloud p-4 transition-colors hover:border-brand-700 hover:bg-mint/10"
-										onClick={() => setSelectedCitaId(cita.id_cita)}
-									>
-										<div className="flex items-center justify-between">
-											<div className="flex-1">
-												<div className="flex items-center gap-2">
-													<h3 className="font-semibold text-brand-900">
-														{fullName}
-													</h3>
-													{tieneInforme ? (
-														<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
-															Con informe
-														</span>
-													) : (
-														<span className="rounded-full bg-cloud px-2 py-1 text-[10px] text-brand-800">
-															Sin informe
-														</span>
-													)}
+									const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+									const tieneInforme = cita.tieneInforme;
+									return (
+										<div
+											key={cita.id_cita}
+											className="cursor-pointer rounded-lg border border-mist bg-cloud p-4 transition-colors hover:border-brand-700 hover:bg-mint/10"
+											onClick={() => setSelectedCitaId(cita.id_cita)}
+										>
+											<div className="flex items-center justify-between">
+												<div className="flex-1">
+													<div className="flex items-center gap-2 flex-wrap">
+														<h3 className="font-semibold text-brand-900">
+															{fullName}
+														</h3>
+														{cita.id_representado ? (
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Representado">
+																<Check className="h-3 w-3" /> Representado
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-brand-200 px-2 py-0.5 text-xs font-medium text-brand-600" title="No representado">
+																<X className="h-3 w-3" /> No representado
+															</span>
+														)}
+														{tieneInforme ? (
+															<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
+																Con informe
+															</span>
+														) : (
+															<span className="rounded-full bg-cloud px-2 py-1 text-[10px] text-brand-800">
+																Sin informe
+															</span>
+														)}
+													</div>
+													<p className="mt-1 text-xs text-brand-800">
+														{cita.eco_nombre} · {formatFecha(cita.fecha_cita)} ·{" "}
+														{formatHora(cita.hora_cita)}
+													</p>
 												</div>
-												<p className="mt-1 text-xs text-brand-800">
-													{cita.eco_nombre} · {formatFecha(cita.fecha_cita)} ·{" "}
-													{formatHora(cita.hora_cita)}
-												</p>
-											</div>
-											<div className="ml-4 flex gap-2">
+												<div className="ml-4 flex gap-2 flex-shrink-0">
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															setSelectedCitaForVer({
+																cita,
+																informePdfUrl: cita.informe?.informe_pdf_url ?? null,
+																pacienteName: fullName,
+															});
+														}}
+														className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50"
+													>
+														Ver cita
+													</button>
 													{tieneInforme && cita.informe?.informe_pdf_url ? (
 														<button
 															type="button"
 															onClick={(e) => {
 																e.stopPropagation();
-																const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
 																const fileName = `Informe-${fullName}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-");
 																setPdfFileName(fileName);
 																setPdfViewerUrl(cita.informe!.informe_pdf_url!);
@@ -523,17 +552,18 @@ const InformesPage = () => {
 															Ver PDF
 														</button>
 													) : null}
-												<button
-													type="button"
-													className="rounded-full border border-mint px-4 py-2 text-xs font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
-												>
-													{tieneInforme ? "Editar informe" : "Crear informe"}
-												</button>
+													<button
+														type="button"
+														onClick={(e) => e.stopPropagation()}
+														className="rounded-full border border-mint px-4 py-2 text-xs font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
+													>
+														{tieneInforme ? "Editar informe" : "Crear informe"}
+													</button>
+												</div>
 											</div>
 										</div>
-									</div>
-								);
-							})
+									);
+								})
 							) : (
 								<p className="py-6 text-center text-sm text-brand-800">
 									{query.trim() || filtroEstado !== "todos"
@@ -586,6 +616,19 @@ const InformesPage = () => {
 					onSuccess={() => {
 						setSelectedCitaId(null);
 						// Los datos se actualizarán automáticamente gracias a RTK Query
+					}}
+				/>
+			)}
+			{selectedCitaForVer && (
+				<VerCitaEspecialistaModal
+					citaFromList={selectedCitaForVer.cita}
+					informePdfUrl={selectedCitaForVer.informePdfUrl}
+					pacienteName={selectedCitaForVer.pacienteName}
+					onClose={() => setSelectedCitaForVer(null)}
+					onVerPdf={(url, fileName) => {
+						setPdfViewerUrl(url);
+						setPdfFileName(fileName);
+						setSelectedCitaForVer(null);
 					}}
 				/>
 			)}

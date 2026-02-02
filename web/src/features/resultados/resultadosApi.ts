@@ -19,6 +19,7 @@ export type CitaSinResultado = {
 export type CitaAtendidaConResultado = {
 	id_cita: string;
 	id_paciente: string;
+	id_representado?: string | null;
 	id_especialista: string;
 	id_eco: string;
 	fecha_cita: string;

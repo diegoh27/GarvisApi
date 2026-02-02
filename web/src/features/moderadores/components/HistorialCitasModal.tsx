@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { CitaAtendidaConResultado } from "../../resultados/resultadosApi";
 import { useGetCitaByIdQuery } from "../moderadoresApi";
 import VerCitaModal from "./VerCitaModal";
@@ -122,10 +122,21 @@ const HistorialCitasModal = ({
 										>
 											<div className="space-y-4">
 												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
+													<div className="flex items-center gap-2 flex-wrap">
 														<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
 															{cita.eco_nombre}
 														</span>
+														{cita.id_representado ? (
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800" title="Representado">
+																<Check className="h-3.5 w-3.5" />
+																Representado
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-cloud px-2 py-0.5 text-xs font-medium text-brand-700" title="No representado">
+																<X className="h-3.5 w-3.5" />
+																No representado
+															</span>
+														)}
 														{tieneResultado && (
 															<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
 																{archivos.length} archivo{archivos.length > 1 ? "s" : ""}

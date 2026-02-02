@@ -18,7 +18,7 @@ const createOrUpdateResultadoController = async ({
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita],
+			[id_cita]
 		);
 		if (!citaRows.length) {
 			const err = new Error("Cita no encontrada");
@@ -27,7 +27,9 @@ const createOrUpdateResultadoController = async ({
 		}
 		const cita = citaRows[0];
 		if (cita.estado_cita !== 3) {
-			const err = new Error("Solo se pueden subir resultados para citas atendidas");
+			const err = new Error(
+				"Solo se pueden subir resultados para citas atendidas"
+			);
 			err.code = "INVALID_STATE";
 			throw err;
 		}
@@ -35,12 +37,12 @@ const createOrUpdateResultadoController = async ({
 		// Verificar si ya existe un resultado para esta cita
 		const [existingRows] = await conn.execute(
 			"SELECT id_resultado, archivo FROM resultado WHERE id_cita = ?",
-			[id_cita],
+			[id_cita]
 		);
 
 		// archivo_url puede ser una URL simple o un JSON array de URLs
 		let archivoToSave;
-		if (typeof archivo_url === 'string') {
+		if (typeof archivo_url === "string") {
 			archivoToSave = archivo_url;
 		} else {
 			archivoToSave = JSON.stringify(archivo_url);
@@ -50,17 +52,23 @@ const createOrUpdateResultadoController = async ({
 		if (existingRows.length > 0 && existingRows[0].archivo) {
 			const archivoExistente = existingRows[0].archivo;
 			let archivosExistentes = [];
-			
+
 			// Parsear archivos existentes
 			try {
 				const parsed = JSON.parse(archivoExistente);
-				archivosExistentes = Array.isArray(parsed) ? parsed : [archivoExistente];
+				archivosExistentes = Array.isArray(parsed)
+					? parsed
+					: [archivoExistente];
 			} catch {
-				if (archivoExistente && archivoExistente !== "" && archivoExistente !== "[]") {
+				if (
+					archivoExistente &&
+					archivoExistente !== "" &&
+					archivoExistente !== "[]"
+				) {
 					archivosExistentes = [archivoExistente];
 				}
 			}
-			
+
 			// Parsear nuevos archivos
 			let archivosNuevos = [];
 			try {
@@ -69,7 +77,7 @@ const createOrUpdateResultadoController = async ({
 			} catch {
 				archivosNuevos = [archivoToSave];
 			}
-			
+
 			// Fusionar arrays, evitando duplicados
 			const archivosCombinados = [...archivosExistentes];
 			archivosNuevos.forEach((url) => {
@@ -77,7 +85,7 @@ const createOrUpdateResultadoController = async ({
 					archivosCombinados.push(url);
 				}
 			});
-			
+
 			// Convertir de vuelta a string
 			if (archivosCombinados.length === 0) {
 				archivoToSave = "[]";
@@ -90,7 +98,8 @@ const createOrUpdateResultadoController = async ({
 
 		// Determinar el estado según si hay archivos
 		// 0: Pendiente, 1: Vacío, 2: Con resultados (resultado_archivo)
-		const tieneArchivos = archivoToSave && archivoToSave !== "[]" && archivoToSave.trim() !== "";
+		const tieneArchivos =
+			archivoToSave && archivoToSave !== "[]" && archivoToSave.trim() !== "";
 		const nuevoEstado = tieneArchivos ? 2 : 1;
 
 		if (existingRows.length > 0) {
@@ -100,7 +109,12 @@ const createOrUpdateResultadoController = async ({
         SET archivo = ?, nombre = ?, fecha_emision = CURRENT_TIMESTAMP, estado_resultado = ?
         WHERE id_cita = ?
       `;
-			await conn.execute(sql, [archivoToSave, nombre || null, nuevoEstado, id_cita]);
+			await conn.execute(sql, [
+				archivoToSave,
+				nombre || null,
+				nuevoEstado,
+				id_cita,
+			]);
 			await conn.commit();
 			return {
 				id_resultado: existingRows[0].id_resultado,
@@ -168,14 +182,14 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
     WHERE c.estado_cita = 3
       AND (r.archivo IS NULL OR r.archivo = '' OR r.archivo = '[]')
   `;
-	
+
 	// Si se proporciona id_especialista, filtrar solo sus citas
 	if (id_especialista) {
 		sql += ` AND c.id_especialista = ?`;
 	}
-	
+
 	sql += ` ORDER BY c.fecha_cita DESC, c.hora_cita DESC`;
-	
+
 	const params = id_especialista ? [id_especialista] : [];
 	const [rows] = await pool.execute(sql, params);
 	return rows;
@@ -187,6 +201,7 @@ const listCitasAtendidasConResultadosController = async () => {
     SELECT
       c.id_cita,
       c.id_paciente,
+      c.id_representado,
       c.id_especialista,
       c.id_eco,
       c.fecha_cita,
@@ -256,7 +271,7 @@ const deleteArchivoFromResultadoController = async ({
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita],
+			[id_cita]
 		);
 		if (!citaRows.length) {
 			const err = new Error("Cita no encontrada");
@@ -267,7 +282,7 @@ const deleteArchivoFromResultadoController = async ({
 		// Obtener el resultado actual
 		const [resultadoRows] = await conn.execute(
 			"SELECT archivo FROM resultado WHERE id_cita = ?",
-			[id_cita],
+			[id_cita]
 		);
 		if (!resultadoRows.length) {
 			const err = new Error("No se encontró resultado para esta cita");
@@ -292,7 +307,9 @@ const deleteArchivoFromResultadoController = async ({
 		}
 
 		// Filtrar el archivo a eliminar
-		const archivosFiltrados = archivos.filter((url) => url !== archivoUrl && url.trim() !== archivoUrl.trim());
+		const archivosFiltrados = archivos.filter(
+			(url) => url !== archivoUrl && url.trim() !== archivoUrl.trim()
+		);
 
 		if (archivosFiltrados.length === archivos.length) {
 			const err = new Error("El archivo especificado no se encontró");
@@ -301,10 +318,11 @@ const deleteArchivoFromResultadoController = async ({
 		}
 
 		// Guardar el array actualizado
-		const nuevoArchivo = archivosFiltrados.length === 0 
-			? "[]" 
-			: archivosFiltrados.length === 1 
-				? archivosFiltrados[0] 
+		const nuevoArchivo =
+			archivosFiltrados.length === 0
+				? "[]"
+				: archivosFiltrados.length === 1
+				? archivosFiltrados[0]
 				: JSON.stringify(archivosFiltrados);
 
 		// Actualizar estado: 1 Vacío si no hay archivos, 2 Con resultados si hay archivos
@@ -312,7 +330,7 @@ const deleteArchivoFromResultadoController = async ({
 
 		await conn.execute(
 			"UPDATE resultado SET archivo = ?, estado_resultado = ? WHERE id_cita = ?",
-			[nuevoArchivo, nuevoEstado, id_cita],
+			[nuevoArchivo, nuevoEstado, id_cita]
 		);
 
 		await conn.commit();

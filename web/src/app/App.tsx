@@ -30,6 +30,7 @@ import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
 import { PagosPage } from "../features/pagos";
 import { ProductosPage } from "../features/productos";
+import { RepresentadosPage } from "../features/representados";
 import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
 import { UsuariosPage } from "../features/usuarios";
@@ -206,6 +207,16 @@ const App = () => {
 							<ProtectedRoute>
 								<RoleRoute allowed={["paciente"]}>
 									<CitasPage />
+								</RoleRoute>
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="representados"
+						element={
+							<ProtectedRoute>
+								<RoleRoute allowed={["paciente"]}>
+									<RepresentadosPage />
 								</RoleRoute>
 							</ProtectedRoute>
 						}
