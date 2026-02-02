@@ -1,7 +1,9 @@
-import { useState, type FormEvent, useEffect, useMemo } from "react";
+import { useState, type FormEvent, useEffect, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
 import { useCreateEcoMutation, useUpdateEcoMutation, useGetEcosQuery } from "../ecosApi";
 import type { Eco } from "../ecosApi";
+
+const DURACION_CREAR = 20;
 
 type EcoFormProps = {
 	eco?: Eco | null;
@@ -12,11 +14,14 @@ type EcoFormProps = {
 const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 	const [createEco, { isLoading: isCreating }] = useCreateEcoMutation();
 	const [updateEco, { isLoading: isUpdating }] = useUpdateEcoMutation();
-	const { data: ecos = [] } = useGetEcosQuery();
+	const { data: ecos = [], refetch: refetchEcos } = useGetEcosQuery();
+	const submittedRef = useRef(false);
+	/** Nombre que acabamos de crear; evita mostrar "ya existe" tras el refetch */
+	const justCreatedNombreRef = useRef<string | null>(null);
 	const [form, setForm] = useState({
 		nombre: eco?.nombre || "",
 		precio: eco?.precio ? String(eco.precio) : "",
-		duracion_min: eco?.duracion_min ? String(eco.duracion_min) : "",
+		duracion_min: eco?.duracion_min ? String(eco.duracion_min) : String(DURACION_CREAR),
 		activo: eco?.activo !== undefined ? eco.activo : 1,
 	});
 	const [error, setError] = useState("");
@@ -30,16 +35,22 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				duracion_min: String(eco.duracion_min),
 				activo: eco.activo,
 			});
+		} else {
+			setForm((prev) => ({
+				...prev,
+				duracion_min: String(DURACION_CREAR),
+			}));
 		}
 	}, [eco]);
 
 	const isLoading = isCreating || isUpdating;
 	const isEditing = !!eco;
 
-	// Validar si el nombre ya existe (case-insensitive)
+	// Validar si el nombre ya existe (case-insensitive). No contar el que acabamos de crear.
 	const nombreExists = useMemo(() => {
 		if (!form.nombre.trim()) return false;
 		const nombreNormalized = form.nombre.trim().toLowerCase();
+		if (!isEditing && justCreatedNombreRef.current === nombreNormalized) return false;
 		return ecos.some(
 			(e) =>
 				e.nombre.toLowerCase() === nombreNormalized &&
@@ -57,6 +68,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 
 	const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+		if (submittedRef.current) return;
 		setError("");
 		setNombreError("");
 
@@ -65,7 +77,6 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			return;
 		}
 
-		// Validar que el nombre no esté duplicado
 		if (nombreExists) {
 			setNombreError("Ya existe un eco con ese nombre.");
 			setError("Ya existe un eco con ese nombre.");
@@ -77,6 +88,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			return;
 		}
 
+		submittedRef.current = true;
 		try {
 			if (isEditing) {
 				await updateEco({
@@ -97,8 +109,9 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				await createEco({
 					nombre: form.nombre.trim(),
 					precio: Number(form.precio),
-					duracion_min: form.duracion_min ? Number(form.duracion_min) : 0,
+					duracion_min: DURACION_CREAR,
 				}).unwrap();
+				justCreatedNombreRef.current = form.nombre.trim().toLowerCase();
 				await Swal.fire({
 					icon: "success",
 					title: "Eco creado",
@@ -109,7 +122,27 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			}
 			onSuccess();
 		} catch (err: any) {
+			submittedRef.current = false;
 			const message = err?.data?.message || "No se pudo guardar el eco";
+			const status = err?.status;
+			// Si el backend devuelve 409 "ya existe" al crear, puede ser race: el eco ya se creó. Comprobamos.
+			if (!isEditing && status === 409 && message.toLowerCase().includes("ya existe")) {
+				const { data: listAfter } = await refetchEcos();
+				const nombreNorm = form.nombre.trim().toLowerCase();
+				const exists = (listAfter ?? []).some((e) => e.nombre.toLowerCase() === nombreNorm);
+				if (exists) {
+					justCreatedNombreRef.current = nombreNorm;
+					await Swal.fire({
+						icon: "success",
+						title: "Eco creado",
+						text: "El eco ha sido creado exitosamente.",
+						timer: 2000,
+						showConfirmButton: false,
+					});
+					onSuccess();
+					return;
+				}
+			}
 			setError(message);
 			Swal.fire({
 				icon: "error",
@@ -134,11 +167,10 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				<input
 					type="text"
 					required
-					className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-						nombreError || nombreExists
-							? "border-red-500 focus:border-red-500"
-							: "border-brand-300"
-					}`}
+					className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${nombreError || nombreExists
+						? "border-red-500 focus:border-red-500"
+						: "border-brand-300"
+						}`}
 					value={form.nombre}
 					onChange={(e) => updateField("nombre", e.target.value)}
 					onBlur={() => {
@@ -176,11 +208,17 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 					<input
 						type="number"
 						min="0"
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-						value={form.duracion_min}
+						disabled={!isEditing}
+						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500 disabled:bg-cloud disabled:cursor-not-allowed"
+						value={isEditing ? form.duracion_min : String(DURACION_CREAR)}
 						onChange={(e) => updateField("duracion_min", e.target.value)}
 						placeholder="0"
 					/>
+					{!isEditing && (
+						<p className="mt-1 text-xs text-brand-600">
+							Al crear un eco la duración es fija: 20 minutos.
+						</p>
+					)}
 				</div>
 			</div>
 
