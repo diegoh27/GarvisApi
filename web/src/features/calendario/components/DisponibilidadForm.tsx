@@ -10,6 +10,8 @@ type DisponibilidadFormProps = {
 	idEcos: string[];
 	minFecha: string;
 	timeOptions: TimeOption[];
+	selectedCellsCount?: number;
+	onClearSelection?: () => void;
 	error: string | null;
 	submitStatus: "idle" | "loading" | "done";
 	onFechaChange: (value: string) => void;
@@ -25,6 +27,8 @@ const DisponibilidadForm = ({
 	idEcos,
 	minFecha,
 	timeOptions,
+	selectedCellsCount = 0,
+	onClearSelection,
 	error,
 	submitStatus,
 	onFechaChange,
@@ -33,6 +37,7 @@ const DisponibilidadForm = ({
 	onSubmit,
 	onCancel,
 }: DisponibilidadFormProps) => {
+	const useCalendarSelection = selectedCellsCount > 0;
 	const { user } = useAuth();
 	const isEspecialista = user?.rol === "especialista";
 	const idEspecialista = user?.id_usuario || "";
@@ -103,31 +108,53 @@ const DisponibilidadForm = ({
 				<span className="text-[10px] text-brand-800">Bloques de 20 minutos</span>
 			</div>
 			<form className="mt-3 space-y-3" onSubmit={onSubmit}>
-				<div className="space-y-1 text-xs text-brand-800">
-					<label className="font-semibold">Fecha</label>
-					<input
-						type="date"
-						value={fecha}
-						onChange={(event) => onFechaChange(event.target.value)}
-						min={minFecha}
-						className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-					/>
-				</div>
-				<div className="space-y-1 text-xs text-brand-800">
-					<label className="font-semibold">Hora inicio</label>
-					<select
-						value={horaInicio}
-						onChange={(event) => onHoraInicioChange(event.target.value)}
-						className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-					>
-						<option value="">Selecciona hora</option>
-						{timeOptions.map((option) => (
-							<option key={option.value} value={option.value}>
-								{option.label}
-							</option>
-						))}
-					</select>
-				</div>
+				{useCalendarSelection ? (
+					<div className="rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-3 text-xs text-brand-800">
+						<p className="font-semibold">
+							{selectedCellsCount} celda{selectedCellsCount !== 1 ? "s" : ""} seleccionada{selectedCellsCount !== 1 ? "s" : ""} en el calendario
+						</p>
+						<p className="mt-1 text-[11px] text-brand-700">
+							Haz clic en celdas vacías para sumar o quitar. Elige el tipo de eco y envía la solicitud.
+						</p>
+						{onClearSelection && (
+							<button
+								type="button"
+								onClick={onClearSelection}
+								className="mt-2 rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
+							>
+								Limpiar selección
+							</button>
+						)}
+					</div>
+				) : (
+					<>
+						<div className="space-y-1 text-xs text-brand-800">
+							<label className="font-semibold">Fecha</label>
+							<input
+								type="date"
+								value={fecha}
+								onChange={(event) => onFechaChange(event.target.value)}
+								min={minFecha}
+								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+							/>
+						</div>
+						<div className="space-y-1 text-xs text-brand-800">
+							<label className="font-semibold">Hora inicio</label>
+							<select
+								value={horaInicio}
+								onChange={(event) => onHoraInicioChange(event.target.value)}
+								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+							>
+								<option value="">Selecciona hora</option>
+								{timeOptions.map((option) => (
+									<option key={option.value} value={option.value}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+					</>
+				)}
 				<div className="space-y-1 text-xs text-brand-800">
 					<label className="font-semibold">
 						Tipo de eco <span className="text-red-500">*</span>
@@ -198,7 +225,10 @@ const DisponibilidadForm = ({
 						)}
 					</div>
 					<p className="text-[10px] text-brand-700">
-						Puedes seleccionar uno o varios ecos desde el desplegable.</p>
+						{useCalendarSelection
+							? "Selecciona uno o varios ecos para aplicar a todas las celdas."
+							: "Puedes seleccionar uno o varios ecos desde el desplegable."}
+					</p>
 				</div>
 				{error ? (
 					<p className="text-[11px] font-semibold text-brand-900">{error}</p>

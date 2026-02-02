@@ -111,7 +111,7 @@ const CalendarioPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState("todas");
 	const [page, setPage] = useState(1);
-	const [selectedCell, setSelectedCell] = useState<string | null>(null);
+	const [selectedCells, setSelectedCells] = useState<string[]>([]);
 
 	const isEspecialista = user?.rol === "especialista";
 	const minFecha = useMemo(() => getLocalDateKey(new Date()), []);
@@ -206,9 +206,8 @@ const CalendarioPage = () => {
 
 		if (exitosos.length > 0) {
 			setSubmitStatus("done");
-			setSelectedCell(null);
+			setSelectedCells([]);
 
-			// Obtener los nombres solo de los ecos creados correctamente
 			const ecosSeleccionados = ecos.filter((eco) =>
 				exitosos.includes(eco.id_eco),
 			);
@@ -238,7 +237,6 @@ const CalendarioPage = () => {
 				(err as Error).message ||
 				"No se pudo enviar una o más disponibilidades";
 
-			// Si es conflicto (409), mostrar mensaje más claro
 			if (err?.status === 409) {
 				setError(
 					apiMessage ||
@@ -254,6 +252,61 @@ const CalendarioPage = () => {
 
 	const handleSubmitDisponibilidad = async (event: FormEvent) => {
 		event.preventDefault();
+		if (idEcos.length === 0) {
+			setError("Selecciona al menos un tipo de eco");
+			return;
+		}
+		setError(null);
+
+		if (selectedCells.length > 0) {
+			setSubmitStatus("loading");
+			let creados = 0;
+			let lastError: unknown = null;
+			for (const cellKey of selectedCells) {
+				const [dateKey, hourValue] = cellKey.split("|");
+				if (!dateKey || !hourValue) continue;
+				const hora_fin = computeHoraFin(hourValue);
+				if (!hora_fin) continue;
+				for (const id_eco of idEcos) {
+					try {
+						await crearDisponibilidad({
+							fecha: dateKey,
+							hora_inicio: hourValue,
+							hora_fin,
+							id_eco,
+						}).unwrap();
+						creados += 1;
+					} catch (err) {
+						lastError = err;
+					}
+				}
+			}
+			setSubmitStatus("done");
+			setSelectedCells([]);
+			setIdEcos([]);
+			if (creados > 0) {
+				await Swal.fire({
+					icon: "success",
+					title: "Disponibilidad agregada",
+					text: `Se agregaron ${creados} bloque${creados !== 1 ? "s" : ""} exitosamente.`,
+					timer: 3000,
+					showConfirmButton: false,
+					confirmButtonColor: "#1C837F",
+				});
+			}
+			if (lastError) {
+				const err: any = lastError;
+				const apiMessage =
+					err?.data?.message ||
+					err?.error ||
+					(err as Error).message ||
+					"No se pudo enviar una o más disponibilidades";
+				setError(err?.status === 409 ? "Algunos horarios ya tienen bloque o cita. Revisa el calendario." : apiMessage);
+			}
+			setSubmitStatus("idle");
+			return;
+		}
+
 		await submitDisponibilidad({
 			fecha,
 			hora_inicio: horaInicio,
@@ -262,7 +315,6 @@ const CalendarioPage = () => {
 		setFecha("");
 		setHoraInicio("");
 		setIdEcos([]);
-		setSelectedCell(null);
 	};
 
 	const days = useMemo(() => {
@@ -437,11 +489,12 @@ const CalendarioPage = () => {
 			}
 			return;
 		}
-		// Mostrar formulario para seleccionar eco y marcar celda como seleccionada
-		setFecha(dateKey);
-		setHoraInicio(hourValue);
-		setIdEcos([]);
-		setSelectedCell(cellKey);
+		// Toggle celda vacía en la selección múltiple
+		setSelectedCells((prev) =>
+			prev.includes(cellKey)
+				? prev.filter((k) => k !== cellKey)
+				: [...prev, cellKey],
+		);
 	};
 
 	const mergedBloques = useMemo(() => {
@@ -549,6 +602,9 @@ const CalendarioPage = () => {
 							{ label: "Atendida", colorClass: "bg-emerald-500" },
 							{ label: "Cancelada", colorClass: "bg-brand-900" },
 							{ label: "Rechazada", colorClass: "bg-red-500" },
+							...(selectedCells.length > 0
+								? [{ label: "Seleccionada (clic para quitar)", colorClass: "bg-brand-200" }]
+								: []),
 						]}
 					/>
 					<CalendarGrid
@@ -560,7 +616,7 @@ const CalendarioPage = () => {
 						minFecha={minFecha}
 						busyCell={busyCell}
 						cancelingId={cancelingId}
-						selectedCell={selectedCell}
+						selectedCells={selectedCells}
 						estadoColor={estadoColor}
 						estadoLabel={estadoLabel}
 						formatHora={formatHora}
@@ -578,6 +634,8 @@ const CalendarioPage = () => {
 						idEcos={idEcos}
 						minFecha={minFecha}
 						timeOptions={timeOptions}
+						selectedCellsCount={selectedCells.length}
+						onClearSelection={() => setSelectedCells([])}
 						error={
 							error ??
 							(bloquesError as Error | undefined)?.message ??
@@ -590,12 +648,12 @@ const CalendarioPage = () => {
 						onIdEcosChange={setIdEcos}
 						onSubmit={handleSubmitDisponibilidad}
 						onCancel={
-							fecha || horaInicio || idEcos.length
+							fecha || horaInicio || idEcos.length || selectedCells.length > 0
 								? () => {
 									setFecha("");
 									setHoraInicio("");
 									setIdEcos([]);
-									setSelectedCell(null);
+									setSelectedCells([]);
 								}
 								: undefined
 						}

@@ -10,7 +10,7 @@ type CalendarGridProps = {
 	minFecha: string;
 	busyCell: string | null;
 	cancelingId: string | null;
-	selectedCell: string | null;
+	selectedCells: string[];
 	estadoColor: Record<number, string>;
 	estadoLabel: Record<number, string>;
 	formatHora: (value: string) => string;
@@ -27,7 +27,7 @@ const CalendarGrid = ({
 	minFecha,
 	busyCell,
 	cancelingId,
-	selectedCell,
+	selectedCells,
 	estadoColor,
 	estadoLabel,
 	formatHora,
@@ -86,7 +86,7 @@ const CalendarGrid = ({
 										? "bg-amber-400 text-brand-900"
 										: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
 								: "";
-							const isSelected = selectedCell === cellKey && !bloque;
+							const isSelected = selectedCells.includes(cellKey) && !bloque;
 							return (
 								<div
 									key={cellKey}
