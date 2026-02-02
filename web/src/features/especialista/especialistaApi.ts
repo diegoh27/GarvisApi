@@ -9,6 +9,17 @@ type CrearDisponibilidadPayload = {
 	id_eco?: string;
 };
 
+type BloqueBatch = {
+	fecha: string;
+	hora_inicio: string;
+	hora_fin: string;
+	id_eco?: string;
+};
+
+type CrearDisponibilidadBatchPayload = {
+	bloques: BloqueBatch[];
+};
+
 const especialistaApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
 		getMisCitas: builder.query<CitaEspecialista[], void>({
@@ -26,6 +37,17 @@ const especialistaApi = baseApi.injectEndpoints({
 		crearDisponibilidad: builder.mutation<void, CrearDisponibilidadPayload>({
 			query: (body) => ({
 				url: "/disponibilidad",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
+		crearDisponibilidadBatch: builder.mutation<
+			{ creados: number; ids: string[] },
+			CrearDisponibilidadBatchPayload
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/batch",
 				method: "POST",
 				body,
 			}),
@@ -57,6 +79,7 @@ const {
 	useGetMisCitasQuery,
 	useGetMisBloquesQuery,
 	useCrearDisponibilidadMutation,
+	useCrearDisponibilidadBatchMutation,
 	useCancelarDisponibilidadMutation,
 	useMarcarAtendidaMutation,
 	useGetCitaByIdQuery,
@@ -67,8 +90,9 @@ export {
 	useGetMisCitasQuery,
 	useGetMisBloquesQuery,
 	useCrearDisponibilidadMutation,
+	useCrearDisponibilidadBatchMutation,
 	useCancelarDisponibilidadMutation,
 	useMarcarAtendidaMutation,
 	useGetCitaByIdQuery,
 };
-export type { CrearDisponibilidadPayload };
+export type { CrearDisponibilidadPayload, CrearDisponibilidadBatchPayload, BloqueBatch };

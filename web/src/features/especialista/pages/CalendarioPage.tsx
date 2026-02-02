@@ -15,10 +15,12 @@ import {
 import {
 	useCancelarDisponibilidadMutation,
 	useCrearDisponibilidadMutation,
+	useCrearDisponibilidadBatchMutation,
 	useGetMisBloquesQuery,
 	useGetMisCitasQuery,
 	useMarcarAtendidaMutation,
 } from "../especialistaApi";
+import type { BloqueBatch } from "../especialistaApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 
 const estadoLabel: Record<number, string> = {
@@ -126,6 +128,7 @@ const CalendarioPage = () => {
 		skip: !shouldFetch,
 	});
 	const [crearDisponibilidad] = useCrearDisponibilidadMutation();
+	const [crearDisponibilidadBatch] = useCrearDisponibilidadBatchMutation();
 	const [cancelarDisponibilidad] = useCancelarDisponibilidadMutation();
 	const [marcarAtendida] = useMarcarAtendidaMutation();
 	const { data: ecos = [] } = useGetEcosQuery();
@@ -248,6 +251,40 @@ const CalendarioPage = () => {
 		}
 
 		setSubmitStatus("idle");
+	};
+
+	const handleSubmitBatch = async (bloques: BloqueBatch[]) => {
+		if (!bloques.length) {
+			setError("Selecciona al menos un bloque en la vista previa");
+			return;
+		}
+		setError(null);
+		setSubmitStatus("loading");
+		try {
+			const result = await crearDisponibilidadBatch({ bloques }).unwrap();
+			setSubmitStatus("done");
+			setSelectedCells([]);
+			setFecha("");
+			setHoraInicio("");
+			setIdEcos([]);
+			await Swal.fire({
+				icon: "success",
+				title: "Disponibilidad agregada",
+				text: `Se enviaron ${result.creados} bloque${result.creados !== 1 ? "s" : ""} correctamente.`,
+				timer: 3000,
+				showConfirmButton: false,
+				confirmButtonColor: "#1C837F",
+			});
+		} catch (err: unknown) {
+			const e = err as { data?: { message?: string }; status?: number };
+			setSubmitStatus("idle");
+			setError(
+				e?.data?.message ||
+				(e?.status === 409
+					? "Algunos horarios se solapan con bloques o citas existentes."
+					: "No se pudieron crear los bloques.")
+			);
+		}
 	};
 
 	const handleSubmitDisponibilidad = async (event: FormEvent) => {
@@ -636,6 +673,7 @@ const CalendarioPage = () => {
 						timeOptions={timeOptions}
 						selectedCellsCount={selectedCells.length}
 						onClearSelection={() => setSelectedCells([])}
+						onSubmitBatch={handleSubmitBatch}
 						error={
 							error ??
 							(bloquesError as Error | undefined)?.message ??

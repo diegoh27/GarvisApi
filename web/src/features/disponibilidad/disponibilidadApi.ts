@@ -83,6 +83,28 @@ const disponibilidadApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Disponibilidad"],
 		}),
+		aprobarDisponibilidadLote: builder.mutation<
+			{ aprobados: number; ids: string[] },
+			{ ids: string[] }
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/aprobar-lote",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
+		aprobarDisponibilidadPorCriterios: builder.mutation<
+			{ aprobados: number; ids: string[] },
+			{ id_especialista?: string; fecha_desde?: string; fecha_hasta?: string; hora_desde?: string; hora_hasta?: string }
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/aprobar-por-criterios",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -92,6 +114,8 @@ const {
 	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
 	useAprobarDisponibilidadMutation,
+	useAprobarDisponibilidadLoteMutation,
+	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
 } = disponibilidadApi;
 
@@ -101,5 +125,7 @@ export {
 	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
 	useAprobarDisponibilidadMutation,
+	useAprobarDisponibilidadLoteMutation,
+	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
 };

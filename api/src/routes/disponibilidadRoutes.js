@@ -1,9 +1,12 @@
 const { Router } = require("express");
 const {
 	createDisponibilidadHandler,
+	createDisponibilidadBatchHandler,
 	listMisDisponibilidadHandler,
 	listPendientesHandler,
 	approveDisponibilidadHandler,
+	approveDisponibilidadBatchHandler,
+	approveDisponibilidadPorCriteriosHandler,
 	rejectDisponibilidadHandler,
 	cancelDisponibilidadHandler,
 	listPublicaHandler,
@@ -24,60 +27,78 @@ disponibilidadRoutes.post(
 	"/",
 	authenticateToken,
 	authorizeRoles("especialista"),
-	createDisponibilidadHandler,
+	createDisponibilidadHandler
+);
+disponibilidadRoutes.post(
+	"/batch",
+	authenticateToken,
+	authorizeRoles("especialista"),
+	createDisponibilidadBatchHandler
 );
 disponibilidadRoutes.get(
 	"/mis-bloques",
 	authenticateToken,
 	authorizeRoles("especialista"),
-	listMisDisponibilidadHandler,
+	listMisDisponibilidadHandler
 );
 disponibilidadRoutes.patch(
 	"/:id/cancelar",
 	authenticateToken,
 	authorizeRoles("especialista"),
-	cancelDisponibilidadHandler,
+	cancelDisponibilidadHandler
 );
 
-// Moderador: pendientes y aprobación/rechazo
+// Moderador: pendientes y aprobación/rechazo (rutas fijas antes de /:id)
 disponibilidadRoutes.get(
 	"/pendientes",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listPendientesHandler,
+	listPendientesHandler
+);
+disponibilidadRoutes.post(
+	"/aprobar-lote",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	approveDisponibilidadBatchHandler
+);
+disponibilidadRoutes.post(
+	"/aprobar-por-criterios",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	approveDisponibilidadPorCriteriosHandler
 );
 disponibilidadRoutes.patch(
 	"/:id/aprobar",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	approveDisponibilidadHandler,
+	approveDisponibilidadHandler
 );
 disponibilidadRoutes.patch(
 	"/:id/rechazar",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	rejectDisponibilidadHandler,
+	rejectDisponibilidadHandler
 );
 // Moderador/Admin: cerrar disponibilidad por dia
 disponibilidadRoutes.post(
 	"/cerrar-dia",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	closeDisponibilidadDiaHandler,
+	closeDisponibilidadDiaHandler
 );
 // Moderador/Admin: obtener disponibilidades por fecha
 disponibilidadRoutes.get(
 	"/por-fecha",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listDisponibilidadesByFechaHandler,
+	listDisponibilidadesByFechaHandler
 );
 // Moderador/Admin: obtener disponibilidades por especialista (aprobadas y pendientes)
 disponibilidadRoutes.get(
 	"/por-especialista",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listDisponibilidadesByEspecialistaHandler,
+	listDisponibilidadesByEspecialistaHandler
 );
 
 module.exports = disponibilidadRoutes;
