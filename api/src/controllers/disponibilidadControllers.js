@@ -107,6 +107,100 @@ const createDisponibilidadController = async ({
 	}
 };
 
+/**
+ * Crear múltiples bloques de disponibilidad en una sola transacción.
+ * @param {Object} params
+ * @param {string} params.id_especialista
+ * @param {string} params.creado_por
+ * @param {Array<{fecha: string, hora_inicio: string, hora_fin: string, id_eco?: string}>} params.bloques
+ * @returns {{ creados: number, ids: string[] }}
+ */
+const createDisponibilidadBatchController = async ({
+	id_especialista,
+	creado_por,
+	bloques,
+}) => {
+	if (!Array.isArray(bloques) || bloques.length === 0) {
+		const err = new Error("Se requiere al menos un bloque");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		const creados = [];
+		for (const bloque of bloques) {
+			const { fecha, hora_inicio, hora_fin, id_eco } = bloque;
+			if (!fecha || !hora_inicio || !hora_fin) {
+				const err = new Error(
+					"Cada bloque debe tener fecha, hora_inicio y hora_fin"
+				);
+				err.code = "INVALID_INPUT";
+				throw err;
+			}
+			if (id_eco) {
+				const [ecoRows] = await conn.execute(
+					"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
+					[id_eco]
+				);
+				if (!ecoRows.length) {
+					const err = new Error(`Eco no encontrado o inactivo: ${id_eco}`);
+					err.code = "ECO_NOT_FOUND";
+					throw err;
+				}
+			}
+			const [overlapRows] = await conn.execute(
+				`SELECT id_disponibilidad, estado, id_eco
+         FROM disponibilidad
+         WHERE id_especialista = ?
+           AND fecha = ?
+           AND NOT (hora_fin <= ? OR hora_inicio >= ?)
+           AND estado IN (0, 1, 4)
+         LIMIT 1`,
+				[id_especialista, fecha, hora_inicio, hora_fin]
+			);
+			if (overlapRows.length) {
+				const existing = overlapRows[0];
+				const isAprobadaOCita = existing.estado === 1 || existing.estado === 4;
+				const isMismoEcoPropuesto =
+					existing.estado === 0 &&
+					existing.id_eco &&
+					existing.id_eco === id_eco;
+				if (isAprobadaOCita || isMismoEcoPropuesto) {
+					const err = new Error(
+						`Bloque se solapa con otro existente: ${fecha} ${hora_inicio}`
+					);
+					err.code = "OVERLAP";
+					throw err;
+				}
+			}
+			const id_disponibilidad = crypto.randomUUID();
+			await conn.execute(
+				`INSERT INTO disponibilidad
+          (id_disponibilidad, id_especialista, fecha, hora_inicio, hora_fin, id_eco, estado, creado_por)
+          VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
+				[
+					id_disponibilidad,
+					id_especialista,
+					fecha,
+					hora_inicio,
+					hora_fin,
+					id_eco || null,
+					creado_por,
+				]
+			);
+			creados.push(id_disponibilidad);
+		}
+		await conn.commit();
+		return { creados: creados.length, ids: creados };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 const listMisDisponibilidadController = async ({ id_especialista, estado }) => {
 	let sql = `
     SELECT
@@ -225,6 +319,84 @@ const approveDisponibilidadController = async ({
 
 		await conn.commit();
 		return { id_disponibilidad, estado: 1 };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+/**
+ * Aprobar múltiples bloques en una sola transacción.
+ * @param {Object} params
+ * @param {string[]} params.ids - id_disponibilidad
+ * @param {string|null} params.aprobado_por
+ * @returns {{ aprobados: number, ids: string[] }}
+ */
+const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
+	if (!Array.isArray(ids) || ids.length === 0) {
+		const err = new Error("Se requiere al menos un id");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		let aprobadoPorFinal = aprobado_por;
+		if (aprobado_por) {
+			const [userRows] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[aprobado_por]
+			);
+			if (!userRows.length) aprobadoPorFinal = null;
+		}
+		const aprobados = [];
+		for (const id_disponibilidad of ids) {
+			const [rows] = await conn.execute(
+				"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
+				[id_disponibilidad]
+			);
+			if (!rows.length) {
+				const err = new Error(
+					`Disponibilidad no encontrada: ${id_disponibilidad}`
+				);
+				err.code = "NOT_FOUND";
+				err.id = id_disponibilidad;
+				throw err;
+			}
+			const bloque = rows[0];
+			if (bloque.estado !== 0) {
+				const err = new Error(
+					`Solo se puede aprobar si está en estado propuesto: ${id_disponibilidad}`
+				);
+				err.code = "INVALID_STATE";
+				err.id = id_disponibilidad;
+				throw err;
+			}
+			const overlap = await hasOverlap(conn, {
+				id_especialista: bloque.id_especialista,
+				fecha: bloque.fecha,
+				hora_inicio: bloque.hora_inicio,
+				hora_fin: bloque.hora_fin,
+				estados: [4],
+			});
+			if (overlap) {
+				const err = new Error(
+					`Bloque se solapa con una cita existente: ${id_disponibilidad}`
+				);
+				err.code = "OVERLAP";
+				err.id = id_disponibilidad;
+				throw err;
+			}
+			await conn.execute(
+				"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
+				[aprobadoPorFinal, id_disponibilidad]
+			);
+			aprobados.push(id_disponibilidad);
+		}
+		await conn.commit();
+		return { aprobados: aprobados.length, ids: aprobados };
 	} catch (err) {
 		await conn.rollback();
 		throw err;
@@ -429,11 +601,102 @@ const listDisponibilidadesByFechaController = async (fecha) => {
 	return rows;
 };
 
+/**
+ * Normaliza hora "HH:mm" o "HH:mm:ss" a "HH:mm:ss" para comparar en BD.
+ */
+const normalizeHora = (h) => {
+	if (!h || typeof h !== "string") return null;
+	const parts = h.trim().split(":");
+	if (parts.length >= 2) {
+		const hh = parts[0].padStart(2, "0");
+		const mm = (parts[1] || "00").padStart(2, "0");
+		const ss = (parts[2] || "00").padStart(2, "0");
+		return `${hh}:${mm}:${ss}`;
+	}
+	return null;
+};
+
+/**
+ * Aprobar todas las disponibilidades pendientes que coincidan con los criterios
+ * (especialista, rango de fechas y/o rango de horas). Útil cuando un especialista solicita
+ * muchos bloques (ej. 2 días todo el día y todos los ecos).
+ * @param {Object} params
+ * @param {string} [params.id_especialista]
+ * @param {string} [params.fecha_desde] YYYY-MM-DD
+ * @param {string} [params.fecha_hasta] YYYY-MM-DD
+ * @param {string} [params.hora_desde] HH:mm o HH:mm:ss
+ * @param {string} [params.hora_hasta] HH:mm o HH:mm:ss
+ * @param {string|null} [params.aprobado_por]
+ * @returns {{ aprobados: number, ids: string[] }}
+ */
+const approveDisponibilidadPorCriteriosController = async ({
+	id_especialista,
+	fecha_desde,
+	fecha_hasta,
+	hora_desde,
+	hora_hasta,
+	aprobado_por,
+}) => {
+	if (
+		!id_especialista &&
+		!fecha_desde &&
+		!fecha_hasta &&
+		!normalizeHora(hora_desde) &&
+		!normalizeHora(hora_hasta)
+	) {
+		const err = new Error(
+			"Debe indicar al menos un criterio: id_especialista, fecha_desde, fecha_hasta, hora_desde o hora_hasta"
+		);
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const conditions = ["d.estado = 0"];
+	const params = [];
+	if (id_especialista) {
+		conditions.push("d.id_especialista = ?");
+		params.push(id_especialista);
+	}
+	if (fecha_desde) {
+		conditions.push("d.fecha >= ?");
+		params.push(fecha_desde);
+	}
+	if (fecha_hasta) {
+		conditions.push("d.fecha <= ?");
+		params.push(fecha_hasta);
+	}
+	const horaDesdeNorm = normalizeHora(hora_desde);
+	if (horaDesdeNorm) {
+		conditions.push("d.hora_inicio >= ?");
+		params.push(horaDesdeNorm);
+	}
+	const horaHastaNorm = normalizeHora(hora_hasta);
+	if (horaHastaNorm) {
+		conditions.push("d.hora_inicio <= ?");
+		params.push(horaHastaNorm);
+	}
+	const whereClause = conditions.join(" AND ");
+	const sql = `
+    SELECT d.id_disponibilidad
+    FROM disponibilidad d
+    WHERE ${whereClause}
+    ORDER BY d.fecha ASC, d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, params);
+	const ids = rows.map((r) => r.id_disponibilidad);
+	if (ids.length === 0) {
+		return { aprobados: 0, ids: [] };
+	}
+	return approveDisponibilidadBatchController({ ids, aprobado_por });
+};
+
 module.exports = {
 	createDisponibilidadController,
+	createDisponibilidadBatchController,
 	listMisDisponibilidadController,
 	listPendientesController,
 	approveDisponibilidadController,
+	approveDisponibilidadBatchController,
+	approveDisponibilidadPorCriteriosController,
 	rejectDisponibilidadController,
 	cancelDisponibilidadController,
 	listPublicaController,

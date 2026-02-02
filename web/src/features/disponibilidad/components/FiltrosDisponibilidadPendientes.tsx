@@ -7,6 +7,8 @@ export type FiltrosDisponibilidadPendientesValues = {
 	ordenFecha: OrdenFecha;
 	fechaDesde: string;
 	fechaHasta: string;
+	horaDesde: string;
+	horaHasta: string;
 	ecoId: string;
 };
 
@@ -50,22 +52,20 @@ const FiltrosDisponibilidadPendientes = ({
 					<button
 						type="button"
 						onClick={() => update({ ordenFecha: "reciente" })}
-						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-							value.ordenFecha === "reciente"
+						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${value.ordenFecha === "reciente"
 								? "bg-brand-700 text-paper"
 								: "bg-cloud text-brand-800 hover:bg-mist"
-						}`}
+							}`}
 					>
 						Más recientes primero
 					</button>
 					<button
 						type="button"
 						onClick={() => update({ ordenFecha: "antigua" })}
-						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-							value.ordenFecha === "antigua"
+						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${value.ordenFecha === "antigua"
 								? "bg-brand-700 text-paper"
 								: "bg-cloud text-brand-800 hover:bg-mist"
-						}`}
+							}`}
 					>
 						Más antiguas primero
 					</button>
@@ -92,6 +92,31 @@ const FiltrosDisponibilidadPendientes = ({
 						type="date"
 						value={value.fechaHasta}
 						onChange={(e) => update({ fechaHasta: e.target.value })}
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
+				</div>
+			</div>
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<div>
+					<label className="mb-2 block text-xs font-medium text-brand-700">
+						Desde hora
+					</label>
+					<input
+						type="time"
+						value={value.horaDesde}
+						onChange={(e) => update({ horaDesde: e.target.value })}
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+					/>
+				</div>
+				<div>
+					<label className="mb-2 block text-xs font-medium text-brand-700">
+						Hasta hora
+					</label>
+					<input
+						type="time"
+						value={value.horaHasta}
+						onChange={(e) => update({ horaHasta: e.target.value })}
 						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 					/>
 				</div>

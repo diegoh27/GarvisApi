@@ -8,6 +8,10 @@ type DisponibilidadPendienteCardProps = {
 	isAprobando: boolean;
 	isRechazando: boolean;
 	selectedId: string | null;
+	/** Para aprobación en lote: mostrar checkbox y estado de selección */
+	showCheckbox?: boolean;
+	selected?: boolean;
+	onToggleSelect?: () => void;
 };
 
 const DisponibilidadPendienteCard = ({
@@ -17,6 +21,9 @@ const DisponibilidadPendienteCard = ({
 	isAprobando,
 	isRechazando,
 	selectedId,
+	showCheckbox = false,
+	selected = false,
+	onToggleSelect,
 }: DisponibilidadPendienteCardProps) => {
 	const isBusy =
 		isAprobando || isRechazando || selectedId === disp.id_disponibilidad;
@@ -24,6 +31,19 @@ const DisponibilidadPendienteCard = ({
 	return (
 		<div className="rounded-lg border border-brand-200 bg-paper p-4">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				{showCheckbox && onToggleSelect && (
+					<div className="flex items-center">
+						<label className="flex cursor-pointer items-center gap-2">
+							<input
+								type="checkbox"
+								checked={selected}
+								onChange={onToggleSelect}
+								className="h-4 w-4 rounded border-brand-600 text-brand-700"
+							/>
+							<span className="sr-only">Seleccionar para aprobar en lote</span>
+						</label>
+					</div>
+				)}
 				<div className="flex-1 space-y-2">
 					<div className="flex items-center gap-2">
 						<h3 className="font-semibold text-brand-900">

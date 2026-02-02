@@ -1,8 +1,38 @@
 import type { FormEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { TimeOption } from "../types";
 import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosApi";
 import { useAuth } from "../../../shared";
+
+export type SlotPreview = { fecha: string; hora_inicio: string; hora_fin: string };
+
+const parseTimeToMinutes = (timeStr: string): number => {
+	const [h, m] = timeStr.split(":").map(Number);
+	if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+	return h * 60 + m;
+};
+const minutesToTime = (totalMinutes: number): string => {
+	const h = Math.floor(totalMinutes / 60);
+	const m = totalMinutes % 60;
+	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+};
+
+const generateSlots = (
+	fecha: string,
+	horaInicio: string,
+	horaFin: string
+): SlotPreview[] => {
+	const start = parseTimeToMinutes(horaInicio);
+	const end = parseTimeToMinutes(horaFin);
+	if (start >= end) return [];
+	const slots: SlotPreview[] = [];
+	for (let m = start; m < end; m += 20) {
+		const hora_inicio = minutesToTime(m);
+		const hora_fin = minutesToTime(m + 20);
+		slots.push({ fecha, hora_inicio, hora_fin });
+	}
+	return slots;
+};
 
 type DisponibilidadFormProps = {
 	fecha: string;
@@ -12,6 +42,7 @@ type DisponibilidadFormProps = {
 	timeOptions: TimeOption[];
 	selectedCellsCount?: number;
 	onClearSelection?: () => void;
+	onSubmitBatch?: (bloques: { fecha: string; hora_inicio: string; hora_fin: string; id_eco?: string }[]) => Promise<void>;
 	error: string | null;
 	submitStatus: "idle" | "loading" | "done";
 	onFechaChange: (value: string) => void;
@@ -29,6 +60,7 @@ const DisponibilidadForm = ({
 	timeOptions,
 	selectedCellsCount = 0,
 	onClearSelection,
+	onSubmitBatch,
 	error,
 	submitStatus,
 	onFechaChange,
@@ -38,6 +70,69 @@ const DisponibilidadForm = ({
 	onCancel,
 }: DisponibilidadFormProps) => {
 	const useCalendarSelection = selectedCellsCount > 0;
+	const [modoRango, setModoRango] = useState(false);
+	const [fechaRango, setFechaRango] = useState("");
+	const [horaInicioRango, setHoraInicioRango] = useState("");
+	const [horaFinRango, setHoraFinRango] = useState("");
+	const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
+
+	const slotsPrevia = useMemo(() => {
+		if (!fechaRango || !horaInicioRango || !horaFinRango) return [];
+		return generateSlots(fechaRango, horaInicioRango, horaFinRango);
+	}, [fechaRango, horaInicioRango, horaFinRango]);
+
+	// Cuando se generan slots nuevos, marcar todos como seleccionados
+	useEffect(() => {
+		if (slotsPrevia.length > 0) {
+			setSelectedSlotKeys(
+				new Set(slotsPrevia.map((s) => `${s.fecha}|${s.hora_inicio}`))
+			);
+		}
+	}, [fechaRango, horaInicioRango, horaFinRango]);
+
+	const toggleSlot = (key: string) => {
+		setSelectedSlotKeys((prev) => {
+			const next = new Set(prev);
+			if (next.has(key)) next.delete(key);
+			else next.add(key);
+			return next;
+		});
+	};
+
+	const selectAllSlots = () => {
+		setSelectedSlotKeys(new Set(slotsPrevia.map((s) => `${s.fecha}|${s.hora_inicio}`)));
+	};
+	const deselectAllSlots = () => {
+		setSelectedSlotKeys(new Set());
+	};
+
+	const handleSubmit = async (event: FormEvent) => {
+		event.preventDefault();
+		if (modoRango && onSubmitBatch && slotsPrevia.length > 0) {
+			const selected = slotsPrevia.filter((s) =>
+				selectedSlotKeys.has(`${s.fecha}|${s.hora_inicio}`)
+			);
+			if (selected.length === 0) return;
+			if (idEcos.length === 0) return;
+			const bloques = selected.flatMap((slot) =>
+				idEcos.map((id_eco) => ({
+					fecha: slot.fecha,
+					hora_inicio: slot.hora_inicio,
+					hora_fin: slot.hora_fin,
+					id_eco,
+				}))
+			);
+			await onSubmitBatch(bloques);
+			setModoRango(false);
+			setFechaRango("");
+			setHoraInicioRango("");
+			setHoraFinRango("");
+			setSelectedSlotKeys(new Set());
+			return;
+		}
+		onSubmit(event);
+	};
+
 	const { user } = useAuth();
 	const isEspecialista = user?.rol === "especialista";
 	const idEspecialista = user?.id_usuario || "";
@@ -99,6 +194,20 @@ const DisponibilidadForm = ({
 		};
 	}, [isEcosDropdownOpen]);
 
+	const horaFinOptions = useMemo(() => {
+		if (!horaInicioRango) return timeOptions;
+		const start = parseTimeToMinutes(horaInicioRango);
+		return timeOptions.filter((opt) => parseTimeToMinutes(opt.value) > start);
+	}, [timeOptions, horaInicioRango]);
+
+	const formatHoraShort = (timeStr: string) => {
+		const [h, m] = timeStr.split(":");
+		const hh = Number(h);
+		const period = hh >= 12 ? "PM" : "AM";
+		const h12 = hh % 12 === 0 ? 12 : hh % 12;
+		return `${h12}:${m} ${period}`;
+	};
+
 	return (
 		<div className="rounded-2xl bg-paper p-4 shadow-sm">
 			<div className="flex items-center justify-between">
@@ -107,7 +216,27 @@ const DisponibilidadForm = ({
 				</h3>
 				<span className="text-[10px] text-brand-800">Bloques de 20 minutos</span>
 			</div>
-			<form className="mt-3 space-y-3" onSubmit={onSubmit}>
+			{!useCalendarSelection && (
+				<div className="mt-2 flex gap-1 rounded-lg border border-mist p-1">
+					<button
+						type="button"
+						onClick={() => setModoRango(false)}
+						className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${!modoRango ? "bg-brand-700 text-paper" : "text-brand-800 hover:bg-cloud"
+							}`}
+					>
+						Una fecha/hora
+					</button>
+					<button
+						type="button"
+						onClick={() => setModoRango(true)}
+						className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${modoRango ? "bg-brand-700 text-paper" : "text-brand-800 hover:bg-cloud"
+							}`}
+					>
+						Por rango
+					</button>
+				</div>
+			)}
+			<form className="mt-3 space-y-3" onSubmit={handleSubmit}>
 				{useCalendarSelection ? (
 					<div className="rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-3 text-xs text-brand-800">
 						<p className="font-semibold">
@@ -126,6 +255,86 @@ const DisponibilidadForm = ({
 							</button>
 						)}
 					</div>
+				) : modoRango ? (
+					<>
+						<div className="space-y-1 text-xs text-brand-800">
+							<label className="font-semibold">Fecha</label>
+							<input
+								type="date"
+								value={fechaRango}
+								onChange={(e) => setFechaRango(e.target.value)}
+								min={minFecha}
+								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+							/>
+						</div>
+						<div className="grid grid-cols-2 gap-2">
+							<div className="space-y-1 text-xs text-brand-800">
+								<label className="font-semibold">Hora inicio</label>
+								<select
+									value={horaInicioRango}
+									onChange={(e) => {
+										setHoraInicioRango(e.target.value);
+										if (horaFinRango && parseTimeToMinutes(e.target.value) >= parseTimeToMinutes(horaFinRango)) {
+											setHoraFinRango("");
+										}
+									}}
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+								>
+									<option value="">Inicio</option>
+									{timeOptions.map((opt) => (
+										<option key={opt.value} value={opt.value}>{opt.label}</option>
+									))}
+								</select>
+							</div>
+							<div className="space-y-1 text-xs text-brand-800">
+								<label className="font-semibold">Hora fin</label>
+								<select
+									value={horaFinRango}
+									onChange={(e) => setHoraFinRango(e.target.value)}
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+								>
+									<option value="">Fin</option>
+									{horaFinOptions.map((opt) => (
+										<option key={opt.value} value={opt.value}>{opt.label}</option>
+									))}
+								</select>
+							</div>
+						</div>
+						{slotsPrevia.length > 0 && (
+							<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-xs text-brand-800">
+								<p className="font-semibold">
+									Vista previa: {slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} · {selectedSlotKeys.size} seleccionado{selectedSlotKeys.size !== 1 ? "s" : ""}
+								</p>
+								<div className="mt-2 flex gap-2">
+									<button type="button" onClick={selectAllSlots} className="text-brand-700 underline hover:no-underline">
+										Marcar todos
+									</button>
+									<button type="button" onClick={deselectAllSlots} className="text-brand-700 underline hover:no-underline">
+										Desmarcar todos
+									</button>
+								</div>
+								<div className="mt-2 max-h-40 overflow-y-auto space-y-1">
+									{slotsPrevia.map((slot) => {
+										const key = `${slot.fecha}|${slot.hora_inicio}`;
+										const checked = selectedSlotKeys.has(key);
+										return (
+											<label key={key} className="flex items-center gap-2 cursor-pointer hover:bg-brand-100/50 rounded px-1 py-0.5">
+												<input
+													type="checkbox"
+													checked={checked}
+													onChange={() => toggleSlot(key)}
+													className="rounded border-brand-600 text-brand-700"
+												/>
+												<span>
+													{slot.fecha} · {formatHoraShort(slot.hora_inicio)} - {formatHoraShort(slot.hora_fin)}
+												</span>
+											</label>
+										);
+									})}
+								</div>
+							</div>
+						)}
+					</>
 				) : (
 					<>
 						<div className="space-y-1 text-xs text-brand-800">

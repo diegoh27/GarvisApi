@@ -1,8 +1,11 @@
 const {
 	createDisponibilidadController,
+	createDisponibilidadBatchController,
 	listMisDisponibilidadController,
 	listPendientesController,
 	approveDisponibilidadController,
+	approveDisponibilidadBatchController,
+	approveDisponibilidadPorCriteriosController,
 	rejectDisponibilidadController,
 	cancelDisponibilidadController,
 	listPublicaController,
@@ -90,6 +93,57 @@ const createDisponibilidadHandler = async (req, res) => {
 	}
 };
 
+const createDisponibilidadBatchHandler = async (req, res) => {
+	try {
+		const { bloques } = req.body;
+		if (!Array.isArray(bloques) || bloques.length === 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "bloques debe ser un array con al menos un elemento",
+			});
+		}
+		for (const b of bloques) {
+			const check = validateTimeBlock(b.hora_inicio, b.hora_fin);
+			if (!check.ok) {
+				return res.status(400).json({
+					ok: false,
+					message: `${check.message} (${b.fecha} ${b.hora_inicio})`,
+				});
+			}
+		}
+		const result = await createDisponibilidadBatchController({
+			id_especialista: req.user.id,
+			creado_por: req.user.id,
+			bloques,
+		});
+		return res.status(201).json({
+			ok: true,
+			message: `${result.creados} bloque${
+				result.creados !== 1 ? "s" : ""
+			} propuesto${result.creados !== 1 ? "s" : ""}`,
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "OVERLAP") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "ECO_NOT_FOUND" || err?.code === "INVALID_INPUT") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 const listMisDisponibilidadHandler = async (req, res) => {
 	try {
 		const { estado } = req.query;
@@ -104,6 +158,98 @@ const listMisDisponibilidadHandler = async (req, res) => {
 		});
 	} catch (err) {
 		if (err?.code === "RESERVED") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const approveDisponibilidadBatchHandler = async (req, res) => {
+	try {
+		const { ids } = req.body;
+		if (!Array.isArray(ids) || ids.length === 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "ids debe ser un array con al menos un id",
+			});
+		}
+		const result = await approveDisponibilidadBatchController({
+			ids,
+			aprobado_por: req.user?.id ?? null,
+		});
+		return res.status(200).json({
+			ok: true,
+			message: `${result.aprobados} bloque${
+				result.aprobados !== 1 ? "s" : ""
+			} aprobado${result.aprobados !== 1 ? "s" : ""}`,
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (
+			err?.code === "INVALID_STATE" ||
+			err?.code === "OVERLAP" ||
+			err?.code === "INVALID_INPUT"
+		) {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const approveDisponibilidadPorCriteriosHandler = async (req, res) => {
+	try {
+		const {
+			id_especialista,
+			fecha_desde,
+			fecha_hasta,
+			hora_desde,
+			hora_hasta,
+		} = req.body;
+		const result = await approveDisponibilidadPorCriteriosController({
+			id_especialista: id_especialista || undefined,
+			fecha_desde: fecha_desde || undefined,
+			fecha_hasta: fecha_hasta || undefined,
+			hora_desde: hora_desde || undefined,
+			hora_hasta: hora_hasta || undefined,
+			aprobado_por: req.user?.id ?? null,
+		});
+		return res.status(200).json({
+			ok: true,
+			message:
+				result.aprobados === 0
+					? "No hay bloques pendientes que coincidan con los criterios"
+					: `${result.aprobados} bloque${
+							result.aprobados !== 1 ? "s" : ""
+					  } aprobado${result.aprobados !== 1 ? "s" : ""}`,
+			data: result,
+		});
+	} catch (err) {
+		if (
+			err?.code === "NOT_FOUND" ||
+			err?.code === "INVALID_STATE" ||
+			err?.code === "OVERLAP" ||
+			err?.code === "INVALID_INPUT"
+		) {
 			return res.status(409).json({
 				ok: false,
 				message: err.message,
@@ -359,9 +505,12 @@ const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
 
 module.exports = {
 	createDisponibilidadHandler,
+	createDisponibilidadBatchHandler,
 	listMisDisponibilidadHandler,
 	listPendientesHandler,
 	approveDisponibilidadHandler,
+	approveDisponibilidadBatchHandler,
+	approveDisponibilidadPorCriteriosHandler,
 	rejectDisponibilidadHandler,
 	cancelDisponibilidadHandler,
 	listPublicaHandler,
