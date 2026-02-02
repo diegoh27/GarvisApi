@@ -167,6 +167,43 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									<p className="text-xs font-semibold text-brand-700">Estudio / Eco</p>
 									<p className="mt-1 text-sm text-brand-900">{cita.eco_nombre}</p>
 								</div>
+								<div className="sm:col-span-2">
+									<p className="text-xs font-semibold text-brand-700">Representado</p>
+									{cita.id_representado &&
+										(cita.representado_nombre ?? cita.representado_apellido) ? (
+										<div className="mt-1 rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-sm text-brand-900 space-y-1">
+											<p>
+												<strong>Nombre:</strong>{" "}
+												{[cita.representado_nombre, cita.representado_apellido]
+													.filter(Boolean)
+													.join(" ") || "—"}
+											</p>
+											{cita.representado_cedula && (
+												<p>
+													<strong>Cédula:</strong> {cita.representado_cedula}
+												</p>
+											)}
+											{cita.representado_fecha_nacimiento && (
+												<p>
+													<strong>Fecha de nacimiento:</strong>{" "}
+													{formatFecha(cita.representado_fecha_nacimiento)}
+												</p>
+											)}
+											{cita.representado_genero && (
+												<p>
+													<strong>Género:</strong> {cita.representado_genero}
+												</p>
+											)}
+											{cita.representado_parentesco && (
+												<p>
+													<strong>Parentesco:</strong> {cita.representado_parentesco}
+												</p>
+											)}
+										</div>
+									) : (
+										<p className="mt-1 text-sm text-brand-600">Representado: NO</p>
+									)}
+								</div>
 							</div>
 						</div>
 

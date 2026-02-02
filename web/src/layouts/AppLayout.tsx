@@ -77,8 +77,10 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	paciente: [
-		{ label: "Home", to: "/disponibilidad", icon: Home },
-		{ label: "Mis citas", to: "/citas", icon: CalendarDays },
+		{ label: "Home", to: "/dashboard", icon: Home },
+		{ label: "Calendario", to: "/disponibilidad", icon: CalendarDays },
+		{ label: "Mis citas", to: "/citas", icon: CalendarCheck },
+		{ label: "Representados", to: "/representados", icon: Users },
 		{ label: "Especialistas", to: "/especialistas", icon: Stethoscope },
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
@@ -138,10 +140,10 @@ const AppLayout = () => {
 				/>
 				<div className="flex min-h-screen flex-1 flex-col">
 					<Topbar
+						onToggleSidebar={toggleSidebar}
 						fullName={fullName}
 						role={user?.rol}
 						onLogout={handleLogout}
-						onToggleSidebar={toggleSidebar}
 					/>
 					<main className="flex-1 p-4 sm:p-6">
 						{/* Banner informativo de tasa del dólar */}

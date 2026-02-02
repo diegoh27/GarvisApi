@@ -15,18 +15,16 @@ type SidebarProps = {
 };
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-	`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-		isActive ? "bg-brand-700 text-paper" : "text-brand-900 hover:bg-cloud"
+	`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-brand-700 text-paper" : "text-brand-900 hover:bg-cloud"
 	}`;
 
 const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 	return (
 		<aside
-			className={`fixed left-0 top-0 z-50 min-h-screen w-56 border-r border-mist bg-paper transition-transform duration-300 ease-in-out lg:relative lg:z-auto lg:translate-x-0 ${
-				isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-			}`}
+			className={`fixed left-0 top-0 z-50 h-screen w-56 border-r border-mist bg-paper transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+				}`}
 		>
-			<div className="flex h-full min-h-screen flex-col">
+			<div className="flex h-full flex-col">
 				<div className="flex items-center justify-between px-5 py-6">
 					<img
 						src="/logo.png"
@@ -41,7 +39,7 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 						<X className="h-5 w-5" />
 					</button>
 				</div>
-				<nav className="flex-1 px-3 pb-6 text-sm">
+				<nav className="flex-1 overflow-y-auto px-3 pb-4 text-sm">
 					{navItems.map((item) => (
 						<NavLink
 							key={item.to}
@@ -63,5 +61,5 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 	);
 };
 
-export type { NavItem };
+export type { NavItem, SidebarProps };
 export default Sidebar;

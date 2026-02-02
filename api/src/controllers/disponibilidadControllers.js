@@ -3,7 +3,7 @@ const crypto = require("crypto");
 
 const hasOverlap = async (
 	conn,
-	{ id_especialista, fecha, hora_inicio, hora_fin, estados },
+	{ id_especialista, fecha, hora_inicio, hora_fin, estados }
 ) => {
 	const placeholders = estados.map(() => "?").join(", ");
 	const sql = `
@@ -36,7 +36,7 @@ const createDisponibilidadController = async ({
 		if (id_eco) {
 			const [ecoRows] = await conn.execute(
 				"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
-				[id_eco],
+				[id_eco]
 			);
 			if (!ecoRows.length) {
 				const err = new Error("Eco no encontrado o inactivo");
@@ -56,7 +56,7 @@ const createDisponibilidadController = async ({
          AND NOT (hora_fin <= ? OR hora_inicio >= ?)
          AND estado IN (0, 1, 4)
        LIMIT 1`,
-			[id_especialista, fecha, hora_inicio, hora_fin],
+			[id_especialista, fecha, hora_inicio, hora_fin]
 		);
 		if (overlapRows.length) {
 			const existing = overlapRows[0];
@@ -172,13 +172,13 @@ const approveDisponibilidadController = async ({
 		if (aprobado_por) {
 			const [userRows] = await conn.execute(
 				"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
-				[aprobado_por],
+				[aprobado_por]
 			);
 			if (!userRows.length) {
 				// Si el usuario no existe, establecer como NULL en lugar de fallar
 				// Esto puede pasar si el token tiene un ID inválido
 				console.warn(
-					`Usuario con ID ${aprobado_por} no encontrado en la base de datos. Aprobando sin registrar aprobado_por.`,
+					`Usuario con ID ${aprobado_por} no encontrado en la base de datos. Aprobando sin registrar aprobado_por.`
 				);
 				aprobadoPorFinal = null;
 			}
@@ -186,7 +186,7 @@ const approveDisponibilidadController = async ({
 
 		const [rows] = await conn.execute(
 			"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
-			[id_disponibilidad],
+			[id_disponibilidad]
 		);
 		if (!rows.length) {
 			const err = new Error("Disponibilidad no encontrada");
@@ -196,7 +196,7 @@ const approveDisponibilidadController = async ({
 		const bloque = rows[0];
 		if (bloque.estado !== 0) {
 			const err = new Error(
-				"Solo se puede aprobar si está en estado propuesto",
+				"Solo se puede aprobar si está en estado propuesto"
 			);
 			err.code = "INVALID_STATE";
 			throw err;
@@ -220,7 +220,7 @@ const approveDisponibilidadController = async ({
 
 		await conn.execute(
 			"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
-			[aprobadoPorFinal, id_disponibilidad],
+			[aprobadoPorFinal, id_disponibilidad]
 		);
 
 		await conn.commit();
@@ -256,7 +256,7 @@ const cancelDisponibilidadController = async ({
 			`SELECT estado FROM disponibilidad
        WHERE id_disponibilidad = ? AND id_especialista = ?
        LIMIT 1`,
-			[id_disponibilidad, id_especialista],
+			[id_disponibilidad, id_especialista]
 		);
 		if (!rows.length) return { updated: 0 };
 
@@ -317,6 +317,48 @@ const listPublicaController = async ({ id_especialista, fecha }) => {
 	return rows;
 };
 
+// Disponibilidad pública filtrada por id_eco: bloques aprobados con datos del especialista
+const listPublicaPorEcoController = async ({ id_eco, fecha }) => {
+	let sql = `
+    SELECT
+      d.id_disponibilidad,
+      d.fecha,
+      d.hora_inicio,
+      d.hora_fin,
+      d.id_eco,
+      e.nombre AS eco_nombre,
+      d.id_especialista,
+      u.nombre AS especialista_nombre,
+      u.apellido AS especialista_apellido,
+      es.nombre AS especialidad_nombre
+    FROM disponibilidad d
+    INNER JOIN usuario u ON u.id_usuario = d.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = d.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
+    WHERE d.estado = 1
+      AND d.id_eco = ?
+  `;
+	const params = [id_eco];
+	if (fecha) {
+		sql += " AND d.fecha = ?";
+		params.push(fecha);
+	}
+	sql += `
+      AND (
+        d.fecha > CURDATE()
+        OR (
+          d.fecha = CURDATE()
+          AND CURTIME() < '17:00:00'
+          AND d.hora_inicio > CURTIME()
+        )
+      )
+    ORDER BY d.fecha ASC, d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, params);
+	return rows;
+};
+
 const closeDisponibilidadDiaController = async ({
 	id_especialista,
 	fecha,
@@ -339,7 +381,7 @@ const closeDisponibilidadDiaController = async ({
 
 // Obtener todas las disponibilidades de un especialista (aprobadas y pendientes) - para moderador/admin
 const listDisponibilidadesByEspecialistaController = async (
-	id_especialista,
+	id_especialista
 ) => {
 	const sql = `
     SELECT
@@ -395,6 +437,7 @@ module.exports = {
 	rejectDisponibilidadController,
 	cancelDisponibilidadController,
 	listPublicaController,
+	listPublicaPorEcoController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,

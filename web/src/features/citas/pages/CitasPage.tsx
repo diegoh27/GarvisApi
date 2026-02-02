@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useGetMisCitasCompletasQuery } from "../citasApi";
 import type { CitaPacienteCompleta } from "../citasApi";
 import { VerCitaPacienteModal } from "../components";
-import { CalendarDays, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 
 const PAGE_SIZE = 5;
 
@@ -154,6 +154,7 @@ const CitasPage = () => {
 											<th className="px-4 py-3 font-semibold text-brand-900">Hora</th>
 											<th className="px-4 py-3 font-semibold text-brand-900">Especialista</th>
 											<th className="px-4 py-3 font-semibold text-brand-900">Estudio</th>
+											<th className="px-4 py-3 font-semibold text-brand-900">Representado</th>
 											<th className="px-4 py-3 font-semibold text-brand-900">Estado pago</th>
 											<th className="px-4 py-3 font-semibold text-brand-900">Acciones</th>
 										</tr>
@@ -170,12 +171,23 @@ const CitasPage = () => {
 													</td>
 													<td className="px-4 py-3 text-brand-900">{cita.eco_nombre}</td>
 													<td className="px-4 py-3">
+														{cita.id_representado ? (
+															<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" title="Cita para representado">
+																<Check className="h-4 w-4" />
+															</span>
+														) : (
+															<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-200 text-brand-600" title="Cita para el paciente">
+																<X className="h-4 w-4" />
+															</span>
+														)}
+													</td>
+													<td className="px-4 py-3">
 														<span
 															className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${estadoPago === 0
-																	? "bg-amber-400 text-brand-900"
-																	: estadoPago === 1
-																		? "bg-emerald-600 text-paper"
-																		: "bg-red-500 text-paper"
+																? "bg-amber-400 text-brand-900"
+																: estadoPago === 1
+																	? "bg-emerald-600 text-paper"
+																	: "bg-red-500 text-paper"
 																}`}
 														>
 															{getEstadoPagoLabel(estadoPago)}
@@ -218,13 +230,24 @@ const CitasPage = () => {
 													<p className="mt-0.5 text-xs text-brand-700">
 														{cita.especialista_nombre} {cita.especialista_apellido}
 													</p>
+													<p className="mt-0.5 text-xs text-brand-600">
+														Representado: {cita.id_representado ? (
+															<span className="inline-flex items-center gap-0.5 text-emerald-700">
+																<Check className="h-3 w-3" /> Sí
+															</span>
+														) : (
+															<span className="inline-flex items-center gap-0.5 text-brand-600">
+																<X className="h-3 w-3" /> No
+															</span>
+														)}
+													</p>
 												</div>
 												<span
 													className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${estadoPago === 0
-															? "bg-amber-400/90 text-brand-900"
-															: estadoPago === 1
-																? "bg-emerald-600 text-paper"
-																: "bg-red-500 text-paper"
+														? "bg-amber-400/90 text-brand-900"
+														: estadoPago === 1
+															? "bg-emerald-600 text-paper"
+															: "bg-red-500 text-paper"
 														}`}
 												>
 													{getEstadoPagoLabel(estadoPago)}

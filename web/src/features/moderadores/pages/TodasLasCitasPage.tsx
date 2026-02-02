@@ -14,7 +14,7 @@ import VerResultadosModal from "../components/VerResultadosModal";
 import VerPagoModal from "../components/VerPagoModal";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import PosponerCitaModal from "../components/PosponerCitaModal";
-import { FileText, Download, Eye } from "lucide-react";
+import { FileText, Download, Eye, Check, X } from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
 const formatFecha = (value: string) => {
@@ -486,8 +486,8 @@ const TodasLasCitasPage = () => {
 									key={option.id}
 									onClick={() => setFilterPago(option.id)}
 									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterPago === option.id
-											? "bg-brand-700 text-paper"
-											: "bg-cloud text-brand-800 hover:bg-mist"
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
 								>
 									{option.label}
@@ -503,8 +503,8 @@ const TodasLasCitasPage = () => {
 									key={option.id}
 									onClick={() => setFilterResultado(option.id)}
 									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterResultado === option.id
-											? "bg-brand-700 text-paper"
-											: "bg-cloud text-brand-800 hover:bg-mist"
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
 								>
 									{option.label}
@@ -520,8 +520,8 @@ const TodasLasCitasPage = () => {
 									key={option.id}
 									onClick={() => setFilterInforme(option.id)}
 									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterInforme === option.id
-											? "bg-brand-700 text-paper"
-											: "bg-cloud text-brand-800 hover:bg-mist"
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
 								>
 									{option.label}
@@ -535,8 +535,8 @@ const TodasLasCitasPage = () => {
 							<button
 								onClick={() => setOrdenFecha("reciente")}
 								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "reciente"
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
+									? "bg-brand-700 text-paper"
+									: "bg-cloud text-brand-800 hover:bg-mist"
 									}`}
 							>
 								Más reciente primero
@@ -544,8 +544,8 @@ const TodasLasCitasPage = () => {
 							<button
 								onClick={() => setOrdenFecha("antigua")}
 								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "antigua"
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
+									? "bg-brand-700 text-paper"
+									: "bg-cloud text-brand-800 hover:bg-mist"
 									}`}
 							>
 								Más antigua primero
@@ -600,6 +600,15 @@ const TodasLasCitasPage = () => {
 													{tieneInforme && (
 														<span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-paper">
 															Con informe
+														</span>
+													)}
+													{cita.id_representado ? (
+														<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Cita para representado">
+															<Check className="h-3 w-3" /> Representado
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-0.5 rounded-full bg-brand-200 px-2 py-0.5 text-xs font-medium text-brand-600" title="Cita para el paciente">
+															<X className="h-3 w-3" /> No representado
 														</span>
 													)}
 												</div>

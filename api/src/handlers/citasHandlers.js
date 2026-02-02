@@ -298,8 +298,8 @@ const updateEstadoPagoHandler = async (req, res) => {
 				estado_pago === 1
 					? "Pago aprobado y cita confirmada"
 					: estado_pago === 2
-						? "Pago rechazado"
-						: "Estado de pago actualizado",
+					? "Pago rechazado"
+					: "Estado de pago actualizado",
 			data,
 		});
 	} catch (err) {
@@ -382,7 +382,7 @@ const getCitaByIdHandler = async (req, res) => {
 						citaId: id,
 						rol,
 						comparison: citaEspecialistaId === usuarioId,
-					},
+					}
 				);
 				return res.status(403).json({
 					ok: false,
@@ -543,6 +543,14 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			});
 		}
 
+		// Si es paciente, solo puede asignar cita para sí mismo
+		if (req.user.rol === "paciente" && id_paciente !== req.user.id) {
+			return res.status(403).json({
+				ok: false,
+				message: "Solo puede reservar cita para su propia cuenta",
+			});
+		}
+
 		const data = await asignarCitaCompletaController({
 			id_paciente,
 			id_representado,
@@ -550,7 +558,7 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			id_especialista,
 			id_disponibilidad,
 			orden: orden_medica || "", // Usar orden_medica como orden (URL de la orden médica)
-			aprobado_por: req.user.id, // ID del admin/moderador que está asignando
+			aprobado_por: req.user.rol === "paciente" ? null : req.user.id, // Paciente no aprueba; admin/moderador sí
 			metodo,
 			imagen,
 			banco_origen,

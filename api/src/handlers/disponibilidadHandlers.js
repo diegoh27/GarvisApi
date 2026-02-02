@@ -6,6 +6,7 @@ const {
 	rejectDisponibilidadController,
 	cancelDisponibilidadController,
 	listPublicaController,
+	listPublicaPorEcoController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
@@ -250,11 +251,18 @@ const cancelDisponibilidadHandler = async (req, res) => {
 
 const listPublicaHandler = async (req, res) => {
 	try {
-		const { id_especialista, fecha } = req.query;
+		const { id_especialista, id_eco, fecha } = req.query;
+		if (id_eco) {
+			const data = await listPublicaPorEcoController({ id_eco, fecha });
+			return res.status(200).json({
+				ok: true,
+				data,
+			});
+		}
 		if (!id_especialista) {
 			return res.status(400).json({
 				ok: false,
-				message: "id_especialista es requerido",
+				message: "id_especialista o id_eco es requerido",
 			});
 		}
 		const data = await listPublicaController({ id_especialista, fecha });
@@ -333,8 +341,9 @@ const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
 				message: "id_especialista es requerido",
 			});
 		}
-		const data =
-			await listDisponibilidadesByEspecialistaController(id_especialista);
+		const data = await listDisponibilidadesByEspecialistaController(
+			id_especialista
+		);
 		return res.status(200).json({
 			ok: true,
 			data,

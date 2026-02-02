@@ -2,6 +2,25 @@ import { baseApi } from "../../app/api/baseApi";
 
 type DisponibilidadPublicaParams = {
 	fecha?: string;
+	id_especialista?: string;
+};
+
+export type DisponibilidadPublicaPorEcoParams = {
+	id_eco: string;
+	fecha?: string;
+};
+
+export type DisponibilidadPublicaPorEcoItem = {
+	id_disponibilidad: string;
+	fecha: string;
+	hora_inicio: string;
+	hora_fin: string;
+	id_eco: string | null;
+	eco_nombre: string | null;
+	id_especialista: string;
+	especialista_nombre: string;
+	especialista_apellido: string;
+	especialidad_nombre: string;
 };
 
 export type DisponibilidadPendiente = {
@@ -25,6 +44,18 @@ const disponibilidadApi = baseApi.injectEndpoints({
 				url: "/disponibilidad/publica",
 				params: params ?? undefined,
 			}),
+		}),
+		getDisponibilidadPublicaPorEco: builder.query<
+			DisponibilidadPublicaPorEcoItem[],
+			DisponibilidadPublicaPorEcoParams
+		>({
+			query: (params) => ({
+				url: "/disponibilidad/publica",
+				params,
+			}),
+			transformResponse: (
+				response: { ok: boolean; data: DisponibilidadPublicaPorEcoItem[] }
+			) => response.data ?? [],
 		}),
 		getDisponibilidadPendientes: builder.query<DisponibilidadPendiente[], void>({
 			query: () => "/disponibilidad/pendientes",
@@ -58,6 +89,7 @@ const disponibilidadApi = baseApi.injectEndpoints({
 
 const {
 	useGetDisponibilidadPublicaQuery,
+	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
 	useAprobarDisponibilidadMutation,
 	useRechazarDisponibilidadMutation,
@@ -66,6 +98,7 @@ const {
 export {
 	disponibilidadApi,
 	useGetDisponibilidadPublicaQuery,
+	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
 	useAprobarDisponibilidadMutation,
 	useRechazarDisponibilidadMutation,

@@ -101,6 +101,13 @@ export type CitaPacienteCompleta = {
 	paciente_nombre: string;
 	paciente_apellido: string;
 	eco_nombre: string;
+	// Datos del representado
+	representado_nombre: string | null;
+	representado_apellido: string | null;
+	representado_cedula: string | null;
+	representado_fecha_nacimiento: string | null;
+	representado_genero: string | null;
+	representado_parentesco: string | null;
 	// Datos del resultado
 	resultado_archivo: string | null;
 	resultado_estado: number | null;

@@ -141,9 +141,9 @@ const HeaderLanding = () => {
 
 			{/* Menú móvil */}
 			<div
-				className={`overflow-hidden transition-all duration-300 ease-out lg:hidden ${isMenuOpen ? "max-h-[320px] opacity-100" : "max-h-0 opacity-0"}`}
+				className={`overflow-y-auto overflow-x-hidden transition-all duration-300 ease-out lg:hidden ${isMenuOpen ? "max-h-[85vh] opacity-100" : "max-h-0 opacity-0"}`}
 			>
-				<nav className="border-t border-[#99F6E4]/30 bg-gradient-to-b from-white/95 to-[#F0FDFA]/95 px-4 py-4 backdrop-blur-lg">
+				<nav className="border-t border-[#99F6E4]/30 bg-gradient-to-b from-white/95 to-[#F0FDFA]/95 px-4 py-4 pb-5 backdrop-blur-lg">
 					<div className="flex flex-col gap-0.5">
 						{navLinks.map(({ href, label }) => {
 							const isActive = activeSection === href;
@@ -168,18 +168,18 @@ const HeaderLanding = () => {
 							);
 						})}
 					</div>
-					<div className="mt-3 flex flex-col gap-2 border-t border-[#99F6E4]/40 pt-4">
+					<div className="mt-3 flex flex-col gap-3 border-t border-[#99F6E4]/40 pt-4">
 						<Link
 							to="/auth/login"
 							onClick={closeMenu}
-							className="rounded-xl border border-[#14B8A6]/50 bg-white py-3 text-center text-sm font-semibold text-[#0E7490] transition-colors hover:bg-[#F0FDFA]"
+							className="flex min-h-[44px] items-center justify-center rounded-xl border border-[#14B8A6]/50 bg-white py-3 text-center text-sm font-semibold leading-normal text-[#0E7490] transition-colors hover:bg-[#F0FDFA]"
 						>
 							Iniciar Sesión
 						</Link>
 						<Link
 							to="/auth/register"
 							onClick={closeMenu}
-							className="rounded-xl bg-gradient-to-r from-[#14B8A6] to-[#0E7490] py-3 text-center text-sm font-semibold text-white shadow-md shadow-teal-500/25 transition-all hover:shadow-lg"
+							className="flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-[#14B8A6] to-[#0E7490] py-3 text-center text-sm font-semibold leading-normal text-white shadow-md shadow-teal-500/25 transition-all hover:shadow-lg"
 						>
 							Registrarse
 						</Link>
