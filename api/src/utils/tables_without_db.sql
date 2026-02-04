@@ -392,6 +392,7 @@ CREATE TABLE IF NOT EXISTS producto_lote (
   cantidad INT NOT NULL,
   fecha_vencimiento DATE NULL,
   fecha_ingreso DATE NOT NULL,
+  costo_total DECIMAL(10,2) NULL COMMENT 'Costo total de la compra/entrada del lote',
 
   PRIMARY KEY (id_lote),
   KEY idx_lote_producto (id_producto),

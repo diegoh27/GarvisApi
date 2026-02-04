@@ -16,7 +16,10 @@ async function isDatabaseEmpty() {
 		);
 		return tables[0].count === 0;
 	} catch (error) {
-		console.error("❌ Error verificando si la base de datos está vacía:", error.message);
+		console.error(
+			"❌ Error verificando si la base de datos está vacía:",
+			error.message
+		);
 		return false;
 	}
 }
@@ -27,7 +30,7 @@ async function isDatabaseEmpty() {
 async function createTables() {
 	try {
 		const sqlPath = path.join(__dirname, "tables_without_db.sql");
-		
+
 		if (!fs.existsSync(sqlPath)) {
 			console.error(`❌ Archivo SQL no encontrado: ${sqlPath}`);
 			return false;
@@ -45,7 +48,9 @@ async function createTables() {
 		const statements = cleanedSQL
 			.split(";")
 			.map((stmt) => stmt.trim())
-			.filter((stmt) => stmt.length > 0 && !stmt.toLowerCase().startsWith("use "));
+			.filter(
+				(stmt) => stmt.length > 0 && !stmt.toLowerCase().startsWith("use ")
+			);
 
 		console.log("📦 Creando tablas...");
 		let successCount = 0;
@@ -62,20 +67,28 @@ async function createTables() {
 					if (
 						err.message.includes("already exists") ||
 						err.message.includes("Duplicate") ||
-						(err.message.includes("Table") && !err.message.includes("doesn't exist"))
+						(err.message.includes("Table") &&
+							!err.message.includes("doesn't exist"))
 					) {
 						// Error esperado, continuar
 						successCount++;
 					} else {
 						errorCount++;
-						console.warn(`⚠️  Advertencia al ejecutar statement: ${err.message.substring(0, 100)}`);
+						console.warn(
+							`⚠️  Advertencia al ejecutar statement: ${err.message.substring(
+								0,
+								100
+							)}`
+						);
 					}
 				}
 			}
 		}
 
 		if (errorCount === 0 || successCount > 0) {
-			console.log(`✅ Tablas creadas exitosamente (${successCount} statements ejecutados)`);
+			console.log(
+				`✅ Tablas creadas exitosamente (${successCount} statements ejecutados)`
+			);
 			return true;
 		} else {
 			console.error(`❌ Error creando tablas: ${errorCount} errores`);
@@ -91,11 +104,17 @@ async function createTables() {
  * Crea o obtiene un rol
  */
 async function getOrCreateRole(nombre) {
-	const [rows] = await pool.execute("SELECT id_rol FROM roles WHERE nombre = ? LIMIT 1", [nombre]);
+	const [rows] = await pool.execute(
+		"SELECT id_rol FROM roles WHERE nombre = ? LIMIT 1",
+		[nombre]
+	);
 	if (rows.length) return rows[0].id_rol;
 
 	const id_rol = crypto.randomUUID();
-	await pool.execute("INSERT INTO roles (id_rol, nombre) VALUES (?, ?)", [id_rol, nombre]);
+	await pool.execute("INSERT INTO roles (id_rol, nombre) VALUES (?, ?)", [
+		id_rol,
+		nombre,
+	]);
 	return id_rol;
 }
 
@@ -120,7 +139,18 @@ async function createUsuario({
 		`INSERT INTO usuario
 		(id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-		[id_usuario, nombre, apellido, genero, cedula, correo, telefono, hashedPassword, fecha_nacimiento, id_rol]
+		[
+			id_usuario,
+			nombre,
+			apellido,
+			genero,
+			cedula,
+			correo,
+			telefono,
+			hashedPassword,
+			fecha_nacimiento,
+			id_rol,
+		]
 	);
 
 	return id_usuario;
@@ -231,7 +261,9 @@ async function initDatabase() {
 			// Crear tablas
 			const tablesCreated = await createTables();
 			if (!tablesCreated) {
-				console.error("❌ No se pudieron crear las tablas. Abortando inicialización.");
+				console.error(
+					"❌ No se pudieron crear las tablas. Abortando inicialización."
+				);
 				return false;
 			}
 
@@ -245,11 +277,16 @@ async function initDatabase() {
 			console.log("✅ Base de datos inicializada correctamente\n");
 			return true;
 		} else {
-			console.log("✅ Base de datos ya contiene tablas. Saltando inicialización.\n");
+			console.log(
+				"✅ Base de datos ya contiene tablas. Saltando inicialización.\n"
+			);
 			return true;
 		}
 	} catch (error) {
-		console.error("❌ Error en inicialización de base de datos:", error.message);
+		console.error(
+			"❌ Error en inicialización de base de datos:",
+			error.message
+		);
 		return false;
 	}
 }

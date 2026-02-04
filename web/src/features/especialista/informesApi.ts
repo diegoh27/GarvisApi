@@ -11,7 +11,11 @@ const informesApi = baseApi.injectEndpoints({
 		}),
 		getInformeByCita: builder.query<Informe | null, string>({
 			query: (id_cita) => `/informes/cita/${id_cita}`,
-			transformResponse: (response: ApiResponse<Informe>) => response.data,
+			transformResponse: (response: ApiResponse<Informe> | null) => {
+				// El backend devuelve 404 cuando no existe informe; mapear a `null` en frontend
+				if (!response || !response.ok) return null;
+				return response.data ?? null;
+			},
 			providesTags: (_result, _error, id_cita) => [
 				{ type: "Informes", id: id_cita },
 			],
