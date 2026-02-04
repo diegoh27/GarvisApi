@@ -554,7 +554,10 @@ const InformesPage = () => {
 													) : null}
 													<button
 														type="button"
-														onClick={(e) => e.stopPropagation()}
+														onClick={(e) => {
+															e.stopPropagation();
+															setSelectedCitaId(cita.id_cita);
+														}}
 														className="rounded-full border border-mint px-4 py-2 text-xs font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
 													>
 														{tieneInforme ? "Editar informe" : "Crear informe"}

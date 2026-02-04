@@ -64,7 +64,7 @@ const baseQueryWithFormData = async (args: any, api: any, extraOptions: any) => 
 const baseApi = createApi({
 	reducerPath: "api",
 	baseQuery: baseQueryWithFormData,
-	tagTypes: ["Citas", "Disponibilidad", "Informes", "Resultados", "Especialidades", "Ecos", "Usuarios", "Representados"],
+	tagTypes: ["Citas", "Disponibilidad", "Informes", "Resultados", "Especialidades", "Ecos", "Usuarios", "Representados", "Productos"],
 	endpoints: () => ({}),
 });
 
