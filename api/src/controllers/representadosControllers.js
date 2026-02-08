@@ -79,9 +79,9 @@ const createRepresentadoController = async (id_paciente, payload) => {
 	const { nombre, apellido, cedula, fecha_nacimiento, genero, parentesco } =
 		payload;
 
-	if (!nombre || !apellido || !cedula || !fecha_nacimiento || !genero) {
+	if (!nombre || !apellido || !fecha_nacimiento || !genero) {
 		const err = new Error(
-			"Faltan campos requeridos: nombre, apellido, cedula, fecha_nacimiento, genero"
+			"Faltan campos requeridos: nombre, apellido, fecha_nacimiento, genero",
 		);
 		err.code = "VALIDATION";
 		throw err;
@@ -94,19 +94,23 @@ const createRepresentadoController = async (id_paciente, payload) => {
 	}
 
 	// Cédula única por paciente (mismo paciente no puede tener dos representados con misma cédula)
-	const [existing] = await pool.execute(
-		"SELECT id_representado FROM representado WHERE id_paciente = ? AND cedula = ? LIMIT 1",
-		[id_paciente, cedula.trim()]
-	);
-	if (existing.length > 0) {
-		const err = new Error(
-			"Ya existe un representado con esta cédula para su cuenta"
+	// Solo validar si se proporciona cédula
+	if (cedula && cedula.trim()) {
+		const [existing] = await pool.execute(
+			"SELECT id_representado FROM representado WHERE id_paciente = ? AND cedula = ? LIMIT 1",
+			[id_paciente, cedula.trim()],
 		);
-		err.code = "DUPLICATE_CEDULA";
-		throw err;
+		if (existing.length > 0) {
+			const err = new Error(
+				"Ya existe un representado con esta cédula para su cuenta",
+			);
+			err.code = "DUPLICATE_CEDULA";
+			throw err;
+		}
 	}
 
 	const id_representado = crypto.randomUUID();
+	const cedulaValue = cedula && cedula.trim() ? cedula.trim() : null;
 	const sql = `
     INSERT INTO representado
       (id_representado, id_paciente, nombre, apellido, fecha_nacimiento, cedula, genero, parentesco)
@@ -119,7 +123,7 @@ const createRepresentadoController = async (id_paciente, payload) => {
 		nombre.trim(),
 		apellido.trim(),
 		fecha_nacimiento,
-		cedula.trim(),
+		cedulaValue,
 		genero,
 		parentesco && parentesco.trim() ? parentesco.trim() : null,
 	]);
@@ -129,7 +133,7 @@ const createRepresentadoController = async (id_paciente, payload) => {
 		id_paciente,
 		nombre: nombre.trim(),
 		apellido: apellido.trim(),
-		cedula: cedula.trim(),
+		cedula: cedulaValue,
 		fecha_nacimiento,
 		genero,
 		parentesco: parentesco && parentesco.trim() ? parentesco.trim() : null,
@@ -142,13 +146,137 @@ const createRepresentadoController = async (id_paciente, payload) => {
 const listParentescosController = async (id_paciente) => {
 	const [rows] = await pool.execute(
 		"SELECT DISTINCT parentesco FROM representado WHERE id_paciente = ? AND parentesco IS NOT NULL AND parentesco != '' ORDER BY parentesco",
-		[id_paciente]
+		[id_paciente],
 	);
 	return rows.map((r) => r.parentesco);
+};
+
+/**
+ * Actualizar representado del paciente.
+ */
+const updateRepresentadoController = async (
+	id_paciente,
+	id_representado,
+	payload,
+) => {
+	const { nombre, apellido, cedula, fecha_nacimiento, genero, parentesco } =
+		payload;
+
+	if (!nombre || !apellido || !fecha_nacimiento || !genero) {
+		const err = new Error(
+			"Faltan campos requeridos: nombre, apellido, fecha_nacimiento, genero",
+		);
+		err.code = "VALIDATION";
+		throw err;
+	}
+
+	if (!GENEROS.includes(genero)) {
+		const err = new Error("Género no válido");
+		err.code = "VALIDATION";
+		throw err;
+	}
+
+	// Verificar que el representado pertenece al paciente
+	const [existing] = await pool.execute(
+		"SELECT id_representado FROM representado WHERE id_representado = ? AND id_paciente = ? LIMIT 1",
+		[id_representado, id_paciente],
+	);
+
+	if (existing.length === 0) {
+		const err = new Error("Representado no encontrado o no autorizado");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+
+	// Verificar que la cédula no esté duplicada (excepto el mismo representado)
+	// Solo validar si se proporciona cédula
+	if (cedula && cedula.trim()) {
+		const [duplicate] = await pool.execute(
+			"SELECT id_representado FROM representado WHERE id_paciente = ? AND cedula = ? AND id_representado != ? LIMIT 1",
+			[id_paciente, cedula.trim(), id_representado],
+		);
+
+		if (duplicate.length > 0) {
+			const err = new Error(
+				"Ya existe otro representado con esta cédula para su cuenta",
+			);
+			err.code = "DUPLICATE_CEDULA";
+			throw err;
+		}
+	}
+
+	const cedulaValue = cedula && cedula.trim() ? cedula.trim() : null;
+	const sql = `
+    UPDATE representado
+    SET nombre = ?, apellido = ?, cedula = ?, fecha_nacimiento = ?, genero = ?, parentesco = ?
+    WHERE id_representado = ? AND id_paciente = ?
+  `;
+
+	await pool.execute(sql, [
+		nombre.trim(),
+		apellido.trim(),
+		cedulaValue,
+		fecha_nacimiento,
+		genero,
+		parentesco && parentesco.trim() ? parentesco.trim() : null,
+		id_representado,
+		id_paciente,
+	]);
+
+	return {
+		id_representado,
+		id_paciente,
+		nombre: nombre.trim(),
+		apellido: apellido.trim(),
+		cedula: cedulaValue,
+		fecha_nacimiento,
+		genero,
+		parentesco: parentesco && parentesco.trim() ? parentesco.trim() : null,
+	};
+};
+
+/**
+ * Eliminar representado del paciente.
+ */
+const deleteRepresentadoController = async (id_paciente, id_representado) => {
+	// Verificar que el representado pertenece al paciente
+	const [existing] = await pool.execute(
+		"SELECT id_representado FROM representado WHERE id_representado = ? AND id_paciente = ? LIMIT 1",
+		[id_representado, id_paciente],
+	);
+
+	if (existing.length === 0) {
+		const err = new Error("Representado no encontrado o no autorizado");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+
+	// Verificar si hay citas asociadas
+	const [citas] = await pool.execute(
+		"SELECT id_cita FROM cita WHERE id_representado = ? LIMIT 1",
+		[id_representado],
+	);
+
+	if (citas.length > 0) {
+		const err = new Error(
+			"No se puede eliminar un representado con citas asociadas",
+		);
+		err.code = "HAS_APPOINTMENTS";
+		throw err;
+	}
+
+	await pool.execute(
+		"DELETE FROM representado WHERE id_representado = ? AND id_paciente = ?",
+		[id_representado, id_paciente],
+	);
+
+	return { id_representado };
 };
 
 module.exports = {
 	listByPacienteController,
 	createRepresentadoController,
 	listParentescosController,
+	updateRepresentadoController,
+	deleteRepresentadoController,
 };

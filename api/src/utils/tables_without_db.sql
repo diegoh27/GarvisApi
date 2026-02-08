@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS representado (
   nombre VARCHAR(60) NOT NULL,
   apellido VARCHAR(60) NOT NULL,
   fecha_nacimiento DATE NOT NULL,
-  cedula VARCHAR(20) NOT NULL,
+  cedula VARCHAR(20) NULL,
   genero ENUM('Masculino','Femenino','Otro') NOT NULL,
   parentesco VARCHAR(40) NULL,
 
