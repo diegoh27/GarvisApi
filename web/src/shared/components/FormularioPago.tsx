@@ -347,7 +347,7 @@ const FormularioPago = ({
 		}
 	};
 
-	// Subir imagen a Cloudinary
+	// Subir comprobante de pago
 	const uploadImage = async (file: File) => {
 		try {
 			const token = getToken();
@@ -392,7 +392,7 @@ const FormularioPago = ({
 		}
 	};
 
-	// Subir orden médica a Cloudinary
+	// Subir orden médica
 	const uploadOrdenMedica = async (file: File) => {
 		try {
 			const token = getToken();

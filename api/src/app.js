@@ -3,6 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+const path = require("path");
 const { auth } = require("express-openid-connect");
 const routes = require("./routes/index");
 
@@ -19,7 +20,12 @@ const config = {
 
 server.use(
 	cors({
-		origin: ["http://localhost:3001", "http://localhost:5173", "https://garvis-api.vercel.app", "https://garvis.mjeimports.store"],
+		origin: [
+			"http://localhost:3001",
+			"http://localhost:5173",
+			"https://garvis-api.vercel.app",
+			"https://garvis.mjeimports.store",
+		],
 		credentials: true,
 	}),
 );
@@ -38,6 +44,8 @@ server.use((err, req, res, next) => {
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
+
+server.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Main Rutes
 // server.use(auth(config));

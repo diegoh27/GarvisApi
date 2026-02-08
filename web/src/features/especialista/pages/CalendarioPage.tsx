@@ -105,7 +105,7 @@ const CalendarioPage = () => {
 	const [horaInicio, setHoraInicio] = useState("");
 	const [idEcos, setIdEcos] = useState<string[]>([]);
 	const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
-	const [busyCell, setBusyCell] = useState<string | null>(null);
+	const [busyCell] = useState<string | null>(null);
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "done">(
 		"idle",
@@ -262,6 +262,7 @@ const CalendarioPage = () => {
 		setSubmitStatus("loading");
 		try {
 			const result = await crearDisponibilidadBatch({ bloques }).unwrap();
+			const creados = result?.creados ?? 0;
 			setSubmitStatus("done");
 			setSelectedCells([]);
 			setFecha("");
@@ -270,7 +271,7 @@ const CalendarioPage = () => {
 			await Swal.fire({
 				icon: "success",
 				title: "Disponibilidad agregada",
-				text: `Se enviaron ${result.creados} bloque${result.creados !== 1 ? "s" : ""} correctamente.`,
+				text: `Se enviaron ${creados} bloque${creados !== 1 ? "s" : ""} correctamente.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
@@ -284,6 +285,7 @@ const CalendarioPage = () => {
 					? "Algunos horarios se solapan con bloques o citas existentes."
 					: "No se pudieron crear los bloques.")
 			);
+			throw err;
 		}
 	};
 
@@ -445,7 +447,6 @@ const CalendarioPage = () => {
 
 	const handleCellClick = async (dateKey: string, hourValue: string) => {
 		if (!isEspecialista) return;
-		if (dateKey < minFecha) return;
 		const cellKey = `${dateKey}|${hourValue}`;
 		const bloque = bloquesMap.get(cellKey);
 		if (bloque) {
@@ -526,6 +527,7 @@ const CalendarioPage = () => {
 			}
 			return;
 		}
+		if (dateKey < minFecha) return;
 		// Toggle celda vacía en la selección múltiple
 		setSelectedCells((prev) =>
 			prev.includes(cellKey)

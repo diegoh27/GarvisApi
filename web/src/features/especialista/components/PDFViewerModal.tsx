@@ -1,5 +1,3 @@
-import { getToken } from "../../../shared/utils/token";
-
 type PDFViewerModalProps = {
 	pdfUrl: string;
 	onClose: () => void;
@@ -7,25 +5,10 @@ type PDFViewerModalProps = {
 };
 
 const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
-	// Obtener la URL base de la API
-	const apiBaseUrl =
-		import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-		"http://localhost:3001";
-
-	// Obtener el token
-	const token = getToken();
-
-	// Usar proxy del backend para evitar problemas de CORS/autenticación
-	// Para el iframe, necesitamos pasar el token como query param
-	const proxyUrl = `${apiBaseUrl}/informes/pdf-proxy?cloudinaryUrl=${encodeURIComponent(
-		pdfUrl
-	)}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
-
 	// Función para descargar el PDF con el nombre correcto
 	const handleDownload = async () => {
 		try {
-			// Usar el proxy para descargar (el token ya está en la URL)
-			const response = await fetch(proxyUrl);
+			const response = await fetch(pdfUrl);
 
 			if (!response.ok) {
 				throw new Error("Error al descargar el PDF");
@@ -90,7 +73,7 @@ const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
 				{/* PDF Viewer */}
 				<div className="flex-1 overflow-hidden">
 					<iframe
-						src={proxyUrl}
+						src={pdfUrl}
 						className="h-full w-full"
 						title="PDF Viewer"
 					/>

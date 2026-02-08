@@ -5,7 +5,9 @@ import {
 	useListUsersQuery,
 	useUpdateUserMutation,
 	useUpdateEspecialistaMutation,
+	useUpdatePacienteMutation,
 	useGetEspecialistaByIdQuery,
+	useGetPacienteByIdQuery,
 	useSetUserActiveMutation,
 	type Usuario,
 } from "../usuariosApi";
@@ -42,6 +44,7 @@ const UsuariosPage = () => {
 
 	const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
 	const [updateEspecialista, { isLoading: isUpdatingEspecialista }] = useUpdateEspecialistaMutation();
+	const [updatePaciente, { isLoading: isUpdatingPaciente }] = useUpdatePacienteMutation();
 	const [setUserActive, { isLoading: isToggling }] = useSetUserActiveMutation();
 
 	// Asegurar que usuarios sea siempre un array
@@ -116,15 +119,23 @@ const UsuariosPage = () => {
 		fecha_nacimiento: string;
 		id_especialidad?: string;
 		codigo_colegiatura?: string;
+		porcentaje?: number;
 		id_ecos?: string[];
+		rif?: string;
 	}) => {
 		if (!selectedUser) return;
 
 		const isEspecialista = selectedUser.rol === "especialista";
+		const isPaciente = selectedUser.rol === "paciente";
 
 		try {
 			if (isEspecialista) {
 				await updateEspecialista({
+					id: selectedUser.id_usuario,
+					payload: formData,
+				}).unwrap();
+			} else if (isPaciente) {
+				await updatePaciente({
 					id: selectedUser.id_usuario,
 					payload: formData,
 				}).unwrap();
@@ -197,7 +208,6 @@ const UsuariosPage = () => {
 						/>
 					</div>
 				</div>
-
 				{/* Lista de usuarios */}
 				<div className="rounded-lg border border-brand-200 bg-paper">
 					{isLoading ? (
@@ -424,7 +434,7 @@ const UsuariosPage = () => {
 							setSelectedUser(null);
 						}}
 						onSave={handleSaveEdit}
-						isLoading={isUpdating || isUpdatingEspecialista}
+						isLoading={isUpdating || isUpdatingEspecialista || isUpdatingPaciente}
 					/>
 				)}
 			</div>
@@ -445,18 +455,25 @@ type EditUserModalProps = {
 		fecha_nacimiento: string;
 		id_especialidad?: string;
 		codigo_colegiatura?: string;
+		porcentaje?: number;
 		id_ecos?: string[];
+		rif?: string;
 	}) => void;
 	isLoading: boolean;
 };
 
 const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalProps) => {
 	const isEspecialista = usuario.rol === "especialista";
+	const isPaciente = usuario.rol === "paciente";
 
 	// Obtener información adicional del especialista
 	const { data: especialistaData, isLoading: loadingEspecialista } = useGetEspecialistaByIdQuery(
 		usuario.id_usuario,
 		{ skip: !isEspecialista }
+	);
+	const { data: pacienteData } = useGetPacienteByIdQuery(
+		usuario.id_usuario,
+		{ skip: !isPaciente }
 	);
 
 	// Obtener ecos asignados y todos los ecos disponibles
@@ -485,7 +502,9 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 			: "",
 		id_especialidad: "",
 		codigo_colegiatura: "",
+		porcentaje: "",
 		id_ecos: [] as string[],
+		rif: "",
 	});
 
 	// Cargar datos del especialista cuando estén disponibles
@@ -495,9 +514,23 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 				...prev,
 				id_especialidad: especialistaData.id_especialidad || "",
 				codigo_colegiatura: (especialistaData as any).codigo_colegiatura || "",
+				porcentaje:
+					especialistaData.porcentaje !== undefined &&
+						especialistaData.porcentaje !== null
+						? String(especialistaData.porcentaje)
+						: "",
 			}));
 		}
 	}, [isEspecialista, especialistaData]);
+
+	useEffect(() => {
+		if (isPaciente && pacienteData) {
+			setForm((prev) => ({
+				...prev,
+				rif: pacienteData.rif || "",
+			}));
+		}
+	}, [isPaciente, pacienteData]);
 
 	// Cargar ecos asignados cuando estén disponibles
 	useEffect(() => {
@@ -562,9 +595,29 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		onSave(form);
+		if (isEspecialista) {
+			const porcentajeValue = Number(form.porcentaje);
+			if (Number.isNaN(porcentajeValue) || porcentajeValue < 0 || porcentajeValue > 100) {
+				Swal.fire({
+					icon: "warning",
+					title: "Porcentaje inválido",
+					text: "El porcentaje debe estar entre 0 y 100.",
+				});
+				return;
+			}
+			const { rif, porcentaje, ...rest } = form;
+			const payload = { ...rest, porcentaje: porcentajeValue };
+			onSave(payload);
+			return;
+		}
+		if (isPaciente) {
+			const { porcentaje, id_especialidad, codigo_colegiatura, id_ecos, ...rest } = form;
+			onSave(rest);
+			return;
+		}
+		const { porcentaje, id_especialidad, codigo_colegiatura, id_ecos, rif, ...rest } = form;
+		onSave(rest);
 	};
-
 	const ecos = todosEcos;
 	const loadingEcos = loadingTodosEcos || loadingEcosAsignados;
 
@@ -660,6 +713,20 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 							/>
 						</div>
 					</div>
+					{isPaciente && (
+						<div>
+							<label className="mb-1 block text-sm font-medium text-brand-700">
+								RIF
+							</label>
+							<input
+								type="text"
+								value={form.rif}
+								onChange={(e) => setForm({ ...form, rif: e.target.value })}
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								placeholder="Ej: J-12345678-9"
+							/>
+						</div>
+					)}
 					<div>
 						<label className="mb-1 block text-sm font-medium text-brand-700">
 							Fecha de nacimiento
@@ -671,6 +738,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 							className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 						/>
 					</div>
+
 
 					{/* Campos adicionales para especialistas */}
 					{isEspecialista && (
@@ -711,6 +779,21 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 										placeholder="Ej: CMV-12345"
 									/>
 								</div>
+							</div>
+							<div>
+								<label className="mb-1 block text-sm font-medium text-brand-700">
+									Porcentaje para especialista <span className="text-red-500">*</span>
+								</label>
+								<input
+									type="number"
+									min={0}
+									max={100}
+									step="0.01"
+									value={form.porcentaje}
+									onChange={(e) => setForm({ ...form, porcentaje: e.target.value })}
+									className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+									placeholder="Ej: 35"
+								/>
 							</div>
 							<div>
 								<label className="mb-1 block text-sm font-medium text-brand-700">

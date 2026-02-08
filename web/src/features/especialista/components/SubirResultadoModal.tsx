@@ -39,15 +39,6 @@ const SubirResultadoModal = ({
 				});
 				return false;
 			}
-			if (file.size > 10 * 1024 * 1024) {
-				Swal.fire({
-					icon: "warning",
-					title: "Archivo muy grande",
-					text: "El tamaño máximo por archivo es 10MB.",
-					timer: 2000,
-				});
-				return false;
-			}
 			return true;
 		});
 
@@ -73,7 +64,7 @@ const SubirResultadoModal = ({
 		if (urlToRevoke) {
 			URL.revokeObjectURL(urlToRevoke);
 		}
-		
+
 		// Actualizar archivos y URLs de preview
 		setSelectedFiles((prev) => {
 			const newFiles = prev.filter((_, i) => i !== index);
@@ -177,7 +168,7 @@ const SubirResultadoModal = ({
 							className="w-full rounded-lg border border-mist bg-cloud px-3 py-2 text-sm text-brand-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
 						/>
 						<p className="text-xs text-brand-800 mt-1">
-							Formatos permitidos: JPEG, PNG, WEBP, PDF. Máximo 10MB por archivo.
+							Formatos permitidos: JPEG, PNG, WEBP, PDF.
 						</p>
 					</div>
 

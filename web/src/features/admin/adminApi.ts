@@ -10,6 +10,7 @@ export type CrearEspecialistaPayload = {
 	contrasena: string;
 	fecha_nacimiento: string;
 	id_especialidad: string;
+	porcentaje: number;
 	codigo_colegiatura?: string;
 	id_ecos?: string[]; // Array de IDs de ecos
 };

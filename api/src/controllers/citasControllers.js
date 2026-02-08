@@ -18,7 +18,7 @@ const createCitaFromDisponibilidadController = async ({
        FROM disponibilidad
        WHERE id_disponibilidad = ?
        FOR UPDATE`,
-			[id_disponibilidad]
+			[id_disponibilidad],
 		);
 		if (!rows.length) {
 			const err = new Error("Disponibilidad no encontrada");
@@ -69,7 +69,7 @@ const createCitaFromDisponibilidadController = async ({
 		// Marcar la disponibilidad usada como "cita"
 		await conn.execute(
 			"UPDATE disponibilidad SET estado = 4 WHERE id_disponibilidad = ?",
-			[id_disponibilidad]
+			[id_disponibilidad],
 		);
 
 		// Bloquear (cancelar) otros bloques del mismo especialista en la misma franja horaria
@@ -88,7 +88,7 @@ const createCitaFromDisponibilidadController = async ({
 				bloque.hora_inicio,
 				bloque.hora_fin,
 				id_disponibilidad,
-			]
+			],
 		);
 
 		await conn.commit();
@@ -244,7 +244,7 @@ const cancelCitaController = async ({ id_cita }) => {
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita]
+			[id_cita],
 		);
 		if (!rows.length) {
 			const err = new Error("Cita no encontrada");
@@ -254,7 +254,7 @@ const cancelCitaController = async ({ id_cita }) => {
 
 		await conn.execute(
 			"UPDATE cita SET estado_cita = 2, estado_pago = 2 WHERE id_cita = ?",
-			[id_cita]
+			[id_cita],
 		);
 
 		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita
@@ -269,7 +269,7 @@ const cancelCitaController = async ({ id_cita }) => {
 		) {
 			await conn.execute(
 				"UPDATE disponibilidad SET estado = 1 WHERE id_disponibilidad = ? AND estado = 4",
-				[id_disponibilidad]
+				[id_disponibilidad],
 			);
 		}
 
@@ -292,7 +292,7 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita]
+			[id_cita],
 		);
 		if (!rows.length) {
 			const err = new Error("Cita no encontrada");
@@ -419,7 +419,7 @@ const updateEstadoPagoController = async ({
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita]
+			[id_cita],
 		);
 		if (!rows.length) {
 			const err = new Error("Cita no encontrada");
@@ -429,7 +429,7 @@ const updateEstadoPagoController = async ({
 		const cita = rows[0];
 		if (cita.estado_cita === 2) {
 			const err = new Error(
-				"No se puede actualizar el pago de una cita cancelada"
+				"No se puede actualizar el pago de una cita cancelada",
 			);
 			err.code = "INVALID_STATE";
 			throw err;
@@ -443,14 +443,14 @@ const updateEstadoPagoController = async ({
 
 		await conn.execute(
 			"UPDATE cita SET estado_pago = ?, estado_cita = ? WHERE id_cita = ?",
-			[estado_pago, nuevoEstadoCita, id_cita]
+			[estado_pago, nuevoEstadoCita, id_cita],
 		);
 
 		// Sincronizar estado en la tabla pagos para que "Detalles del pago" muestre el estado correcto
 		if (estado_pago === 1 && aprobado_por) {
 			await conn.execute(
 				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
-				[estado_pago, aprobado_por, id_cita]
+				[estado_pago, aprobado_por, id_cita],
 			);
 		} else {
 			await conn.execute("UPDATE pagos SET estado_pago = ? WHERE id_cita = ?", [
@@ -514,7 +514,7 @@ const posponerCitaController = async ({ id_cita, fecha_cita, hora_cita }) => {
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
-			[id_cita]
+			[id_cita],
 		);
 		if (!rows.length) {
 			const err = new Error("Cita no encontrada");
@@ -551,7 +551,7 @@ const posponerCitaController = async ({ id_cita, fecha_cita, hora_cita }) => {
 		// Actualizar fecha y hora de la cita
 		await conn.execute(
 			"UPDATE cita SET fecha_cita = ?, hora_cita = ? WHERE id_cita = ?",
-			[fecha_cita, hora_cita, id_cita]
+			[fecha_cita, hora_cita, id_cita],
 		);
 
 		await conn.commit();
@@ -749,11 +749,11 @@ const asignarCitaCompletaController = async ({
 
 		// 1. Verificar y obtener disponibilidad
 		const [dispRows] = await conn.execute(
-			`SELECT id_especialista, fecha, hora_inicio, estado, id_eco
+			`SELECT id_especialista, fecha, hora_inicio, hora_fin, estado, id_eco
        FROM disponibilidad
        WHERE id_disponibilidad = ?
        FOR UPDATE`,
-			[id_disponibilidad]
+			[id_disponibilidad],
 		);
 		if (!dispRows.length) {
 			const err = new Error("Disponibilidad no encontrada");
@@ -766,7 +766,7 @@ const asignarCitaCompletaController = async ({
 		if (disponibilidad.estado === 0) {
 			await conn.execute(
 				"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
-				[aprobado_por, id_disponibilidad]
+				[aprobado_por, id_disponibilidad],
 			);
 		} else if (disponibilidad.estado !== 1) {
 			const err = new Error("Disponibilidad no disponible");
@@ -777,7 +777,7 @@ const asignarCitaCompletaController = async ({
 		// Verificar que el especialista tenga este eco
 		const [ecoEspecialistaRows] = await conn.execute(
 			"SELECT id_especialista FROM especialista_eco WHERE id_especialista = ? AND id_eco = ?",
-			[id_especialista, id_eco]
+			[id_especialista, id_eco],
 		);
 		if (!ecoEspecialistaRows.length) {
 			const err = new Error("El especialista no tiene este eco disponible");
@@ -788,7 +788,7 @@ const asignarCitaCompletaController = async ({
 		// Obtener precio del eco
 		const [ecoRows] = await conn.execute(
 			"SELECT precio FROM eco WHERE id_eco = ?",
-			[id_eco]
+			[id_eco],
 		);
 		if (!ecoRows.length) {
 			const err = new Error("Eco no encontrado");
@@ -820,7 +820,26 @@ const asignarCitaCompletaController = async ({
 		// 3. Actualizar disponibilidad a ocupada
 		await conn.execute(
 			"UPDATE disponibilidad SET estado = 4 WHERE id_disponibilidad = ?",
-			[id_disponibilidad]
+			[id_disponibilidad],
+		);
+
+		// 3b. Bloquear otros bloques del mismo especialista en la misma franja horaria
+		// para evitar que se reserven ecos distintos en el mismo horario.
+		await conn.execute(
+			`UPDATE disponibilidad
+       SET estado = 3
+       WHERE id_especialista = ?
+         AND fecha = ?
+         AND estado IN (0, 1)
+         AND NOT (hora_fin <= ? OR hora_inicio >= ?)
+         AND id_disponibilidad <> ?`,
+			[
+				disponibilidad.id_especialista,
+				disponibilidad.fecha,
+				disponibilidad.hora_inicio,
+				disponibilidad.hora_fin,
+				id_disponibilidad,
+			],
 		);
 
 		// 4. Obtener tasa BCV del día para guardarla en el pago (no puede ser null en BD)

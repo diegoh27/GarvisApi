@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS especialista (
   id_especialista CHAR(36) NOT NULL,
   id_especialidad CHAR(36) NOT NULL,
   codigo_colegiatura VARCHAR(30) NULL,
+  porcentaje DECIMAL(5,2) NOT NULL DEFAULT 0,
 
   PRIMARY KEY (id_especialista),
   KEY idx_especialista_especialidad (id_especialidad),

@@ -55,10 +55,29 @@ export const usuariosApi = baseApi.injectEndpoints({
 				id_especialidad: string;
 				especialidad: string;
 				codigo_colegiatura: string | null;
+				porcentaje?: number | null;
 			},
 			string
 		>({
 			query: (id) => `/medicos/${id}`,
+			transformResponse: (response: { ok: boolean; data: any }) => {
+				return response.data;
+			},
+			providesTags: ["Usuarios"],
+		}),
+		getPacienteById: builder.query<
+			{
+				id_paciente: string;
+				nombre: string;
+				apellido: string;
+				cedula: string;
+				correo: string;
+				telefono: string;
+				rif: string | null;
+			},
+			string
+		>({
+			query: (id) => `/pacientes/${id}`,
 			transformResponse: (response: { ok: boolean; data: any }) => {
 				return response.data;
 			},
@@ -93,6 +112,7 @@ export const usuariosApi = baseApi.injectEndpoints({
 				payload: UpdateUsuarioPayload & {
 					id_especialidad?: string;
 					codigo_colegiatura?: string;
+					porcentaje?: number;
 					id_ecos?: string[];
 				};
 			}
@@ -107,6 +127,20 @@ export const usuariosApi = baseApi.injectEndpoints({
 			},
 			invalidatesTags: ["Usuarios", "Ecos"],
 		}),
+		updatePaciente: builder.mutation<
+			{ id_paciente: string },
+			{ id: string; payload: UpdateUsuarioPayload & { rif?: string } }
+		>({
+			query: ({ id, payload }) => ({
+				url: `/pacientes/${id}`,
+				method: "PUT",
+				body: payload,
+			}),
+			transformResponse: (response: { ok: boolean; data: any }) => {
+				return response.data;
+			},
+			invalidatesTags: ["Usuarios"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -115,7 +149,9 @@ export const {
 	useListUsersQuery,
 	useGetUserByIdQuery,
 	useGetEspecialistaByIdQuery,
+	useGetPacienteByIdQuery,
 	useUpdateUserMutation,
 	useUpdateEspecialistaMutation,
+	useUpdatePacienteMutation,
 	useSetUserActiveMutation,
 } = usuariosApi;

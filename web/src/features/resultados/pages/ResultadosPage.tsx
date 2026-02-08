@@ -46,14 +46,14 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 		return urls.map((url) => {
 			if (!url) return url;
 			const trimmedUrl = url.trim();
-			if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+			if (!trimmedUrl.match(/^https?:\/\//i)) {
 				return `https://${trimmedUrl}`;
 			}
 			return trimmedUrl;
 		});
 	} catch {
 		const trimmedUrl = archivo.trim();
-		if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+		if (!trimmedUrl.match(/^https?:\/\//i)) {
 			return [`https://${trimmedUrl}`];
 		}
 		return [trimmedUrl];
@@ -134,15 +134,6 @@ const ResultadosPage = () => {
 					icon: "warning",
 					title: "Tipo de archivo no válido",
 					text: "Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs.",
-					timer: 2000,
-				});
-				return false;
-			}
-			if (file.size > 10 * 1024 * 1024) {
-				Swal.fire({
-					icon: "warning",
-					title: "Archivo muy grande",
-					text: "El tamaño máximo por archivo es 10MB.",
 					timer: 2000,
 				});
 				return false;
@@ -555,7 +546,7 @@ const ResultadosPage = () => {
 												className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
 											/>
 											<p className="text-xs text-brand-800 mt-1">
-												Formatos permitidos: JPEG, PNG, WEBP, PDF. Máximo 10MB por archivo.
+												Formatos permitidos: JPEG, PNG, WEBP, PDF.
 											</p>
 										</div>
 										{uploadingFiles[cita.id_cita] && uploadingFiles[cita.id_cita].length > 0 && (

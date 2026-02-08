@@ -33,20 +33,25 @@ const createEspecialistaController = async (payload) => {
 		]);
 
 		const sqlEspecialista = `
-      INSERT INTO especialista
-        (id_especialista, id_especialidad, codigo_colegiatura)
-      VALUES
-        (?, ?, ?)
-    `;
+			INSERT INTO especialista
+				(id_especialista, id_especialidad, codigo_colegiatura, porcentaje)
+			VALUES
+				(?, ?, ?, ?)
+		`;
 
 		await conn.execute(sqlEspecialista, [
 			id_usuario,
 			payload.id_especialidad,
 			payload.codigo_colegiatura ?? null,
+			payload.porcentaje,
 		]);
 
 		// Asignar ecos al especialista si se proporcionaron
-		if (payload.id_ecos && Array.isArray(payload.id_ecos) && payload.id_ecos.length > 0) {
+		if (
+			payload.id_ecos &&
+			Array.isArray(payload.id_ecos) &&
+			payload.id_ecos.length > 0
+		) {
 			const sqlEco = `
 				INSERT INTO especialista_eco (id_especialista, id_eco)
 				VALUES (?, ?)
@@ -55,7 +60,7 @@ const createEspecialistaController = async (payload) => {
 			for (const id_eco of payload.id_ecos) {
 				const [ecoRows] = await conn.execute(
 					"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
-					[id_eco]
+					[id_eco],
 				);
 				if (!ecoRows.length) {
 					throw new Error(`Eco ${id_eco} no encontrado o inactivo`);
@@ -63,7 +68,7 @@ const createEspecialistaController = async (payload) => {
 				// Verificar que no esté ya asignado
 				const [relRows] = await conn.execute(
 					"SELECT id_especialista FROM especialista_eco WHERE id_especialista = ? AND id_eco = ?",
-					[id_usuario, id_eco]
+					[id_usuario, id_eco],
 				);
 				if (relRows.length === 0) {
 					await conn.execute(sqlEco, [id_usuario, id_eco]);
@@ -81,6 +86,7 @@ const createEspecialistaController = async (payload) => {
 			correo: payload.correo,
 			telefono: payload.telefono,
 			id_especialidad: payload.id_especialidad,
+			porcentaje: payload.porcentaje,
 		};
 	} catch (err) {
 		await conn.rollback();
@@ -96,7 +102,8 @@ const listEspecialistasController = async ({ q }) => {
       u.id_usuario AS id_especialista,
       u.nombre,
       u.apellido,
-      e.id_especialidad,
+			e.id_especialidad,
+			e.porcentaje,
       es.nombre AS especialidad
     FROM especialista e
     INNER JOIN usuario u ON u.id_usuario = e.id_especialista
@@ -132,8 +139,9 @@ const getEspecialistaByIdController = async (id_especialista) => {
       u.correo,
       u.telefono,
       u.fecha_nacimiento,
-      e.id_especialidad,
-      e.codigo_colegiatura,
+			e.id_especialidad,
+			e.codigo_colegiatura,
+			e.porcentaje,
       es.nombre AS especialidad
     FROM especialista e
     INNER JOIN usuario u ON u.id_usuario = e.id_especialista
@@ -158,8 +166,9 @@ const getEspecialistaSelfController = async (id_especialista) => {
       u.activo,
       u.fecha_nacimiento,
       u.fecha_registro,
-      e.id_especialidad,
-      e.codigo_colegiatura,
+			e.id_especialidad,
+			e.codigo_colegiatura,
+			e.porcentaje,
       es.nombre AS especialidad
     FROM especialista e
     INNER JOIN usuario u ON u.id_usuario = e.id_especialista
@@ -225,7 +234,7 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 			await conn.execute(sqlUsuario, [...userParams, id_especialista]);
 		}
 
-		const espFields = ["id_especialidad", "codigo_colegiatura"];
+		const espFields = ["id_especialidad", "codigo_colegiatura", "porcentaje"];
 		const espUpdates = [];
 		const espParams = [];
 		espFields.forEach((field) => {
@@ -248,7 +257,7 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 			// Eliminar todas las relaciones existentes
 			await conn.execute(
 				"DELETE FROM especialista_eco WHERE id_especialista = ?",
-				[id_especialista]
+				[id_especialista],
 			);
 
 			// Insertar las nuevas relaciones
@@ -261,7 +270,7 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 				for (const id_eco of payload.id_ecos) {
 					const [ecoRows] = await conn.execute(
 						"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
-						[id_eco]
+						[id_eco],
 					);
 					if (!ecoRows.length) {
 						throw new Error(`Eco ${id_eco} no encontrado o inactivo`);
@@ -287,7 +296,11 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 	}
 };
 
-const updateEspecialistaSelfController = async ({ id_usuario, telefono, contrasena }) => {
+const updateEspecialistaSelfController = async ({
+	id_usuario,
+	telefono,
+	contrasena,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();

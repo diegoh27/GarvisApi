@@ -5,16 +5,34 @@ const {
 	listResultadosByPacienteController,
 	deleteArchivoFromResultadoController,
 } = require("../controllers/resultadosControllers");
-const { uploadMulterFileToCloudinary } = require("../utils/uploadToCloudinary");
+const { uploadMulterFileToLocal } = require("../utils/uploadToLocal");
+const fs = require("fs");
 const multer = require("multer");
+const path = require("path");
 
-// Configurar multer para almacenar en memoria
-const storage = multer.memoryStorage();
+const tmpDir = path.join(__dirname, "..", "..", "uploads", "_tmp");
+fs.mkdirSync(tmpDir, { recursive: true });
+
+const cleanupTempFiles = async (files = []) => {
+	const deletePromises = files
+		.map((file) => file?.path)
+		.filter(Boolean)
+		.map((filePath) => fs.promises.unlink(filePath).catch(() => null));
+	await Promise.all(deletePromises);
+};
+
+// Configurar multer para almacenar en disco (evita usar RAM en archivos grandes)
+const storage = multer.diskStorage({
+	destination: (req, file, cb) => {
+		cb(null, tmpDir);
+	},
+	filename: (req, file, cb) => {
+		const extension = path.extname(file.originalname) || "";
+		cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
+	},
+});
 const upload = multer({
 	storage,
-	limits: {
-		fileSize: 10 * 1024 * 1024, // 10MB máximo
-	},
 	fileFilter: (req, file, cb) => {
 		// Permitir imágenes y PDFs
 		const allowedMimes = [
@@ -29,9 +47,9 @@ const upload = multer({
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs."
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs.",
 				),
-				false
+				false,
 			);
 		}
 	},
@@ -58,9 +76,9 @@ const uploadResultadoHandler = async (req, res) => {
 			});
 		}
 
-		// Subir todos los archivos a Cloudinary
+		// Guardar todos los archivos en VPS
 		const uploadPromises = req.files.map((file) =>
-			uploadMulterFileToCloudinary(file, "garbis/resultados")
+			uploadMulterFileToLocal(file, "garbis/resultados"),
 		);
 		const results = await Promise.all(uploadPromises);
 		const archivoUrls = results.map((result) => result.url);
@@ -79,14 +97,15 @@ const uploadResultadoHandler = async (req, res) => {
 		return res.status(200).json({
 			ok: true,
 			message: data.updated
-				? `Resultado actualizado exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? 's' : ''})`
-				: `Resultado subido exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? 's' : ''})`,
+				? `Resultado actualizado exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? "s" : ""})`
+				: `Resultado subido exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? "s" : ""})`,
 			data: {
 				...data,
 				archivo_urls: archivoUrls, // Devolver como array para el frontend
 			},
 		});
 	} catch (error) {
+		await cleanupTempFiles(req.files);
 		if (error?.code === "NOT_FOUND") {
 			return res.status(404).json({
 				ok: false,
@@ -110,7 +129,8 @@ const uploadResultadoHandler = async (req, res) => {
 const listCitasSinResultadoHandler = async (req, res) => {
 	try {
 		// Si es especialista, pasar su ID para filtrar solo sus citas
-		const id_especialista = req.user.rol === "especialista" ? req.user.id : null;
+		const id_especialista =
+			req.user.rol === "especialista" ? req.user.id : null;
 		const data = await listCitasSinResultadoController(id_especialista);
 		return res.status(200).json({
 			ok: true,
@@ -167,7 +187,7 @@ const deleteArchivoFromResultadoHandler = async (req, res) => {
 
 		return res.status(200).json({
 			ok: true,
-			message: `Archivo eliminado exitosamente. Quedan ${data.archivos_restantes} archivo${data.archivos_restantes !== 1 ? 's' : ''}.`,
+			message: `Archivo eliminado exitosamente. Quedan ${data.archivos_restantes} archivo${data.archivos_restantes !== 1 ? "s" : ""}.`,
 			data,
 		});
 	} catch (error) {

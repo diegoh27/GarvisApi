@@ -13,7 +13,6 @@ import { EntesLegalesPage } from "../features/entesLegales";
 import { EspecialidadesPage } from "../features/especialidades";
 import {
 	CalendarioPage,
-	ConfiguracionPage,
 	InformesPage,
 	NotificacionesPage,
 	PacientesPage,
@@ -34,6 +33,7 @@ import { RepresentadosPage } from "../features/representados";
 import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
 import { UsuariosPage } from "../features/usuarios";
+import { ConfiguracionPage } from "../features/configuracion";
 import GuestRoute from "../routes/GuestRoute";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import RoleRoute from "../routes/RoleRoute";

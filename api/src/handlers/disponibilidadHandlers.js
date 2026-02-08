@@ -3,11 +3,14 @@ const {
 	createDisponibilidadBatchController,
 	listMisDisponibilidadController,
 	listPendientesController,
+	listDisponibilidadesAdminController,
 	approveDisponibilidadController,
 	approveDisponibilidadBatchController,
 	approveDisponibilidadPorCriteriosController,
 	rejectDisponibilidadController,
 	cancelDisponibilidadController,
+	cancelDisponibilidadAdminController,
+	cancelDisponibilidadBatchController,
 	listPublicaController,
 	listPublicaPorEcoController,
 	closeDisponibilidadDiaController,
@@ -40,6 +43,15 @@ const validateTimeBlock = (hora_inicio, hora_fin) => {
 	}
 	return { ok: true };
 };
+
+const parseDateKey = (value) => {
+	if (!value || typeof value !== "string") return null;
+	const date = new Date(`${value}T00:00:00`);
+	if (Number.isNaN(date.getTime())) return null;
+	return date;
+};
+
+const MAX_BATCH_RANGE_DAYS = 6;
 
 const createDisponibilidadHandler = async (req, res) => {
 	try {
@@ -100,6 +112,24 @@ const createDisponibilidadBatchHandler = async (req, res) => {
 			return res.status(400).json({
 				ok: false,
 				message: "bloques debe ser un array con al menos un elemento",
+			});
+		}
+
+		const fechas = bloques.map((b) => parseDateKey(b?.fecha));
+		if (fechas.some((d) => d === null)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Fecha inválida en uno o más bloques",
+			});
+		}
+		const timestamps = fechas.map((d) => d.getTime());
+		const minTs = Math.min(...timestamps);
+		const maxTs = Math.max(...timestamps);
+		const diffDays = Math.floor((maxTs - minTs) / (1000 * 60 * 60 * 24)) + 1;
+		if (diffDays > MAX_BATCH_RANGE_DAYS) {
+			return res.status(400).json({
+				ok: false,
+				message: `El rango máximo permitido es de ${MAX_BATCH_RANGE_DAYS} días`,
 			});
 		}
 		for (const b of bloques) {
@@ -240,7 +270,7 @@ const approveDisponibilidadPorCriteriosHandler = async (req, res) => {
 					? "No hay bloques pendientes que coincidan con los criterios"
 					: `${result.aprobados} bloque${
 							result.aprobados !== 1 ? "s" : ""
-					  } aprobado${result.aprobados !== 1 ? "s" : ""}`,
+						} aprobado${result.aprobados !== 1 ? "s" : ""}`,
 			data: result,
 		});
 	} catch (err) {
@@ -277,6 +307,26 @@ const listPendientesHandler = async (req, res) => {
 				message: err.message,
 			});
 		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const listDisponibilidadesAdminHandler = async (req, res) => {
+	try {
+		const { estado } = req.query;
+		const parsedEstado = estado !== undefined ? Number(estado) : undefined;
+		const data = await listDisponibilidadesAdminController({
+			estado: Number.isNaN(parsedEstado) ? undefined : parsedEstado,
+		});
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
 		console.error(err);
 		return res.status(500).json({
 			ok: false,
@@ -395,6 +445,62 @@ const cancelDisponibilidadHandler = async (req, res) => {
 	}
 };
 
+const cancelDisponibilidadAdminHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const result = await cancelDisponibilidadAdminController({
+			id_disponibilidad: id,
+		});
+		if (!result.updated) {
+			return res.status(404).json({
+				ok: false,
+				message: "Disponibilidad no encontrada o ya cancelada",
+			});
+		}
+		return res.status(200).json({
+			ok: true,
+			message: "Bloque cancelado",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "RESERVED") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const cancelDisponibilidadBatchHandler = async (req, res) => {
+	try {
+		const { ids } = req.body;
+		const result = await cancelDisponibilidadBatchController({ ids });
+		return res.status(200).json({
+			ok: true,
+			message: "Cancelación en lote completada",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "INVALID_INPUT") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 const listPublicaHandler = async (req, res) => {
 	try {
 		const { id_especialista, id_eco, fecha } = req.query;
@@ -487,9 +593,8 @@ const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
 				message: "id_especialista es requerido",
 			});
 		}
-		const data = await listDisponibilidadesByEspecialistaController(
-			id_especialista
-		);
+		const data =
+			await listDisponibilidadesByEspecialistaController(id_especialista);
 		return res.status(200).json({
 			ok: true,
 			data,
@@ -508,11 +613,14 @@ module.exports = {
 	createDisponibilidadBatchHandler,
 	listMisDisponibilidadHandler,
 	listPendientesHandler,
+	listDisponibilidadesAdminHandler,
 	approveDisponibilidadHandler,
 	approveDisponibilidadBatchHandler,
 	approveDisponibilidadPorCriteriosHandler,
 	rejectDisponibilidadHandler,
 	cancelDisponibilidadHandler,
+	cancelDisponibilidadAdminHandler,
+	cancelDisponibilidadBatchHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,

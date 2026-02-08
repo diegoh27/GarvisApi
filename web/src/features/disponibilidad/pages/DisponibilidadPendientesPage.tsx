@@ -2,11 +2,13 @@ import { useState, useMemo, useEffect } from "react";
 import Swal from "sweetalert2";
 import { PageShell } from "../../../shared";
 import {
-	useGetDisponibilidadPendientesQuery,
+	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
 	useAprobarDisponibilidadLoteMutation,
 	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
+	useCancelarDisponibilidadAdminMutation,
+	useCancelarDisponibilidadLoteMutation,
 } from "../disponibilidadApi";
 import type { DisponibilidadPendiente } from "../disponibilidadApi";
 import { toDateKey } from "../utils/dateUtils";
@@ -22,6 +24,7 @@ const ITEMS_PER_PAGE = 25;
 const DEFAULT_FILTROS: FiltrosDisponibilidadPendientesValues = {
 	query: "",
 	ordenFecha: "reciente",
+	estado: "todas",
 	fechaDesde: "",
 	fechaHasta: "",
 	horaDesde: "",
@@ -31,7 +34,7 @@ const DEFAULT_FILTROS: FiltrosDisponibilidadPendientesValues = {
 
 const DisponibilidadPendientesPage = () => {
 	const { data: disponibilidades = [], isLoading, refetch } =
-		useGetDisponibilidadPendientesQuery();
+		useGetDisponibilidadAdminQuery();
 	const [aprobarDisponibilidad, { isLoading: isAprobando }] =
 		useAprobarDisponibilidadMutation();
 	const [aprobarDisponibilidadLote, { isLoading: isAprobandoLote }] =
@@ -40,6 +43,10 @@ const DisponibilidadPendientesPage = () => {
 		useAprobarDisponibilidadPorCriteriosMutation();
 	const [rechazarDisponibilidad, { isLoading: isRechazando }] =
 		useRechazarDisponibilidadMutation();
+	const [cancelarDisponibilidad, { isLoading: isCancelando }] =
+		useCancelarDisponibilidadAdminMutation();
+	const [cancelarDisponibilidadLote, { isLoading: isCancelandoLote }] =
+		useCancelarDisponibilidadLoteMutation();
 	const [filtros, setFiltros] = useState<FiltrosDisponibilidadPendientesValues>(DEFAULT_FILTROS);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -102,6 +109,26 @@ const DisponibilidadPendientesPage = () => {
 	// Filtrar y ordenar
 	const filteredAndSorted = useMemo(() => {
 		let list = [...disponibilidades];
+
+		switch (filtros.estado) {
+			case "pendientes":
+				list = list.filter((d) => d.estado === 0);
+				break;
+			case "aprobadas":
+				list = list.filter((d) => d.estado === 1);
+				break;
+			case "rechazadas":
+				list = list.filter((d) => d.estado === 2);
+				break;
+			case "canceladas":
+				list = list.filter((d) => d.estado === 3);
+				break;
+			case "citas":
+				list = list.filter((d) => d.estado === 4);
+				break;
+			default:
+				break;
+		}
 
 		// Búsqueda por eco, especialista o fecha
 		if (filtros.query.trim()) {
@@ -174,7 +201,14 @@ const DisponibilidadPendientesPage = () => {
 
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [filtros.query, filtros.ordenFecha, filtros.fechaDesde, filtros.fechaHasta, filtros.ecoId]);
+	}, [
+		filtros.query,
+		filtros.ordenFecha,
+		filtros.fechaDesde,
+		filtros.fechaHasta,
+		filtros.ecoId,
+		filtros.estado,
+	]);
 
 	const handleAprobar = async (id: string) => {
 		setSelectedId(id);
@@ -235,12 +269,26 @@ const DisponibilidadPendientesPage = () => {
 	};
 
 	const handleAprobarLote = async () => {
-		const ids = Array.from(selectedIds);
-		if (ids.length === 0) return;
+		const selectedItems = filteredAndSorted.filter((d) =>
+			selectedIds.has(d.id_disponibilidad),
+		);
+		const ids = selectedItems
+			.filter((d) => d.estado === 0)
+			.map((d) => d.id_disponibilidad);
+		if (ids.length === 0) {
+			await Swal.fire({
+				icon: "warning",
+				title: "No hay pendientes seleccionadas",
+				text: "Selecciona bloques en estado pendiente para aprobar en lote.",
+			});
+			return;
+		}
+		const skipped = selectedIds.size - ids.length;
 		const result = await Swal.fire({
 			icon: "question",
 			title: "Aprobar en lote",
-			text: `Se aprobarán ${ids.length} bloque${ids.length !== 1 ? "s" : ""} de disponibilidad. ¿Continuar?`,
+			text: `Se aprobarán ${ids.length} bloque${ids.length !== 1 ? "s" : ""
+				} de disponibilidad${skipped > 0 ? ` (se omiten ${skipped})` : ""}. ¿Continuar?`,
 			showCancelButton: true,
 			confirmButtonText: "Sí, aprobar",
 			cancelButtonText: "Cancelar",
@@ -264,6 +312,97 @@ const DisponibilidadPendientesPage = () => {
 				icon: "error",
 				title: "Error",
 				text: error?.data?.message || "No se pudo aprobar en lote",
+			});
+		} finally {
+			setSelectedId(null);
+		}
+	};
+
+	const handleCancelar = async (id: string) => {
+		const result = await Swal.fire({
+			icon: "warning",
+			title: "¿Cancelar disponibilidad?",
+			text: "Esta acción marcará el bloque como cancelado.",
+			showCancelButton: true,
+			confirmButtonText: "Sí, cancelar",
+			cancelButtonText: "Volver",
+			confirmButtonColor: "#dc2626",
+		});
+
+		if (!result.isConfirmed) return;
+
+		setSelectedId(id);
+		try {
+			await cancelarDisponibilidad(id).unwrap();
+			await Swal.fire({
+				icon: "success",
+				title: "Disponibilidad cancelada",
+				text: "El bloque ha sido marcado como cancelado.",
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			refetch();
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo cancelar la disponibilidad",
+			});
+		} finally {
+			setSelectedId(null);
+		}
+	};
+
+	const handleCancelarLote = async () => {
+		const selectedItems = filteredAndSorted.filter((d) =>
+			selectedIds.has(d.id_disponibilidad),
+		);
+		const ids = selectedItems
+			.filter((d) => d.estado === 0 || d.estado === 1)
+			.map((d) => d.id_disponibilidad);
+		if (ids.length === 0) {
+			await Swal.fire({
+				icon: "warning",
+				title: "No hay bloques cancelables",
+				text: "Selecciona bloques pendientes o aprobados para cancelar en lote.",
+			});
+			return;
+		}
+		const skipped = selectedIds.size - ids.length;
+		const result = await Swal.fire({
+			icon: "warning",
+			title: "Cancelar en lote",
+			text: `Se cancelarán ${ids.length} bloque${ids.length !== 1 ? "s" : ""
+				}${skipped > 0 ? ` (se omiten ${skipped})` : ""}. ¿Continuar?`,
+			showCancelButton: true,
+			confirmButtonText: "Sí, cancelar",
+			cancelButtonText: "Volver",
+			confirmButtonColor: "#dc2626",
+		});
+		if (!result.isConfirmed) return;
+		setSelectedId("cancel-lote");
+		try {
+			const response = await cancelarDisponibilidadLote({ ids }).unwrap();
+			const data = (response as { data?: { cancelados?: number; reservados?: string[] } })?.data;
+			const cancelados = data?.cancelados ?? ids.length;
+			const reservados = data?.reservados?.length ?? 0;
+			await Swal.fire({
+				icon: "success",
+				title: "Disponibilidades canceladas",
+				text:
+					reservados > 0
+						? `Se cancelaron ${cancelados} bloque${cancelados !== 1 ? "s" : ""}. ${reservados} no se pudieron cancelar porque tienen cita.`
+						: `Se cancelaron ${cancelados} bloque${cancelados !== 1 ? "s" : ""} correctamente.`,
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			setSelectedIds(new Set());
+			refetch();
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo cancelar en lote",
 			});
 		} finally {
 			setSelectedId(null);
@@ -327,8 +466,8 @@ const DisponibilidadPendientesPage = () => {
 
 	return (
 		<PageShell
-			title="Aprobar disponibilidades"
-			description="Revisar y aprobar bloques de disponibilidad propuestos por especialistas."
+			title="Gestionar disponibilidades"
+			description="Revisar, aprobar o cancelar bloques de disponibilidad propuestos por especialistas."
 		>
 			<div className="space-y-4">
 				<FiltrosDisponibilidadPendientes
@@ -431,7 +570,7 @@ const DisponibilidadPendientesPage = () => {
 
 				{isLoading ? (
 					<div className="py-8 text-center text-brand-600">
-						Cargando disponibilidades pendientes...
+						Cargando disponibilidades...
 					</div>
 				) : filteredAndSorted.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
@@ -443,7 +582,9 @@ const DisponibilidadPendientesPage = () => {
 								filtros.horaHasta ||
 								filtros.ecoId
 								? "No hay resultados con los filtros aplicados."
-								: "No hay disponibilidades pendientes de aprobar."}
+								: filtros.estado === "pendientes"
+									? "No hay disponibilidades pendientes de aprobar."
+									: "No hay disponibilidades para mostrar."}
 						</p>
 					</div>
 				) : (
@@ -486,6 +627,16 @@ const DisponibilidadPendientesPage = () => {
 											? "Procesando..."
 											: `Aprobar seleccionados (${selectedIds.size})`}
 									</button>
+									<button
+										type="button"
+										onClick={handleCancelarLote}
+										disabled={isCancelandoLote || selectedId === "cancel-lote"}
+										className="rounded-full border border-red-500 bg-paper px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+									>
+										{isCancelandoLote && selectedId === "cancel-lote"
+											? "Procesando..."
+											: `Cancelar seleccionados (${selectedIds.size})`}
+									</button>
 								</>
 							)}
 						</div>
@@ -496,8 +647,10 @@ const DisponibilidadPendientesPage = () => {
 									disp={disp}
 									onAprobar={handleAprobar}
 									onRechazar={handleRechazar}
+									onCancelar={handleCancelar}
 									isAprobando={isAprobando}
 									isRechazando={isRechazando}
+									isCancelando={isCancelando}
 									selectedId={selectedId}
 									showCheckbox
 									selected={selectedIds.has(disp.id_disponibilidad)}

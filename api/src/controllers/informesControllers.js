@@ -112,7 +112,7 @@ const createOrUpdateInformeController = async ({
       LEFT JOIN resultado r ON r.id_cita = c.id_cita
       LEFT JOIN representado rep ON rep.id_representado = c.id_representado
       WHERE c.id_cita = ?`,
-			[id_cita]
+			[id_cita],
 		);
 
 		if (!citaData.length) {
@@ -132,7 +132,7 @@ const createOrUpdateInformeController = async ({
 		// Validar que la cita esté marcada como atendida (estado_cita = 3)
 		if (citaInfo.estado_cita !== 3) {
 			const err = new Error(
-				"Solo se pueden crear informes para citas que han sido atendidas"
+				"Solo se pueden crear informes para citas que han sido atendidas",
 			);
 			err.code = "INVALID_STATE";
 			throw err;
@@ -141,7 +141,7 @@ const createOrUpdateInformeController = async ({
 		// Verificar si ya existe un informe
 		const [existing] = await conn.execute(
 			`SELECT id_informe FROM informe WHERE id_cita = ?`,
-			[id_cita]
+			[id_cita],
 		);
 
 		// Normalizar valores null/undefined
@@ -164,11 +164,11 @@ const createOrUpdateInformeController = async ({
 					cedula: citaInfo.representado_cedula || null,
 					fecha_nacimiento: citaInfo.representado_fecha_nacimiento
 						? new Date(
-								citaInfo.representado_fecha_nacimiento
-						  ).toLocaleDateString("es-VE")
+								citaInfo.representado_fecha_nacimiento,
+							).toLocaleDateString("es-VE")
 						: null,
 					parentesco: citaInfo.representado_parentesco || null,
-			  }
+				}
 			: null;
 		const paciente = {
 			nombre: citaInfo.paciente_nombre,
@@ -196,14 +196,14 @@ const createOrUpdateInformeController = async ({
 				hora_cita: citaInfo.hora_cita_formatted || citaInfo.hora_cita,
 				eco_nombre: citaInfo.eco_nombre,
 			},
-			ecoUrl: citaInfo.eco_archivo_url || null, // URL del archivo del eco (de Cloudinary)
+			ecoUrl: citaInfo.eco_archivo_url || null, // URL del archivo del eco
 		};
 
 		// Debug: Log para verificar si hay URL del eco
 		console.log("📄 Generando PDF para cita:", id_cita);
 		console.log(
 			"🔗 URL del eco (resultado.archivo):",
-			citaInfo.eco_archivo_url
+			citaInfo.eco_archivo_url,
 		);
 		console.log("📊 Estado del resultado:", citaInfo.resultado_estado);
 		console.log("📋 Tipo de dato:", typeof citaInfo.eco_archivo_url);
@@ -220,7 +220,7 @@ const createOrUpdateInformeController = async ({
 		// Actualizar el ecoUrl en pdfData con el valor normalizado
 		pdfData.ecoUrl = ecoUrlFinal;
 
-		// Generar y subir PDF a Cloudinary
+		// Generar y guardar PDF en el VPS
 		const pdfResult = await generateInformePDF(pdfData);
 		const informePdfUrl = pdfResult.url;
 
@@ -232,7 +232,7 @@ const createOrUpdateInformeController = async ({
 				`UPDATE informe 
          SET reseña = ?, recomendaciones = ?, informe_pdf_url = ?
          WHERE id_informe = ?`,
-				[reseñaValue, recomendacionesValue, informePdfUrl, informeId]
+				[reseñaValue, recomendacionesValue, informePdfUrl, informeId],
 			);
 		} else {
 			// Crear nuevo informe
@@ -248,7 +248,7 @@ const createOrUpdateInformeController = async ({
 					reseñaValue,
 					recomendacionesValue,
 					informePdfUrl,
-				]
+				],
 			);
 		}
 

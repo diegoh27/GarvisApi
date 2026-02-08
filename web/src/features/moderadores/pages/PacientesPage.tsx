@@ -45,8 +45,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 		return urls.map((url) => {
 			if (!url) return url;
 			const trimmedUrl = url.trim();
-			// Si la URL no tiene protocolo pero parece ser de Cloudinary, agregar https://
-			if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+			if (!trimmedUrl.match(/^https?:\/\//i)) {
 				return `https://${trimmedUrl}`;
 			}
 			return trimmedUrl;
@@ -54,7 +53,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 	} catch {
 		// Si no es JSON, tratar como string simple
 		const trimmedUrl = archivo.trim();
-		if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+		if (!trimmedUrl.match(/^https?:\/\//i)) {
 			return [`https://${trimmedUrl}`];
 		}
 		return [trimmedUrl];
@@ -237,8 +236,8 @@ const PacientesPage = () => {
 								key={option.id}
 								onClick={() => setFilter(option.id)}
 								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-brand-100"
+									? "bg-brand-700 text-paper"
+									: "bg-cloud text-brand-800 hover:bg-brand-100"
 									}`}
 							>
 								{option.label}

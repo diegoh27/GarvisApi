@@ -21,6 +21,7 @@ const createEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			porcentaje,
 			id_ecos, // Array de IDs de ecos
 		} = req.body;
 
@@ -34,6 +35,9 @@ const createEspecialistaHandler = async (req, res) => {
 		if (!contrasena) missing.push("contrasena");
 		if (!fecha_nacimiento) missing.push("fecha_nacimiento");
 		if (!id_especialidad) missing.push("id_especialidad");
+		if (porcentaje === undefined || porcentaje === null || porcentaje === "") {
+			missing.push("porcentaje");
+		}
 
 		if (missing.length) {
 			return res.status(400).json({
@@ -47,6 +51,20 @@ const createEspecialistaHandler = async (req, res) => {
 			return res.status(400).json({
 				ok: false,
 				message: "genero inválido (Masculino | Femenino | Otro)",
+			});
+		}
+
+		const porcentajeValue = Number(porcentaje);
+		if (Number.isNaN(porcentajeValue)) {
+			return res.status(400).json({
+				ok: false,
+				message: "porcentaje inválido",
+			});
+		}
+		if (porcentajeValue < 0 || porcentajeValue > 100) {
+			return res.status(400).json({
+				ok: false,
+				message: "porcentaje debe estar entre 0 y 100",
 			});
 		}
 
@@ -69,6 +87,7 @@ const createEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			porcentaje: porcentajeValue,
 			id_ecos: id_ecos || [],
 		});
 
@@ -198,6 +217,7 @@ const updateEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			porcentaje,
 			id_ecos, // Array de IDs de ecos
 		} = req.body;
 
@@ -206,6 +226,23 @@ const updateEspecialistaHandler = async (req, res) => {
 				ok: false,
 				message: "genero inválido",
 			});
+		}
+
+		let porcentajeValue;
+		if (porcentaje !== undefined) {
+			porcentajeValue = Number(porcentaje);
+			if (Number.isNaN(porcentajeValue)) {
+				return res.status(400).json({
+					ok: false,
+					message: "porcentaje inválido",
+				});
+			}
+			if (porcentajeValue < 0 || porcentajeValue > 100) {
+				return res.status(400).json({
+					ok: false,
+					message: "porcentaje debe estar entre 0 y 100",
+				});
+			}
 		}
 
 		const payload = {
@@ -218,6 +255,7 @@ const updateEspecialistaHandler = async (req, res) => {
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
+			porcentaje: porcentajeValue,
 			id_ecos, // Array de IDs de ecos
 		};
 
