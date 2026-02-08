@@ -614,11 +614,11 @@ const PacientesPage = () => {
 																		cita,
 																		informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
 																	})
-															}
-															className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+																}
+																className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
 															>
-															Ver
-														</button>
+																Ver
+															</button>
 														</td>
 														<td className="px-2 py-2 text-center">
 															{cita.estado_cita === 3 ? (
@@ -631,7 +631,7 @@ const PacientesPage = () => {
 																	onClick={() => handleAtenderCita(cita)}
 																	className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
 																>
-																Atender
+																	Atender
 																</button>
 															)}
 														</td>
