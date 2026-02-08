@@ -14,6 +14,7 @@ import VerResultadosModal from "../components/VerResultadosModal";
 import VerPagoModal from "../components/VerPagoModal";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import PosponerCitaModal from "../components/PosponerCitaModal";
+import RechazarPagoModal from "../components/RechazarPagoModal";
 import { FileText, Download, Eye, Check, X } from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
@@ -94,6 +95,7 @@ const TodasLasCitasPage = () => {
 	const [selectedCitaForUpload, setSelectedCitaForUpload] = useState<CitaCompleta | null>(null);
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
+	const [citaToReject, setCitaToReject] = useState<{ id_cita: string; nombre: string } | null>(null);
 
 	// Obtener datos del pago cuando se selecciona una cita
 	const {
@@ -287,29 +289,39 @@ const TodasLasCitasPage = () => {
 	};
 
 	const handleRechazarPago = async (id_cita: string) => {
-		const result = await Swal.fire({
-			icon: "warning",
-			title: "¿Rechazar pago?",
-			text: "Esta acción marcará el pago como rechazado.",
-			showCancelButton: true,
-			confirmButtonText: "Sí, rechazar",
-			cancelButtonText: "Cancelar",
-			confirmButtonColor: "#dc2626",
-		});
+		// Buscar nombre del paciente para mostrar en el modal
+		const cita = citas.find(c => c.id_cita === id_cita);
+		const nombrePaciente = cita
+			? `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim()
+			: "";
 
-		if (!result.isConfirmed) return;
+		// Abrir modal para ingresar motivo de rechazo
+		setCitaToReject({ id_cita, nombre: nombrePaciente });
+	};
+
+	const handleConfirmRechazar = async (motivo: string) => {
+		if (!citaToReject) return;
 
 		try {
-			await updateEstadoPago({ id_cita, estado_pago: 2 }).unwrap();
+			await updateEstadoPago({
+				id_cita: citaToReject.id_cita,
+				estado_pago: 2,
+				motivo_rechazo: motivo
+			}).unwrap();
+
+			setCitaToReject(null);
+
 			await Swal.fire({
 				icon: "success",
 				title: "Pago rechazado",
-				text: "El pago ha sido marcado como rechazado.",
-				timer: 2000,
+				text: "El pago ha sido rechazado y el paciente ha sido notificado.",
+				timer: 2500,
 				showConfirmButton: false,
 			});
+
 			refetch();
 		} catch (error: any) {
+			setCitaToReject(null);
 			Swal.fire({
 				icon: "error",
 				title: "Error",
@@ -881,6 +893,16 @@ const TodasLasCitasPage = () => {
 						refetch();
 						setSelectedCitaForPosponer(null);
 					}}
+				/>
+			)}
+
+			{/* Modal de rechazar pago */}
+			{citaToReject && (
+				<RechazarPagoModal
+					onClose={() => setCitaToReject(null)}
+					onConfirm={handleConfirmRechazar}
+					isLoading={isUpdating}
+					nombrePaciente={citaToReject.nombre}
 				/>
 			)}
 		</PageShell>

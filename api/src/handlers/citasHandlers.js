@@ -268,7 +268,7 @@ const listCitasConPagosHandler = async (req, res) => {
 const updateEstadoPagoHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { estado_pago } = req.body;
+		const { estado_pago, motivo_rechazo } = req.body;
 		const aprobado_por = req.user?.id;
 
 		if (!aprobado_por) {
@@ -286,10 +286,32 @@ const updateEstadoPagoHandler = async (req, res) => {
 			});
 		}
 
+		// Si se rechaza el pago, el motivo es obligatorio
+		if (
+			Number(estado_pago) === 2 &&
+			(!motivo_rechazo || !motivo_rechazo.trim())
+		) {
+			return res.status(400).json({
+				ok: false,
+				message: "Debe proporcionar un motivo para el rechazo",
+			});
+		}
+		if (
+			Number(estado_pago) === 2 &&
+			motivo_rechazo &&
+			motivo_rechazo.trim().length > 255
+		) {
+			return res.status(400).json({
+				ok: false,
+				message: "El motivo no puede exceder 255 caracteres",
+			});
+		}
+
 		const data = await updateEstadoPagoController({
 			id_cita: id,
 			estado_pago: Number(estado_pago),
 			aprobado_por,
+			motivo_rechazo: motivo_rechazo?.trim() || null,
 		});
 
 		return res.status(200).json({
@@ -298,8 +320,8 @@ const updateEstadoPagoHandler = async (req, res) => {
 				estado_pago === 1
 					? "Pago aprobado y cita confirmada"
 					: estado_pago === 2
-					? "Pago rechazado"
-					: "Estado de pago actualizado",
+						? "Pago rechazado"
+						: "Estado de pago actualizado",
 			data,
 		});
 	} catch (err) {
@@ -382,7 +404,7 @@ const getCitaByIdHandler = async (req, res) => {
 						citaId: id,
 						rol,
 						comparison: citaEspecialistaId === usuarioId,
-					}
+					},
 				);
 				return res.status(403).json({
 					ok: false,

@@ -13,6 +13,21 @@ import DaySummaryCard from "./DaySummaryCard";
 import NextAppointmentCard from "./NextAppointmentCard";
 import CitasPorResultadoCard from "./CitasPorResultadoCard";
 import CitasVerificacionPagoCard from "./CitasVerificacionPagoCard";
+import RecentNotificationsCard from "./RecentNotificationsCard";
+import { useGetMisNotificacionesQuery } from "../../notificaciones/notificacionesApi";
+
+const formatFecha = (value: string) => {
+	if (!value) return "";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleDateString("es-VE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+};
 
 const mapCitaToCardItem = (
 	cita: CitaEspecialista,
@@ -30,6 +45,14 @@ const DashboardEspecialista = () => {
 	const { data: rawCitas = [], isLoading } = useGetMisCitasQuery(undefined, {
 		skip: user?.rol !== "especialista",
 	});
+
+	const { data: notificaciones = [], isLoading: loadingNotificaciones } =
+		useGetMisNotificacionesQuery({ limit: 5 });
+	const notifications = notificaciones.map((n) => ({
+		id: n.id_notificacion,
+		title: n.titulo,
+		timeLabel: formatFecha(n.fecha_creacion),
+	}));
 
 	const citas: CitaEspecialista[] = rawCitas.map((cita) => ({
 		...cita,
@@ -53,14 +76,14 @@ const DashboardEspecialista = () => {
 	const nextCita = upcomingCitas[0];
 	const nextAppointment = nextCita
 		? {
-				patientName: `${nextCita.paciente_nombre} ${nextCita.paciente_apellido}`,
-				study: nextCita.eco_nombre,
-				dateLabel: formatDateLabel(nextCita.fecha_cita),
-				timeLabel: formatHora(nextCita.hora_cita),
-				paymentStatus:
-					nextCita.estado_pago === 1 ? "Pago aprobado" : "Pago pendiente",
-				statusLabel: "Confirmada",
-			}
+			patientName: `${nextCita.paciente_nombre} ${nextCita.paciente_apellido}`,
+			study: nextCita.eco_nombre,
+			dateLabel: formatDateLabel(nextCita.fecha_cita),
+			timeLabel: formatHora(nextCita.hora_cita),
+			paymentStatus:
+				nextCita.estado_pago === 1 ? "Pago aprobado" : "Pago pendiente",
+			statusLabel: "Confirmada",
+		}
 		: null;
 
 	const citasToday = citas.filter(
@@ -139,6 +162,17 @@ const DashboardEspecialista = () => {
 					citas={citasPendientesVerificacionPago}
 					isLoading={isLoading}
 					emptyMessage="Sin citas pendientes de verificación de pago."
+				/>
+			</div>
+
+			<div className="grid gap-4 lg:grid-cols-2">
+				<RecentNotificationsCard
+					notifications={notifications}
+					emptyMessage={
+						loadingNotificaciones
+							? "Cargando notificaciones..."
+							: undefined
+					}
 				/>
 			</div>
 		</div>

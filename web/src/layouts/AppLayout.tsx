@@ -16,6 +16,7 @@ import {
 	ListChecks,
 } from "lucide-react";
 import { useAuth } from "../shared";
+import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
 import Sidebar, { type NavItem } from "./Sidebar";
 import Topbar from "./Topbar";
 import { DolarInfoBanner } from "../features/dolar";
@@ -98,6 +99,17 @@ const AppLayout = () => {
 	const navItems = navByRole[role] ?? [];
 	const showShell = !!token && !isAuthRoute;
 
+	const { data: notificacionesNoLeidas = [] } = useGetMisNotificacionesQuery(
+		{ solo_no_leidas: true, limit: 200 },
+		{ skip: !token },
+	);
+	const unreadCount = notificacionesNoLeidas.length;
+	const navItemsWithBadges = navItems.map((item) =>
+		item.to === "/notificaciones" && unreadCount > 0
+			? { ...item, badge: unreadCount }
+			: item,
+	);
+
 	const handleLogout = () => {
 		logout();
 		navigate("/auth/login");
@@ -134,7 +146,7 @@ const AppLayout = () => {
 			)}
 			<div className="flex min-h-screen">
 				<Sidebar
-					navItems={navItems}
+					navItems={navItemsWithBadges}
 					isOpen={sidebarOpen}
 					onClose={closeSidebar}
 				/>

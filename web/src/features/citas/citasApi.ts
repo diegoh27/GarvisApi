@@ -140,12 +140,12 @@ const citasApi = baseApi.injectEndpoints({
 		}),
 		updateEstadoPago: builder.mutation<
 			{ id_cita: string; estado_pago: number; estado_cita: number },
-			{ id_cita: string; estado_pago: number }
+			{ id_cita: string; estado_pago: number; motivo_rechazo?: string }
 		>({
-			query: ({ id_cita, estado_pago }) => ({
+			query: ({ id_cita, estado_pago, motivo_rechazo }) => ({
 				url: `/citas/${id_cita}/estado-pago`,
 				method: "PATCH",
-				body: { estado_pago },
+				body: { estado_pago, motivo_rechazo },
 			}),
 			invalidatesTags: ["Citas"],
 		}),

@@ -6,6 +6,21 @@ import { getTodayKey, toDateKey } from "../utils/dateUtils";
 import DaySummaryCard from "./DaySummaryCard";
 import QuickAlertsCard from "./QuickAlertsCard";
 import QuickActionsModerador from "./QuickActionsModerador";
+import RecentNotificationsCard from "./RecentNotificationsCard";
+import { useGetMisNotificacionesQuery } from "../../notificaciones/notificacionesApi";
+
+const formatFecha = (value: string) => {
+	if (!value) return "";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleDateString("es-VE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+};
 
 const DashboardModerador = () => {
 	const { user } = useAuth();
@@ -44,26 +59,34 @@ const DashboardModerador = () => {
 	const moderadorAlerts = [
 		citasPendientesPago.length
 			? {
-					id: "alert-pagos",
-					message: `${citasPendientesPago.length} citas con pago pendiente por verificar.`,
-				}
+				id: "alert-pagos",
+				message: `${citasPendientesPago.length} citas con pago pendiente por verificar.`,
+			}
 			: null,
 		disponibilidadPendiente.length
 			? {
-					id: "alert-disponibilidad",
-					message: `${disponibilidadPendiente.length} disponibilidades pendientes de aprobar.`,
-				}
+				id: "alert-disponibilidad",
+				message: `${disponibilidadPendiente.length} disponibilidades pendientes de aprobar.`,
+			}
 			: null,
 		citasSinResultado.length
 			? {
-					id: "alert-resultados",
-					message: `${citasSinResultado.length} citas atendidas sin resultado.`,
-				}
+				id: "alert-resultados",
+				message: `${citasSinResultado.length} citas atendidas sin resultado.`,
+			}
 			: null,
 	].filter((alert): alert is { id: string; message: string } => Boolean(alert));
 
 	const loading =
 		loadingPagos || loadingDisponibilidad || loadingResultados;
+
+	const { data: notificaciones = [], isLoading: loadingNotificaciones } =
+		useGetMisNotificacionesQuery({ limit: 5 });
+	const notifications = notificaciones.map((n) => ({
+		id: n.id_notificacion,
+		title: n.titulo,
+		timeLabel: formatFecha(n.fecha_creacion),
+	}));
 
 	return (
 		<div className="space-y-6">
@@ -83,6 +106,17 @@ const DashboardModerador = () => {
 					alerts={moderadorAlerts}
 					emptyMessage={
 						loading ? "Cargando alertas..." : "Sin alertas pendientes."
+					}
+				/>
+			</div>
+
+			<div className="grid gap-4 lg:grid-cols-2">
+				<RecentNotificationsCard
+					notifications={notifications}
+					emptyMessage={
+						loadingNotificaciones
+							? "Cargando notificaciones..."
+							: undefined
 					}
 				/>
 			</div>

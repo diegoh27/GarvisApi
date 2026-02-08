@@ -409,16 +409,19 @@ const updateEstadoPagoController = async ({
 	id_cita,
 	estado_pago,
 	aprobado_por,
+	motivo_rechazo = null,
 }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
 
 		const [rows] = await conn.execute(
-			`SELECT estado_cita, estado_pago
-       FROM cita
-       WHERE id_cita = ?
-       FOR UPDATE`,
+			`SELECT c.estado_cita, c.estado_pago, c.id_paciente, c.id_representado,
+		c.fecha_cita, c.hora_cita, e.nombre AS eco_nombre
+	FROM cita c
+	LEFT JOIN eco e ON e.id_eco = c.id_eco
+	WHERE c.id_cita = ?
+	FOR UPDATE`,
 			[id_cita],
 		);
 		if (!rows.length) {
@@ -457,6 +460,50 @@ const updateEstadoPagoController = async ({
 				estado_pago,
 				id_cita,
 			]);
+		}
+
+		// Crear notificación si el pago fue rechazado
+		if (estado_pago === 2 && cita.id_paciente) {
+			const titulo = "Pago rechazado";
+			const fecha = cita.fecha_cita || "";
+			const hora = cita.hora_cita || "";
+			const ecoNombre = cita.eco_nombre ? ` (${cita.eco_nombre})` : "";
+			const motivo = motivo_rechazo ? motivo_rechazo.trim() : "";
+			let mensaje = `Tu pago para la cita ${fecha} ${hora}${ecoNombre} fue rechazado. Motivo: ${motivo}.`;
+			if (mensaje.length > 255) {
+				mensaje = `${mensaje.slice(0, 252)}...`;
+			}
+			await conn.execute(
+				`INSERT INTO notificacion (id_notificacion, id_usuario, titulo, mensaje, tipo, leida)
+         VALUES (?, ?, ?, ?, ?, 0)`,
+				[
+					crypto.randomUUID(),
+					cita.id_paciente,
+					titulo,
+					mensaje,
+					"pago_rechazado",
+				],
+			);
+		}
+
+		// Si se rechaza el pago, crear notificación para el paciente/representado
+		if (estado_pago === 2 && motivo_rechazo) {
+			const id_usuario = cita.representado_usuario || cita.paciente_usuario;
+			if (id_usuario) {
+				const id_notificacion = crypto.randomUUID();
+				await conn.execute(
+					`INSERT INTO notificacion (id_notificacion, id_usuario, titulo, mensaje, tipo, leida)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+					[
+						id_notificacion,
+						id_usuario,
+						"Pago rechazado",
+						motivo_rechazo,
+						"rechazo_pago",
+						0,
+					],
+				);
+			}
 		}
 
 		await conn.commit();
