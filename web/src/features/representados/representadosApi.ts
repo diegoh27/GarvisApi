@@ -5,7 +5,7 @@ export type Representado = {
 	id_paciente: string;
 	nombre: string;
 	apellido: string;
-	cedula: string;
+	cedula: string | null;
 	fecha_nacimiento: string;
 	genero: "Masculino" | "Femenino" | "Otro";
 	parentesco: string | null;
@@ -30,7 +30,17 @@ export type ListRepresentadosResponse = {
 export type CreateRepresentadoPayload = {
 	nombre: string;
 	apellido: string;
-	cedula: string;
+	cedula?: string | null;
+	fecha_nacimiento: string;
+	genero: "Masculino" | "Femenino" | "Otro";
+	parentesco?: string | null;
+};
+
+export type UpdateRepresentadoPayload = {
+	id_representado: string;
+	nombre: string;
+	apellido: string;
+	cedula?: string | null;
 	fecha_nacimiento: string;
 	genero: "Masculino" | "Femenino" | "Otro";
 	parentesco?: string | null;
@@ -79,6 +89,24 @@ const representadosApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Representados"],
 		}),
+		updateRepresentado: builder.mutation<
+			Representado,
+			UpdateRepresentadoPayload
+		>({
+			query: ({ id_representado, ...body }) => ({
+				url: `/representados/${id_representado}`,
+				method: "PUT",
+				body,
+			}),
+			invalidatesTags: ["Representados"],
+		}),
+		deleteRepresentado: builder.mutation<void, string>({
+			query: (id_representado) => ({
+				url: `/representados/${id_representado}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Representados"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -87,6 +115,8 @@ export const {
 	useGetRepresentadosQuery,
 	useGetParentescosQuery,
 	useCreateRepresentadoMutation,
+	useUpdateRepresentadoMutation,
+	useDeleteRepresentadoMutation,
 } = representadosApi;
 
 export { representadosApi };

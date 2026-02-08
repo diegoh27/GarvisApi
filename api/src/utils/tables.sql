@@ -189,7 +189,7 @@ IF NOT EXISTS representado
 (60) NOT NULL,
   fecha_nacimiento DATE NOT NULL,
   cedula VARCHAR
-(20) NOT NULL,
+(20) NULL,
   genero ENUM
 ('Masculino','Femenino','Otro') NOT NULL,
   parentesco VARCHAR

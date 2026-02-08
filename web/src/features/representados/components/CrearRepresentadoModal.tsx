@@ -36,8 +36,7 @@ const CrearRepresentadoModal = ({
 		else if (form.nombre.length > 60) next.nombre = "Máximo 60 caracteres";
 		if (!form.apellido.trim()) next.apellido = "El apellido es requerido";
 		else if (form.apellido.length > 60) next.apellido = "Máximo 60 caracteres";
-		if (!form.cedula.trim()) next.cedula = "La cédula es requerida";
-		else if (form.cedula.length > 20) next.cedula = "Máximo 20 caracteres";
+		if (form.cedula.trim() && form.cedula.length > 20) next.cedula = "Máximo 20 caracteres";
 		if (!form.fecha_nacimiento) next.fecha_nacimiento = "La fecha de nacimiento es requerida";
 		if (!form.genero) next.genero = "El género es requerido";
 		else if (!GENEROS.includes(form.genero)) next.genero = "Género no válido";
@@ -53,7 +52,7 @@ const CrearRepresentadoModal = ({
 			await createRepresentado({
 				nombre: form.nombre.trim(),
 				apellido: form.apellido.trim(),
-				cedula: form.cedula.trim(),
+				cedula: form.cedula.trim() || null,
 				fecha_nacimiento: form.fecha_nacimiento,
 				genero: form.genero as (typeof GENEROS)[number],
 				parentesco: form.parentesco.trim() || null,
@@ -142,7 +141,7 @@ const CrearRepresentadoModal = ({
 
 					<div>
 						<label htmlFor="cedula" className="mb-1 block text-sm font-medium text-brand-800">
-							Cédula
+							Cédula (opcional)
 						</label>
 						<input
 							id="cedula"
