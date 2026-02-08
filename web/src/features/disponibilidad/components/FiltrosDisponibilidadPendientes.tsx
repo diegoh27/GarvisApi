@@ -1,10 +1,18 @@
 import { Search } from "lucide-react";
 
 export type OrdenFecha = "reciente" | "antigua";
+export type EstadoFiltro =
+	| "todas"
+	| "pendientes"
+	| "aprobadas"
+	| "rechazadas"
+	| "canceladas"
+	| "citas";
 
 export type FiltrosDisponibilidadPendientesValues = {
 	query: string;
 	ordenFecha: OrdenFecha;
+	estado: EstadoFiltro;
 	fechaDesde: string;
 	fechaHasta: string;
 	horaDesde: string;
@@ -46,6 +54,24 @@ const FiltrosDisponibilidadPendientes = ({
 
 			<div>
 				<label className="mb-2 block text-xs font-medium text-brand-700">
+					Mostrar
+				</label>
+				<select
+					value={value.estado}
+					onChange={(e) => update({ estado: e.target.value as EstadoFiltro })}
+					className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
+				>
+					<option value="todas">Todas</option>
+					<option value="pendientes">Pendientes</option>
+					<option value="aprobadas">Aprobadas</option>
+					<option value="rechazadas">Rechazadas</option>
+					<option value="canceladas">Canceladas</option>
+					<option value="citas">Con cita</option>
+				</select>
+			</div>
+
+			<div>
+				<label className="mb-2 block text-xs font-medium text-brand-700">
 					Ordenar por fecha
 				</label>
 				<div className="flex flex-wrap gap-2">
@@ -53,8 +79,8 @@ const FiltrosDisponibilidadPendientes = ({
 						type="button"
 						onClick={() => update({ ordenFecha: "reciente" })}
 						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${value.ordenFecha === "reciente"
-								? "bg-brand-700 text-paper"
-								: "bg-cloud text-brand-800 hover:bg-mist"
+							? "bg-brand-700 text-paper"
+							: "bg-cloud text-brand-800 hover:bg-mist"
 							}`}
 					>
 						Más recientes primero
@@ -63,8 +89,8 @@ const FiltrosDisponibilidadPendientes = ({
 						type="button"
 						onClick={() => update({ ordenFecha: "antigua" })}
 						className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${value.ordenFecha === "antigua"
-								? "bg-brand-700 text-paper"
-								: "bg-cloud text-brand-800 hover:bg-mist"
+							? "bg-brand-700 text-paper"
+							: "bg-cloud text-brand-800 hover:bg-mist"
 							}`}
 					>
 						Más antiguas primero

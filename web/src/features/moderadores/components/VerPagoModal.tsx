@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import type { PagoData } from "../moderadoresApi";
 
@@ -55,6 +56,49 @@ const VerPagoModal = ({
 	isUpdating = false,
 }: VerPagoModalProps) => {
 	const puedeVerificar = showAcciones && id_cita && pago?.estado_pago === 0 && onAprobar && onRechazar;
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const [zoom, setZoom] = useState(1);
+	const [pan, setPan] = useState({ x: 0, y: 0 });
+	const [isDragging, setIsDragging] = useState(false);
+	const dragStart = useRef({ x: 0, y: 0 });
+	const panStart = useRef({ x: 0, y: 0 });
+
+	useEffect(() => {
+		if (isPreviewOpen) {
+			setZoom(1);
+			setPan({ x: 0, y: 0 });
+		}
+	}, [isPreviewOpen, pago?.imagen]);
+
+	const handleZoomWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+		event.preventDefault();
+		const delta = event.deltaY < 0 ? 0.1 : -0.1;
+		setZoom((current) => {
+			const next = Math.max(1, Math.min(4, Number((current + delta).toFixed(2))));
+			if (next === 1) {
+				setPan({ x: 0, y: 0 });
+			}
+			return next;
+		});
+	};
+
+	const handleDragStart = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (zoom <= 1) return;
+		setIsDragging(true);
+		dragStart.current = { x: event.clientX, y: event.clientY };
+		panStart.current = { x: pan.x, y: pan.y };
+	};
+
+	const handleDragMove = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (!isDragging) return;
+		const deltaX = event.clientX - dragStart.current.x;
+		const deltaY = event.clientY - dragStart.current.y;
+		setPan({ x: panStart.current.x + deltaX, y: panStart.current.y + deltaY });
+	};
+
+	const handleDragEnd = () => {
+		setIsDragging(false);
+	};
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 			<div className="relative w-full max-w-lg rounded-xl bg-paper shadow-lg flex flex-col max-h-[85vh]">
@@ -214,12 +258,22 @@ const VerPagoModal = ({
 									<img
 										src={pago.imagen}
 										alt="Comprobante de pago"
-										className="w-full h-auto object-contain max-h-64"
+										className="w-full h-auto object-contain max-h-64 cursor-zoom-in"
+										onClick={() => setIsPreviewOpen(true)}
 										onError={(e) => {
 											(e.target as HTMLImageElement).src =
 												"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%236b7280' font-family='sans-serif' font-size='16'%3EImagen no disponible%3C/text%3E%3C/svg%3E";
 										}}
 									/>
+								</div>
+								<div className="mt-2 flex justify-end">
+									<button
+										type="button"
+										onClick={() => setIsPreviewOpen(true)}
+										className="rounded-lg border border-brand-700 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-cloud"
+									>
+										Ver en grande
+									</button>
 								</div>
 							</div>
 						</div>
@@ -256,6 +310,46 @@ const VerPagoModal = ({
 					</button>
 				</div>
 			</div>
+			{isPreviewOpen && pago?.imagen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+					<div className="relative w-full max-w-5xl">
+						<button
+							type="button"
+							onClick={() => setIsPreviewOpen(false)}
+							className="absolute -top-10 right-0 rounded-full bg-paper p-2 text-brand-800 shadow hover:bg-cloud"
+							aria-label="Cerrar vista ampliada"
+						>
+							<X className="h-5 w-5" />
+						</button>
+						<div
+							className="rounded-xl bg-paper p-3"
+							onWheel={handleZoomWheel}
+						>
+							<div
+								className={
+									`flex max-h-[80vh] w-full items-center justify-center overflow-auto ${zoom > 1 ? "cursor-grab" : ""
+									}`
+								}
+								onMouseDown={handleDragStart}
+								onMouseMove={handleDragMove}
+								onMouseUp={handleDragEnd}
+								onMouseLeave={handleDragEnd}
+							>
+								<img
+									src={pago.imagen}
+									alt="Comprobante de pago en grande"
+									className={
+										`max-h-none max-w-none ${isDragging ? "cursor-grabbing" : ""}`
+									}
+									style={{
+										transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+									}}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

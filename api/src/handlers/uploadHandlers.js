@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { uploadMulterFileToCloudinary } = require("../utils/uploadToCloudinary");
+const { uploadMulterFileToLocal } = require("../utils/uploadToLocal");
 
 // Configurar multer para almacenar en memoria (buffer)
 const storage = multer.memoryStorage();
@@ -26,9 +26,9 @@ const upload = multer({
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs."
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs.",
 				),
-				false
+				false,
 			);
 		}
 	},
@@ -69,10 +69,10 @@ const uploadFirmaHandler = async (req, res) => {
 			});
 		}
 
-		// Subir a Cloudinary
-		const result = await uploadMulterFileToCloudinary(
+		// Guardar en VPS
+		const result = await uploadMulterFileToLocal(
 			req.file,
-			"garbis/informes/firmas"
+			"garbis/informes/firmas",
 		);
 
 		return res.status(200).json({
@@ -121,10 +121,10 @@ const uploadInformePDFHandler = async (req, res) => {
 			});
 		}
 
-		// Subir a Cloudinary
-		const result = await uploadMulterFileToCloudinary(
+		// Guardar en VPS
+		const result = await uploadMulterFileToLocal(
 			req.file,
-			"garbis/informes/pdfs"
+			"garbis/informes/pdfs",
 		);
 
 		return res.status(200).json({
@@ -152,20 +152,15 @@ const uploadComprobantePago = multer({
 	},
 	fileFilter: (req, file, cb) => {
 		// Solo permitir imágenes
-		const allowedMimes = [
-			"image/jpeg",
-			"image/jpg",
-			"image/png",
-			"image/webp",
-		];
+		const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 		if (allowedMimes.includes(file.mimetype)) {
 			cb(null, true);
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP)."
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP).",
 				),
-				false
+				false,
 			);
 		}
 	},
@@ -200,10 +195,10 @@ const uploadComprobantePagoHandler = async (req, res) => {
 			});
 		}
 
-		// Subir a Cloudinary
-		const result = await uploadMulterFileToCloudinary(
+		// Guardar en VPS
+		const result = await uploadMulterFileToLocal(
 			req.file,
-			"garbis/pagos/comprobantes"
+			"garbis/pagos/comprobantes",
 		);
 
 		return res.status(200).json({
@@ -231,20 +226,15 @@ const uploadOrdenMedica = multer({
 	},
 	fileFilter: (req, file, cb) => {
 		// Solo permitir imágenes
-		const allowedMimes = [
-			"image/jpeg",
-			"image/jpg",
-			"image/png",
-			"image/webp",
-		];
+		const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 		if (allowedMimes.includes(file.mimetype)) {
 			cb(null, true);
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP)."
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP).",
 				),
-				false
+				false,
 			);
 		}
 	},
@@ -279,10 +269,10 @@ const uploadOrdenMedicaHandler = async (req, res) => {
 			});
 		}
 
-		// Subir a Cloudinary
-		const result = await uploadMulterFileToCloudinary(
+		// Guardar en VPS
+		const result = await uploadMulterFileToLocal(
 			req.file,
-			"garbis/citas/ordenes-medicas"
+			"garbis/citas/ordenes-medicas",
 		);
 
 		return res.status(200).json({

@@ -4,7 +4,10 @@ export {
 	disponibilidadApi,
 	useGetDisponibilidadPublicaQuery,
 	useGetDisponibilidadPendientesQuery,
+	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
 	useRechazarDisponibilidadMutation,
+	useCancelarDisponibilidadAdminMutation,
+	useCancelarDisponibilidadLoteMutation,
 } from "./disponibilidadApi";
 export type { DisponibilidadState, DisponibilidadPendiente } from "./disponibilidadApi";

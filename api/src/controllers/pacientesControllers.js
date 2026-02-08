@@ -137,6 +137,7 @@ const getPacienteByIdController = async (id_paciente) => {
       p.tipo_sangre,
       p.descripcion,
       p.direccion,
+	p.rif,
       p.contacto_emergencia_nombre,
       p.contacto_emergencia_telefono
     FROM paciente p
@@ -185,6 +186,7 @@ const updatePacienteController = async (id_paciente, payload) => {
 			"tipo_sangre",
 			"descripcion",
 			"direccion",
+			"rif",
 			"contacto_emergencia_nombre",
 			"contacto_emergencia_telefono",
 		];
@@ -236,7 +238,16 @@ const deactivatePacienteController = async (id_paciente) => {
 	};
 };
 
-const updatePacienteSelfController = async ({ id_usuario, telefono, contrasena }) => {
+const updatePacienteSelfController = async ({
+	id_usuario,
+	telefono,
+	contrasena,
+	tipo_sangre,
+	descripcion,
+	direccion,
+	contacto_emergencia_nombre,
+	contacto_emergencia_telefono,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -265,22 +276,59 @@ const updatePacienteSelfController = async ({ id_usuario, telefono, contrasena }
 			params.push(hashedPassword);
 		}
 
-		if (!updates.length) {
+		const pacienteUpdates = [];
+		const pacienteParams = [];
+		if (tipo_sangre !== undefined) {
+			pacienteUpdates.push("tipo_sangre = ?");
+			pacienteParams.push(tipo_sangre);
+		}
+		if (descripcion !== undefined) {
+			pacienteUpdates.push("descripcion = ?");
+			pacienteParams.push(descripcion);
+		}
+		if (direccion !== undefined) {
+			pacienteUpdates.push("direccion = ?");
+			pacienteParams.push(direccion);
+		}
+		if (contacto_emergencia_nombre !== undefined) {
+			pacienteUpdates.push("contacto_emergencia_nombre = ?");
+			pacienteParams.push(contacto_emergencia_nombre);
+		}
+		if (contacto_emergencia_telefono !== undefined) {
+			pacienteUpdates.push("contacto_emergencia_telefono = ?");
+			pacienteParams.push(contacto_emergencia_telefono);
+		}
+
+		if (!updates.length && !pacienteUpdates.length) {
 			const err = new Error("No hay campos para actualizar");
 			err.code = "NO_FIELDS";
 			throw err;
 		}
 
-		const sql = `
+		let totalUpdated = 0;
+		if (updates.length) {
+			const sql = `
       UPDATE usuario
       SET ${updates.join(", ")}
       WHERE id_usuario = ?
     `;
-		params.push(id_usuario);
-		const [result] = await conn.execute(sql, params);
+			params.push(id_usuario);
+			const [result] = await conn.execute(sql, params);
+			totalUpdated += result.affectedRows;
+		}
+		if (pacienteUpdates.length) {
+			const sqlPaciente = `
+      UPDATE paciente
+      SET ${pacienteUpdates.join(", ")}
+      WHERE id_paciente = ?
+    `;
+			pacienteParams.push(id_usuario);
+			const [resultPaciente] = await conn.execute(sqlPaciente, pacienteParams);
+			totalUpdated += resultPaciente.affectedRows;
+		}
 
 		await conn.commit();
-		return { updated: result.affectedRows, id_usuario };
+		return { updated: totalUpdated, id_usuario };
 	} catch (err) {
 		await conn.rollback();
 		throw err;

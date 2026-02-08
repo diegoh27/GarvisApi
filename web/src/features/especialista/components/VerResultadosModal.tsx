@@ -1,32 +1,25 @@
-import { X, ExternalLink, FileText, Image as ImageIcon, Trash2, Download } from "lucide-react";
+import { X, ExternalLink, FileText, Image as ImageIcon, Download } from "lucide-react";
 import Swal from "sweetalert2";
 
 type VerResultadosModalProps = {
 	archivos: string[];
 	pacienteNombre: string;
 	ecoNombre: string;
-	idCita: string;
 	onClose: () => void;
-	onArchivoDeleted?: () => void; // Callback para refrescar datos después de eliminar
 };
 
 const VerResultadosModal = ({
 	archivos,
 	pacienteNombre,
 	ecoNombre,
-	idCita,
 	onClose,
-	onArchivoDeleted,
 }: VerResultadosModalProps) => {
 	// Nota: Los especialistas solo pueden ver, no eliminar
-	const canDelete = false; // Solo moderadores pueden eliminar
 	const getFileType = (url: string): "image" | "pdf" | "unknown" => {
 		const lowerUrl = url.toLowerCase();
-		// Para Cloudinary, los PDFs se almacenan como "raw", así que buscar /raw/ en la URL
 		if (lowerUrl.includes("/raw/") || lowerUrl.includes(".pdf") || lowerUrl.includes("pdf")) {
 			return "pdf";
 		}
-		// Para Cloudinary, las imágenes se almacenan como "image", así que buscar /image/ en la URL
 		if (
 			lowerUrl.includes("/image/") ||
 			lowerUrl.includes(".jpg") ||
@@ -42,17 +35,12 @@ const VerResultadosModal = ({
 
 	const normalizeUrl = (url: string): string => {
 		let validUrl = url.trim();
-		
+
 		// Si la URL no comienza con http:// o https://, agregar https://
 		if (!validUrl.match(/^https?:\/\//i)) {
-			// Si parece ser una URL de Cloudinary sin protocolo, agregar https://
-			if (validUrl.includes("cloudinary") || validUrl.includes("res.cloudinary")) {
-				validUrl = `https://${validUrl}`;
-			} else {
-				throw new Error(`URL inválida: ${url}`);
-			}
+			validUrl = `https://${validUrl}`;
 		}
-		
+
 		// Validar que sea una URL válida
 		new URL(validUrl);
 		return validUrl;
@@ -62,13 +50,13 @@ const VerResultadosModal = ({
 		try {
 			const validUrl = normalizeUrl(url);
 			const fileType = getFileType(validUrl);
-			
+
 			// Para PDFs, usar Google Docs Viewer para visualizar en el navegador
 			if (fileType === "pdf") {
 				// Codificar la URL para Google Docs Viewer
 				const encodedUrl = encodeURIComponent(validUrl);
 				const viewerUrl = `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
-				
+
 				// Abrir en nueva pestaña
 				window.open(viewerUrl, "_blank", "noopener,noreferrer");
 			} else {
@@ -85,7 +73,7 @@ const VerResultadosModal = ({
 		try {
 			const validUrl = normalizeUrl(url);
 			const fileType = getFileType(validUrl);
-			
+
 			// Mostrar indicador de carga
 			Swal.fire({
 				title: "Descargando...",
@@ -95,21 +83,21 @@ const VerResultadosModal = ({
 					Swal.showLoading();
 				},
 			});
-			
+
 			// Hacer fetch del archivo
 			const response = await fetch(validUrl);
 			if (!response.ok) {
 				throw new Error(`Error al descargar el archivo: ${response.statusText}`);
 			}
-			
+
 			// Obtener el arrayBuffer primero
 			const arrayBuffer = await response.arrayBuffer();
 			const contentType = response.headers.get("content-type") || "";
-			
+
 			// Determinar el tipo MIME y extensión
 			let mimeType: string;
 			let extension: string;
-			
+
 			if (fileType === "pdf") {
 				mimeType = "application/pdf";
 				extension = ".pdf";
@@ -131,7 +119,7 @@ const VerResultadosModal = ({
 				mimeType = contentType || "application/octet-stream";
 				extension = "";
 			}
-			
+
 			// Crear el nombre del archivo (sanitizar caracteres especiales)
 			const sanitizeFileName = (name: string) => {
 				return name
@@ -139,24 +127,24 @@ const VerResultadosModal = ({
 					.replace(/[^a-zA-Z0-9_\-]/g, "") // Remover caracteres especiales excepto guiones y guiones bajos
 					.substring(0, 50); // Limitar longitud
 			};
-			
+
 			const fileName = `resultado_${sanitizeFileName(pacienteNombre)}_${sanitizeFileName(ecoNombre)}_${index + 1}${extension}`;
-			
+
 			// Crear el File con el tipo MIME correcto (File tiene mejor soporte para download)
 			const file = new File([arrayBuffer], fileName, { type: mimeType });
-			
+
 			// Crear un objeto URL del file
 			const fileUrl = URL.createObjectURL(file);
-			
+
 			// Crear un enlace temporal para descargar
 			const link = document.createElement("a");
 			link.href = fileUrl;
 			link.download = fileName;
 			link.style.display = "none";
-			
+
 			// Agregar al DOM
 			document.body.appendChild(link);
-			
+
 			// Usar un pequeño delay para asegurar que el DOM esté listo
 			setTimeout(() => {
 				link.click();

@@ -139,7 +139,10 @@ const updatePacienteHandler = async (req, res) => {
 		const { id } = req.params;
 		const payload = req.body;
 
-		if (payload.genero && !["Masculino", "Femenino", "Otro"].includes(payload.genero)) {
+		if (
+			payload.genero &&
+			!["Masculino", "Femenino", "Otro"].includes(payload.genero)
+		) {
 			return res.status(400).json({
 				ok: false,
 				message: "genero inválido (Masculino | Femenino | Otro)",
@@ -229,13 +232,26 @@ const getPacienteSelfHandler = async (req, res) => {
 
 const updatePacienteSelfHandler = async (req, res) => {
 	try {
-		const { telefono, contrasena } = req.body;
+		const {
+			telefono,
+			contrasena,
+			tipo_sangre,
+			descripcion,
+			direccion,
+			contacto_emergencia_nombre,
+			contacto_emergencia_telefono,
+		} = req.body;
 		const id_usuario = req.user?.id;
 
 		const result = await updatePacienteSelfController({
 			id_usuario,
 			telefono,
 			contrasena,
+			tipo_sangre,
+			descripcion,
+			direccion,
+			contacto_emergencia_nombre,
+			contacto_emergencia_telefono,
 		});
 
 		if (!result.updated) {

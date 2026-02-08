@@ -36,6 +36,7 @@ const RegistrarEspecialistaForm = () => {
 		contrasena: "",
 		confirmar_contrasena: "",
 		id_especialidad: "",
+		porcentaje: "",
 		codigo_colegiatura: "",
 		id_ecos: [] as string[], // Array de IDs de ecos seleccionados
 	});
@@ -85,7 +86,7 @@ const RegistrarEspecialistaForm = () => {
 			const spaceBelow = window.innerHeight - rect.bottom;
 			const spaceAbove = rect.top;
 			const dropdownHeight = 240; // max-h-60 = 240px aproximadamente
-			
+
 			// Si no hay suficiente espacio abajo pero sí arriba, abrir hacia arriba
 			if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
 				setDropdownPosition("top");
@@ -115,6 +116,13 @@ const RegistrarEspecialistaForm = () => {
 				if (!value) return "Confirma tu contraseña";
 				if (value !== form.contrasena) return "Las contraseñas no coinciden";
 				return "";
+			case "porcentaje": {
+				if (!value.trim()) return "El porcentaje es requerido";
+				const parsed = Number(value);
+				if (Number.isNaN(parsed)) return "Porcentaje inválido";
+				if (parsed < 0 || parsed > 100) return "El porcentaje debe estar entre 0 y 100";
+				return "";
+			}
 			case "id_ecos":
 				if (!Array.isArray(value) || value.length === 0) {
 					return "Debes seleccionar al menos un eco";
@@ -128,17 +136,17 @@ const RegistrarEspecialistaForm = () => {
 	const updateField = (field: keyof typeof form, value: string | string[]) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
 		setError("");
-		
+
 		// Validar el campo
 		const fieldError = validateField(field, value as string);
 		setFieldErrors((prev) => ({ ...prev, [field]: fieldError }));
-		
+
 		// Validar telefono_numero cuando cambia telefono_prefijo
 		if (field === "telefono_prefijo" && form.telefono_numero) {
 			const telefonoError = validateField("telefono_numero", form.telefono_numero);
 			setFieldErrors((prev) => ({ ...prev, telefono_numero: telefonoError }));
 		}
-		
+
 		// Si se cambia la contraseña, revalidar confirmar_contrasena
 		if (field === "contrasena" && form.confirmar_contrasena) {
 			const confirmError = validateField("confirmar_contrasena", form.confirmar_contrasena);
@@ -155,9 +163,10 @@ const RegistrarEspecialistaForm = () => {
 		Object.keys(form).forEach((field) => {
 			// Saltar campos que no se validan directamente
 			if (field === "telefono_prefijo" || field === "codigo_colegiatura") return;
-			
+
 			const fieldValue = form[field as keyof typeof form];
-			const fieldError = validateField(field as keyof typeof form, fieldValue as string | string[]);
+			if (Array.isArray(fieldValue)) return;
+			const fieldError = validateField(field as keyof typeof form, fieldValue as string);
 			if (fieldError) {
 				errors[field] = fieldError;
 			}
@@ -175,6 +184,7 @@ const RegistrarEspecialistaForm = () => {
 			"contrasena",
 			"confirmar_contrasena",
 			"id_especialidad",
+			"porcentaje",
 		];
 		const missing = required.filter(
 			(field) => !form[field as keyof typeof form]
@@ -197,6 +207,12 @@ const RegistrarEspecialistaForm = () => {
 			return;
 		}
 
+		const porcentajeValue = Number(form.porcentaje);
+		if (Number.isNaN(porcentajeValue)) {
+			setError("Porcentaje inválido.");
+			return;
+		}
+
 		try {
 			await crearEspecialista({
 				nombre: form.nombre,
@@ -208,6 +224,7 @@ const RegistrarEspecialistaForm = () => {
 				telefono: `${form.telefono_prefijo}${form.telefono_numero}`,
 				contrasena: form.contrasena,
 				id_especialidad: form.id_especialidad,
+				porcentaje: porcentajeValue,
 				codigo_colegiatura: form.codigo_colegiatura || undefined,
 				id_ecos: form.id_ecos,
 			}).unwrap();
@@ -278,9 +295,8 @@ const RegistrarEspecialistaForm = () => {
 						name="correo"
 						autoComplete="email"
 						required
-						className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-							fieldErrors.correo ? "border-red-500" : "border-brand-300"
-						}`}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.correo ? "border-red-500" : "border-brand-300"
+							}`}
 						value={form.correo}
 						onChange={(e) => updateField("correo", e.target.value)}
 					/>
@@ -309,9 +325,8 @@ const RegistrarEspecialistaForm = () => {
 								type="tel"
 								required
 								placeholder="Número (7 dígitos)"
-								className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-									fieldErrors.telefono_numero ? "border-red-500" : "border-brand-300"
-								}`}
+								className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.telefono_numero ? "border-red-500" : "border-brand-300"
+									}`}
 								value={form.telefono_numero}
 								onChange={(e) => updateField("telefono_numero", e.target.value.replace(/\D/g, ""))}
 								maxLength={7}
@@ -331,9 +346,8 @@ const RegistrarEspecialistaForm = () => {
 						required
 						value={form.contrasena}
 						onChange={(value) => updateField("contrasena", value)}
-						className={`h-11 w-full rounded-lg border bg-paper px-3 pr-10 text-sm outline-none focus:border-brand-500 ${
-							fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
-						}`}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 pr-10 text-sm outline-none focus:border-brand-500 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
+							}`}
 					/>
 					{fieldErrors.contrasena && (
 						<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
@@ -345,9 +359,8 @@ const RegistrarEspecialistaForm = () => {
 						required
 						value={form.confirmar_contrasena}
 						onChange={(value) => updateField("confirmar_contrasena", value)}
-						className={`h-11 w-full rounded-lg border bg-paper px-3 pr-10 text-sm outline-none focus:border-brand-500 ${
-							fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
-						}`}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 pr-10 text-sm outline-none focus:border-brand-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
+							}`}
 					/>
 					{fieldErrors.confirmar_contrasena && (
 						<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>
@@ -427,6 +440,27 @@ const RegistrarEspecialistaForm = () => {
 
 			<div>
 				<label className="mb-1 block text-sm font-medium text-brand-700">
+					Porcentaje para especialista <span className="text-red-500">*</span>
+				</label>
+				<input
+					type="number"
+					required
+					min={0}
+					max={100}
+					step="0.01"
+					className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-300"
+						}`}
+					value={form.porcentaje}
+					onChange={(e) => updateField("porcentaje", e.target.value)}
+					placeholder="Ej: 35"
+				/>
+				{fieldErrors.porcentaje && (
+					<p className="mt-1 text-xs text-red-500">{fieldErrors.porcentaje}</p>
+				)}
+			</div>
+
+			<div>
+				<label className="mb-1 block text-sm font-medium text-brand-700">
 					Ecos <span className="text-red-500">*</span>
 				</label>
 				<div className="relative" ref={ecosDropdownRef}>
@@ -435,30 +469,27 @@ const RegistrarEspecialistaForm = () => {
 						ref={ecosButtonRef}
 						onClick={handleToggleDropdown}
 						disabled={loadingEcos}
-						className={`h-11 w-full rounded-lg border bg-paper px-3 text-left text-sm outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between ${
-							fieldErrors.id_ecos ? "border-red-500" : "border-brand-300"
-						}`}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 text-left text-sm outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between ${fieldErrors.id_ecos ? "border-red-500" : "border-brand-300"
+							}`}
 					>
 						<span className="truncate">
 							{loadingEcos
 								? "Cargando ecos..."
 								: form.id_ecos.length === 0
-								? "Selecciona los ecos"
-								: form.id_ecos.length === 1
-								? "1 eco seleccionado"
-								: `${form.id_ecos.length} ecos seleccionados`}
+									? "Selecciona los ecos"
+									: form.id_ecos.length === 1
+										? "1 eco seleccionado"
+										: `${form.id_ecos.length} ecos seleccionados`}
 						</span>
 						<ChevronDown
-							className={`h-4 w-4 text-brand-600 transition-transform ${
-								isEcosDropdownOpen ? "rotate-180" : ""
-							}`}
+							className={`h-4 w-4 text-brand-600 transition-transform ${isEcosDropdownOpen ? "rotate-180" : ""
+								}`}
 						/>
 					</button>
 					{isEcosDropdownOpen && (
 						<div
-							className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${
-								dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
-							}`}
+							className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+								}`}
 						>
 							{loadingEcos ? (
 								<div className="p-3 text-sm text-brand-600">Cargando ecos...</div>
@@ -475,16 +506,14 @@ const RegistrarEspecialistaForm = () => {
 													key={eco.id_eco}
 													type="button"
 													onClick={() => toggleEco(eco.id_eco)}
-													className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-brand-50 transition-colors ${
-														isSelected ? "bg-brand-50" : ""
-													}`}
+													className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
+														}`}
 												>
 													<div
-														className={`flex h-4 w-4 items-center justify-center rounded border ${
-															isSelected
-																? "border-brand-700 bg-brand-700"
-																: "border-brand-300 bg-paper"
-														}`}
+														className={`flex h-4 w-4 items-center justify-center rounded border ${isSelected
+															? "border-brand-700 bg-brand-700"
+															: "border-brand-300 bg-paper"
+															}`}
 													>
 														{isSelected && <Check className="h-3 w-3 text-paper" />}
 													</div>

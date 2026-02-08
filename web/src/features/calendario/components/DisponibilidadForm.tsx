@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { TimeOption } from "../types";
 import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosApi";
 import { useAuth } from "../../../shared";
+import Swal from "sweetalert2";
 
 export type SlotPreview = { fecha: string; hora_inicio: string; hora_fin: string };
 
@@ -30,6 +31,27 @@ const generateSlots = (
 		const hora_inicio = minutesToTime(m);
 		const hora_fin = minutesToTime(m + 20);
 		slots.push({ fecha, hora_inicio, hora_fin });
+	}
+	return slots;
+};
+
+const generateSlotsRange = (
+	fechaDesde: string,
+	fechaHasta: string,
+	horaInicio: string,
+	horaFin: string
+): SlotPreview[] => {
+	const startDate = new Date(`${fechaDesde}T00:00:00`);
+	const endDate = new Date(`${fechaHasta}T00:00:00`);
+	if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+		return [];
+	}
+	if (startDate > endDate) return [];
+
+	const slots: SlotPreview[] = [];
+	for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+		const dateKey = d.toISOString().slice(0, 10);
+		slots.push(...generateSlots(dateKey, horaInicio, horaFin));
 	}
 	return slots;
 };
@@ -71,15 +93,58 @@ const DisponibilidadForm = ({
 }: DisponibilidadFormProps) => {
 	const useCalendarSelection = selectedCellsCount > 0;
 	const [modoRango, setModoRango] = useState(false);
-	const [fechaRango, setFechaRango] = useState("");
+	const [fechaDesde, setFechaDesde] = useState("");
+	const [fechaHasta, setFechaHasta] = useState("");
 	const [horaInicioRango, setHoraInicioRango] = useState("");
 	const [horaFinRango, setHoraFinRango] = useState("");
 	const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
+	const [rangeError, setRangeError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+
+	const rangeDays = useMemo(() => {
+		if (!fechaDesde || !fechaHasta) return 0;
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+			return 0;
+		}
+		const diffMs = endDate.getTime() - startDate.getTime();
+		const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+		return diffDays;
+	}, [fechaDesde, fechaHasta]);
 
 	const slotsPrevia = useMemo(() => {
-		if (!fechaRango || !horaInicioRango || !horaFinRango) return [];
-		return generateSlots(fechaRango, horaInicioRango, horaFinRango);
-	}, [fechaRango, horaInicioRango, horaFinRango]);
+		if (!fechaDesde || !fechaHasta || !horaInicioRango || !horaFinRango) return [];
+		if (rangeError) return [];
+		return generateSlotsRange(fechaDesde, fechaHasta, horaInicioRango, horaFinRango);
+	}, [fechaDesde, fechaHasta, horaInicioRango, horaFinRango, rangeError]);
+
+	useEffect(() => {
+		if (!modoRango) {
+			setRangeError(null);
+			setSubmitError(null);
+			return;
+		}
+		if (!fechaDesde || !fechaHasta) {
+			setRangeError(null);
+			return;
+		}
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+			setRangeError("Fecha inválida");
+			return;
+		}
+		if (endDate < startDate) {
+			setRangeError("La fecha hasta debe ser mayor o igual a la fecha desde");
+			return;
+		}
+		if (rangeDays > 6) {
+			setRangeError("El rango máximo permitido es de 6 días");
+			return;
+		}
+		setRangeError(null);
+	}, [fechaDesde, fechaHasta, modoRango, rangeDays]);
 
 	// Cuando se generan slots nuevos, marcar todos como seleccionados
 	useEffect(() => {
@@ -88,7 +153,11 @@ const DisponibilidadForm = ({
 				new Set(slotsPrevia.map((s) => `${s.fecha}|${s.hora_inicio}`))
 			);
 		}
-	}, [fechaRango, horaInicioRango, horaFinRango]);
+	}, [slotsPrevia]);
+
+	useEffect(() => {
+		setSubmitError(null);
+	}, [idEcos, selectedSlotKeys, fechaDesde, fechaHasta, horaInicioRango, horaFinRango]);
 
 	const toggleSlot = (key: string) => {
 		setSelectedSlotKeys((prev) => {
@@ -108,12 +177,29 @@ const DisponibilidadForm = ({
 
 	const handleSubmit = async (event: FormEvent) => {
 		event.preventDefault();
-		if (modoRango && onSubmitBatch && slotsPrevia.length > 0) {
+		setSubmitError(null);
+		if (modoRango && rangeError) {
+			await Swal.fire({
+				icon: "warning",
+				title: "Rango inválido",
+				text: rangeError,
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		if (modoRango && onSubmitBatch && slotsPrevia.length > 0 && !rangeError) {
 			const selected = slotsPrevia.filter((s) =>
 				selectedSlotKeys.has(`${s.fecha}|${s.hora_inicio}`)
 			);
-			if (selected.length === 0) return;
-			if (idEcos.length === 0) return;
+			if (selected.length === 0) {
+				setSubmitError("Selecciona al menos un bloque en la vista previa");
+				return;
+			}
+			if (idEcos.length === 0) {
+				setSubmitError("Selecciona al menos un tipo de eco");
+				return;
+			}
 			const bloques = selected.flatMap((slot) =>
 				idEcos.map((id_eco) => ({
 					fecha: slot.fecha,
@@ -122,13 +208,31 @@ const DisponibilidadForm = ({
 					id_eco,
 				}))
 			);
-			await onSubmitBatch(bloques);
-			setModoRango(false);
-			setFechaRango("");
-			setHoraInicioRango("");
-			setHoraFinRango("");
-			setSelectedSlotKeys(new Set());
-			return;
+			try {
+				await onSubmitBatch(bloques);
+				setSubmitError(null);
+				setModoRango(false);
+				setFechaDesde("");
+				setFechaHasta("");
+				setHoraInicioRango("");
+				setHoraFinRango("");
+				setSelectedSlotKeys(new Set());
+				return;
+			} catch (err) {
+				const apiMessage =
+					(err as { data?: { message?: string }; message?: string })?.data
+						?.message ||
+					(err as { message?: string })?.message ||
+					"No se pudieron crear los bloques.";
+				await Swal.fire({
+					icon: "warning",
+					title: "No se pudo enviar",
+					text: apiMessage,
+					confirmButtonText: "Entendido",
+					confirmButtonColor: "#1C837F",
+				});
+				return;
+			}
 		}
 		onSubmit(event);
 	};
@@ -220,7 +324,14 @@ const DisponibilidadForm = ({
 				<div className="mt-2 flex gap-1 rounded-lg border border-mist p-1">
 					<button
 						type="button"
-						onClick={() => setModoRango(false)}
+						onClick={() => {
+							setModoRango(false);
+							setFechaDesde("");
+							setFechaHasta("");
+							setHoraInicioRango("");
+							setHoraFinRango("");
+							setSelectedSlotKeys(new Set());
+						}}
 						className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${!modoRango ? "bg-brand-700 text-paper" : "text-brand-800 hover:bg-cloud"
 							}`}
 					>
@@ -257,16 +368,29 @@ const DisponibilidadForm = ({
 					</div>
 				) : modoRango ? (
 					<>
-						<div className="space-y-1 text-xs text-brand-800">
-							<label className="font-semibold">Fecha</label>
-							<input
-								type="date"
-								value={fechaRango}
-								onChange={(e) => setFechaRango(e.target.value)}
-								min={minFecha}
-								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-							/>
+						<div className="grid grid-cols-2 gap-2">
+							<div className="space-y-1 text-xs text-brand-800">
+								<label className="font-semibold">Desde</label>
+								<input
+									type="date"
+									value={fechaDesde}
+									onChange={(e) => setFechaDesde(e.target.value)}
+									min={minFecha}
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+								/>
+							</div>
+							<div className="space-y-1 text-xs text-brand-800">
+								<label className="font-semibold">Hasta</label>
+								<input
+									type="date"
+									value={fechaHasta}
+									onChange={(e) => setFechaHasta(e.target.value)}
+									min={minFecha}
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+								/>
+							</div>
 						</div>
+						<p className="text-[10px] text-brand-700">Rango máximo: 6 días</p>
 						<div className="grid grid-cols-2 gap-2">
 							<div className="space-y-1 text-xs text-brand-800">
 								<label className="font-semibold">Hora inicio</label>
@@ -300,7 +424,10 @@ const DisponibilidadForm = ({
 								</select>
 							</div>
 						</div>
-						{slotsPrevia.length > 0 && (
+						{rangeError && (
+							<p className="text-[11px] font-semibold text-brand-900">{rangeError}</p>
+						)}
+						{!rangeError && slotsPrevia.length > 0 && (
 							<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-xs text-brand-800">
 								<p className="font-semibold">
 									Vista previa: {slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} · {selectedSlotKeys.size} seleccionado{selectedSlotKeys.size !== 1 ? "s" : ""}
@@ -439,8 +566,10 @@ const DisponibilidadForm = ({
 							: "Puedes seleccionar uno o varios ecos desde el desplegable."}
 					</p>
 				</div>
-				{error ? (
-					<p className="text-[11px] font-semibold text-brand-900">{error}</p>
+				{error || submitError ? (
+					<p className="text-[11px] font-semibold text-brand-900">
+						{error ?? submitError}
+					</p>
 				) : null}
 				<div className="flex gap-2">
 					{onCancel && (

@@ -1,6 +1,5 @@
 export { default as CalendarioPage } from "./pages/CalendarioPage";
 export { default as PacientesPage } from "./pages/PacientesPage";
-export { default as ConfiguracionPage } from "./pages/ConfiguracionPage";
 export { default as InformesPage } from "./pages/InformesPage";
 export { default as NotificacionesPage } from "./pages/NotificacionesPage";
 export { default as ContactoModal } from "./components/ContactoModal";

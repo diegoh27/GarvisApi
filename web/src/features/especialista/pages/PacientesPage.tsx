@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 import { PageShell, useAuth } from "../../../shared";
 import type { CitaEspecialista } from "../types";
-import { useGetMisCitasQuery } from "../especialistaApi";
+import { useGetMisCitasQuery, useMarcarAtendidaMutation } from "../especialistaApi";
 import { useGetMisInformesQuery } from "../informesApi";
-import { useNavigate } from "react-router-dom";
 import ContactoModal, {
 	type ContactoPaciente,
 } from "../components/ContactoModal";
 import HistorialModal from "../components/HistorialModal";
 import PDFViewerModal from "../components/PDFViewerModal";
-import SubirResultadoModal from "../components/SubirResultadoModal";
+import VerCitaEspecialistaModal from "../components/VerCitaEspecialistaModal";
 
 const estadoCitaLabel: Record<number, string> = {
 	0: "Pendiente",
@@ -54,15 +55,12 @@ const formatFecha = (value: string | Date) => {
 const getEstadoCitaLabel = (cita: CitaEspecialista) =>
 	estadoCitaLabel[cita.estado_cita] ?? `Estado ${cita.estado_cita}`;
 
-const isLikelyUrl = (value: string) =>
-	/^https?:\/\//i.test(value) || value.startsWith("data:");
 
 const PacientesPage = () => {
 	const { user, token } = useAuth();
-	const navigate = useNavigate();
 	const isEspecialista = user?.rol === "especialista";
 	const shouldFetch = isEspecialista && !!token;
-	const [error, setError] = useState<string | null>(null);
+	const [error] = useState<string | null>(null);
 	const [query, setQuery] = useState("");
 	const [estado, setEstado] = useState("todos");
 	const [filtroResultado, setFiltroResultado] = useState("todos"); // "todos", "sin-resultado", "con-resultado"
@@ -74,10 +72,15 @@ const PacientesPage = () => {
 	} | null>(null);
 	/** Cita desde la que se abrió "Ver historial"; se marcará como atendida al abrir si aplica */
 	const [citaParaMarcarAtendida, setCitaParaMarcarAtendida] = useState<CitaEspecialista | null>(null);
+	const [selectedCitaParaVer, setSelectedCitaParaVer] = useState<{
+		cita: CitaEspecialista;
+		informePdfUrl: string | null;
+	} | null>(null);
 	const [contactoPaciente, setContactoPaciente] =
 		useState<ContactoPaciente | null>(null);
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+	const [marcarAtendida] = useMarcarAtendidaMutation();
 	const { data: rawCitas = [], isFetching: loading } = useGetMisCitasQuery(
 		undefined,
 		{
@@ -106,20 +109,77 @@ const PacientesPage = () => {
 		[rawCitas],
 	);
 
-	const handleViewOrdenMedica = (orden: string | null) => {
-		if (!orden) return;
-		if (isLikelyUrl(orden)) {
-			window.open(orden, "_blank", "noopener,noreferrer");
-			return;
-		}
-		window.open(orden, "_blank", "noopener,noreferrer");
-	};
 
 	const getResultadoLabel = (cita: CitaEspecialista) =>
 		cita.resultado_estado !== null && cita.resultado_estado !== undefined
 			? estadoResultadoLabel[cita.resultado_estado] ??
 			`Estado ${cita.resultado_estado}`
 			: "Pendiente";
+
+	const handleAtenderCita = async (cita: CitaEspecialista) => {
+		if (cita.estado_pago !== 1) {
+			await Swal.fire({
+				title: "Pago pendiente",
+				text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		if (cita.estado_cita === 3) {
+			await Swal.fire({
+				title: "Cita ya atendida",
+				icon: "info",
+				confirmButtonText: "Listo",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		if (cita.estado_cita === 2) {
+			await Swal.fire({
+				title: "Cita cancelada",
+				text: "No puedes marcar como atendida una cita cancelada.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const today = new Date().toISOString().slice(0, 10);
+		if (getDateKey(cita.fecha_cita) > today) {
+			await Swal.fire({
+				title: "Aún no puedes marcar esta cita",
+				text: "Solo puedes marcar como atendida cuando llegue el día.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const confirmResult = await Swal.fire({
+			title: "¿Marcar cita como atendida?",
+			text: "Esta acción confirma que el paciente fue atendido.",
+			icon: "question",
+			showCancelButton: true,
+			confirmButtonText: "Sí, atender",
+			cancelButtonText: "No",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+		if (!confirmResult.isConfirmed) return;
+		try {
+			await marcarAtendida(cita.id_cita).unwrap();
+		} catch (err) {
+			await Swal.fire({
+				title: "No se pudo marcar",
+				text: (err as Error).message ?? "No se pudo marcar como atendida la cita.",
+				icon: "error",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+		}
+	};
 
 	// Función para parsear el archivo (puede ser string simple o JSON array)
 	const parseResultadoArchivo = (archivo: string | null | undefined): string[] => {
@@ -131,8 +191,7 @@ const PacientesPage = () => {
 			return urls.map((url) => {
 				if (!url) return url;
 				const trimmedUrl = url.trim();
-				// Si la URL no tiene protocolo pero parece ser de Cloudinary, agregar https://
-				if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+				if (!trimmedUrl.match(/^https?:\/\//i)) {
 					return `https://${trimmedUrl}`;
 				}
 				return trimmedUrl;
@@ -140,7 +199,7 @@ const PacientesPage = () => {
 		} catch {
 			// Si no es JSON, tratar como string simple
 			const trimmedUrl = archivo.trim();
-			if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+			if (!trimmedUrl.match(/^https?:\/\//i)) {
 				return [`https://${trimmedUrl}`];
 			}
 			return [trimmedUrl];
@@ -522,6 +581,8 @@ const PacientesPage = () => {
 											<th className="px-2 py-2 whitespace-nowrap">Eco</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Estado</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Pago</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Cita</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Atender</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Historial</th>
 										</tr>
 									</thead>
@@ -548,6 +609,35 @@ const PacientesPage = () => {
 														<td className="px-2 py-2 text-center">
 															<button
 																type="button"
+																onClick={() =>
+																	setSelectedCitaParaVer({
+																		cita,
+																		informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
+																	})
+																}
+																className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+															>
+																Ver
+															</button>
+														</td>
+														<td className="px-2 py-2 text-center">
+															{cita.estado_cita === 3 ? (
+																<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+																	Atendida
+																</span>
+															) : (
+																<button
+																	type="button"
+																	onClick={() => handleAtenderCita(cita)}
+																	className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+																>
+																	Atender
+																</button>
+															)}
+														</td>
+														<td className="px-2 py-2 text-center">
+															<button
+																type="button"
 																onClick={() => {
 																	setSelectedPaciente({ id: cita.id_paciente, name: fullName || "Paciente" });
 																	setCitaParaMarcarAtendida(cita);
@@ -562,7 +652,7 @@ const PacientesPage = () => {
 											})
 										) : (
 											<tr>
-												<td colSpan={7} className="px-2 py-6 text-center text-sm text-brand-800">
+												<td colSpan={9} className="px-2 py-6 text-center text-sm text-brand-800">
 													No hay citas que coincidan con los filtros.
 												</td>
 											</tr>
@@ -631,6 +721,18 @@ const PacientesPage = () => {
 				<ContactoModal
 					contactoPaciente={contactoPaciente}
 					onClose={() => setContactoPaciente(null)}
+				/>
+			) : null}
+			{selectedCitaParaVer ? (
+				<VerCitaEspecialistaModal
+					citaFromList={selectedCitaParaVer.cita}
+					informePdfUrl={selectedCitaParaVer.informePdfUrl}
+					pacienteName={`${selectedCitaParaVer.cita.paciente_nombre ?? ""} ${selectedCitaParaVer.cita.paciente_apellido ?? ""}`.trim() || "Paciente"}
+					onClose={() => setSelectedCitaParaVer(null)}
+					onVerPdf={(url, fileName) => {
+						setPdfFileName(fileName);
+						setPdfViewerUrl(url);
+					}}
 				/>
 			) : null}
 			{pdfViewerUrl && (

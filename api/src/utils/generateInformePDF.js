@@ -1,8 +1,8 @@
 const PDFDocument = require("pdfkit");
-const { uploadBufferToCloudinary } = require("./uploadToCloudinary");
+const { uploadBufferToLocal } = require("./uploadToLocal");
 
 /**
- * Genera un PDF del informe médico y lo sube a Cloudinary
+ * Genera un PDF del informe médico y lo guarda en el VPS
  * @param {Object} datos - Datos del informe
  * @param {string} datos.reseña - Reseña del estudio
  * @param {string} datos.recomendaciones - Recomendaciones
@@ -11,7 +11,7 @@ const { uploadBufferToCloudinary } = require("./uploadToCloudinary");
  * @param {Object|null} datos.representado - Datos del representado (si la cita es para un representado)
  * @param {Object} datos.especialista - Datos del especialista
  * @param {Object} datos.cita - Datos de la cita
- * @param {string} datos.ecoUrl - URL del eco en Cloudinary
+ * @param {string} datos.ecoUrl - URL del eco
  * @returns {Promise<{url: string, public_id: string}>}
  */
 const generateInformePDF = async (datos) => {
@@ -27,17 +27,13 @@ const generateInformePDF = async (datos) => {
 			doc.on("end", async () => {
 				try {
 					const buffer = Buffer.concat(chunks);
-					const result = await uploadBufferToCloudinary(
+					const result = await uploadBufferToLocal(
 						buffer,
 						"garbis/informes/pdfs",
-						"raw",
 						{
-							// Forzar formato PDF y nombre con extensión
-							format: "pdf",
-							resource_type: "raw",
-							access_mode: "public", // Asegurar que sea público
-							type: "upload", // Asegurar que se suba como upload
-						}
+							// Forzar nombre con extension
+							extension: ".pdf",
+						},
 					);
 					resolve(result);
 				} catch (error) {
@@ -92,12 +88,12 @@ const generateInformePDF = async (datos) => {
 							[datos.representado.nombre, datos.representado.apellido]
 								.filter(Boolean)
 								.join(" ") || "N/A"
-						}`
+						}`,
 					)
 					.text(`Cédula: ${datos.representado.cedula || "N/A"}`);
 				if (datos.representado.fecha_nacimiento) {
 					doc.text(
-						`Fecha de nacimiento: ${datos.representado.fecha_nacimiento}`
+						`Fecha de nacimiento: ${datos.representado.fecha_nacimiento}`,
 					);
 				}
 				if (datos.representado.parentesco) {
@@ -123,7 +119,7 @@ const generateInformePDF = async (datos) => {
 				.moveDown(0.5)
 				.font("Helvetica")
 				.text(
-					`Dr./Dra. ${datos.especialista.nombre} ${datos.especialista.apellido}`
+					`Dr./Dra. ${datos.especialista.nombre} ${datos.especialista.apellido}`,
 				)
 				.text(`Cédula: ${datos.especialista.cedula || "N/A"}`)
 				.moveDown(1);
@@ -189,7 +185,7 @@ const generateInformePDF = async (datos) => {
 						.moveDown(0.5)
 						.font("Helvetica")
 						.text(
-							"Puede descargar el archivo del estudio desde el siguiente enlace:"
+							"Puede descargar el archivo del estudio desde el siguiente enlace:",
 						)
 						.moveDown(0.3)
 						.fillColor("blue")
@@ -199,7 +195,7 @@ const generateInformePDF = async (datos) => {
 					console.log("✅ Link del eco agregado al PDF exitosamente");
 				} else {
 					console.log(
-						"⚠️  ecoUrl no es una URL válida (debe empezar con http:// o https://)"
+						"⚠️  ecoUrl no es una URL válida (debe empezar con http:// o https://)",
 					);
 					console.log("⚠️  Valor recibido:", ecoUrlClean);
 				}
@@ -222,7 +218,7 @@ const generateInformePDF = async (datos) => {
 					})}`,
 					50,
 					pageHeight - 80,
-					{ align: "center", width: pageWidth - 100 }
+					{ align: "center", width: pageWidth - 100 },
 				);
 
 			doc.end();

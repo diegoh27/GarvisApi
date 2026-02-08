@@ -1,7 +1,9 @@
 const {
 	userCreateController,
 	getUserByIdController,
+	getUserSelfController,
 	updateUserController,
+	updateUserSelfController,
 	setUserActiveController,
 	listUsersController,
 } = require("../controllers/usersControllers");
@@ -65,7 +67,10 @@ const updateUserHandler = async (req, res) => {
 		const { id } = req.params;
 		const payload = req.body;
 
-		if (payload.genero && !["Masculino", "Femenino", "Otro"].includes(payload.genero)) {
+		if (
+			payload.genero &&
+			!["Masculino", "Femenino", "Otro"].includes(payload.genero)
+		) {
 			return res.status(400).json({
 				ok: false,
 				message: "genero inválido (Masculino | Femenino | Otro)",
@@ -86,6 +91,96 @@ const updateUserHandler = async (req, res) => {
 			data: user,
 		});
 	} catch (err) {
+		if (err?.code === "NO_FIELDS") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "ER_DUP_ENTRY") {
+			return res.status(409).json({
+				ok: false,
+				message: "Cédula o correo ya existe",
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const getUserSelfHandler = async (req, res) => {
+	try {
+		const id_usuario = req.user?.id;
+		const user = await getUserSelfController(id_usuario);
+		if (!user) {
+			return res.status(404).json({
+				ok: false,
+				message: "Admin no encontrado",
+			});
+		}
+		return res.status(200).json({
+			ok: true,
+			data: user,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const updateUserSelfHandler = async (req, res) => {
+	try {
+		const id_usuario = req.user?.id;
+		const payload = req.body;
+
+		if (
+			payload.genero &&
+			!["Masculino", "Femenino", "Otro"].includes(payload.genero)
+		) {
+			return res.status(400).json({
+				ok: false,
+				message: "genero inválido (Masculino | Femenino | Otro)",
+			});
+		}
+
+		const result = await updateUserSelfController({
+			id_usuario,
+			nombre: payload.nombre,
+			apellido: payload.apellido,
+			genero: payload.genero,
+			cedula: payload.cedula,
+			correo: payload.correo,
+			telefono: payload.telefono,
+			fecha_nacimiento: payload.fecha_nacimiento,
+			contrasena: payload.contrasena,
+		});
+
+		if (!result.updated) {
+			return res.status(404).json({
+				ok: false,
+				message: "Admin no encontrado",
+			});
+		}
+
+		const user = await getUserSelfController(id_usuario);
+		return res.status(200).json({
+			ok: true,
+			message: "Perfil actualizado",
+			data: user,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: "Admin no encontrado",
+			});
+		}
 		if (err?.code === "NO_FIELDS") {
 			return res.status(400).json({
 				ok: false,
@@ -156,5 +251,7 @@ module.exports = {
 	listUsersHandler,
 	getUserByIdHandler,
 	updateUserHandler,
+	getUserSelfHandler,
+	updateUserSelfHandler,
 	setUserActiveHandler,
 };

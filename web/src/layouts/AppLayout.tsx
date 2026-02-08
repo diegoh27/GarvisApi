@@ -78,10 +78,10 @@ const navByRole: Record<string, NavItem[]> = {
 	],
 	paciente: [
 		{ label: "Home", to: "/dashboard", icon: Home },
-		{ label: "Calendario", to: "/disponibilidad", icon: CalendarDays },
+		{ label: "Agendar cita", to: "/disponibilidad", icon: CalendarDays },
 		{ label: "Mis citas", to: "/citas", icon: CalendarCheck },
 		{ label: "Representados", to: "/representados", icon: Users },
-		{ label: "Especialistas", to: "/especialistas", icon: Stethoscope },
+		// { label: "Especialistas", to: "/especialistas", icon: Stethoscope },
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],

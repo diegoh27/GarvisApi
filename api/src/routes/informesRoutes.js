@@ -14,13 +14,8 @@ const {
 	uploadFirmaHandler,
 	uploadInformePDFHandler,
 } = require("../handlers/uploadHandlers");
-const { servePDFProxyHandler } = require("../handlers/pdfProxyHandler");
 
 const informesRoutes = Router();
-
-// Servir PDF como proxy (debe estar antes del middleware para permitir token en query)
-// El handler verifica el token manualmente
-informesRoutes.get("/pdf-proxy", servePDFProxyHandler);
 
 // Ruta para moderadores: listar todos los informes completados
 informesRoutes.get(

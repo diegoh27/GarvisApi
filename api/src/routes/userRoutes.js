@@ -4,6 +4,8 @@ const {
 	listUsersHandler,
 	getUserByIdHandler,
 	updateUserHandler,
+	getUserSelfHandler,
+	updateUserSelfHandler,
 	setUserActiveHandler,
 } = require("../handlers/userHandlers");
 const { authenticateToken } = require("../middleware/auth");
@@ -19,6 +21,20 @@ userRoutes.get(
 	listUsersHandler,
 );
 userRoutes.post("/", userCreateHandler);
+// GET /users/mi-perfil (admin)
+userRoutes.get(
+	"/mi-perfil",
+	authenticateToken,
+	authorizeRoles("admin"),
+	getUserSelfHandler,
+);
+// PATCH /users/mi-perfil (admin)
+userRoutes.patch(
+	"/mi-perfil",
+	authenticateToken,
+	authorizeRoles("admin"),
+	updateUserSelfHandler,
+);
 // GET /users/:id (solo admin)
 userRoutes.get(
 	"/:id",

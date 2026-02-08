@@ -44,6 +44,7 @@ const disponibilidadApi = baseApi.injectEndpoints({
 				url: "/disponibilidad/publica",
 				params: params ?? undefined,
 			}),
+			providesTags: ["Disponibilidad"],
 		}),
 		getDisponibilidadPublicaPorEco: builder.query<
 			DisponibilidadPublicaPorEcoItem[],
@@ -56,9 +57,16 @@ const disponibilidadApi = baseApi.injectEndpoints({
 			transformResponse: (
 				response: { ok: boolean; data: DisponibilidadPublicaPorEcoItem[] }
 			) => response.data ?? [],
+			providesTags: ["Disponibilidad"],
 		}),
 		getDisponibilidadPendientes: builder.query<DisponibilidadPendiente[], void>({
 			query: () => "/disponibilidad/pendientes",
+			transformResponse: (response: { ok: boolean; data: DisponibilidadPendiente[] }) =>
+				response.data ?? [],
+			providesTags: ["Disponibilidad"],
+		}),
+		getDisponibilidadAdmin: builder.query<DisponibilidadPendiente[], void>({
+			query: () => "/disponibilidad/todas",
 			transformResponse: (response: { ok: boolean; data: DisponibilidadPendiente[] }) =>
 				response.data ?? [],
 			providesTags: ["Disponibilidad"],
@@ -105,6 +113,27 @@ const disponibilidadApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Disponibilidad"],
 		}),
+		cancelarDisponibilidadAdmin: builder.mutation<
+			{ id_disponibilidad: string; estado: number },
+			string
+		>({
+			query: (id) => ({
+				url: `/disponibilidad/${id}/cancelar-admin`,
+				method: "PATCH",
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
+		cancelarDisponibilidadLote: builder.mutation<
+			{ cancelados: number; ids: string[] },
+			{ ids: string[] }
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/cancelar-lote",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -113,10 +142,13 @@ const {
 	useGetDisponibilidadPublicaQuery,
 	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
+	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
 	useAprobarDisponibilidadLoteMutation,
 	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
+	useCancelarDisponibilidadAdminMutation,
+	useCancelarDisponibilidadLoteMutation,
 } = disponibilidadApi;
 
 export {
@@ -124,8 +156,11 @@ export {
 	useGetDisponibilidadPublicaQuery,
 	useGetDisponibilidadPublicaPorEcoQuery,
 	useGetDisponibilidadPendientesQuery,
+	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
 	useAprobarDisponibilidadLoteMutation,
 	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
+	useCancelarDisponibilidadAdminMutation,
+	useCancelarDisponibilidadLoteMutation,
 };

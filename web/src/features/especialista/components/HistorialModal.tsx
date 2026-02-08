@@ -42,8 +42,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 		return urls.map((url) => {
 			if (!url) return url;
 			const trimmedUrl = url.trim();
-			// Si la URL no tiene protocolo pero parece ser de Cloudinary, agregar https://
-			if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+			if (!trimmedUrl.match(/^https?:\/\//i)) {
 				return `https://${trimmedUrl}`;
 			}
 			return trimmedUrl;
@@ -51,7 +50,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 	} catch {
 		// Si no es JSON, tratar como string simple
 		const trimmedUrl = archivo.trim();
-		if (!trimmedUrl.match(/^https?:\/\//i) && trimmedUrl.includes("cloudinary")) {
+		if (!trimmedUrl.match(/^https?:\/\//i)) {
 			return [`https://${trimmedUrl}`];
 		}
 		return [trimmedUrl];
