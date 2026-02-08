@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { X, FileText, Banknote, FileCheck, Images } from "lucide-react";
+import { X, FileText, Banknote, FileCheck, Images, AlertCircle, Edit } from "lucide-react";
 import type { CitaPacienteCompleta } from "../citasApi";
 import PDFViewerModal from "../../especialista/components/PDFViewerModal";
 import VerPagoModal from "../../moderadores/components/VerPagoModal";
 import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import { useGetPagoByCitaQuery } from "../../moderadores/moderadoresApi";
+import { useUpdatePagoMutation } from "../../pagos/pagosApi";
+import FormularioPago, { type PagoFormData } from "../../../shared/components/FormularioPago";
+import Swal from "sweetalert2";
 
 const parseResultadoArchivos = (value: string | null): string[] => {
 	if (!value || value.trim() === "") return [];
@@ -80,13 +83,55 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 	const [pdfViewer, setPdfViewer] = useState<{ url: string; title: string } | null>(null);
 	const [showVerPago, setShowVerPago] = useState(false);
 	const [showResultados, setShowResultados] = useState(false);
+	const [isEditingPago, setIsEditingPago] = useState(false);
+	const [pagoFormData, setPagoFormData] = useState<Partial<PagoFormData>>({});
 
 	const { data: pago, error: pagoError, isLoading: pagoLoading } = useGetPagoByCitaQuery(cita?.id_cita ?? "", {
 		skip: !showVerPago || !cita?.id_cita,
 	});
 
+	const [updatePago, { isLoading: isUpdatingPago }] = useUpdatePagoMutation();
+
 	const openPdf = (url: string, title: string) => {
 		setPdfViewer({ url, title });
+	};
+
+	const handleCorregirPago = () => {
+		setIsEditingPago(true);
+	};
+
+	const handleCancelarEdicion = () => {
+		setIsEditingPago(false);
+		setPagoFormData({});
+	};
+
+	const handleSubmitCorreccion = async () => {
+		if (!cita?.id_cita) return;
+
+		try {
+			await updatePago({
+				id_cita: cita.id_cita,
+				...pagoFormData,
+			}).unwrap();
+
+			await Swal.fire({
+				icon: "success",
+				title: "Pago corregido",
+				text: "Tu pago ha sido actualizado y será revisado nuevamente.",
+				timer: 2500,
+				showConfirmButton: false,
+			});
+
+			setIsEditingPago(false);
+			setPagoFormData({});
+			onClose();
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo actualizar el pago",
+			});
+		}
 	};
 
 	if (!cita) {
@@ -206,6 +251,65 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 								</div>
 							</div>
 						</div>
+
+						{/* Alerta de pago rechazado + botón corregir */}
+						{estadoPago === 2 && !isEditingPago && (
+							<div className="rounded-lg border border-red-200 bg-red-50 p-4">
+								<div className="flex items-start gap-3">
+									<AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+									<div className="flex-1">
+										<h4 className="text-sm font-semibold text-red-900 mb-1">
+											Pago rechazado
+										</h4>
+										<p className="text-xs text-red-700 mb-3">
+											Tu comprobante de pago fue rechazado. Por favor, corrige la información y vuelve a enviarlo.
+										</p>
+										<button
+											type="button"
+											onClick={handleCorregirPago}
+											className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+										>
+											<Edit className="h-4 w-4" />
+											Corregir pago
+										</button>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Formulario de corrección de pago */}
+						{isEditingPago && (
+							<div className="rounded-lg border border-brand-200 bg-brand-50/50 p-4">
+								<h4 className="text-sm font-semibold text-brand-900 mb-3">
+									Corregir comprobante de pago
+								</h4>
+								<FormularioPago
+									precioEcoUSD={cita?.eco_precio ? parseFloat(cita.eco_precio.toString()) : null}
+									onChange={setPagoFormData}
+									initialData={pagoFormData}
+									isLoading={isUpdatingPago}
+									disabled={isUpdatingPago}
+								/>
+								<div className="flex items-center justify-end gap-3 mt-4">
+									<button
+										type="button"
+										onClick={handleCancelarEdicion}
+										disabled={isUpdatingPago}
+										className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										Cancelar
+									</button>
+									<button
+										type="button"
+										onClick={handleSubmitCorreccion}
+										disabled={isUpdatingPago || !pagoFormData.imagen}
+										className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+									>
+										{isUpdatingPago ? "Actualizando..." : "Guardar corrección"}
+									</button>
+								</div>
+							</div>
+						)}
 
 						{/* Documentos: pago, orden médica, informe médico y resultados (igual que admin/moderador) */}
 						<div>

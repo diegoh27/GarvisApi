@@ -452,7 +452,7 @@ const CalendarioPage = () => {
 		if (bloque) {
 			const isCita = bloque.id_disponibilidad.startsWith("cita-");
 			if (bloque.estado === 4 && isCita) {
-				if (bloque.estado_pago === 0) {
+				if (bloque.estado_pago !== 1) {
 					await Swal.fire({
 						title: "Pago pendiente",
 						text: "No puedes marcar esta cita hasta que el pago sea aprobado.",

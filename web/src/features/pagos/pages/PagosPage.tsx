@@ -11,6 +11,7 @@ import { useGetPagoByCitaQuery, useGetCitaByIdQuery } from "../../moderadores/mo
 import VerPagoModal from "../../moderadores/components/VerPagoModal";
 import VerCitaModal from "../../moderadores/components/VerCitaModal";
 import PosponerCitaModal from "../../moderadores/components/PosponerCitaModal";
+import RechazarPagoModal from "../../moderadores/components/RechazarPagoModal";
 
 const formatFecha = (value: string) => {
 	if (!value) return "";
@@ -49,6 +50,7 @@ const PagosPage = () => {
 	const [selectedCitaIdForVerificar, setSelectedCitaIdForVerificar] = useState<string | null>(null);
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
+	const [citaToReject, setCitaToReject] = useState<{ id_cita: string; nombre: string } | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
 	const [query, setQuery] = useState("");
@@ -162,36 +164,47 @@ const PagosPage = () => {
 	};
 
 	const handleRechazarPago = async (id_cita: string): Promise<boolean> => {
-		const result = await Swal.fire({
-			icon: "warning",
-			title: "¿Rechazar pago?",
-			text: "Esta acción marcará el pago como rechazado.",
-			showCancelButton: true,
-			confirmButtonText: "Sí, rechazar",
-			cancelButtonText: "Cancelar",
-			confirmButtonColor: "#dc2626",
-		});
+		// Buscar nombre del paciente para mostrar en el modal
+		const cita = citas.find(c => c.id_cita === id_cita);
+		const nombrePaciente = cita
+			? `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim()
+			: undefined;
 
-		if (!result.isConfirmed) return false;
+		// Abrir modal para ingresar motivo de rechazo
+		setCitaToReject({ id_cita, nombre: nombrePaciente || "" });
+		return false; // No cerrar modales todavía
+	};
+
+	const handleConfirmRechazar = async (motivo: string) => {
+		if (!citaToReject) return;
 
 		try {
-			await updateEstadoPago({ id_cita, estado_pago: 2 }).unwrap();
+			await updateEstadoPago({
+				id_cita: citaToReject.id_cita,
+				estado_pago: 2,
+				motivo_rechazo: motivo
+			}).unwrap();
+
+			setCitaToReject(null);
+			setSelectedCitaId(null);
+			setSelectedCitaIdForVerificar(null);
+
 			await Swal.fire({
 				icon: "success",
 				title: "Pago rechazado",
-				text: "El pago ha sido marcado como rechazado.",
-				timer: 2000,
+				text: "El pago ha sido rechazado y el paciente ha sido notificado.",
+				timer: 2500,
 				showConfirmButton: false,
 			});
+
 			refetch();
-			return true;
 		} catch (error: any) {
+			setCitaToReject(null);
 			Swal.fire({
 				icon: "error",
 				title: "Error",
 				text: error?.data?.message || "No se pudo rechazar el pago",
 			});
-			return false;
 		}
 	};
 
@@ -350,8 +363,8 @@ const PagosPage = () => {
 													setSelectedCitaIdForVerificar(cita.estado_pago === 0 ? cita.id_cita : null);
 												}}
 												className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${cita.estado_pago === 0
-														? "bg-amber-500 text-white hover:bg-amber-600"
-														: "border border-brand-700 bg-paper text-brand-700 hover:bg-brand-50"
+													? "bg-amber-500 text-white hover:bg-amber-600"
+													: "border border-brand-700 bg-paper text-brand-700 hover:bg-brand-50"
 													}`}
 											>
 												{cita.estado_pago === 0 ? "Verificar pago" : "Ver pago"}
@@ -473,6 +486,16 @@ const PagosPage = () => {
 						refetch();
 						setSelectedCitaForPosponer(null);
 					}}
+				/>
+			)}
+
+			{/* Modal de rechazar pago */}
+			{citaToReject && (
+				<RechazarPagoModal
+					onClose={() => setCitaToReject(null)}
+					onConfirm={handleConfirmRechazar}
+					isLoading={isUpdating}
+					nombrePaciente={citaToReject.nombre}
 				/>
 			)}
 		</PageShell>

@@ -6,6 +6,7 @@ type NavItem = {
 	label: string;
 	to: string;
 	icon: LucideIcon;
+	badge?: number;
 };
 
 type SidebarProps = {
@@ -52,7 +53,12 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 							}}
 						>
 							<item.icon className="h-4 w-4 text-brand-800" />
-							<span>{item.label}</span>
+							<span className="flex-1">{item.label}</span>
+							{item.badge && item.badge > 0 ? (
+								<span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+									{item.badge > 99 ? "99+" : item.badge}
+								</span>
+							) : null}
 						</NavLink>
 					))}
 				</nav>

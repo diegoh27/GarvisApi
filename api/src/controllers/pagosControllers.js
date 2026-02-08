@@ -39,6 +39,112 @@ const getPagoByCitaController = async (id_cita) => {
 	return rows.length > 0 ? rows[0] : null;
 };
 
+// Actualizar pago rechazado (corregir comprobante)
+const updatePagoController = async (id_cita, pagoData) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Verificar que el pago existe y está rechazado
+		const [rows] = await conn.execute(
+			`SELECT p.id_pago, p.estado_pago, c.estado_cita, c.id_paciente, c.id_representado
+       FROM pagos p
+       INNER JOIN cita c ON c.id_cita = p.id_cita
+       WHERE p.id_cita = ?
+       FOR UPDATE`,
+			[id_cita],
+		);
+
+		if (!rows.length) {
+			const err = new Error("Pago no encontrado");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+
+		const pago = rows[0];
+
+		// Solo permitir editar pagos rechazados
+		if (pago.estado_pago !== 2) {
+			const err = new Error("Solo se pueden corregir pagos rechazados");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		// No permitir editar pagos de citas canceladas
+		if (pago.estado_cita === 2) {
+			const err = new Error(
+				"No se puede corregir el pago de una cita cancelada",
+			);
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		// Construir UPDATE dinámico
+		const campos = [];
+		const valores = [];
+
+		if (pagoData.metodo !== undefined) {
+			campos.push("metodo = ?");
+			valores.push(pagoData.metodo);
+		}
+		if (pagoData.imagen !== undefined) {
+			campos.push("imagen = ?");
+			valores.push(pagoData.imagen);
+		}
+		if (pagoData.banco_origen !== undefined) {
+			campos.push("banco_origen = ?");
+			valores.push(pagoData.banco_origen);
+		}
+		if (pagoData.banco_destino !== undefined) {
+			campos.push("banco_destino = ?");
+			valores.push(pagoData.banco_destino);
+		}
+		if (pagoData.monto !== undefined) {
+			campos.push("monto = ?");
+			valores.push(pagoData.monto);
+		}
+		if (pagoData.cedula_pagador !== undefined) {
+			campos.push("cedula_pagador = ?");
+			valores.push(pagoData.cedula_pagador);
+		}
+		if (pagoData.telefono_pagador !== undefined) {
+			campos.push("telefono_pagador = ?");
+			valores.push(pagoData.telefono_pagador);
+		}
+		if (pagoData.referencia !== undefined) {
+			campos.push("referencia = ?");
+			valores.push(pagoData.referencia);
+		}
+
+		// Siempre resetear estado_pago a 0 (pendiente) y limpiar validación
+		campos.push("estado_pago = 0");
+		campos.push("fecha_validacion = NULL");
+		campos.push("validado_por = NULL");
+		campos.push("fecha_pago = CURRENT_TIMESTAMP");
+
+		valores.push(id_cita);
+
+		await conn.execute(
+			`UPDATE pagos SET ${campos.join(", ")} WHERE id_cita = ?`,
+			valores,
+		);
+
+		// También resetear estado_pago en la tabla cita
+		await conn.execute("UPDATE cita SET estado_pago = 0 WHERE id_cita = ?", [
+			id_cita,
+		]);
+
+		await conn.commit();
+		return { id_cita, estado_pago: 0 };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	getPagoByCitaController,
+	updatePagoController,
 };

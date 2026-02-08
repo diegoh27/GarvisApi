@@ -72,6 +72,7 @@ const CalendarGrid = ({
 								hour.value,
 							)} - ${formatHora(horaFin)}`;
 							const isPagoPendiente = bloque?.estado === 4 && bloque.estado_pago === 0;
+							const isPagoRechazado = bloque?.estado === 4 && bloque.estado_pago === 2;
 							const isAtendida =
 								bloque?.estado === 4 && bloque.estado_cita === 3;
 							const label = bloque
@@ -82,9 +83,11 @@ const CalendarGrid = ({
 							const colorClass = bloque
 								? isAtendida
 									? "bg-emerald-500 text-paper"
-									: isPagoPendiente
-										? "bg-amber-400 text-brand-900"
-										: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
+									: isPagoRechazado
+										? "bg-red-500 text-paper"
+										: isPagoPendiente
+											? "bg-amber-400 text-brand-900"
+											: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
 								: "";
 							const isSelected = selectedCells.includes(cellKey) && !bloque;
 							return (
@@ -115,6 +118,10 @@ const CalendarGrid = ({
 											{!isAtendida && isPagoPendiente ? (
 												<span className="text-[10px] font-semibold">
 													Pago por aprobar
+												</span>
+											) : !isAtendida && isPagoRechazado ? (
+												<span className="text-[10px] font-semibold">
+													Pago rechazado
 												</span>
 											) : null}
 											<span className="text-[10px] opacity-90">

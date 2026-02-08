@@ -14,9 +14,9 @@ import { EspecialidadesPage } from "../features/especialidades";
 import {
 	CalendarioPage,
 	InformesPage,
-	NotificacionesPage,
 	PacientesPage,
 } from "../features/especialista";
+import { NotificacionesPage } from "../features/notificaciones";
 import {
 	EspecialistaDetallePage,
 	EspecialistasListPage,

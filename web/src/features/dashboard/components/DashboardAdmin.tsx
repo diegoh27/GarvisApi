@@ -1,10 +1,34 @@
 import { UserPlus, Users, Stethoscope } from "lucide-react";
+import RecentNotificationsCard from "./RecentNotificationsCard";
+import { useGetMisNotificacionesQuery } from "../../notificaciones/notificacionesApi";
+
+const formatFecha = (value: string) => {
+	if (!value) return "";
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleDateString("es-VE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+};
 
 /**
  * Dashboard para rol admin. No consume APIs de especialista ni moderador,
  * para evitar peticiones no autorizadas (ej. 403 en /citas/mi-especialista).
  */
 const DashboardAdmin = () => {
+	const { data: notificaciones = [], isLoading } = useGetMisNotificacionesQuery({
+		limit: 5,
+	});
+	const notifications = notificaciones.map((n) => ({
+		id: n.id_notificacion,
+		title: n.titulo,
+		timeLabel: formatFecha(n.fecha_creacion),
+	}));
+
 	return (
 		<div className="space-y-6">
 			<div className="space-y-1">
@@ -64,6 +88,15 @@ const DashboardAdmin = () => {
 						</div>
 					</div>
 				</a>
+			</div>
+
+			<div className="grid gap-4 lg:grid-cols-2">
+				<RecentNotificationsCard
+					notifications={notifications}
+					emptyMessage={
+						isLoading ? "Cargando notificaciones..." : undefined
+					}
+				/>
 			</div>
 		</div>
 	);
