@@ -146,6 +146,21 @@ const productosApi = baseApi.injectEndpoints({
 			],
 		}),
 
+		// PUT /productos/compras/:idCompra - actualizar compra
+		updateCompra: builder.mutation<
+			CompraProducto,
+			{ idCompra: string; payload: Partial<RegistrarCompraPayload> }
+		>({
+			query: ({ idCompra, payload }) => ({
+				url: `/productos/compras/${idCompra}`,
+				method: "PUT",
+				body: payload,
+			}),
+			transformResponse: (response: { ok: boolean; data: CompraProducto }) =>
+				response.data,
+			invalidatesTags: ["Productos", "Compras", "HistorialCompras"],
+		}),
+
 		// GET /productos/:id/compras - listar compras de un producto
 		getComprasProducto: builder.query<CompraProducto[], string>({
 			query: (id) => ({
@@ -223,6 +238,7 @@ export const {
 	useCreateProductoMutation,
 	useUpdateProductoMutation,
 	useRegistrarCompraMutation,
+	useUpdateCompraMutation,
 	useGetComprasProductoQuery,
 	useGetHistorialComprasQuery,
 	useRegistrarAjusteMutation,

@@ -4,10 +4,11 @@ import EntesLegalesTable from "../components/entes-legales/EntesLegalesTable";
 import CrearEnteModal from "../components/entes-legales/CrearEnteModal";
 import EditarEnteModal from "../components/entes-legales/EditarEnteModal";
 import GenerarPagoEnteModal from "../components/entes-legales/GenerarPagoEnteModal";
+import EditarPagoEnteModal from "../components/entes-legales/EditarPagoEnteModal";
 import HistorialPagosTable from "../components/HistorialPagosTable";
 import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
-import type { EnteLegal } from "../api";
+import type { EnteLegal, HistorialEnteLegal, CompraProducto } from "../api";
 import { useGetEntesLegalesQuery, useDeleteEnteLegalMutation, useGetHistorialPagosEntesQuery } from "../api";
 
 export default function EntesLegalesPage() {
@@ -15,10 +16,12 @@ export default function EntesLegalesPage() {
   const [deleteEnte] = useDeleteEnteLegalMutation();
 
   const [selectedEnte, setSelectedEnte] = useState<EnteLegal | null>(null);
+  const [selectedPago, setSelectedPago] = useState<HistorialEnteLegal | null>(null);
   const { data: historialData = [], isLoading: historialLoading } = useGetHistorialPagosEntesQuery();
   const [showCrearModal, setShowCrearModal] = useState(false);
   const [showEditarModal, setShowEditarModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
+  const [showEditarPagoModal, setShowEditarPagoModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageHistorial, setCurrentPageHistorial] = useState(1);
@@ -34,6 +37,11 @@ export default function EntesLegalesPage() {
     const ente = entesData.find((e) => e.id_ente === id) || null;
     setSelectedEnte(ente);
     setShowPagoModal(true);
+  };
+
+  const onEditarHistorialEnteLegal = (row: CompraProducto | HistorialEnteLegal) => {
+    setSelectedPago(row as HistorialEnteLegal);
+    setShowEditarPagoModal(true);
   };
 
   const handleEliminar = async (id: string) => {
@@ -144,6 +152,7 @@ export default function EntesLegalesPage() {
         variant="pagos"
         title="Historial de Pagos"
         emptyMessage="No hay pagos registrados"
+        onEditar={onEditarHistorialEnteLegal}
       />
       {!historialLoading && historialData.length > 0 && (
         <Pagination
@@ -172,6 +181,19 @@ export default function EntesLegalesPage() {
         isOpen={showPagoModal}
         onClose={() => setShowPagoModal(false)}
         ente={selectedEnte}
+      />
+
+      <EditarPagoEnteModal
+        isOpen={showEditarPagoModal}
+        onClose={() => {
+          setShowEditarPagoModal(false);
+          setSelectedPago(null);
+        }}
+        pago={selectedPago}
+        onSuccess={() => {
+          setShowEditarPagoModal(false);
+          setSelectedPago(null);
+        }}
       />
     </div>
   );

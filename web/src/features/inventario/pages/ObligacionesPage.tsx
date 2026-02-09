@@ -6,11 +6,13 @@ import EditarObligacionModal from "../components/entes-legales/EditarObligacionM
 import CrearEnteModal from "../components/entes-legales/CrearEnteModal";
 import EditarEnteModal from "../components/entes-legales/EditarEnteModal";
 import GenerarPagoObligacionModal from "../components/obligaciones/GenerarPagoObligacionModal";
+import HistorialObligacionModal from "../components/obligaciones/HistorialObligacionModal";
+import EditarPagoEnteModal from "../components/entes-legales/EditarPagoEnteModal";
 import EntesLegalesTableSimple from "../components/entes-legales/EntesLegalesTableSimple.tsx";
 import HistorialPagosTable from "../components/HistorialPagosTable";
 import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
-import type { Obligacion, EnteLegal } from "../api";
+import type { Obligacion, EnteLegal, HistorialEnteLegal, CompraProducto } from "../api";
 import {
   useGetObligacionesQuery,
   useDeleteObligacionMutation,
@@ -37,12 +39,16 @@ export default function EntesLegalesPage() {
     null
   );
   const [selectedEnte, setSelectedEnte] = useState<EnteLegal | null>(null);
+  const [selectedPago, setSelectedPago] = useState<HistorialEnteLegal | null>(null);
+  const [selectedObligacionParaHistorial, setSelectedObligacionParaHistorial] = useState<Obligacion | null>(null);
   const [showCrearObligacionModal, setShowCrearObligacionModal] = useState(false);
   const [showEditarObligacionModal, setShowEditarObligacionModal] =
     useState(false);
   const [showCrearEnteModal, setShowCrearEnteModal] = useState(false);
   const [showEditarEnteModal, setShowEditarEnteModal] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
+  const [showEditarPagoModal, setShowEditarPagoModal] = useState(false);
+  const [showHistorialObligacionModal, setShowHistorialObligacionModal] = useState(false);
   const [showEntesManagement, setShowEntesManagement] = useState(false);
 
   // Search
@@ -80,6 +86,17 @@ export default function EntesLegalesPage() {
       setSelectedObligacion(obligacion);
       setShowPagoModal(true);
     }
+  };
+
+  const handleEditarPago = (row: CompraProducto | HistorialEnteLegal) => {
+    setSelectedPago(row as HistorialEnteLegal);
+    setShowEditarPagoModal(true);
+  };
+
+  const handleVerHistorialObligacion = (id: string) => {
+    const obligacion = obligaciones.find((o) => o.id_obligacion === id) || null;
+    setSelectedObligacionParaHistorial(obligacion);
+    setShowHistorialObligacionModal(true);
   };
 
   // Filter obligaciones by search query
@@ -202,6 +219,7 @@ export default function EntesLegalesPage() {
         onEditar={handleEditarObligacion}
         onEliminar={handleEliminarObligacion}
         onGenerarPago={handleGenerarPago}
+        onVerHistorial={handleVerHistorialObligacion}
       />
 
       {/* Pagination */}
@@ -263,6 +281,7 @@ export default function EntesLegalesPage() {
         variant="pagos"
         title="Historial de Pagos"
         emptyMessage="No hay pagos registrados"
+        onEditar={handleEditarPago}
       />
       {!historialLoading && historialData.length > 0 && (
         <Pagination
@@ -318,6 +337,32 @@ export default function EntesLegalesPage() {
         onClose={() => {
           setShowPagoModal(false);
           setSelectedObligacion(null);
+        }}
+      />
+
+      {/* Editar Pago */}
+      <EditarPagoEnteModal
+        isOpen={showEditarPagoModal}
+        onClose={() => {
+          setShowEditarPagoModal(false);
+          setSelectedPago(null);
+        }}
+        pago={selectedPago}
+        onSuccess={() => {
+          setShowEditarPagoModal(false);
+          setSelectedPago(null);
+        }}
+      />
+
+      {/* Historial de Obligación */}
+      <HistorialObligacionModal
+        isOpen={showHistorialObligacionModal}
+        obligacion={selectedObligacionParaHistorial}
+        historialData={historialData}
+        isLoading={historialLoading}
+        onClose={() => {
+          setShowHistorialObligacionModal(false);
+          setSelectedObligacionParaHistorial(null);
         }}
       />
     </div>

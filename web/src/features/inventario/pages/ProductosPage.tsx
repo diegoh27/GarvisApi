@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
-import { useGetProductosQuery, useGetHistorialComprasQuery } from "../api";
+import { useGetProductosQuery, useGetHistorialComprasQuery, type CompraProducto } from "../api";
 import ComprarProductoModal from "../components/productos/ComprarProductoModal.tsx";
+import EditarCompraModal from "../components/productos/EditarCompraModal.tsx";
 import CambiarCantidadModal from "../components/productos/CambiarCantidadModal.tsx";
 import HistorialModal from "../components/productos/HistorialModal.tsx";
 import CrearProductoModal from "../components/productos/CrearProductoModal.tsx";
@@ -15,7 +16,9 @@ export default function ProductosPage() {
   const { data: productos = [], isLoading, refetch } = useGetProductosQuery();
   const { data: historialCompras = [], isLoading: loadingHistorial } = useGetHistorialComprasQuery();
   const [selectedProducto, setSelectedProducto] = useState<string | null>(null);
+  const [selectedCompra, setSelectedCompra] = useState<CompraProducto | null>(null);
   const [showComprarModal, setShowComprarModal] = useState(false);
+  const [showEditarCompraModal, setShowEditarCompraModal] = useState(false);
   const [showCambiarModal, setShowCambiarModal] = useState(false);
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [showCrearModal, setShowCrearModal] = useState(false);
@@ -133,6 +136,10 @@ export default function ProductosPage() {
         historial={currentHistorialCompras}
         isLoading={loadingHistorial}
         variant="compras"
+        onEditar={(row) => {
+          setSelectedCompra(row as CompraProducto);
+          setShowEditarCompraModal(true);
+        }}
       />
       {!loadingHistorial && historialCompras.length > 0 && (
         <Pagination
@@ -149,6 +156,19 @@ export default function ProductosPage() {
       <CrearProductoModal
         isOpen={showCrearModal}
         onClose={() => setShowCrearModal(false)}
+      />
+
+      <EditarCompraModal
+        isOpen={showEditarCompraModal}
+        onClose={() => {
+          setShowEditarCompraModal(false);
+          setSelectedCompra(null);
+        }}
+        compra={selectedCompra}
+        onSuccess={() => {
+          setShowEditarCompraModal(false);
+          setSelectedCompra(null);
+        }}
       />
 
       {selectedProducto && (

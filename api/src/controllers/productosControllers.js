@@ -397,6 +397,117 @@ const listHistorialAjustesController = async ({ limit = 200 } = {}) => {
 	return rows;
 };
 
+/**
+ * Actualiza una compra de producto existente
+ */
+const updateCompraProductoController = async ({
+	id_compra,
+	id_producto,
+	fecha_ingreso,
+	cantidad,
+	precio_unitario,
+	precio_total,
+	proveedor,
+	referencia,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Obtener la compra actual
+		const [compraActual] = await conn.execute(
+			"SELECT id_compra, id_producto, cantidad FROM inv_producto_compra WHERE id_compra = ? LIMIT 1",
+			[id_compra],
+		);
+		if (!compraActual.length) {
+			const err = new Error("Compra no encontrada");
+			err.code = "COMPRA_NOT_FOUND";
+			throw err;
+		}
+
+		const compra = compraActual[0];
+		const cantidadAnterior = Number(compra.cantidad);
+		const cantidadNueva =
+			cantidad !== undefined ? Number(cantidad) : cantidadAnterior;
+		const diferenciaCantidad = cantidadNueva - cantidadAnterior;
+
+		// Construir la actualización de la compra
+		const updates = [];
+		const params = [];
+
+		if (fecha_ingreso !== undefined) {
+			updates.push("fecha_ingreso = ?");
+			params.push(fecha_ingreso);
+		}
+		if (cantidad !== undefined) {
+			updates.push("cantidad = ?");
+			params.push(cantidadNueva);
+		}
+		if (precio_unitario !== undefined) {
+			updates.push("precio_unitario = ?");
+			params.push(Number(precio_unitario));
+		}
+		if (precio_total !== undefined) {
+			updates.push("precio_total = ?");
+			params.push(Number(precio_total));
+		} else if (precio_unitario !== undefined && cantidad !== undefined) {
+			// Recalcular precio_total si se cambian ambos
+			updates.push("precio_total = ?");
+			params.push(Number(precio_unitario) * cantidadNueva);
+		}
+		if (proveedor !== undefined) {
+			updates.push("proveedor = ?");
+			params.push(proveedor || null);
+		}
+		if (referencia !== undefined) {
+			updates.push("referencia = ?");
+			params.push(referencia || null);
+		}
+
+		if (updates.length > 0) {
+			params.push(id_compra);
+			await conn.execute(
+				`UPDATE inv_producto_compra SET ${updates.join(", ")} WHERE id_compra = ?`,
+				params,
+			);
+		}
+
+		// Ajustar stock_actual si cambió la cantidad
+		if (diferenciaCantidad !== 0) {
+			await conn.execute(
+				`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
+				[diferenciaCantidad, compra.id_producto],
+			);
+		}
+
+		await conn.commit();
+
+		// Obtener la compra actualizada
+		const [compraActualizada] = await conn.execute(
+			`SELECT 
+				id_compra,
+				id_producto,
+				fecha_ingreso,
+				cantidad,
+				precio_unitario,
+				precio_total,
+				proveedor,
+				referencia,
+				id_usuario,
+				creado_en
+			FROM inv_producto_compra WHERE id_compra = ? LIMIT 1`,
+			[id_compra],
+		);
+
+		return compraActualizada[0];
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	// Productos
 	listProductosController,
@@ -405,6 +516,7 @@ module.exports = {
 	updateProductoController,
 	// Compras
 	registrarCompraProductoController,
+	updateCompraProductoController,
 	listComprasProductoController,
 	listHistorialComprasController,
 	// Ajustes

@@ -5,6 +5,7 @@ const {
 	getProductoHandler,
 	updateProductoHandler,
 	registrarCompraProductoHandler,
+	updateCompraProductoHandler,
 	listComprasProductoHandler,
 	listHistorialComprasHandler,
 	registrarAjusteStockHandler,
@@ -62,6 +63,14 @@ productosRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	registrarCompraProductoHandler,
+);
+
+// PUT /productos/compras/:idCompra - actualizar una compra existente
+productosRoutes.put(
+	"/compras/:idCompra",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	updateCompraProductoHandler,
 );
 
 // GET /productos/:id/compras - listar compras de un producto

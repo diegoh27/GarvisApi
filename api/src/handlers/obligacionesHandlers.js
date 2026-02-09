@@ -5,6 +5,7 @@ const {
 	updateObligacionController,
 	deleteObligacionController,
 	registrarPagoObligacionController,
+	updatePagoObligacionController,
 } = require("../controllers/obligacionesControllers");
 
 // ==========================================
@@ -205,6 +206,39 @@ const registrarPagoObligacionHandler = async (req, res) => {
 	}
 };
 
+/**
+ * PUT /obligaciones/pagos/:idPago - Actualiza un pago de obligación existente
+ */
+const updatePagoObligacionHandler = async (req, res) => {
+	try {
+		const { idPago } = req.params;
+		const { monto, fecha_pago, metodo, referencia } = req.body;
+
+		const pago = await updatePagoObligacionController({
+			id_pago: idPago,
+			monto: monto !== undefined ? Number(monto) : undefined,
+			fecha_pago,
+			metodo,
+			referencia,
+		});
+
+		return res.status(200).json({
+			ok: true,
+			message: "Pago actualizado",
+			data: pago,
+		});
+	} catch (error) {
+		console.error(error);
+		if (error.code === "PAGO_NOT_FOUND") {
+			return res.status(404).json({ ok: false, message: error.message });
+		}
+		return res.status(500).json({
+			ok: false,
+			message: "Error al actualizar pago",
+		});
+	}
+};
+
 module.exports = {
 	listObligacionesHandler,
 	getObligacionHandler,
@@ -212,4 +246,5 @@ module.exports = {
 	updateObligacionHandler,
 	deleteObligacionHandler,
 	registrarPagoObligacionHandler,
+	updatePagoObligacionHandler,
 };

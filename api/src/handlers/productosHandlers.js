@@ -4,6 +4,7 @@ const {
 	getProductoController,
 	updateProductoController,
 	registrarCompraProductoController,
+	updateCompraProductoController,
 	listComprasProductoController,
 	listHistorialComprasController,
 	registrarAjusteStockController,
@@ -194,6 +195,50 @@ const registrarCompraProductoHandler = async (req, res) => {
 	}
 };
 
+const updateCompraProductoHandler = async (req, res) => {
+	try {
+		const { idCompra } = req.params;
+		const {
+			fecha_ingreso,
+			cantidad,
+			precio_unitario,
+			precio_total,
+			proveedor,
+			referencia,
+		} = req.body;
+
+		const data = await updateCompraProductoController({
+			id_compra: idCompra,
+			fecha_ingreso,
+			cantidad: cantidad !== undefined ? Number(cantidad) : undefined,
+			precio_unitario:
+				precio_unitario !== undefined ? Number(precio_unitario) : undefined,
+			precio_total:
+				precio_total !== undefined ? Number(precio_total) : undefined,
+			proveedor,
+			referencia,
+		});
+
+		return res.status(200).json({
+			ok: true,
+			message: "Compra actualizada",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "COMPRA_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al actualizar la compra",
+		});
+	}
+};
+
 const listComprasProductoHandler = async (req, res) => {
 	try {
 		const { id: id_producto } = req.params;
@@ -321,6 +366,7 @@ module.exports = {
 	updateProductoHandler,
 	// Compras
 	registrarCompraProductoHandler,
+	updateCompraProductoHandler,
 	listComprasProductoHandler,
 	listHistorialComprasHandler,
 	// Ajustes

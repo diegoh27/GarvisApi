@@ -19,6 +19,7 @@ export default function EditarObligacionModal({
   const [formData, setFormData] = useState({
     concepto: "",
     periodo: "Mensual",
+    fecha_vencimiento: "",
   });
 
   const [error, setError] = useState("");
@@ -26,9 +27,13 @@ export default function EditarObligacionModal({
 
   useEffect(() => {
     if (obligacion && isOpen) {
+      const fecha = obligacion.fecha_vencimiento
+        ? new Date(obligacion.fecha_vencimiento).toISOString().split('T')[0]
+        : "";
       setFormData({
         concepto: obligacion.concepto || "",
         periodo: obligacion.periodo || "Mensual",
+        fecha_vencimiento: fecha,
       });
       setError("");
       setSuccess("");
@@ -52,6 +57,7 @@ export default function EditarObligacionModal({
       const payload: UpdateObligacionPayload = {
         concepto: formData.concepto.trim(),
         periodo: formData.periodo,
+        ...(formData.fecha_vencimiento && { fecha_vencimiento: formData.fecha_vencimiento }),
       };
 
       await updateObligacion({
@@ -133,6 +139,21 @@ export default function EditarObligacionModal({
               <option value="Anual">Anual</option>
               <option value="Unico">Único</option>
             </select>
+          </div>
+
+          {/* Fecha de Vencimiento */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha de Vencimiento
+            </label>
+            <input
+              type="date"
+              value={formData.fecha_vencimiento}
+              onChange={(e) =>
+                setFormData({ ...formData, fecha_vencimiento: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
 
           {/* Info: Monto y Fecha (solo lectura) */}
