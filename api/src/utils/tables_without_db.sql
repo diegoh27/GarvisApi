@@ -863,6 +863,9 @@ IF NOT EXISTS nom_empleado
 (10,2) NOT NULL DEFAULT 0,
   estado ENUM
 ('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
+  proximo_pago_manual DATE NULL,
+  estatus_pago_manual ENUM
+('Pendiente','Pagada') NULL,
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en TIMESTAMP NULL DEFAULT NULL ON
 UPDATE CURRENT_TIMESTAMP,
@@ -881,6 +884,7 @@ IF NOT EXISTS nom_pago
   id_empleado CHAR
 (36) NOT NULL,
   fecha_pago DATE NOT NULL,
+  fecha_proximo_pago DATE NULL,
   monto DECIMAL
 (10,2) NOT NULL,
   metodo ENUM

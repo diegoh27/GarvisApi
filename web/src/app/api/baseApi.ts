@@ -84,6 +84,9 @@ const baseApi = createApi({
 		"EntesLegales",
 		"Obligaciones",
 		"HistorialEnteLegal",
+		// Inventario - Nómina
+		"Empleado",
+		"NominaPago",
 	],
 	endpoints: () => ({}),
 });

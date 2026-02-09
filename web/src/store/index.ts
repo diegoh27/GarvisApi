@@ -4,6 +4,7 @@ import { baseApi } from "../app/api/baseApi";
 // Asegura que los endpoints inyectados (inventario, etc.) estén registrados al iniciar
 import "../features/inventario/api/productosApi";
 import "../features/inventario/api/entesLegalesApi";
+import "../features/inventario/api/nominaApi";
 
 const store = configureStore({
 	reducer: {

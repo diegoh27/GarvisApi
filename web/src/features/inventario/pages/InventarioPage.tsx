@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ProductosPage from "./ProductosPage";
 import ObligacionesPage from "./ObligacionesPage";
+import NominaPage from "./NominaPage";
 
 type TabType = "productos" | "entes" | "nomina" | "alquiler" | "facturacion";
 
@@ -44,13 +45,7 @@ export default function InventarioPage() {
 			<div className="max-w-7xl mx-auto">
 				{activeTab === "productos" && <ProductosPage />}
 				{activeTab === "entes" && <ObligacionesPage />}
-				{activeTab === "nomina" && (
-					<div className="p-6">
-						<p className="text-gray-600">
-							Esta sección aún no está implementada
-						</p>
-					</div>
-				)}
+				{activeTab === "nomina" && <NominaPage />}
 				{activeTab === "alquiler" && (
 					<div className="p-6">
 						<p className="text-gray-600">
