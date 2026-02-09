@@ -2,24 +2,30 @@ const { Router } = require("express");
 const {
 	listProductosHandler,
 	createProductoHandler,
-	createProductoLoteHandler,
-	listLotesByProductoHandler,
-	listHistorialLotesHandler,
-	updateProductoLoteHandler,
+	getProductoHandler,
 	updateProductoHandler,
-	getGastoProductosHandler,
+	registrarCompraProductoHandler,
+	listComprasProductoHandler,
+	listHistorialComprasHandler,
+	registrarAjusteStockHandler,
+	listAjustesProductoHandler,
+	listHistorialAjustesHandler,
 } = require("../handlers/productosHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
 
 const productosRoutes = Router();
 
-// GET /productos - lista productos con stock (producto + producto_lote)
+// ==========================================
+// CRUD PRODUCTOS
+// ==========================================
+
+// GET /productos - lista todos los productos
 productosRoutes.get(
 	"/",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	listProductosHandler
+	listProductosHandler,
 );
 
 // POST /productos - crear producto
@@ -27,23 +33,15 @@ productosRoutes.post(
 	"/",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	createProductoHandler
+	createProductoHandler,
 );
 
-// GET /productos/gasto?desde=YYYY-MM-DD&hasta=YYYY-MM-DD - gasto en compras por período
+// GET /productos/:id - obtener un producto
 productosRoutes.get(
-	"/gasto",
+	"/:id",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	getGastoProductosHandler
-);
-
-// GET /productos/historial-lotes - historial de lotes de compras (todos los productos)
-productosRoutes.get(
-	"/historial-lotes",
-	authenticateToken,
-	authorizeRoles("admin", "moderador"),
-	listHistorialLotesHandler
+	getProductoHandler,
 );
 
 // PATCH /productos/:id - actualizar producto
@@ -51,31 +49,63 @@ productosRoutes.patch(
 	"/:id",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	updateProductoHandler
+	updateProductoHandler,
 );
 
-// GET /productos/:id/lotes - listar lotes de un producto
-productosRoutes.get(
-	"/:id/lotes",
-	authenticateToken,
-	authorizeRoles("admin", "moderador"),
-	listLotesByProductoHandler
-);
+// ==========================================
+// COMPRAS
+// ==========================================
 
-// PATCH /productos/:id/lotes/:idLote - actualizar un lote
-productosRoutes.patch(
-	"/:id/lotes/:idLote",
-	authenticateToken,
-	authorizeRoles("admin", "moderador"),
-	updateProductoLoteHandler
-);
-
-// POST /productos/:id/lotes - registrar entrada/lote para un producto
+// POST /productos/:id/compras - registrar una compra (suma al stock)
 productosRoutes.post(
-	"/:id/lotes",
+	"/:id/compras",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	createProductoLoteHandler
+	registrarCompraProductoHandler,
+);
+
+// GET /productos/:id/compras - listar compras de un producto
+productosRoutes.get(
+	"/:id/compras",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	listComprasProductoHandler,
+);
+
+// GET /productos/compras/historial - historial de todas las compras
+productosRoutes.get(
+	"/compras/historial",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	listHistorialComprasHandler,
+);
+
+// ==========================================
+// AJUSTES DE STOCK
+// ==========================================
+
+// POST /productos/:id/ajustes - registrar un ajuste de stock
+productosRoutes.post(
+	"/:id/ajustes",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	registrarAjusteStockHandler,
+);
+
+// GET /productos/:id/ajustes - listar ajustes de un producto
+productosRoutes.get(
+	"/:id/ajustes",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	listAjustesProductoHandler,
+);
+
+// GET /productos/ajustes/historial - historial de todos los ajustes
+productosRoutes.get(
+	"/ajustes/historial",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	listHistorialAjustesHandler,
 );
 
 module.exports = productosRoutes;
