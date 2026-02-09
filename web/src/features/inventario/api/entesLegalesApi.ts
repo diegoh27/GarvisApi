@@ -242,6 +242,19 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			],
 		}),
 
+		// PUT /obligaciones/pagos/:idPago - actualizar pago de obligación
+		updatePagoObligacion: builder.mutation<
+			any,
+			{ idPago: string; payload: Partial<RegistrarPagoObligacionPayload> }
+		>({
+			query: ({ idPago, payload }) => ({
+				url: `/obligaciones/pagos/${idPago}`,
+				method: "PUT",
+				body: payload,
+			}),
+			invalidatesTags: ["Obligaciones", "EntesLegales", "HistorialEnteLegal"],
+		}),
+
 		// ==========================================
 		// ENTES LEGALES - EXTRAS
 		// ==========================================
@@ -304,6 +317,7 @@ export const {
 	useUpdateObligacionMutation,
 	useDeleteObligacionMutation,
 	useRegistrarPagoObligacionMutation,
+	useUpdatePagoObligacionMutation,
 	useGetHistorialEnteLegalQuery,
 	useGetHistorialPagosEntesQuery,
 	useRegistrarPagoEnteLegalMutation,

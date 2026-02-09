@@ -10,6 +10,7 @@ const {
 	updateObligacionHandler,
 	deleteObligacionHandler,
 	registrarPagoObligacionHandler,
+	updatePagoObligacionHandler,
 } = require("../handlers/obligacionesHandlers");
 
 // Todas las rutas requieren autenticación y rol admin o moderador
@@ -27,6 +28,9 @@ router.post("/", createObligacionHandler);
 
 // POST /obligaciones/:id/pagar - Registrar pago de obligación
 router.post("/:id/pagar", registrarPagoObligacionHandler);
+
+// PUT /obligaciones/pagos/:idPago - Actualizar un pago existente
+router.put("/pagos/:idPago", updatePagoObligacionHandler);
 
 // PATCH /obligaciones/:id - Actualizar obligación
 router.patch("/:id", updateObligacionHandler);

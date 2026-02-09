@@ -267,6 +267,99 @@ const registrarPagoObligacionController = async ({
 	}
 };
 
+/**
+ * Actualiza un pago de obligación existente
+ */
+const updatePagoObligacionController = async ({
+	id_pago,
+	monto,
+	fecha_pago,
+	metodo,
+	referencia,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// Verificar que el pago existe y obtener datos actuales
+		const [pagos] = await conn.execute(
+			`SELECT id_pago, id_obligacion, monto FROM leg_pago WHERE id_pago = ?`,
+			[id_pago],
+		);
+
+		if (!pagos.length) {
+			const err = new Error("Pago no encontrado");
+			err.code = "PAGO_NOT_FOUND";
+			throw err;
+		}
+
+		const pago = pagos[0];
+		const montoAnterior = Number(pago.monto);
+		const montoNuevo = monto !== undefined ? Number(monto) : montoAnterior;
+
+		// Construir la actualización del pago
+		const updates = [];
+		const params = [];
+
+		if (fecha_pago !== undefined) {
+			updates.push("fecha_pago = ?");
+			params.push(fecha_pago);
+		}
+		if (monto !== undefined) {
+			updates.push("monto = ?");
+			params.push(montoNuevo);
+		}
+		if (metodo !== undefined) {
+			updates.push("metodo = ?");
+			params.push(metodo);
+		}
+		if (referencia !== undefined) {
+			updates.push("referencia = ?");
+			params.push(referencia || null);
+		}
+
+		if (updates.length > 0) {
+			params.push(id_pago);
+			await conn.execute(
+				`UPDATE leg_pago SET ${updates.join(", ")} WHERE id_pago = ?`,
+				params,
+			);
+		}
+
+		// Si cambió el monto, actualizar también en la obligación
+		if (monto !== undefined && montoNuevo !== montoAnterior) {
+			await conn.execute(
+				`UPDATE leg_obligacion SET monto = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_obligacion = ?`,
+				[montoNuevo, pago.id_obligacion],
+			);
+		}
+
+		await conn.commit();
+
+		// Obtener el pago actualizado
+		const [pagoActualizado] = await conn.execute(
+			`SELECT 
+				id_pago,
+				id_obligacion,
+				fecha_pago,
+				monto,
+				metodo,
+				referencia,
+				id_usuario,
+				creado_en
+			FROM leg_pago WHERE id_pago = ?`,
+			[id_pago],
+		);
+
+		return pagoActualizado[0];
+	} catch (error) {
+		await conn.rollback();
+		throw error;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	listObligacionesController,
 	getObligacionController,
@@ -274,4 +367,5 @@ module.exports = {
 	updateObligacionController,
 	deleteObligacionController,
 	registrarPagoObligacionController,
+	updatePagoObligacionController,
 };

@@ -1,5 +1,6 @@
 import type { CompraProducto, HistorialEnteLegal } from "../api";
 import GenericTable from "./GenericTable";
+import { Edit } from "lucide-react";
 
 type HistorialRow = CompraProducto | HistorialEnteLegal;
 
@@ -9,6 +10,7 @@ type HistorialPagosTableProps = {
   variant?: "compras" | "pagos";
   title?: string;
   emptyMessage?: string;
+  onEditar?: (row: HistorialRow) => void;
 };
 
 export default function HistorialPagosTable({
@@ -17,6 +19,7 @@ export default function HistorialPagosTable({
   variant = "compras",
   title,
   emptyMessage,
+  onEditar,
 }: HistorialPagosTableProps) {
   const isCompras = variant === "compras";
 
@@ -84,6 +87,26 @@ export default function HistorialPagosTable({
         cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
         render: (row: HistorialRow) => (row as CompraProducto).proveedor || "-",
       },
+      ...(onEditar
+        ? [
+          {
+            key: "actions",
+            header: "Acciones",
+            headerClassName:
+              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-center",
+            render: (row: HistorialRow) => (
+              <button
+                onClick={() => onEditar(row)}
+                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                title="Editar compra"
+              >
+                <Edit size={18} />
+              </button>
+            ),
+          },
+        ]
+        : []),
     ]
     : [
       {
@@ -144,6 +167,26 @@ export default function HistorialPagosTable({
             day: "numeric",
           }),
       },
+      ...(onEditar
+        ? [
+          {
+            key: "actions",
+            header: "Acciones",
+            headerClassName:
+              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-center",
+            render: (row: HistorialRow) => (
+              <button
+                onClick={() => onEditar(row)}
+                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                title="Editar pago"
+              >
+                <Edit size={18} />
+              </button>
+            ),
+          },
+        ]
+        : []),
     ];
 
   const tableTitle = title || (isCompras ? "Historial de Compras" : "Historial de Pagos");
