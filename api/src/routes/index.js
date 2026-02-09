@@ -22,6 +22,7 @@ const notificacionesRoutes = require("./notificacionesRoutes");
 const inventarioRoutes = require("./inventarioRoutes");
 const productosRoutes = require("./productosRoutes");
 const entesLegalesRoutes = require("./entesLegalesRoutes");
+const obligacionesRoutes = require("./obligacionesRoutes");
 const empleadosRoutes = require("./empleadosRoutes");
 
 const rolesRoutes = require("./rolesRoutes");
@@ -48,6 +49,7 @@ router.use("/notificaciones", notificacionesRoutes);
 router.use("/inventario", inventarioRoutes);
 router.use("/productos", productosRoutes);
 router.use("/entes-legales", entesLegalesRoutes);
+router.use("/obligaciones", obligacionesRoutes);
 router.use("/empleados", empleadosRoutes);
 
 router.use("/roles", rolesRoutes);

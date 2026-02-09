@@ -8,8 +8,7 @@ import {
 	DisponibilidadPendientesPage,
 } from "../features/disponibilidad";
 import { EcosPage } from "../features/ecos";
-import { EmpleadosPage } from "../features/empleados";
-import { EntesLegalesPage } from "../features/entesLegales";
+
 import { EspecialidadesPage } from "../features/especialidades";
 import {
 	CalendarioPage,
@@ -28,7 +27,7 @@ import { InventarioPage } from "../features/inventario";
 import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
 import { PagosPage } from "../features/pagos";
-import { ProductosPage } from "../features/productos";
+
 import { RepresentadosPage } from "../features/representados";
 import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
@@ -261,30 +260,7 @@ const App = () => {
 							</RoleRoute>
 						}
 					/>
-					<Route
-						path="productos"
-						element={
-							<RoleRoute allowed={["admin", "moderador"]}>
-								<ProductosPage />
-							</RoleRoute>
-						}
-					/>
-					<Route
-						path="entes-legales"
-						element={
-							<RoleRoute allowed={["admin", "moderador"]}>
-								<EntesLegalesPage />
-							</RoleRoute>
-						}
-					/>
-					<Route
-						path="empleados"
-						element={
-							<RoleRoute allowed={["admin", "moderador"]}>
-								<EmpleadosPage />
-							</RoleRoute>
-						}
-					/>
+
 					<Route
 						path="usuarios"
 						element={

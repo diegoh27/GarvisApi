@@ -150,14 +150,14 @@ const AppLayout = () => {
 					isOpen={sidebarOpen}
 					onClose={closeSidebar}
 				/>
-				<div className="flex min-h-screen flex-1 flex-col">
+				<div className="flex min-h-screen flex-1 flex-col min-w-0">
 					<Topbar
 						onToggleSidebar={toggleSidebar}
 						fullName={fullName}
 						role={user?.rol}
 						onLogout={handleLogout}
 					/>
-					<main className="flex-1 p-4 sm:p-6">
+					<main className="flex-1 p-4 sm:p-6 min-w-0">
 						{/* Banner informativo de tasa del dólar */}
 						{(role === "admin" || role === "moderador" || role === "paciente") && (
 							<DolarInfoBanner />

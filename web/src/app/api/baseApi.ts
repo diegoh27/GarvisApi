@@ -75,6 +75,15 @@ const baseApi = createApi({
 		"Representados",
 		"Productos",
 		"Notificaciones",
+		// Inventario - Productos
+		"Compras",
+		"HistorialCompras",
+		"Ajustes",
+		"HistorialAjustes",
+		// Inventario - Entes Legales
+		"EntesLegales",
+		"Obligaciones",
+		"HistorialEnteLegal",
 	],
 	endpoints: () => ({}),
 });

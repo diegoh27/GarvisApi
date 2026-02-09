@@ -1,5 +1,11 @@
 -- =========================
--- Script SQL completo para crear la base de datos y todas las tablas
+-- Script SQL completo (ESQUEMA / DOCUMENTACIÓN) - ACTUALIZADO
+-- Cambios aplicados igual que al archivo anterior:
+--   - Inventario viejo NO se incluye. Se documenta el inventario NUEVO (inv_*)
+--   - Obligaciones administrativas viejas NO se incluyen. Se documenta Entes legales (leg_*)
+--   - Se incluyen módulos: Nómina (nom_*), Alquiler (alq_*), Especialistas comisión (esp_comision),
+--     y Facturación global (fac_movimiento)
+-- NOTA: Sin DROP. Solo CREATE TABLE IF NOT EXISTS.
 -- =========================
 
 -- =========================
@@ -55,7 +61,6 @@ IF NOT EXISTS usuario
 (1) NOT NULL DEFAULT 1,
   fecha_nacimiento DATE NOT NULL,
   fecha_registro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
   updated_at TIMESTAMP NULL DEFAULT NULL ON
 UPDATE CURRENT_TIMESTAMP,
   id_rol CHAR(36)
@@ -246,18 +251,18 @@ IF NOT EXISTS especialista_eco
 (id_especialista),
   KEY idx_esp_eco_eco
 (id_eco),
-  CONSTRAINT fk_esp_eco_especialista 
+  CONSTRAINT fk_esp_eco_especialista
     FOREIGN KEY
 (id_especialista) REFERENCES especialista
-(id_especialista) 
+(id_especialista)
     ON
 UPDATE CASCADE
     ON
 DELETE CASCADE,
-  CONSTRAINT fk_esp_eco_eco 
+  CONSTRAINT fk_esp_eco_eco
     FOREIGN KEY
 (id_eco) REFERENCES eco
-(id_eco) 
+(id_eco)
     ON
 UPDATE CASCADE
     ON
@@ -436,8 +441,8 @@ IF NOT EXISTS resultado
 (36) NOT NULL,
   nombre VARCHAR
 (255) NULL,
-  archivo TEXT NULL, -- TEXT para almacenar arrays JSON de múltiples URLs
-  estado_resultado TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Vacío, 2 Con resultados (resultado_archivo)
+  archivo TEXT NULL,
+  estado_resultado TINYINT NOT NULL DEFAULT 0,
   fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_publicacion TIMESTAMP NULL DEFAULT NULL,
 
@@ -515,7 +520,7 @@ DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- =========================
--- 11) Pagos
+-- 11) Pagos (Citas)
 -- =========================
 CREATE TABLE
 IF NOT EXISTS pagos
@@ -542,7 +547,7 @@ IF NOT EXISTS pagos
 (20) NOT NULL,
   referencia VARCHAR
 (64) NOT NULL,
-  estado_pago TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Aprobado, 2 Rechazado
+  estado_pago TINYINT NOT NULL DEFAULT 0,
   fecha_pago TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_validacion TIMESTAMP NULL DEFAULT NULL,
   validado_por CHAR
@@ -626,50 +631,73 @@ DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
--- 12) Inventario
+-- TABLAS ADMINISTRATIVAS
+-- =========================
+
+-- =========================
+-- 12) Inventario NUEVO (Productos)
+-- (sin unidad / sin stock_minimo, como decidiste)
 -- =========================
 CREATE TABLE
-IF NOT EXISTS producto
+IF NOT EXISTS inv_producto
 (
   id_producto CHAR
 (36) NOT NULL,
   nombre VARCHAR
 (255) NOT NULL,
-  unidad VARCHAR
-(20) NOT NULL,
-  stock_minimo INT NOT NULL DEFAULT 0,
+  stock_actual INT NOT NULL DEFAULT 0,
   activo TINYINT
 (1) NOT NULL DEFAULT 1,
-  precio DECIMAL
-(10,2) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY
 (id_producto),
-  UNIQUE KEY uk_producto_nombre
+  UNIQUE KEY uk_inv_producto_nombre
 (nombre)
 ) ENGINE=InnoDB;
 
 CREATE TABLE
-IF NOT EXISTS producto_lote
+IF NOT EXISTS inv_producto_compra
 (
-  id_lote CHAR
+  id_compra CHAR
 (36) NOT NULL,
   id_producto CHAR
 (36) NOT NULL,
-  cantidad INT NOT NULL,
-  fecha_vencimiento DATE NULL,
   fecha_ingreso DATE NOT NULL,
-  costo_total DECIMAL
-(10,2) NULL COMMENT 'Costo total de la compra/entrada del lote',
+  cantidad INT NOT NULL,
+  precio_unitario DECIMAL
+(10,2) NOT NULL,
+  precio_total DECIMAL
+(10,2) NOT NULL,
+  proveedor VARCHAR
+(120) NULL,
+  referencia VARCHAR
+(80) NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY
-(id_lote),
-  KEY idx_lote_producto
+(id_compra),
+  KEY idx_inv_compra_producto
 (id_producto),
+  KEY idx_inv_compra_usuario
+(id_usuario),
 
-  CONSTRAINT fk_lote_producto
+  CONSTRAINT fk_inv_compra_producto
     FOREIGN KEY
-(id_producto) REFERENCES producto
+(id_producto) REFERENCES inv_producto
 (id_producto)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+
+  CONSTRAINT fk_inv_compra_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
+(id_usuario)
     ON
 UPDATE CASCADE
     ON
@@ -677,38 +705,38 @@ DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE
-IF NOT EXISTS inventario_movimiento
+IF NOT EXISTS inv_producto_ajuste
 (
-  id_movimiento CHAR
+  id_ajuste CHAR
 (36) NOT NULL,
   id_producto CHAR
 (36) NOT NULL,
-  tipo ENUM
-('Entrada','Salida','Ajuste') NOT NULL,
-  cantidad INT NOT NULL,
+  fecha DATE NOT NULL,
+  stock_anterior INT NOT NULL,
+  stock_nuevo INT NOT NULL,
   motivo VARCHAR
 (120) NULL,
   id_usuario CHAR
 (36) NOT NULL,
-  fecha_movimiento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY
-(id_movimiento),
-  KEY idx_movimiento_producto
+(id_ajuste),
+  KEY idx_inv_ajuste_producto
 (id_producto),
-  KEY idx_movimiento_usuario
+  KEY idx_inv_ajuste_usuario
 (id_usuario),
 
-  CONSTRAINT fk_movimiento_producto
+  CONSTRAINT fk_inv_ajuste_producto
     FOREIGN KEY
-(id_producto) REFERENCES producto
+(id_producto) REFERENCES inv_producto
 (id_producto)
     ON
 UPDATE CASCADE
     ON
 DELETE RESTRICT,
 
-  CONSTRAINT fk_movimiento_usuario
+  CONSTRAINT fk_inv_ajuste_usuario
     FOREIGN KEY
 (id_usuario) REFERENCES usuario
 (id_usuario)
@@ -719,54 +747,253 @@ DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- =========================
--- 13) Obligaciones administrativas
+-- 13) Entes legales (lista + historial)
 -- =========================
 CREATE TABLE
-IF NOT EXISTS obligacion
+IF NOT EXISTS leg_ente
+(
+  id_ente CHAR
+(36) NOT NULL,
+  nombre VARCHAR
+(120) NOT NULL,
+  activo TINYINT
+(1) NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_ente),
+  UNIQUE KEY uk_leg_ente_nombre
+(nombre)
+) ENGINE=InnoDB;
+
+CREATE TABLE
+IF NOT EXISTS leg_obligacion
 (
   id_obligacion CHAR
+(36) NOT NULL,
+  id_ente CHAR
+(36) NOT NULL,
+  concepto VARCHAR
+(120) NOT NULL,
+  periodo ENUM
+('Mensual','Trimestral','Semestral','Anual','Unico') NOT NULL,
+  fecha_vencimiento DATE NULL DEFAULT NULL,
+  monto DECIMAL
+(10,2) NULL DEFAULT NULL,
+  estado ENUM
+('Pendiente','Pagado','Vencido') NOT NULL DEFAULT 'Pendiente',
+  recordatorio_dias INT NOT NULL DEFAULT 0,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_obligacion),
+  KEY idx_leg_obligacion_ente
+(id_ente),
+  KEY idx_leg_obligacion_estado
+(estado),
+
+  CONSTRAINT fk_leg_obligacion_ente
+    FOREIGN KEY
+(id_ente) REFERENCES leg_ente
+(id_ente)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE
+IF NOT EXISTS leg_pago
+(
+  id_pago CHAR
+(36) NOT NULL,
+  id_obligacion CHAR
+(36) NOT NULL,
+  fecha_pago DATE NOT NULL,
+  monto DECIMAL
+(10,2) NOT NULL DEFAULT 0,
+  metodo ENUM
+('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
+  referencia VARCHAR
+(80) NULL,
+  comprobante_url VARCHAR
+(255) NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_pago),
+  KEY idx_leg_pago_obligacion
+(id_obligacion),
+  KEY idx_leg_pago_usuario
+(id_usuario),
+
+  CONSTRAINT fk_leg_pago_obligacion
+    FOREIGN KEY
+(id_obligacion) REFERENCES leg_obligacion
+(id_obligacion)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+
+  CONSTRAINT fk_leg_pago_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 14) Nómina (lista + historial)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS nom_empleado
+(
+  id_empleado CHAR
+(36) NOT NULL,
+  nombre VARCHAR
+(80) NOT NULL,
+  apellido VARCHAR
+(80) NULL,
+  cedula VARCHAR
+(20) NULL,
+  cargo VARCHAR
+(60) NOT NULL,
+  periodo ENUM
+('Semanal','Quincenal','Mensual') NOT NULL DEFAULT 'Quincenal',
+  sueldo DECIMAL
+(10,2) NOT NULL DEFAULT 0,
+  estado ENUM
+('Activo','Inactivo') NOT NULL DEFAULT 'Activo',
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_empleado),
+  KEY idx_nom_empleado_cedula
+(cedula)
+) ENGINE=InnoDB;
+
+CREATE TABLE
+IF NOT EXISTS nom_pago
+(
+  id_pago CHAR
+(36) NOT NULL,
+  id_empleado CHAR
+(36) NOT NULL,
+  fecha_pago DATE NOT NULL,
+  monto DECIMAL
+(10,2) NOT NULL,
+  metodo ENUM
+('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
+  referencia VARCHAR
+(80) NULL,
+  comprobante_url VARCHAR
+(255) NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_pago),
+  KEY idx_nom_pago_empleado
+(id_empleado),
+  KEY idx_nom_pago_usuario
+(id_usuario),
+
+  CONSTRAINT fk_nom_pago_empleado
+    FOREIGN KEY
+(id_empleado) REFERENCES nom_empleado
+(id_empleado)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+
+  CONSTRAINT fk_nom_pago_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 15) Alquiler (lista + historial)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS alq_contrato
+(
+  id_contrato CHAR
 (36) NOT NULL,
   nombre VARCHAR
 (120) NOT NULL,
   descripcion VARCHAR
 (255) NULL,
-  fecha_vencimiento DATE NOT NULL,
+  periodo ENUM
+('Mensual','Anual','Unico') NOT NULL DEFAULT 'Mensual',
   monto DECIMAL
 (10,2) NOT NULL DEFAULT 0,
-  estado TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Pagada, 2 Vencida
-  recordatorio_dias INT NOT NULL DEFAULT 0,
+  estado ENUM
+('Pendiente','Pagado','Vencido') NOT NULL DEFAULT 'Pendiente',
+  fecha_vencimiento DATE NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
 
   PRIMARY KEY
-(id_obligacion)
+(id_contrato)
 ) ENGINE=InnoDB;
 
 CREATE TABLE
-IF NOT EXISTS obligacion_bitacora
+IF NOT EXISTS alq_pago
 (
-  id_bitacora CHAR
+  id_pago CHAR
 (36) NOT NULL,
-  id_obligacion CHAR
+  id_contrato CHAR
 (36) NOT NULL,
+  fecha_pago DATE NOT NULL,
+  monto DECIMAL
+(10,2) NOT NULL,
+  metodo ENUM
+('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
+  referencia VARCHAR
+(80) NULL,
+  comprobante_url VARCHAR
+(255) NULL,
   id_usuario CHAR
 (36) NOT NULL,
-  accion VARCHAR
-(120) NOT NULL,
-  fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
   PRIMARY KEY
-(id_bitacora),
-  KEY idx_bitacora_obligacion
-(id_obligacion),
-  KEY idx_bitacora_usuario
+(id_pago),
+  KEY idx_alq_pago_contrato
+(id_contrato),
+  KEY idx_alq_pago_usuario
 (id_usuario),
-  CONSTRAINT fk_bitacora_obligacion
+
+  CONSTRAINT fk_alq_pago_contrato
     FOREIGN KEY
-(id_obligacion) REFERENCES obligacion
-(id_obligacion)
+(id_contrato) REFERENCES alq_contrato
+(id_contrato)
     ON
 UPDATE CASCADE
     ON
 DELETE RESTRICT,
-  CONSTRAINT fk_bitacora_usuario
+
+  CONSTRAINT fk_alq_pago_usuario
     FOREIGN KEY
 (id_usuario) REFERENCES usuario
 (id_usuario)
@@ -776,7 +1003,124 @@ UPDATE CASCADE
 DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+-- =========================
+-- 16) Especialistas - comisión (egreso por % de cita)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS esp_comision
+(
+  id_comision CHAR
+(36) NOT NULL,
+  id_cita CHAR
+(36) NOT NULL,
+  id_especialista CHAR
+(36) NOT NULL,
+  porcentaje DECIMAL
+(5,2) NOT NULL,
+  monto DECIMAL
+(12,2) NOT NULL,
+  estado ENUM
+('Pendiente','Pagada') NOT NULL DEFAULT 'Pendiente',
+  fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_pago DATE NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+
+  PRIMARY KEY
+(id_comision),
+  UNIQUE KEY uk_esp_comision_cita
+(id_cita),
+  KEY idx_esp_comision_especialista
+(id_especialista),
+  KEY idx_esp_comision_estado
+(estado),
+
+  CONSTRAINT fk_esp_comision_cita
+    FOREIGN KEY
+(id_cita) REFERENCES cita
+(id_cita)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+
+  CONSTRAINT fk_esp_comision_especialista
+    FOREIGN KEY
+(id_especialista) REFERENCES especialista
+(id_especialista)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+
+  CONSTRAINT fk_esp_comision_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 17) Facturación global (ledger)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS fac_movimiento
+(
+  id_movimiento CHAR
+(36) NOT NULL,
+  tipo ENUM
+('Ingreso','Egreso') NOT NULL,
+  fecha DATE NOT NULL,
+  monto DECIMAL
+(12,2) NOT NULL,
+  descripcion VARCHAR
+(255) NULL,
+  referencia VARCHAR
+(80) NULL,
+
+  origen_modulo ENUM
+(
+    'CITA_PAGO',
+    'ESP_COMISION',
+    'INV_COMPRA',
+    'INV_AJUSTE',
+    'LEG_PAGO',
+    'NOM_PAGO',
+    'ALQ_PAGO',
+    'AJUSTE'
+  ) NOT NULL,
+
+  origen_id CHAR
+(36) NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_movimiento),
+  KEY idx_fac_fecha
+(fecha),
+  KEY idx_fac_tipo
+(tipo),
+  KEY idx_fac_origen
+(origen_modulo, origen_id),
+
+  CONSTRAINT fk_fac_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
 -- Tabla de prueba para el sistema de migraciones
+-- =========================
 CREATE TABLE
 IF NOT EXISTS prueba
 (
@@ -792,7 +1136,7 @@ IF NOT EXISTS prueba
 UPDATE CURRENT_TIMESTAMP,
   id_usuario CHAR(36)
 NOT NULL,
-  
+
   PRIMARY KEY
 (id_prueba),
   KEY idx_prueba_id_usuario
