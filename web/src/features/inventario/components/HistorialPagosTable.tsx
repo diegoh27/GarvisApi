@@ -1,16 +1,19 @@
 import type { CompraProducto, HistorialEnteLegal } from "../api";
+import type { NominaPago } from "../api/nominaApi";
 import GenericTable from "./GenericTable";
 import { Edit } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
-type HistorialRow = CompraProducto | HistorialEnteLegal;
+type HistorialRow = CompraProducto | HistorialEnteLegal | NominaPago;
 
 type HistorialPagosTableProps = {
   historial: HistorialRow[];
   isLoading: boolean;
-  variant?: "compras" | "pagos";
+  variant?: "compras" | "pagos" | "nomina";
   title?: string;
   emptyMessage?: string;
   onEditar?: (row: HistorialRow) => void;
+  onEliminar?: (id: string) => void;
 };
 
 export default function HistorialPagosTable({
@@ -20,8 +23,10 @@ export default function HistorialPagosTable({
   title,
   emptyMessage,
   onEditar,
+  onEliminar,
 }: HistorialPagosTableProps) {
   const isCompras = variant === "compras";
+  const isNomina = variant === "nomina";
 
   const columns = isCompras
     ? [
@@ -108,88 +113,187 @@ export default function HistorialPagosTable({
         ]
         : []),
     ]
-    : [
-      {
-        key: "id",
-        header: "ID",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-        render: (row: HistorialRow) => {
-          const pago = row as HistorialEnteLegal;
-          return pago.id_historial ? `${pago.id_historial.slice(0, 6)}...` : "-";
-        },
-      },
-      {
-        key: "ente",
-        header: "Ente",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
-        render: (row: HistorialRow) => (row as HistorialEnteLegal).nombre_ente || "-",
-      },
-      {
-        key: "concepto",
-        header: "Concepto",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
-        render: (row: HistorialRow) => (row as HistorialEnteLegal).concepto || "-",
-      },
-      {
-        key: "fecha",
-        header: "Fecha",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-        render: (row: HistorialRow) =>
-          new Date((row as HistorialEnteLegal).fecha_ingreso).toLocaleDateString("es-ES", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          }),
-      },
-      {
-        key: "valor",
-        header: "Valor",
-        headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
-        render: (row: HistorialRow) => {
-          const pago = row as HistorialEnteLegal;
-          return `$${Number(pago.precio_unitario).toFixed(2)}`;
-        },
-      },
-      {
-        key: "creado",
-        header: "Registrado",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-        render: (row: HistorialRow) =>
-          new Date((row as HistorialEnteLegal).creado_en).toLocaleDateString("es-ES", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          }),
-      },
-      ...(onEditar
-        ? [
-          {
-            key: "actions",
-            header: "Acciones",
-            headerClassName:
-              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-center",
-            render: (row: HistorialRow) => (
-              <button
-                onClick={() => onEditar(row)}
-                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
-                title="Editar pago"
-              >
-                <Edit size={18} />
-              </button>
-            ),
+    : isNomina
+      ? [
+        {
+          key: "id_pago",
+          header: "ID",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => {
+            const pago = row as NominaPago;
+            return pago.id_pago ? `${pago.id_pago.slice(0, 8)}...` : "-";
           },
-        ]
-        : []),
-    ];
+        },
+        {
+          key: "empleado",
+          header: "Empleado",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => {
+            const pago = row as NominaPago;
+            return `${pago.nombre_empleado} ${pago.apellido || ""}`;
+          },
+        },
+        {
+          key: "cargo",
+          header: "Cargo",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => (row as NominaPago).cargo || "-",
+        },
+        {
+          key: "fecha_pago",
+          header: "Fecha de Pago",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) =>
+            new Date((row as NominaPago).fecha_pago).toLocaleDateString("es-ES"),
+        },
+        {
+          key: "monto",
+          header: "Monto",
+          headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900 font-semibold",
+          render: (row: HistorialRow) => {
+            const pago = row as NominaPago;
+            return `$${Number(pago.monto).toFixed(2)}`;
+          },
+        },
+        {
+          key: "metodo",
+          header: "Método",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => {
+            const pago = row as NominaPago;
+            return pago.metodo.charAt(0).toUpperCase() + pago.metodo.slice(1);
+          },
+        },
+        {
+          key: "referencia",
+          header: "Referencia",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => (row as NominaPago).referencia || "-",
+        },
+        ...(onEditar || onEliminar
+          ? [
+            {
+              key: "actions",
+              header: "Acciones",
+              headerClassName:
+                "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+              cellClassName: "px-3 md:px-6 py-4 text-center",
+              render: (row: HistorialRow) => (
+                <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
+                  {onEditar && (
+                    <button
+                      onClick={() => onEditar(row)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                      title="Editar pago"
+                    >
+                      <Edit size={18} />
+                    </button>
+                  )}
+                  {onEliminar && (
+                    <button
+                      onClick={() => onEliminar((row as NominaPago).id_pago)}
+                      className="text-red-600 hover:text-red-800 transition-colors p-1"
+                      title="Eliminar pago"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              ),
+            },
+          ]
+          : []),
+      ]
+      : [
+        {
+          key: "id",
+          header: "ID",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) => {
+            const pago = row as HistorialEnteLegal;
+            return pago.id_historial ? `${pago.id_historial.slice(0, 6)}...` : "-";
+          },
+        },
+        {
+          key: "ente",
+          header: "Ente",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
+          render: (row: HistorialRow) => (row as HistorialEnteLegal).nombre_ente || "-",
+        },
+        {
+          key: "concepto",
+          header: "Concepto",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
+          render: (row: HistorialRow) => (row as HistorialEnteLegal).concepto || "-",
+        },
+        {
+          key: "fecha",
+          header: "Fecha",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) =>
+            new Date((row as HistorialEnteLegal).fecha_ingreso).toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+        },
+        {
+          key: "valor",
+          header: "Valor",
+          headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+          render: (row: HistorialRow) => {
+            const pago = row as HistorialEnteLegal;
+            return `$${Number(pago.precio_unitario).toFixed(2)}`;
+          },
+        },
+        {
+          key: "creado",
+          header: "Registrado",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          render: (row: HistorialRow) =>
+            new Date((row as HistorialEnteLegal).creado_en).toLocaleDateString("es-ES", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+        },
+        ...(onEditar
+          ? [
+            {
+              key: "actions",
+              header: "Acciones",
+              headerClassName:
+                "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+              cellClassName: "px-3 md:px-6 py-4 text-center",
+              render: (row: HistorialRow) => (
+                <button
+                  onClick={() => onEditar(row)}
+                  className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                  title="Editar pago"
+                >
+                  <Edit size={18} />
+                </button>
+              ),
+            },
+          ]
+          : []),
+      ];
 
-  const tableTitle = title || (isCompras ? "Historial de Compras" : "Historial de Pagos");
+  const tableTitle = title ||
+    (isCompras ? "Historial de Compras" : "Historial de Pagos");
   const tableEmptyMessage =
     emptyMessage || (isCompras ? "No hay compras registradas" : "No hay pagos registrados");
 
@@ -205,7 +309,9 @@ export default function HistorialPagosTable({
           rowKey={(row) =>
             isCompras
               ? (row as CompraProducto).id_compra
-              : (row as HistorialEnteLegal).id_historial
+              : isNomina
+                ? (row as NominaPago).id_pago
+                : (row as HistorialEnteLegal).id_historial
           }
           tableClassName="w-full min-w-[720px] text-sm"
           theadClassName="bg-gray-100"

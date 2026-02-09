@@ -281,7 +281,7 @@ export default function EntesLegalesPage() {
         variant="pagos"
         title="Historial de Pagos"
         emptyMessage="No hay pagos registrados"
-        onEditar={handleEditarPago}
+        onEditar={(row) => handleEditarPago(row as CompraProducto | HistorialEnteLegal)}
       />
       {!historialLoading && historialData.length > 0 && (
         <Pagination
