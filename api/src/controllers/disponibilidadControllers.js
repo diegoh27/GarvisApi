@@ -46,8 +46,8 @@ const createDisponibilidadController = async ({
 		}
 
 		// Validar solapamiento:
-		// - No permitir solaparse con bloques aprobados o con cita (estado 1 o 4)
-		// - No permitir otro bloque propuesto (estado 0) con el mismo eco en ese horario
+		// - No permitir duplicados del mismo eco en el mismo horario (estado 0 o 1)
+		// - No permitir crear si ya existe una cita en ese horario (estado 4)
 		const [overlapRows] = await conn.execute(
 			`SELECT id_disponibilidad, estado, id_eco
        FROM disponibilidad
@@ -60,16 +60,12 @@ const createDisponibilidadController = async ({
 		);
 		if (overlapRows.length) {
 			const existing = overlapRows[0];
-			const isAprobadaOCita = existing.estado === 1 || existing.estado === 4;
-			const isMismoEcoPropuesto =
-				existing.estado === 0 && existing.id_eco && existing.id_eco === id_eco;
-
-			if (isAprobadaOCita || isMismoEcoPropuesto) {
+			const sameEco = (existing.id_eco ?? null) === (id_eco ?? null);
+			if (existing.estado === 4 || sameEco) {
 				const err = new Error("Bloque se solapa con otro existente");
 				err.code = "OVERLAP";
 				throw err;
 			}
-			// Si llega aquí es un bloque propuesto con eco distinto: lo permitimos.
 		}
 
 		const id_disponibilidad = crypto.randomUUID();
@@ -161,12 +157,8 @@ const createDisponibilidadBatchController = async ({
 			);
 			if (overlapRows.length) {
 				const existing = overlapRows[0];
-				const isAprobadaOCita = existing.estado === 1 || existing.estado === 4;
-				const isMismoEcoPropuesto =
-					existing.estado === 0 &&
-					existing.id_eco &&
-					existing.id_eco === id_eco;
-				if (isAprobadaOCita || isMismoEcoPropuesto) {
+				const sameEco = (existing.id_eco ?? null) === (id_eco ?? null);
+				if (existing.estado === 4 || sameEco) {
 					const err = new Error(
 						`Bloque se solapa con otro existente: ${fecha} ${hora_inicio}`,
 					);

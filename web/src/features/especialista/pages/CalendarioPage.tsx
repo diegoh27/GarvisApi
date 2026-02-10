@@ -153,6 +153,16 @@ const CalendarioPage = () => {
 		[],
 	);
 
+	const showConflict = async (message: string) => {
+		await Swal.fire({
+			icon: "error",
+			title: "Conflicto de horario",
+			text: message,
+			confirmButtonText: "Entendido",
+			confirmButtonColor: "#1C837F",
+		});
+	};
+
 	const computeHoraFin = (hora: string) => {
 		const [hStr, mStr] = hora.split(":");
 		const h = Number(hStr);
@@ -241,10 +251,11 @@ const CalendarioPage = () => {
 				"No se pudo enviar una o más disponibilidades";
 
 			if (err?.status === 409) {
-				setError(
+				const conflictMessage =
 					apiMessage ||
-					"Ya existe un bloque aprobado o con cita en ese horario. Ajusta la hora o edita la disponibilidad existente.",
-				);
+					"Ya solicitaste este eco en ese horario, o ya hay una cita en ese horario.";
+				setError(conflictMessage);
+				await showConflict(conflictMessage);
 			} else {
 				setError(apiMessage);
 			}
@@ -263,6 +274,14 @@ const CalendarioPage = () => {
 		try {
 			const result = await crearDisponibilidadBatch({ bloques }).unwrap();
 			const creados = result?.creados ?? 0;
+			const fechasEnviadas = Array.from(
+				new Set(bloques.map((bloque) => bloque.fecha)),
+			).sort();
+			const fechasTexto = fechasEnviadas.length
+				? `Se enviaron solicitudes en los dias: ${fechasEnviadas
+					.map((fechaItem) => formatFecha(fechaItem))
+					.join(", ")}.`
+				: "Se enviaron las solicitudes.";
 			setSubmitStatus("done");
 			setSelectedCells([]);
 			setFecha("");
@@ -271,7 +290,7 @@ const CalendarioPage = () => {
 			await Swal.fire({
 				icon: "success",
 				title: "Disponibilidad agregada",
-				text: `Se enviaron ${creados} bloque${creados !== 1 ? "s" : ""} correctamente.`,
+				text: fechasTexto,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
@@ -340,7 +359,15 @@ const CalendarioPage = () => {
 					err?.error ||
 					(err as Error).message ||
 					"No se pudo enviar una o más disponibilidades";
-				setError(err?.status === 409 ? "Algunos horarios ya tienen bloque o cita. Revisa el calendario." : apiMessage);
+				if (err?.status === 409) {
+					const conflictMessage =
+						apiMessage ||
+						"Ya solicitaste este eco en uno o mas horarios, o ya hay citas en esos horarios.";
+					setError(conflictMessage);
+					await showConflict(conflictMessage);
+				} else {
+					setError(apiMessage);
+				}
 			}
 			setSubmitStatus("idle");
 			return;
