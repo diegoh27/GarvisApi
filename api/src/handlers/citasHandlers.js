@@ -442,7 +442,7 @@ const getCitaByIdHandler = async (req, res) => {
 const posponerCitaHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { fecha_cita, hora_cita } = req.body;
+		const { fecha_cita, hora_cita, id_especialista, id_disponibilidad } = req.body;
 
 		const missing = [];
 		if (!fecha_cita) missing.push("fecha_cita");
@@ -453,6 +453,14 @@ const posponerCitaHandler = async (req, res) => {
 				ok: false,
 				message: "Faltan campos requeridos",
 				missing,
+			});
+		}
+
+		if ((id_especialista && !id_disponibilidad) || (!id_especialista && id_disponibilidad)) {
+			return res.status(400).json({
+				ok: false,
+				message:
+					"Para cambiar de especialista debes enviar id_especialista e id_disponibilidad",
 			});
 		}
 
@@ -482,6 +490,8 @@ const posponerCitaHandler = async (req, res) => {
 			id_cita: id,
 			fecha_cita,
 			hora_cita: horaNormalizada,
+			id_especialista: id_especialista || null,
+			id_disponibilidad: id_disponibilidad || null,
 		});
 
 		return res.status(200).json({

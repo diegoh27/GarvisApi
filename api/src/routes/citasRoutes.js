@@ -82,11 +82,11 @@ citasRoutes.patch(
 	authorizeRoles("admin", "moderador"),
 	posponerCitaHandler
 );
-// PATCH /citas/:id/atender (especialista o paciente para marcar su propia cita al abrir historial)
+// PATCH /citas/:id/atender (especialista/paciente o admin/moderador)
 citasRoutes.patch(
 	"/:id/atender",
 	authenticateToken,
-	authorizeRoles("especialista", "paciente"),
+	authorizeRoles("especialista", "paciente", "admin", "moderador"),
 	markCitaAtendidaHandler
 );
 // GET /citas/pendientes-pago (moderador/admin)

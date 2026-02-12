@@ -8,6 +8,13 @@ type MonthCalendarProps = {
 	onMonthChange: (newMonth: Date) => void;
 };
 
+const getLocalDateKey = (date: Date) => {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+};
+
 const MonthCalendar = ({
 	currentMonth,
 	selectedDate,
@@ -43,7 +50,7 @@ const MonthCalendar = ({
 		const prevMonth = new Date(year, month, -i);
 		days.push({
 			day: prevMonth.getDate(),
-			dateKey: prevMonth.toISOString().slice(0, 10),
+			dateKey: getLocalDateKey(prevMonth),
 			isCurrentMonth: false,
 		});
 	}
@@ -52,7 +59,7 @@ const MonthCalendar = ({
 		const date = new Date(year, month, day);
 		days.push({
 			day,
-			dateKey: date.toISOString().slice(0, 10),
+			dateKey: getLocalDateKey(date),
 			isCurrentMonth: true,
 		});
 	}
@@ -62,7 +69,7 @@ const MonthCalendar = ({
 		const nextMonth = new Date(year, month + 1, day);
 		days.push({
 			day: nextMonth.getDate(),
-			dateKey: nextMonth.toISOString().slice(0, 10),
+			dateKey: getLocalDateKey(nextMonth),
 			isCurrentMonth: false,
 		});
 	}
@@ -70,7 +77,7 @@ const MonthCalendar = ({
 	const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 	const getDateStatus = (dateKey: string) => {
-		const today = new Date().toISOString().slice(0, 10);
+		const today = getLocalDateKey(new Date());
 		const isToday = dateKey === today;
 		const isSelected = dateKey === selectedDate;
 		const isPast = dateKey < today;

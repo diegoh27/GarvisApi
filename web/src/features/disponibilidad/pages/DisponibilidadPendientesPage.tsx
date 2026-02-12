@@ -5,7 +5,6 @@ import {
 	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
 	useAprobarDisponibilidadLoteMutation,
-	useAprobarDisponibilidadPorCriteriosMutation,
 	useRechazarDisponibilidadMutation,
 	useCancelarDisponibilidadAdminMutation,
 	useCancelarDisponibilidadLoteMutation,
@@ -39,8 +38,6 @@ const DisponibilidadPendientesPage = () => {
 		useAprobarDisponibilidadMutation();
 	const [aprobarDisponibilidadLote, { isLoading: isAprobandoLote }] =
 		useAprobarDisponibilidadLoteMutation();
-	const [aprobarPorCriterios, { isLoading: isAprobandoPorCriterios }] =
-		useAprobarDisponibilidadPorCriteriosMutation();
 	const [rechazarDisponibilidad, { isLoading: isRechazando }] =
 		useRechazarDisponibilidadMutation();
 	const [cancelarDisponibilidad, { isLoading: isCancelando }] =
@@ -51,12 +48,6 @@ const DisponibilidadPendientesPage = () => {
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [currentPage, setCurrentPage] = useState(1);
-	// Aprobar por criterios (especialista + rango fechas + rango horas)
-	const [criteriosEspecialista, setCriteriosEspecialista] = useState("");
-	const [criteriosFechaDesde, setCriteriosFechaDesde] = useState("");
-	const [criteriosFechaHasta, setCriteriosFechaHasta] = useState("");
-	const [criteriosHoraDesde, setCriteriosHoraDesde] = useState("");
-	const [criteriosHoraHasta, setCriteriosHoraHasta] = useState("");
 
 	const toggleSelect = (id: string) => {
 		setSelectedIds((prev) => {
@@ -76,6 +67,7 @@ const DisponibilidadPendientesPage = () => {
 	};
 
 	const clearSelection = () => setSelectedIds(new Set());
+	const clearFiltros = () => setFiltros(DEFAULT_FILTROS);
 
 	// Opciones de eco: únicos a partir de los datos
 	const ecoOptions = useMemo(() => {
@@ -87,21 +79,6 @@ const DisponibilidadPendientesPage = () => {
 				seen.add(nombre);
 				list.push({ id: nombre, label: nombre });
 			}
-		}
-		return list.sort((a, b) => a.label.localeCompare(b.label));
-	}, [disponibilidades]);
-
-	// Especialistas únicos (para aprobar por criterios)
-	const especialistaOptions = useMemo(() => {
-		const seen = new Set<string>();
-		const list: { id: string; label: string }[] = [];
-		for (const d of disponibilidades) {
-			if (seen.has(d.id_especialista)) continue;
-			seen.add(d.id_especialista);
-			list.push({
-				id: d.id_especialista,
-				label: `${d.nombre} ${d.apellido}`.trim(),
-			});
 		}
 		return list.sort((a, b) => a.label.localeCompare(b.label));
 	}, [disponibilidades]);
@@ -160,7 +137,7 @@ const DisponibilidadPendientesPage = () => {
 			);
 		}
 
-		// Filtro por rango de horas (hora_inicio del bloque)
+		// Filtro por rango de horas
 		if (filtros.horaDesde) {
 			const desde = filtros.horaDesde.padEnd(8, ":00").slice(0, 8);
 			list = list.filter((d) => {
@@ -171,7 +148,7 @@ const DisponibilidadPendientesPage = () => {
 		if (filtros.horaHasta) {
 			const hasta = filtros.horaHasta.padEnd(8, ":00").slice(0, 8);
 			list = list.filter((d) => {
-				const h = (d.hora_inicio ?? "").padEnd(8, ":00").slice(0, 8);
+				const h = (d.hora_fin ?? "").padEnd(8, ":00").slice(0, 8);
 				return h <= hasta;
 			});
 		}
@@ -198,6 +175,11 @@ const DisponibilidadPendientesPage = () => {
 		const start = (currentPage - 1) * ITEMS_PER_PAGE;
 		return filteredAndSorted.slice(start, start + ITEMS_PER_PAGE);
 	}, [filteredAndSorted, currentPage]);
+
+	const filteredIds = useMemo(
+		() => filteredAndSorted.map((d) => d.id_disponibilidad),
+		[filteredAndSorted],
+	);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -409,61 +391,6 @@ const DisponibilidadPendientesPage = () => {
 		}
 	};
 
-	const handleAprobarPorCriterios = async () => {
-		if (!criteriosEspecialista.trim()) {
-			Swal.fire({
-				icon: "warning",
-				title: "Selecciona un especialista",
-				text: "El especialista es obligatorio para aprobar por criterios.",
-			});
-			return;
-		}
-		const result = await Swal.fire({
-			icon: "question",
-			title: "Aprobar por criterios",
-			text: "Se aprobarán todas las disponibilidades pendientes del especialista seleccionado que coincidan con el rango de fechas (si lo indicaste). ¿Continuar?",
-			showCancelButton: true,
-			confirmButtonText: "Sí, aprobar",
-			cancelButtonText: "Cancelar",
-			confirmButtonColor: "#1a365d",
-		});
-		if (!result.isConfirmed) return;
-		setSelectedId("criterios");
-		try {
-			const data = await aprobarPorCriterios({
-				id_especialista: criteriosEspecialista,
-				fecha_desde: criteriosFechaDesde || undefined,
-				fecha_hasta: criteriosFechaHasta || undefined,
-				hora_desde: criteriosHoraDesde || undefined,
-				hora_hasta: criteriosHoraHasta || undefined,
-			}).unwrap();
-			await Swal.fire({
-				icon: "success",
-				title: "Aprobación por criterios",
-				text:
-					data.aprobados === 0
-						? "No hay bloques pendientes que coincidan con los criterios."
-						: `Se aprobaron ${data.aprobados} bloque${data.aprobados !== 1 ? "s" : ""} correctamente.`,
-				timer: 2000,
-				showConfirmButton: false,
-			});
-			refetch();
-			setCriteriosEspecialista("");
-			setCriteriosFechaDesde("");
-			setCriteriosFechaHasta("");
-			setCriteriosHoraDesde("");
-			setCriteriosHoraHasta("");
-		} catch (error: any) {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: error?.data?.message || "No se pudo aprobar por criterios",
-			});
-		} finally {
-			setSelectedId(null);
-		}
-	};
-
 	return (
 		<PageShell
 			title="Gestionar disponibilidades"
@@ -474,99 +401,13 @@ const DisponibilidadPendientesPage = () => {
 					value={filtros}
 					onChange={setFiltros}
 					ecoOptions={ecoOptions}
+					onReset={clearFiltros}
 				/>
 
 				<FiltroFechaCard
 					fechaDesde={filtros.fechaDesde}
 					fechaHasta={filtros.fechaHasta}
 				/>
-
-				{/* Aprobar por criterios: especialista + rango fechas + rango horas */}
-				<div className="rounded-lg border border-brand-200 bg-brand-50/30 p-4">
-					<h3 className="mb-3 text-sm font-semibold text-brand-800">
-						Aprobar por criterios
-					</h3>
-					<p className="mb-3 text-xs text-brand-700">
-						Aprobar de una vez todas las pendientes de un especialista (y opcionalmente rango de fechas y/o de horas). Ideal cuando solicitó muchos bloques (ej. 2 días todo el día y todos los ecos).
-					</p>
-					<div className="flex flex-wrap items-end gap-3">
-						<div className="min-w-[180px]">
-							<label className="mb-1 block text-xs font-medium text-brand-700">
-								Especialista <span className="text-red-500">*</span>
-							</label>
-							<select
-								value={criteriosEspecialista}
-								onChange={(e) => setCriteriosEspecialista(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700"
-							>
-								<option value="">Seleccionar...</option>
-								{especialistaOptions.map((opt) => (
-									<option key={opt.id} value={opt.id}>
-										{opt.label}
-									</option>
-								))}
-							</select>
-						</div>
-						<div>
-							<label className="mb-1 block text-xs font-medium text-brand-700">
-								Desde fecha
-							</label>
-							<input
-								type="date"
-								value={criteriosFechaDesde}
-								onChange={(e) => setCriteriosFechaDesde(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-						<div>
-							<label className="mb-1 block text-xs font-medium text-brand-700">
-								Hasta fecha
-							</label>
-							<input
-								type="date"
-								value={criteriosFechaHasta}
-								onChange={(e) => setCriteriosFechaHasta(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-						<div>
-							<label className="mb-1 block text-xs font-medium text-brand-700">
-								Desde hora
-							</label>
-							<input
-								type="time"
-								value={criteriosHoraDesde}
-								onChange={(e) => setCriteriosHoraDesde(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-						<div>
-							<label className="mb-1 block text-xs font-medium text-brand-700">
-								Hasta hora
-							</label>
-							<input
-								type="time"
-								value={criteriosHoraHasta}
-								onChange={(e) => setCriteriosHoraHasta(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-						<button
-							type="button"
-							onClick={handleAprobarPorCriterios}
-							disabled={
-								!criteriosEspecialista.trim() ||
-								isAprobandoPorCriterios ||
-								selectedId === "criterios"
-							}
-							className="rounded-full bg-brand-700 px-4 py-2 text-sm font-semibold text-paper hover:bg-brand-800 disabled:opacity-50"
-						>
-							{isAprobandoPorCriterios && selectedId === "criterios"
-								? "Procesando..."
-								: "Aprobar todas las que coincidan"}
-						</button>
-					</div>
-				</div>
 
 				{isLoading ? (
 					<div className="py-8 text-center text-brand-600">
@@ -599,14 +440,10 @@ const DisponibilidadPendientesPage = () => {
 							</button>
 							<button
 								type="button"
-								onClick={() =>
-									setSelectedIds(
-										new Set(filteredAndSorted.map((d) => d.id_disponibilidad)),
-									)
-								}
+								onClick={() => setSelectedIds(new Set(filteredIds))}
 								className="rounded-full border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
 							>
-								Seleccionar todas ({filteredAndSorted.length})
+								Seleccionar filtrados ({filteredAndSorted.length})
 							</button>
 							{selectedIds.size > 0 && (
 								<>

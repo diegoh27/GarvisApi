@@ -778,7 +778,7 @@ const approveDisponibilidadPorCriteriosController = async ({
 	}
 	const horaHastaNorm = normalizeHora(hora_hasta);
 	if (horaHastaNorm) {
-		conditions.push("d.hora_inicio <= ?");
+		conditions.push("d.hora_fin <= ?");
 		params.push(horaHastaNorm);
 	}
 	const whereClause = conditions.join(" AND ");

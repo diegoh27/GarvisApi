@@ -5,6 +5,7 @@ import {
 	useGetAllCitasQuery,
 	useUpdateEstadoPagoMutation,
 	useCancelCitaMutation,
+	useMarcarAtendidaMutation,
 } from "../../citas/citasApi";
 import type { CitaCompleta } from "../../citas/citasApi";
 import { useGetCitaByIdQuery, useGetPagoByCitaQuery } from "../moderadoresApi";
@@ -77,12 +78,16 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 type FilterOption = {
 	id: string;
 	label: string;
+	estado?: number;
 };
+
+const toNumber = (value: number | string | null | undefined) => Number(value);
 
 const TodasLasCitasPage = () => {
 	const { data: citas = [], isLoading, refetch } = useGetAllCitasQuery();
 	const [updateEstadoPago, { isLoading: isUpdating }] = useUpdateEstadoPagoMutation();
 	const [cancelCita] = useCancelCitaMutation();
+	const [marcarAtendida, { isLoading: isMarkingAtendida }] = useMarcarAtendidaMutation();
 	const [uploadResultado, { isLoading: isUploading }] = useUploadResultadoMutation();
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
@@ -109,6 +114,7 @@ const TodasLasCitasPage = () => {
 	const [filterPago, setFilterPago] = useState("todas");
 	const [filterResultado, setFilterResultado] = useState("todas");
 	const [filterInforme, setFilterInforme] = useState("todas");
+	const [filterAtencion, setFilterAtencion] = useState("todas");
 	const [ordenFecha, setOrdenFecha] = useState<"reciente" | "antigua">("reciente");
 	const [query, setQuery] = useState("");
 	const itemsPerPage = 10;
@@ -142,6 +148,12 @@ const TodasLasCitasPage = () => {
 		{ id: "sin-informe", label: "Sin informe" },
 	];
 
+	const filterOptionsAtencion: FilterOption[] = [
+		{ id: "todas", label: "Todas" },
+		{ id: "atendidas", label: "Atendidas" },
+		{ id: "no-atendidas", label: "No atendidas" },
+	];
+
 	// Filtrar citas según los filtros seleccionados y búsqueda
 	const filteredCitas = useMemo(() => {
 		let citasFiltradas = citas;
@@ -171,11 +183,13 @@ const TodasLasCitasPage = () => {
 		if (filterPago !== "todas") {
 			if (filterPago === "canceladas") {
 				// Filtrar por estado de cita cancelada
-				citasFiltradas = citasFiltradas.filter((cita) => cita.estado_cita === 2);
+				citasFiltradas = citasFiltradas.filter((cita) => toNumber(cita.estado_cita) === 2);
 			} else {
 				const filterOption = filterOptionsPago.find((opt) => opt.id === filterPago);
 				if (filterOption?.estado !== undefined) {
-					citasFiltradas = citasFiltradas.filter((cita) => cita.estado_pago === filterOption.estado);
+					citasFiltradas = citasFiltradas.filter(
+						(cita) => toNumber(cita.estado_pago) === filterOption.estado,
+					);
 				}
 			}
 		}
@@ -201,6 +215,19 @@ const TodasLasCitasPage = () => {
 				citasFiltradas = citasFiltradas.filter((cita) => cita.id_informe !== null);
 			} else if (filterInforme === "sin-informe") {
 				citasFiltradas = citasFiltradas.filter((cita) => cita.id_informe === null);
+			}
+		}
+
+		// Filtro por atención del especialista
+		if (filterAtencion !== "todas") {
+			if (filterAtencion === "atendidas") {
+				citasFiltradas = citasFiltradas.filter(
+					(cita) => toNumber(cita.estado_cita) === 3,
+				);
+			} else if (filterAtencion === "no-atendidas") {
+				citasFiltradas = citasFiltradas.filter(
+					(cita) => toNumber(cita.estado_cita) !== 3,
+				);
 			}
 		}
 
@@ -241,7 +268,7 @@ const TodasLasCitasPage = () => {
 		});
 
 		return citasFiltradas;
-	}, [citas, filterPago, filterResultado, filterInforme, ordenFecha, filterOptionsPago, query]);
+	}, [citas, filterPago, filterResultado, filterInforme, filterAtencion, ordenFecha, filterOptionsPago, query]);
 
 	// Paginación
 	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
@@ -253,7 +280,7 @@ const TodasLasCitasPage = () => {
 	// Resetear a página 1 cuando cambian los datos, los filtros o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filterPago, filterResultado, filterInforme, ordenFecha, query]);
+	}, [citas.length, filterPago, filterResultado, filterInforme, filterAtencion, ordenFecha, query]);
 
 	const handleAprobarPago = async (id_cita: string) => {
 		const confirmResult = await Swal.fire({
@@ -359,6 +386,39 @@ const TodasLasCitasPage = () => {
 				icon: "error",
 				title: "Error",
 				text: err?.data?.message || "No se pudo cancelar la cita",
+			});
+		}
+	};
+
+	const handleMarcarAtendida = async (id: string, pacienteNombre: string) => {
+		const confirmResult = await Swal.fire({
+			title: "¿Marcar cita como atendida?",
+			text: `Se marcará como atendida la cita de ${pacienteNombre}.`,
+			icon: "question",
+			showCancelButton: true,
+			confirmButtonText: "Sí, marcar atendida",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+
+		if (!confirmResult.isConfirmed) return;
+
+		try {
+			await marcarAtendida(id).unwrap();
+			await Swal.fire({
+				icon: "success",
+				title: "Cita marcada como atendida",
+				text: "La cita fue actualizada exitosamente.",
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			refetch();
+		} catch (err: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: err?.data?.message || "No se pudo marcar la cita como atendida",
 			});
 		}
 	};
@@ -542,6 +602,23 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
+						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por atención</label>
+						<div className="flex flex-wrap gap-2">
+							{filterOptionsAtencion.map((option) => (
+								<button
+									key={option.id}
+									onClick={() => setFilterAtencion(option.id)}
+									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterAtencion === option.id
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-mist"
+										}`}
+								>
+									{option.label}
+								</button>
+							))}
+						</div>
+					</div>
+					<div>
 						<label className="mb-2 block text-xs font-medium text-brand-700">Ordenar por fecha</label>
 						<div className="flex flex-wrap gap-2">
 							<button
@@ -573,7 +650,7 @@ const TodasLasCitasPage = () => {
 				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" ? `con los filtros seleccionados` : ""}.`}
+							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" || filterAtencion !== "todas" ? `con los filtros seleccionados` : ""}.`}
 						</p>
 					</div>
 				) : (
@@ -585,6 +662,8 @@ const TodasLasCitasPage = () => {
 								const tieneInforme = cita.id_informe !== null;
 								const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
 								const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
+								const estadoPago = toNumber(cita.estado_pago);
+								const estadoCita = toNumber(cita.estado_cita);
 
 								return (
 									<div
@@ -598,12 +677,23 @@ const TodasLasCitasPage = () => {
 													<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-paper">
 														{cita.eco_nombre}
 													</span>
-													<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(cita.estado_pago)}`}>
-														{getEstadoPagoLabel(cita.estado_pago)}
+													<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(estadoPago)}`}>
+														{getEstadoPagoLabel(estadoPago)}
 													</span>
-													<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoCitaColor(cita.estado_cita)}`}>
-														{getEstadoCitaLabel(cita.estado_cita)}
-													</span>
+													{estadoCita === 2 && (
+														<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoCitaColor(estadoCita)}`}>
+															{getEstadoCitaLabel(estadoCita)}
+														</span>
+													)}
+													{estadoCita === 3 ? (
+														<span className="inline-flex items-center gap-0.5 rounded-full bg-green-600 px-2 py-0.5 text-xs font-medium text-paper" title="La cita ya fue atendida por el especialista">
+															<Check className="h-3 w-3" /> Atendida
+														</span>
+													) : (
+														<span className="inline-flex items-center gap-0.5 rounded-full bg-violet-500 px-2 py-0.5 text-xs font-medium text-paper" title="La cita aún no ha sido atendida por el especialista">
+															<X className="h-3 w-3" /> No atendida
+														</span>
+													)}
 													{tieneResultado && (
 														<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
 															{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
@@ -667,7 +757,7 @@ const TodasLasCitasPage = () => {
 													</button>
 												)}
 												{/* Botones de aprobar y rechazar - solo cuando el pago está pendiente */}
-												{cita.estado_pago === 0 && cita.id_pago && (
+												{estadoPago === 0 && cita.id_pago && (
 													<>
 														<button
 															type="button"
@@ -753,7 +843,7 @@ const TodasLasCitasPage = () => {
 														Ver orden médica
 													</button>
 												)} */}
-												{cita.estado_cita !== 2 && cita.estado_cita !== 3 && (
+												{estadoCita !== 2 && estadoCita !== 3 && (
 													<>
 														<button
 															type="button"
@@ -767,8 +857,8 @@ const TodasLasCitasPage = () => {
 																	id_eco: cita.id_eco,
 																	fecha_cita: cita.fecha_cita,
 																	hora_cita: cita.hora_cita,
-																	estado_cita: cita.estado_cita,
-																	estado_pago: cita.estado_pago,
+																	estado_cita: estadoCita,
+																	estado_pago: estadoPago,
 																	id_disponibilidad: cita.id_disponibilidad,
 																	orden: cita.orden,
 																	paciente_nombre: cita.paciente_nombre,
@@ -791,6 +881,14 @@ const TodasLasCitasPage = () => {
 															className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-red-600"
 														>
 															Cancelar cita
+														</button>
+														<button
+															type="button"
+															onClick={() => handleMarcarAtendida(cita.id_cita, fullName)}
+															disabled={isMarkingAtendida}
+															className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-green-700 disabled:opacity-50"
+														>
+															{isMarkingAtendida ? "Marcando..." : "Marcar atendida"}
 														</button>
 													</>
 												)}

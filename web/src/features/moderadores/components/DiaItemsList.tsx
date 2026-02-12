@@ -7,10 +7,12 @@ import {
 import {
 	useUpdateEstadoPagoMutation,
 	useCancelCitaMutation,
+	useMarcarAtendidaMutation,
 } from "../../citas/citasApi";
 import { useGetPagoByCitaQuery, useGetCitaByIdQuery } from "../moderadoresApi";
 import VerPagoModal from "./VerPagoModal";
 import VerCitaModal from "./VerCitaModal";
+import RechazarPagoModal from "./RechazarPagoModal";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 
@@ -25,6 +27,8 @@ type FilterOption = {
 	id: string;
 	label: string;
 };
+
+const toNumber = (value: unknown) => Number(value);
 
 const formatFecha = (value: string) => {
 	if (!value) return "";
@@ -54,8 +58,10 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
 	const [aprobarDisponibilidad] = useAprobarDisponibilidadMutation();
 	const [rechazarDisponibilidad] = useRechazarDisponibilidadMutation();
-	const [updateEstadoPago] = useUpdateEstadoPagoMutation();
+	const [updateEstadoPago, { isLoading: isUpdatingPago }] = useUpdateEstadoPagoMutation();
 	const [cancelCita] = useCancelCitaMutation();
+	const [marcarAtendida, { isLoading: isMarkingAtendida }] = useMarcarAtendidaMutation();
+	const [citaToReject, setCitaToReject] = useState<{ id_cita: string; nombre: string } | null>(null);
 
 	// Obtener datos del pago cuando se selecciona una cita
 	const {
@@ -78,8 +84,7 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 	const filterOptions: FilterOption[] = [
 		{ id: "todas", label: "Todas" },
 		{ id: "pendientes", label: "Pendientes" },
-		{ id: "citas-pendientes-pago", label: "Citas por confirmar pago" },
-		{ id: "citas-aprobadas", label: "Citas aprobadas" },
+		{ id: "citas", label: "Citas" },
 		{ id: "aprobadas", label: "Aprobadas" },
 		{ id: "rechazadas", label: "Rechazadas" },
 	];
@@ -88,37 +93,31 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 	const filteredItems = useMemo(() => {
 		if (filter === "todas") {
 			return {
-				disponibilidades: disponibilidades.filter((d) => d.estado !== 4), // Excluir las que son citas
+				disponibilidades: disponibilidades.filter((d) => toNumber(d.estado) !== 4), // Excluir las que son citas
 				citas: citas,
 			};
 		}
 		if (filter === "pendientes") {
 			return {
-				disponibilidades: disponibilidades.filter((d) => d.estado === 0),
+				disponibilidades: disponibilidades.filter((d) => toNumber(d.estado) === 0),
 				citas: [],
 			};
 		}
-		if (filter === "citas-pendientes-pago") {
+		if (filter === "citas") {
 			return {
 				disponibilidades: [],
-				citas: citas.filter((c) => c.estado_pago === 0 && c.estado_cita !== 2),
-			};
-		}
-		if (filter === "citas-aprobadas") {
-			return {
-				disponibilidades: [],
-				citas: citas.filter((c) => c.estado_pago === 1 && c.estado_cita !== 2),
+				citas: citas,
 			};
 		}
 		if (filter === "aprobadas") {
 			return {
-				disponibilidades: disponibilidades.filter((d) => d.estado === 1),
+				disponibilidades: disponibilidades.filter((d) => toNumber(d.estado) === 1),
 				citas: [],
 			};
 		}
 		if (filter === "rechazadas") {
 			return {
-				disponibilidades: disponibilidades.filter((d) => d.estado === 2),
+				disponibilidades: disponibilidades.filter((d) => toNumber(d.estado) === 2),
 				citas: [],
 			};
 		}
@@ -277,6 +276,42 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 		}
 	};
 
+	const handleRechazarPago = (id_cita: string) => {
+		const cita = citas.find((c) => c.id_cita === id_cita);
+		const nombrePaciente = cita
+			? `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim()
+			: "";
+		setCitaToReject({ id_cita, nombre: nombrePaciente });
+	};
+
+	const handleConfirmRechazar = async (motivo: string) => {
+		if (!citaToReject) return;
+
+		try {
+			await updateEstadoPago({
+				id_cita: citaToReject.id_cita,
+				estado_pago: 2,
+				motivo_rechazo: motivo,
+			}).unwrap();
+
+			setCitaToReject(null);
+
+			await Swal.fire({
+				icon: "success",
+				title: "Pago rechazado",
+				text: "El pago ha sido rechazado y el paciente ha sido notificado.",
+				timer: 2500,
+				showConfirmButton: false,
+			});
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo rechazar el pago",
+			});
+		}
+	};
+
 	const handleCancelarCita = async (id: string, pacienteNombre: string) => {
 		const confirmResult = await Swal.fire({
 			title: "¿Cancelar cita?",
@@ -305,6 +340,38 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 				icon: "error",
 				title: "Error",
 				text: err?.data?.message || "No se pudo cancelar la cita",
+			});
+		}
+	};
+
+	const handleMarcarAtendida = async (id: string, pacienteNombre: string) => {
+		const confirmResult = await Swal.fire({
+			title: "¿Marcar cita como atendida?",
+			text: `Se marcará como atendida la cita de ${pacienteNombre}.`,
+			icon: "question",
+			showCancelButton: true,
+			confirmButtonText: "Sí, marcar atendida",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+
+		if (!confirmResult.isConfirmed) return;
+
+		try {
+			await marcarAtendida(id).unwrap();
+			await Swal.fire({
+				icon: "success",
+				title: "Cita marcada como atendida",
+				text: "La cita fue actualizada exitosamente.",
+				timer: 2000,
+				showConfirmButton: false,
+			});
+		} catch (err: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: err?.data?.message || "No se pudo marcar la cita como atendida",
 			});
 		}
 	};
@@ -352,6 +419,7 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 						{paginatedItems.map((item) => {
 							if (item.type === "disponibilidad") {
 								const disp = item.data;
+								const estadoDisponibilidad = toNumber(disp.estado);
 								return (
 									<div
 										key={disp.id_disponibilidad}
@@ -372,21 +440,21 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 												)}
 												<span
 													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${
-														disp.estado === 0
+														estadoDisponibilidad === 0
 															? "bg-accent text-paper"
-															: disp.estado === 1
+															: estadoDisponibilidad === 1
 																? "bg-brand-700 text-paper"
 																: "bg-red-500 text-paper"
 													}`}
 												>
-													{disp.estado === 0
+													{estadoDisponibilidad === 0
 														? "Pendiente"
-														: disp.estado === 1
+														: estadoDisponibilidad === 1
 															? "Aprobada"
 															: "Rechazada"}
 												</span>
 											</div>
-											{disp.estado === 0 && (
+											{estadoDisponibilidad === 0 && (
 												<div className="flex gap-2 ml-2">
 													<button
 														onClick={() => handleAprobarDisponibilidad(disp.id_disponibilidad)}
@@ -407,6 +475,8 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 								);
 							} else {
 								const cita = item.data;
+								const estadoPago = toNumber(cita.estado_pago);
+								const estadoCita = toNumber(cita.estado_cita);
 								return (
 									<div
 										key={cita.id_cita}
@@ -428,16 +498,18 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 												</p>
 												<span
 													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${
-														cita.estado_pago === 0
-															? "bg-amber-400 text-brand-900"
-															: "bg-sky-500 text-paper"
+														estadoCita === 3
+															? "bg-green-600 text-paper"
+															: estadoPago === 0
+																? "bg-amber-400 text-brand-900"
+																: "bg-sky-500 text-paper"
 													}`}
 												>
-													{cita.estado_pago === 0 ? "Pago pendiente" : "Cita aprobada"}
+													{estadoCita === 3 ? "Atendida" : estadoPago === 0 ? "Pago pendiente" : "Cita aprobada"}
 												</span>
 											</div>
 											<div className="ml-2 flex flex-col gap-2">
-												{cita.estado_pago === 0 && (
+												{estadoPago === 0 && (
 													<button
 														onClick={() => handleAprobarPago(cita.id_cita)}
 														className="rounded-lg bg-brand-700 px-3 py-1 text-[10px] text-paper hover:bg-brand-800"
@@ -457,18 +529,32 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 												>
 													Ver pago
 												</button>
-												{cita.estado_cita !== 2 && cita.estado_cita !== 3 && (
-													<button
-														onClick={() =>
-															handleCancelarCita(
-																cita.id_cita,
-																`${cita.paciente_nombre} ${cita.paciente_apellido}`,
-															)
-														}
-														className="rounded-lg bg-red-500 px-3 py-1 text-[10px] text-paper hover:bg-red-600"
-													>
-														Cancelar cita
-													</button>
+												{estadoCita !== 2 && estadoCita !== 3 && (
+													<>
+														<button
+															onClick={() =>
+																handleMarcarAtendida(
+																	cita.id_cita,
+																	`${cita.paciente_nombre} ${cita.paciente_apellido}`,
+																)
+															}
+															disabled={isMarkingAtendida}
+															className="rounded-lg bg-green-600 px-3 py-1 text-[10px] text-paper hover:bg-green-700 disabled:opacity-50"
+														>
+															{isMarkingAtendida ? "Marcando..." : "Marcar atendida"}
+														</button>
+														<button
+															onClick={() =>
+																handleCancelarCita(
+																	cita.id_cita,
+																	`${cita.paciente_nombre} ${cita.paciente_apellido}`,
+																)
+															}
+															className="rounded-lg bg-red-500 px-3 py-1 text-[10px] text-paper hover:bg-red-600"
+														>
+															Cancelar cita
+														</button>
+													</>
 												)}
 											</div>
 										</div>
@@ -525,7 +611,22 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 				<VerPagoModal
 					pago={loadingPago ? null : pagoData || null}
 					error={pagoError ? "No se pudo cargar la información del pago" : null}
+					showAcciones
+					id_cita={selectedCitaId}
+					onAprobar={handleAprobarPago}
+					onRechazar={handleRechazarPago}
+					isUpdating={isUpdatingPago}
 					onClose={() => setSelectedCitaId(null)}
+				/>
+			)}
+
+			{/* Modal de rechazar pago */}
+			{citaToReject && (
+				<RechazarPagoModal
+					onClose={() => setCitaToReject(null)}
+					onConfirm={handleConfirmRechazar}
+					isLoading={isUpdatingPago}
+					nombrePaciente={citaToReject.nombre}
 				/>
 			)}
 		</div>

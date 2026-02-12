@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import type { CitaEspecialista } from "../types";
@@ -60,7 +60,7 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 const HistorialModal = ({
 	paciente,
 	citas,
-	citaParaMarcarAtendida = null,
+	citaParaMarcarAtendida: _citaParaMarcarAtendida = null,
 	informesMap = new Map(),
 	formatFecha,
 	formatHora,
@@ -83,20 +83,6 @@ const HistorialModal = ({
 	} | null>(null);
 
 	const [marcarAtendida] = useMarcarAtendidaMutation();
-
-	// Al abrir el historial, marcar la cita correspondiente como atendida si aplica
-	useEffect(() => {
-		if (!citaParaMarcarAtendida) return;
-		const cita = citaParaMarcarAtendida;
-		if (cita.estado_cita === 3) return;
-		if (cita.estado_cita === 2) return;
-		if (cita.estado_pago !== 1) return;
-		const today = new Date().toISOString().slice(0, 10);
-		const citaDateKey = getDateKey(cita.fecha_cita);
-		if (citaDateKey > today) return;
-		marcarAtendida(cita.id_cita).catch(() => { });
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- solo al abrir con esta cita
-	}, [citaParaMarcarAtendida?.id_cita]);
 
 	const handleMarcarAtendida = async (cita: CitaEspecialista) => {
 		if (cita.estado_pago === 0) {

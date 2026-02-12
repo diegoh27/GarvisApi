@@ -301,9 +301,11 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 		}
 		const cita = rows[0];
 		const autorizado =
-			role === "paciente"
-				? cita.id_paciente === userId
-				: cita.id_especialista === userId;
+			role === "admin" || role === "moderador"
+				? true
+				: role === "paciente"
+					? cita.id_paciente === userId
+					: cita.id_especialista === userId;
 		if (!autorizado) {
 			const err = new Error("No autorizado");
 			err.code = "FORBIDDEN";
@@ -549,15 +551,21 @@ const listCitasByFechaController = async (fecha) => {
 	return rows;
 };
 
-// Posponer cita (actualizar fecha y hora)
-const posponerCitaController = async ({ id_cita, fecha_cita, hora_cita }) => {
+// Posponer cita (actualizar fecha/hora y opcionalmente especialista/disponibilidad)
+const posponerCitaController = async ({
+	id_cita,
+	fecha_cita,
+	hora_cita,
+	id_especialista,
+	id_disponibilidad,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
 
 		// Verificar que la cita existe y no está cancelada o atendida
 		const [rows] = await conn.execute(
-			`SELECT estado_cita, estado_pago, fecha_cita, hora_cita
+			`SELECT estado_cita, estado_pago, fecha_cita, hora_cita, id_disponibilidad, id_eco
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
@@ -581,28 +589,111 @@ const posponerCitaController = async ({ id_cita, fecha_cita, hora_cita }) => {
 			throw err;
 		}
 
+		let targetFecha = fecha_cita;
+		let targetHora = hora_cita;
+		let targetEspecialista = id_especialista || null;
+		let targetDisponibilidad = id_disponibilidad || null;
+
+		if (id_disponibilidad) {
+			const [dispRows] = await conn.execute(
+				`SELECT id_disponibilidad, id_especialista, id_eco, fecha, hora_inicio, estado
+         FROM disponibilidad
+         WHERE id_disponibilidad = ?
+         FOR UPDATE`,
+				[id_disponibilidad],
+			);
+
+			if (!dispRows.length) {
+				const err = new Error("Disponibilidad seleccionada no encontrada");
+				err.code = "NOT_FOUND";
+				throw err;
+			}
+
+			const disponibilidad = dispRows[0];
+			if (![0, 1, 4].includes(Number(disponibilidad.estado))) {
+				const err = new Error("La disponibilidad seleccionada no puede usarse para posponer");
+				err.code = "INVALID_STATE";
+				throw err;
+			}
+
+			if (
+				Number(disponibilidad.estado) === 4 &&
+				cita.id_disponibilidad !== disponibilidad.id_disponibilidad
+			) {
+				const err = new Error("La disponibilidad seleccionada ya está reservada");
+				err.code = "INVALID_STATE";
+				throw err;
+			}
+
+			if (cita.id_eco && disponibilidad.id_eco && cita.id_eco !== disponibilidad.id_eco) {
+				const err = new Error("La disponibilidad seleccionada no corresponde al eco de la cita");
+				err.code = "INVALID_STATE";
+				throw err;
+			}
+
+			if (id_especialista && disponibilidad.id_especialista !== id_especialista) {
+				const err = new Error("La disponibilidad no pertenece al especialista seleccionado");
+				err.code = "INVALID_STATE";
+				throw err;
+			}
+
+			targetFecha = disponibilidad.fecha;
+			targetHora = disponibilidad.hora_inicio;
+			targetEspecialista = disponibilidad.id_especialista;
+			targetDisponibilidad = disponibilidad.id_disponibilidad;
+		}
+
 		// Validar que la nueva fecha no sea en el pasado
 		const today = new Date().toISOString().slice(0, 10);
 		const nowTime = new Date().toTimeString().slice(0, 8);
-		if (fecha_cita < today) {
+		if (targetFecha < today) {
 			const err = new Error("No se puede posponer una cita a una fecha pasada");
 			err.code = "PAST_DATE";
 			throw err;
 		}
-		if (fecha_cita === today && hora_cita <= nowTime) {
+		if (targetFecha === today && targetHora <= nowTime) {
 			const err = new Error("No se puede posponer una cita a una hora pasada");
 			err.code = "PAST_DATE";
 			throw err;
 		}
 
-		// Actualizar fecha y hora de la cita
+		if (
+			targetDisponibilidad &&
+			cita.id_disponibilidad &&
+			cita.id_disponibilidad !== targetDisponibilidad
+		) {
+			await conn.execute(
+				"UPDATE disponibilidad SET estado = 1 WHERE id_disponibilidad = ? AND estado = 4",
+				[cita.id_disponibilidad],
+			);
+		}
+
+		if (targetDisponibilidad) {
+			await conn.execute(
+				"UPDATE disponibilidad SET estado = 4 WHERE id_disponibilidad = ? AND estado IN (0, 1)",
+				[targetDisponibilidad],
+			);
+		}
+
+		// Actualizar fecha, hora y opcionalmente especialista/disponibilidad
 		await conn.execute(
-			"UPDATE cita SET fecha_cita = ?, hora_cita = ? WHERE id_cita = ?",
-			[fecha_cita, hora_cita, id_cita],
+			`UPDATE cita
+       SET fecha_cita = ?,
+           hora_cita = ?,
+           id_especialista = COALESCE(?, id_especialista),
+           id_disponibilidad = COALESCE(?, id_disponibilidad)
+       WHERE id_cita = ?`,
+			[targetFecha, targetHora, targetEspecialista, targetDisponibilidad, id_cita],
 		);
 
 		await conn.commit();
-		return { id_cita, fecha_cita, hora_cita };
+		return {
+			id_cita,
+			fecha_cita: targetFecha,
+			hora_cita: targetHora,
+			id_especialista: targetEspecialista,
+			id_disponibilidad: targetDisponibilidad,
+		};
 	} catch (err) {
 		await conn.rollback();
 		throw err;
