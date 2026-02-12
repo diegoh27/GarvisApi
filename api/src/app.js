@@ -23,9 +23,10 @@ server.use(
 		origin: [
 			"http://localhost:3001",
 			"http://localhost:5173",
-			"https://garvis-api.vercel.app",
+			"https://garbis.online/",
 			"https://garvis.mjeimports.store",
-			"*",
+			"https://garbis.online/",
+			"https://api.garbis.online/",
 		],
 		credentials: true,
 	}),
