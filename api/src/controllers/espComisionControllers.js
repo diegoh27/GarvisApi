@@ -97,7 +97,11 @@ exports.generarComisionesPendientesController = async ({ id_usuario }) => {
 // COMISIONES - PAGAR
 // ==========================================
 
-exports.pagarComisionController = async ({ id_comision, id_usuario, fecha_pago }) => {
+exports.pagarComisionController = async ({
+	id_comision,
+	id_usuario,
+	fecha_pago,
+}) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
