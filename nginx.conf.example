@@ -20,19 +20,24 @@ server {
     ssl_certificate /etc/letsencrypt/live/garbis.online/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/garbis.online/privkey.pem;
 
-    # Root del frontend (ajusta la ruta según tu estructura)
-    root /var/www/garbis.online/GarvisApi/web/dist;
-    index index.html;
-
-    # Servir archivos estáticos con caché
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
+    # Frontend React en subcarpeta
+    location /GarvisApi/web/dist/ {
+        alias /var/www/garbis.online/GarvisApi/web/dist/;
+        index index.html;
+        
+        # SPA routing - intenta servir el archivo, si no existe va a index.html
+        try_files $uri $uri/ /GarvisApi/web/dist/index.html;
+        
+        # Caché para assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
     }
 
-    # SPA routing - todas las rutas van a index.html
+    # Ruta raíz (opcional, puede redirigir o servir otra cosa)
     location / {
-        try_files $uri $uri/ /index.html;
+        return 301 /GarvisApi/web/dist/;
     }
 }
 
