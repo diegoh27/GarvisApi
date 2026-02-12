@@ -25,6 +25,7 @@ server.use(
 			"http://localhost:5173",
 			"https://garvis-api.vercel.app",
 			"https://garvis.mjeimports.store",
+			"*",
 		],
 		credentials: true,
 	}),

@@ -3,8 +3,15 @@ import ProductosPage from "./ProductosPage";
 import ObligacionesPage from "./ObligacionesPage";
 import NominaPage from "./NominaPage";
 import AlquilerPage from "./AlquilerPage";
+import ComisionesEspecialistasPage from "./ComisionesEspecialistasPage";
 
-type TabType = "productos" | "entes" | "nomina" | "alquiler" | "facturacion";
+type TabType =
+	| "productos"
+	| "entes"
+	| "nomina"
+	| "alquiler"
+	| "comisiones"
+	| "facturacion";
 
 export default function InventarioPage() {
 	const [activeTab, setActiveTab] = useState<TabType>("productos");
@@ -14,6 +21,7 @@ export default function InventarioPage() {
 		{ id: "entes", label: "Entes Legales" },
 		{ id: "nomina", label: "Nómina" },
 		{ id: "alquiler", label: "Alquiler" },
+		{ id: "comisiones", label: "Comisiones" },
 		{ id: "facturacion", label: "Facturación" },
 	];
 
@@ -48,6 +56,7 @@ export default function InventarioPage() {
 				{activeTab === "entes" && <ObligacionesPage />}
 				{activeTab === "nomina" && <NominaPage />}
 				{activeTab === "alquiler" && <AlquilerPage />}
+				{activeTab === "comisiones" && <ComisionesEspecialistasPage />}
 				{activeTab === "facturacion" && (
 					<div className="p-6">
 						<p className="text-gray-600">

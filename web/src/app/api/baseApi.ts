@@ -90,6 +90,8 @@ const baseApi = createApi({
 		// Inventario - Alquiler
 		"AlquilerContrato",
 		"AlquilerPago",
+		// Inventario - Comisiones Especialistas
+		"EspecialistaComision",
 	],
 	endpoints: () => ({}),
 });

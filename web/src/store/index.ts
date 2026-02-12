@@ -6,6 +6,7 @@ import "../features/inventario/api/productosApi.ts";
 import "../features/inventario/api/entesLegalesApi.ts";
 import "../features/inventario/api/nominaApi.ts";
 import "../features/inventario/api/alquilerApi.ts";
+import "../features/inventario/api/especialistasApi.ts";
 
 const store = configureStore({
 	reducer: {
