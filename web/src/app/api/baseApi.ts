@@ -87,6 +87,11 @@ const baseApi = createApi({
 		// Inventario - Nómina
 		"Empleado",
 		"NominaPago",
+		// Inventario - Alquiler
+		"AlquilerContrato",
+		"AlquilerPago",
+		// Inventario - Comisiones Especialistas
+		"EspecialistaComision",
 	],
 	endpoints: () => ({}),
 });
