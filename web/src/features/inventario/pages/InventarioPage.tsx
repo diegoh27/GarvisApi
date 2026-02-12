@@ -2,6 +2,7 @@ import { useState } from "react";
 import ProductosPage from "./ProductosPage";
 import ObligacionesPage from "./ObligacionesPage";
 import NominaPage from "./NominaPage";
+import AlquilerPage from "./AlquilerPage";
 
 type TabType = "productos" | "entes" | "nomina" | "alquiler" | "facturacion";
 
@@ -46,13 +47,7 @@ export default function InventarioPage() {
 				{activeTab === "productos" && <ProductosPage />}
 				{activeTab === "entes" && <ObligacionesPage />}
 				{activeTab === "nomina" && <NominaPage />}
-				{activeTab === "alquiler" && (
-					<div className="p-6">
-						<p className="text-gray-600">
-							Esta sección aún no está implementada
-						</p>
-					</div>
-				)}
+				{activeTab === "alquiler" && <AlquilerPage />}
 				{activeTab === "facturacion" && (
 					<div className="p-6">
 						<p className="text-gray-600">

@@ -25,6 +25,7 @@ const entesLegalesRoutes = require("./entesLegalesRoutes");
 const obligacionesRoutes = require("./obligacionesRoutes");
 const empleadosRoutes = require("./empleadosRoutes");
 const nominaRoutes = require("./nominaRoutes");
+const alquilerRoutes = require("./alquilerRoutes");
 
 const rolesRoutes = require("./rolesRoutes");
 const dolarRoutes = require("./dolarRoutes");
@@ -53,6 +54,7 @@ router.use("/entes-legales", entesLegalesRoutes);
 router.use("/obligaciones", obligacionesRoutes);
 router.use("/empleados", empleadosRoutes);
 router.use("/nomina", nominaRoutes);
+router.use("/alquiler", alquilerRoutes);
 
 router.use("/roles", rolesRoutes);
 router.use("/dolar", dolarRoutes);

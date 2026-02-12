@@ -87,6 +87,9 @@ const baseApi = createApi({
 		// Inventario - Nómina
 		"Empleado",
 		"NominaPago",
+		// Inventario - Alquiler
+		"AlquilerContrato",
+		"AlquilerPago",
 	],
 	endpoints: () => ({}),
 });
