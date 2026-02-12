@@ -1,0 +1,10 @@
+ErrorDocument 404 /GarvisApi/web/dist/index.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /GarvisApi/web/dist/
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /GarvisApi/web/dist/index.html [L]
+</IfModule>
