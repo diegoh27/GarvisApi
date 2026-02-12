@@ -18,18 +18,40 @@ const config = {
 	issuerBaseURL: process.env.AUTH0_ISSUERBASEURL,
 };
 
-server.use(
-	cors({
-		origin: [
+// CORS Configuration
+const corsOptions = {
+	origin: function (origin, callback) {
+		const allowedOrigins = [
 			"http://localhost:3001",
 			"http://localhost:5173",
 			"https://garbis.online",
 			"https://www.garbis.online",
 			"https://garvis.mjeimports.store",
-		],
-		credentials: true,
-	}),
-);
+		];
+		// Allow requests with no origin (like mobile apps or curl)
+		if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+			callback(null, true);
+		} else {
+			callback(new Error("Not allowed by CORS"));
+		}
+	},
+	credentials: true,
+	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"X-Requested-With",
+		"Accept",
+	],
+	exposeHeaders: ["Content-Length", "Content-Type"],
+	preflightContinue: false,
+	optionsSuccessStatus: 204,
+};
+
+server.use(cors(corsOptions));
+
+// Handle preflight requests
+server.options("*", cors(corsOptions));
 
 server.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 server.use(bodyParser.json({ limit: "50mb" }));
