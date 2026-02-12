@@ -23,10 +23,9 @@ server.use(
 		origin: [
 			"http://localhost:3001",
 			"http://localhost:5173",
-			"https://garbis.online/",
+			"https://garbis.online",
+			"https://www.garbis.online",
 			"https://garvis.mjeimports.store",
-			"https://garbis.online/",
-			"https://api.garbis.online/",
 		],
 		credentials: true,
 	}),
