@@ -1,12 +1,26 @@
 require("dotenv").config();
 const mysql = require("mysql2/promise");
 
-const DELETE_DATABASE = false;
+const toBool = (value) =>
+	String(value || "")
+		.trim()
+		.toLowerCase() === "true";
 
 async function deleteDatabaseOnStartup() {
-	if (!DELETE_DATABASE) {
+	const shouldDelete = toBool(process.env.RESET_DATABASE_ON_STARTUP);
+	const isProduction = process.env.NODE_ENV === "production";
+	const allowInProduction = toBool(process.env.ALLOW_DB_RESET_IN_PRODUCTION);
+
+	if (!shouldDelete) {
 		console.log(
-			"⏭️ DELETE_DATABASE está en false. No se borra la base al iniciar servidor.",
+			"⏭️ RESET_DATABASE_ON_STARTUP no está activo. No se borra la base al iniciar servidor.",
+		);
+		return;
+	}
+
+	if (isProduction && !allowInProduction) {
+		console.log(
+			"🛡️ NODE_ENV=production detectado. Se bloquea el borrado de BD (usa ALLOW_DB_RESET_IN_PRODUCTION=true solo si es intencional).",
 		);
 		return;
 	}
@@ -29,7 +43,9 @@ async function deleteDatabaseOnStartup() {
 			port: Number(DB_PORT),
 		});
 
-		console.log(`⚠️ Borrando base de datos al iniciar servidor: ${DB_NAME}...`);
+		console.log(
+			`⚠️ Borrando base de datos al iniciar servidor: ${DB_NAME} (NODE_ENV=${process.env.NODE_ENV || "undefined"})...`,
+		);
 		await connection.query(`DROP DATABASE IF EXISTS \`${DB_NAME}\``);
 		await connection.query(
 			`CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
