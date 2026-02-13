@@ -58,13 +58,13 @@ export default function ComisionesEspecialistasPage() {
 
   const handleGenerarComisiones = async () => {
     const result = await Swal.fire({
-      title: "¿Generar comisiones?",
+      title: "¿Sincronizar pagos pendientes?",
       text: "Se generarán comisiones para todas las citas atendidas y pagadas pendientes.",
       icon: "info",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, generar",
+      confirmButtonText: "Sí, sincronizar",
       cancelButtonText: "Cancelar",
     });
 
@@ -73,8 +73,8 @@ export default function ComisionesEspecialistasPage() {
         const response = await generarComisiones({}).unwrap();
         Swal.fire({
           icon: "success",
-          title: "Comisiones generadas",
-          text: `Se generaron ${response.data.inserted} comisiones exitosamente.`,
+          title: "Pagos pendientes sincronizados",
+          text: `Se sincronizaron ${response.data.inserted} comisiones exitosamente.`,
           timer: 2000,
           showConfirmButton: false,
         });
@@ -226,12 +226,16 @@ export default function ComisionesEspecialistasPage() {
     return comisionesData.filter((comision) => {
       const nombre = comision.especialista_nombre?.toLowerCase() || "";
       const apellido = comision.especialista_apellido?.toLowerCase() || "";
+      const paciente = comision.paciente_nombre?.toLowerCase() || "";
+      const cedulaPaciente = comision.paciente_cedula?.toLowerCase() || "";
       const ecoNombre = comision.eco_nombre?.toLowerCase() || "";
       const monto = comision.monto?.toString() || "";
 
       return (
         nombre.includes(query) ||
         apellido.includes(query) ||
+        paciente.includes(query) ||
+        cedulaPaciente.includes(query) ||
         ecoNombre.includes(query) ||
         monto.includes(query)
       );
@@ -319,7 +323,7 @@ export default function ComisionesEspecialistasPage() {
             className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors w-full md:w-auto justify-center md:justify-start"
           >
             <Plus size={20} />
-            Generar pagos pendientes
+            Sincronizar pagos pendientes
           </button>
         </div>
       </div>

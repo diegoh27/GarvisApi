@@ -21,7 +21,11 @@ import {
 	EspecialistasListPage,
 } from "../features/especialistas";
 import { CalendarioModeradorPage, PacientesPage as ModeradoresPacientesPage, TodasLasCitasPage } from "../features/moderadores";
-import { RegistrarEspecialistaPage, RegistrarModeradorPage } from "../features/admin";
+import {
+	RegistrarEspecialistaPage,
+	RegistrarModeradorPage,
+	MetodosPagoPage,
+} from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
 import { ModeradoresPage } from "../features/moderadores";
@@ -123,6 +127,14 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["admin"]}>
 								<RegistrarModeradorPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="admin/metodos-pago"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<MetodosPagoPage />
 							</RoleRoute>
 						}
 					/>

@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 // ==========================================
 // OBLIGACIONES
@@ -211,7 +212,10 @@ const registrarPagoObligacionController = async ({
 
 		// Verificar que la obligación existe
 		const [obligaciones] = await conn.execute(
-			`SELECT id_obligacion, id_ente FROM leg_obligacion WHERE id_obligacion = ?`,
+			`SELECT o.id_obligacion, o.id_ente, o.concepto, e.nombre AS nombre_ente
+			 FROM leg_obligacion o
+			 INNER JOIN leg_ente e ON e.id_ente = o.id_ente
+			 WHERE o.id_obligacion = ?`,
 			[id_obligacion],
 		);
 
@@ -222,17 +226,25 @@ const registrarPagoObligacionController = async ({
 		}
 
 		const id_pago = crypto.randomUUID();
+		const tasaDiaBcv = await getTodayBcvRate();
+		const normalized = normalizeUsdAmounts({
+			montoUsd: Number(monto),
+			tasaBcv: tasaDiaBcv,
+		});
 
 		// Insertar el pago
 		await conn.execute(
 			`INSERT INTO leg_pago
-			(id_pago, id_obligacion, fecha_pago, monto, metodo, referencia, id_usuario)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			(id_pago, id_obligacion, fecha_pago, monto, monto_usd, monto_bs, tasa_dia_bcv, metodo, referencia, id_usuario)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				id_pago,
 				id_obligacion,
 				fecha_pago,
 				Number(monto),
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
 				metodo,
 				referencia,
 				id_usuario,
@@ -245,6 +257,24 @@ const registrarPagoObligacionController = async ({
 			 SET estado = ?, monto = ?, fecha_vencimiento = ?, actualizado_en = CURRENT_TIMESTAMP
 			 WHERE id_obligacion = ?`,
 			["Pagado", Number(monto), fecha_proxima_vencimiento, id_obligacion],
+		);
+
+		await conn.execute(
+			`INSERT INTO fac_movimiento
+				(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+			 VALUES
+				(UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'LEG_PAGO', ?, ?, NOW())`,
+			[
+				fecha_pago,
+				normalized.monto_usd,
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
+				`Pago obligación ${obligaciones[0].concepto} - ${obligaciones[0].nombre_ente}`,
+				referencia || id_pago,
+				id_pago,
+				id_usuario,
+			],
 		);
 
 		await conn.commit();
@@ -283,7 +313,7 @@ const updatePagoObligacionController = async ({
 
 		// Verificar que el pago existe y obtener datos actuales
 		const [pagos] = await conn.execute(
-			`SELECT id_pago, id_obligacion, monto FROM leg_pago WHERE id_pago = ?`,
+			`SELECT id_pago, id_obligacion, monto, monto_usd, monto_bs, tasa_dia_bcv, referencia, id_usuario FROM leg_pago WHERE id_pago = ?`,
 			[id_pago],
 		);
 
@@ -308,6 +338,15 @@ const updatePagoObligacionController = async ({
 		if (monto !== undefined) {
 			updates.push("monto = ?");
 			params.push(montoNuevo);
+			const tasaPago = Number(pago.tasa_dia_bcv || 0);
+			if (tasaPago > 0) {
+				const normalizedMonto = normalizeUsdAmounts({
+					montoUsd: montoNuevo,
+					tasaBcv: tasaPago,
+				});
+				updates.push("monto_usd = ?", "monto_bs = ?");
+				params.push(normalizedMonto.monto_usd, normalizedMonto.monto_bs);
+			}
 		}
 		if (metodo !== undefined) {
 			updates.push("metodo = ?");
@@ -333,6 +372,50 @@ const updatePagoObligacionController = async ({
 				[montoNuevo, pago.id_obligacion],
 			);
 		}
+
+		const [obligacionRows] = await conn.execute(
+			`SELECT o.concepto, e.nombre AS nombre_ente
+			 FROM leg_obligacion o
+			 INNER JOIN leg_ente e ON e.id_ente = o.id_ente
+			 WHERE o.id_obligacion = ?
+			 LIMIT 1`,
+			[pago.id_obligacion],
+		);
+
+		const tasaLedger = Number(pago.tasa_dia_bcv || 0);
+		const montoUsdLedger = Number(
+			monto !== undefined
+				? montoNuevo
+				: pago.monto_usd || pago.monto || 0,
+		);
+		const montoBsLedger =
+			tasaLedger > 0
+				? Number((montoUsdLedger * tasaLedger).toFixed(2))
+				: Number(pago.monto_bs || montoUsdLedger);
+
+		await conn.execute(
+			`UPDATE fac_movimiento
+			 SET fecha = COALESCE(?, fecha),
+				 monto = ?,
+				 monto_usd = ?,
+				 monto_bs = ?,
+				 tasa_dia_bcv = ?,
+				 descripcion = ?,
+				 referencia = ?,
+				 id_usuario = ?
+			 WHERE origen_modulo = 'LEG_PAGO' AND origen_id = ?`,
+			[
+				fecha_pago,
+				montoUsdLedger,
+				montoUsdLedger,
+				montoBsLedger,
+				tasaLedger,
+				`Pago obligación ${obligacionRows[0]?.concepto || ""} - ${obligacionRows[0]?.nombre_ente || ""}`.trim(),
+				referencia !== undefined ? referencia || id_pago : pago.referencia || id_pago,
+				pago.id_usuario,
+				id_pago,
+			],
+		);
 
 		await conn.commit();
 

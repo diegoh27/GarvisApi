@@ -7,7 +7,7 @@ export type Representado = {
 	apellido: string;
 	cedula: string | null;
 	fecha_nacimiento: string;
-	genero: "Masculino" | "Femenino" | "Otro";
+	genero: "Masculino" | "Femenino";
 	parentesco: string | null;
 };
 
@@ -16,7 +16,7 @@ export type ListRepresentadosParams = {
 	limit?: number;
 	search?: string;
 	parentesco?: string;
-	genero?: string;
+	genero?: "Masculino" | "Femenino";
 };
 
 export type ListRepresentadosResponse = {
@@ -32,7 +32,7 @@ export type CreateRepresentadoPayload = {
 	apellido: string;
 	cedula?: string | null;
 	fecha_nacimiento: string;
-	genero: "Masculino" | "Femenino" | "Otro";
+	genero: "Masculino" | "Femenino";
 	parentesco?: string | null;
 };
 
@@ -42,7 +42,7 @@ export type UpdateRepresentadoPayload = {
 	apellido: string;
 	cedula?: string | null;
 	fecha_nacimiento: string;
-	genero: "Masculino" | "Femenino" | "Otro";
+	genero: "Masculino" | "Femenino";
 	parentesco?: string | null;
 };
 

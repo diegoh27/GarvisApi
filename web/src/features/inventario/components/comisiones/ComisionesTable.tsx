@@ -51,8 +51,24 @@ export default function ComisionesTable({
         `${row.especialista_nombre} ${row.especialista_apellido || ""}`.trim(),
     },
     {
+      key: "paciente",
+      header: "Paciente",
+      headerClassName:
+        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      render: (row: EspecialistaComision) => row.paciente_nombre || "-",
+    },
+    {
+      key: "cedula",
+      header: "Cédula",
+      headerClassName:
+        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      render: (row: EspecialistaComision) => row.paciente_cedula || "-",
+    },
+    {
       key: "especialidad",
-      header: "Especialidad",
+      header: "Eco",
       headerClassName:
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",

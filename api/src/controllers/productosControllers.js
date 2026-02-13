@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 // ==========================================
 // PRODUCTOS
@@ -163,7 +164,7 @@ const registrarCompraProductoController = async ({
 
 		// Validar que el producto exista
 		const [producto] = await conn.execute(
-			"SELECT id_producto, stock_actual FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			"SELECT id_producto, nombre, stock_actual FROM inv_producto WHERE id_producto = ? LIMIT 1",
 			[id_producto],
 		);
 		if (!producto.length) {
@@ -179,13 +180,18 @@ const registrarCompraProductoController = async ({
 			precio_total !== undefined
 				? Number(precio_total)
 				: cantidadNum * precioUnitario;
+		const tasaDiaBcv = await getTodayBcvRate();
+		const normalized = normalizeUsdAmounts({
+			montoUsd: precioTotal,
+			tasaBcv: tasaDiaBcv,
+		});
 
 		// Insertar compra
 		const id_compra = crypto.randomUUID();
 		await conn.execute(
 			`INSERT INTO inv_producto_compra 
-			(id_compra, id_producto, fecha_ingreso, cantidad, precio_unitario, precio_total, proveedor, referencia, id_usuario)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			(id_compra, id_producto, fecha_ingreso, cantidad, precio_unitario, precio_total, monto_usd, monto_bs, tasa_dia_bcv, proveedor, referencia, id_usuario)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			[
 				id_compra,
 				id_producto,
@@ -193,6 +199,9 @@ const registrarCompraProductoController = async ({
 				cantidadNum,
 				precioUnitario,
 				precioTotal,
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
 				proveedor || null,
 				referencia || null,
 				id_usuario,
@@ -203,6 +212,24 @@ const registrarCompraProductoController = async ({
 		await conn.execute(
 			`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
 			[cantidadNum, id_producto],
+		);
+
+		await conn.execute(
+			`INSERT INTO fac_movimiento
+				(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+			 VALUES
+				(UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'INV_COMPRA', ?, ?, NOW())`,
+			[
+				fecha_ingreso,
+				normalized.monto_usd,
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
+				`Compra de inventario - ${producto[0].nombre} x${cantidadNum}`,
+				referencia || id_compra,
+				id_compra,
+				id_usuario,
+			],
 		);
 
 		await conn.commit();
@@ -430,6 +457,11 @@ const updateCompraProductoController = async ({
 		const cantidadNueva =
 			cantidad !== undefined ? Number(cantidad) : cantidadAnterior;
 		const diferenciaCantidad = cantidadNueva - cantidadAnterior;
+		const [productoRows] = await conn.execute(
+			"SELECT nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			[compra.id_producto],
+		);
+		const nombreProducto = productoRows[0]?.nombre || "Producto";
 
 		// Construir la actualización de la compra
 		const updates = [];
@@ -477,6 +509,55 @@ const updateCompraProductoController = async ({
 			await conn.execute(
 				`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
 				[diferenciaCantidad, compra.id_producto],
+			);
+		}
+
+		const [compraFinalRows] = await conn.execute(
+			`SELECT id_compra, fecha_ingreso, cantidad, precio_total, monto_usd, monto_bs, tasa_dia_bcv, referencia, id_usuario
+			 FROM inv_producto_compra
+			 WHERE id_compra = ?
+			 LIMIT 1`,
+			[id_compra],
+		);
+		const compraFinal = compraFinalRows[0];
+
+		if (compraFinal) {
+			let tasaDiaBcv = Number(compraFinal.tasa_dia_bcv || 0);
+			if (tasaDiaBcv <= 0) {
+				tasaDiaBcv = await getTodayBcvRate();
+			}
+			const normalized = normalizeUsdAmounts({
+				montoUsd: Number(compraFinal.precio_total || 0),
+				tasaBcv: tasaDiaBcv,
+			});
+
+			await conn.execute(
+				`UPDATE inv_producto_compra
+				 SET monto_usd = ?, monto_bs = ?, tasa_dia_bcv = ?
+				 WHERE id_compra = ?`,
+				[
+					normalized.monto_usd,
+					normalized.monto_bs,
+					normalized.tasa_dia_bcv,
+					id_compra,
+				],
+			);
+
+			await conn.execute(
+				`UPDATE fac_movimiento
+				 SET fecha = ?, monto = ?, monto_usd = ?, monto_bs = ?, tasa_dia_bcv = ?, descripcion = ?, referencia = ?, id_usuario = ?
+				 WHERE origen_modulo = 'INV_COMPRA' AND origen_id = ?`,
+				[
+					compraFinal.fecha_ingreso,
+					normalized.monto_usd,
+					normalized.monto_usd,
+					normalized.monto_bs,
+					normalized.tasa_dia_bcv,
+					`Compra de inventario - ${nombreProducto} x${Number(compraFinal.cantidad || 0)}`,
+					compraFinal.referencia || compraFinal.id_compra,
+					compraFinal.id_usuario,
+					id_compra,
+				],
 			);
 		}
 

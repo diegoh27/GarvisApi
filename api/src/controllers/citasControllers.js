@@ -1,11 +1,21 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
 const { getDolarOficialController } = require("./dolarControllers");
+const { normalizeCitaAmounts, round2 } = require("../utils/currency");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
 const MOSTRADOR_CORREO = "mostrador@garvis.local";
 const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
 const MOSTRADOR_RIF = "J0000000000";
+
+const resolveExistingUsuarioId = async (conn, candidateId) => {
+	if (!candidateId) return null;
+	const [rows] = await conn.execute(
+		"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+		[candidateId],
+	);
+	return rows.length ? candidateId : null;
+};
 
 const ensureMostradorPacienteBase = async (conn) => {
 	const [pacienteRows] = await conn.execute(
@@ -506,22 +516,54 @@ const updateEstadoPagoController = async ({
 			nuevoEstadoCita = 1; // Aprobar la cita
 		}
 
+		const estadoPagoAnterior = Number(cita.estado_pago);
+		const aprobadorValido = await resolveExistingUsuarioId(conn, aprobado_por);
+
 		await conn.execute(
 			"UPDATE cita SET estado_pago = ?, estado_cita = ? WHERE id_cita = ?",
 			[estado_pago, nuevoEstadoCita, id_cita],
 		);
 
 		// Sincronizar estado en la tabla pagos para que "Detalles del pago" muestre el estado correcto
-		if (estado_pago === 1 && aprobado_por) {
+		if (estado_pago === 1) {
 			await conn.execute(
 				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
-				[estado_pago, aprobado_por, id_cita],
+				[estado_pago, aprobadorValido, id_cita],
 			);
 		} else {
 			await conn.execute("UPDATE pagos SET estado_pago = ? WHERE id_cita = ?", [
 				estado_pago,
 				id_cita,
 			]);
+		}
+
+		if (estado_pago === 1 && estadoPagoAnterior !== 1) {
+			const [comRows] = await conn.execute(
+				`SELECT id_comision FROM esp_comision WHERE id_cita = ? LIMIT 1`,
+				[id_cita],
+			);
+
+			if (!comRows.length) {
+				await conn.execute(
+					`INSERT INTO esp_comision
+						(id_comision, id_cita, id_especialista, porcentaje, monto, estado, fecha_creacion, fecha_pago, id_usuario)
+					 SELECT
+						UUID(),
+						c.id_cita,
+						c.id_especialista,
+						esp.porcentaje,
+						ROUND((eco.precio * esp.porcentaje) / 100, 2) AS monto,
+						'Pendiente',
+						NOW(),
+						NULL,
+						?
+					 FROM cita c
+					 INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
+					 INNER JOIN eco eco ON eco.id_eco = c.id_eco
+					 WHERE c.id_cita = ?`,
+					[aprobado_por || cita.id_paciente, id_cita],
+				);
+			}
 		}
 
 		// Crear notificación si el pago fue rechazado
@@ -1012,6 +1054,8 @@ const createCitaMostradorController = async ({
 		}
 
 		const id_paciente = await ensureMostradorPacienteBase(conn);
+		const usuarioValido =
+			(await resolveExistingUsuarioId(conn, id_usuario)) || id_paciente;
 		const id_cita = crypto.randomUUID();
 		const id_pago = crypto.randomUUID();
 		const id_comision = crypto.randomUUID();
@@ -1019,6 +1063,11 @@ const createCitaMostradorController = async ({
 		const metodoReal = String(metodo || "").trim() || "Transferencia";
 		const referenciaPago =
 			referencia || `MOST-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+		const normalizedPago = normalizeCitaAmounts({
+			montoInput: montoValue,
+			metodo: metodoReal,
+			tasaBcv: tasaValue,
+		});
 
 		await conn.execute(
 			`INSERT INTO cita
@@ -1038,9 +1087,9 @@ const createCitaMostradorController = async ({
 
 		await conn.execute(
 			`INSERT INTO pagos
-				(id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago, fecha_validacion, validado_por, tasa_dia_bcv)
+				(id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, monto_usd, monto_bs, cedula_pagador, telefono_pagador, referencia, estado_pago, fecha_validacion, validado_por, tasa_dia_bcv)
 			VALUES
-				(?, ?, ?, ?, '', ?, 'Mostrador', ?, ?, '0000000000', ?, 1, CURRENT_TIMESTAMP, ?, ?)`,
+				(?, ?, ?, ?, '', ?, 'Mostrador', ?, ?, ?, ?, '0000000000', ?, 1, CURRENT_TIMESTAMP, ?, ?)`,
 			[
 				id_pago,
 				id_cita,
@@ -1048,25 +1097,12 @@ const createCitaMostradorController = async ({
 				metodoReal,
 				`Mostrador-${metodoReal}`,
 				montoValue,
+				normalizedPago.monto_usd,
+				normalizedPago.monto_bs,
 				cedula,
 				referenciaPago,
-				id_usuario,
-				tasaValue,
-			],
-		);
-
-		await conn.execute(
-			`INSERT INTO fac_movimiento
-				(id_movimiento, tipo, fecha, monto, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
-			VALUES
-				(UUID(), 'Ingreso', ?, ?, ?, ?, 'CITA_PAGO', ?, ?, NOW())`,
-			[
-				fecha_cita,
-				montoValue,
-				`Pago cita mostrador - ${nombre} ${apellido} (metodo: ${metodoReal})`,
-				referenciaPago,
-				id_pago,
-				id_usuario,
+				usuarioValido,
+				normalizedPago.tasa_dia_bcv,
 			],
 		);
 
@@ -1085,7 +1121,7 @@ const createCitaMostradorController = async ({
 				id_especialista,
 				porcentaje,
 				montoComision,
-				id_usuario,
+				usuarioValido,
 			],
 		);
 
@@ -1238,10 +1274,15 @@ const asignarCitaCompletaController = async ({
 		const id_pago = crypto.randomUUID();
 		const sqlPago = `
       INSERT INTO pagos
-        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago, tasa_dia_bcv)
+        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, monto_usd, monto_bs, cedula_pagador, telefono_pagador, referencia, estado_pago, tasa_dia_bcv)
       VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
     `;
+		const normalizedPago = normalizeCitaAmounts({
+			montoInput: Number(monto),
+			metodo,
+			tasaBcv: tasaDiaBcv,
+		});
 		await conn.execute(sqlPago, [
 			id_pago,
 			id_cita,
@@ -1251,10 +1292,12 @@ const asignarCitaCompletaController = async ({
 			banco_origen,
 			banco_destino,
 			monto,
+			normalizedPago.monto_usd,
+			normalizedPago.monto_bs,
 			cedula_pagador,
 			telefono_pagador,
 			referencia,
-			tasaDiaBcv,
+			normalizedPago.tasa_dia_bcv,
 		]);
 
 		// 6. Crear resultado vacío (estado 0: Pendiente)

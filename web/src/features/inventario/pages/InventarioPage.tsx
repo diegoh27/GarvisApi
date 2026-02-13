@@ -4,6 +4,7 @@ import ObligacionesPage from "./ObligacionesPage";
 import NominaPage from "./NominaPage";
 import AlquilerPage from "./AlquilerPage";
 import ComisionesEspecialistasPage from "./ComisionesEspecialistasPage";
+import FacturacionPage from "./FacturacionPage";
 
 type TabType =
 	| "productos"
@@ -57,13 +58,7 @@ export default function InventarioPage() {
 				{activeTab === "nomina" && <NominaPage />}
 				{activeTab === "alquiler" && <AlquilerPage />}
 				{activeTab === "comisiones" && <ComisionesEspecialistasPage />}
-				{activeTab === "facturacion" && (
-					<div className="p-6">
-						<p className="text-gray-600">
-							Esta sección aún no está implementada
-						</p>
-					</div>
-				)}
+				{activeTab === "facturacion" && <FacturacionPage />}
 			</div>
 		</div>
 	);

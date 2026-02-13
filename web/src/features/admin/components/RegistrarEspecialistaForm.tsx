@@ -28,7 +28,7 @@ const RegistrarEspecialistaForm = () => {
 		nombre: "",
 		apellido: "",
 		correo: "",
-		genero: "Masculino" as "Masculino" | "Femenino" | "Otro",
+		genero: "Masculino" as "Masculino" | "Femenino",
 		fecha_nacimiento: "",
 		cedula: "",
 		telefono_prefijo: "0412",
@@ -388,7 +388,6 @@ const RegistrarEspecialistaForm = () => {
 					>
 						<option value="Masculino">Masculino</option>
 						<option value="Femenino">Femenino</option>
-						<option value="Otro">Otro</option>
 					</select>
 				</div>
 			</div>
@@ -504,8 +503,8 @@ const RegistrarEspecialistaForm = () => {
 												>
 													<div
 														className={`flex h-4 w-4 items-center justify-center rounded border ${isSelected
-																? "border-brand-700 bg-brand-700"
-																: "border-brand-300 bg-paper"
+															? "border-brand-700 bg-brand-700"
+															: "border-brand-300 bg-paper"
 															}`}
 													>
 														{isSelected && <Check className="h-3 w-3 text-paper" />}

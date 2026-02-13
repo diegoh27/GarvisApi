@@ -49,6 +49,10 @@ export default function PagarComisionModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const ecoTotalUsd = Number(comision.eco_precio || 0);
+  const parteEspecialistaUsd = Number(comision.monto || 0);
+  const parteNegocioUsd = Math.max(0, ecoTotalUsd - parteEspecialistaUsd);
+
   // Calcular monto en Bs basado en el monto de la comisión en USD y la tasa del BCV
   const montoCalculadoBs = comision && dolarOficial
     ? Math.round((comision.monto * dolarOficial.promedio) * 100) / 100
@@ -141,17 +145,31 @@ export default function PagarComisionModal({
                 {comision.eco_nombre || "-"}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Monto (USD):</span>
-              <span className="font-bold text-emerald-600">
-                ${Number(comision.monto).toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Comisión (%):</span>
-              <span className="font-medium text-gray-900">
-                {Number(comision.porcentaje).toFixed(1)}%
-              </span>
+            <div className="bg-white p-3 rounded border border-teal-100 space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Costo total del eco:</span>
+                <span className="font-semibold text-teal-600">
+                  ${ecoTotalUsd.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Parte especialista ({Number(comision.porcentaje).toFixed(1)}%):</span>
+                <span className="font-semibold text-orange-600">
+                  ${parteEspecialistaUsd.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Parte negocio:</span>
+                <span className="font-semibold text-brand-700">
+                  ${parteNegocioUsd.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm border-t pt-1">
+                <span className="text-gray-600 font-medium">Total a pagar:</span>
+                <span className="font-bold text-emerald-600">
+                  ${parteEspecialistaUsd.toFixed(2)}
+                </span>
+              </div>
             </div>
             <div className="flex justify-between text-sm border-t pt-2">
               <span className="text-gray-600">Tasa BCV:</span>

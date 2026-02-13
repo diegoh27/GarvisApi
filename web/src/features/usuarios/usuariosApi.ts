@@ -18,7 +18,7 @@ export type Usuario = {
 export type UpdateUsuarioPayload = {
 	nombre?: string;
 	apellido?: string;
-	genero?: "Masculino" | "Femenino" | "Otro";
+	genero?: "Masculino" | "Femenino";
 	cedula?: string;
 	correo?: string;
 	telefono?: string;

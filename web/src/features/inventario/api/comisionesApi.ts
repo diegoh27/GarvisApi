@@ -10,6 +10,8 @@ export type EspecialistaComision = {
 	id_cita: string;
 	especialista_nombre: string;
 	especialista_apellido: string | null;
+	paciente_nombre?: string | null;
+	paciente_cedula?: string | null;
 	porcentaje: number;
 	monto: number;
 	estado: "Pendiente" | "Pagada";
@@ -17,6 +19,7 @@ export type EspecialistaComision = {
 	fecha_pago: string | null;
 	fecha_cita?: string;
 	eco_nombre?: string;
+	eco_precio?: number;
 	empresa_paciente?: string | null;
 	referencia_pago?: string | null;
 	descripcion_pago?: string | null;

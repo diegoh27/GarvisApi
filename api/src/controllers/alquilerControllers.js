@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const { v4: uuidv4 } = require("uuid");
+const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 const sanitizeLimit = (limit, fallback = 200, max = 1000) => {
 	const parsed = Number.parseInt(limit, 10);
@@ -250,7 +251,7 @@ exports.registrarPagoAlquilerController = async (
 		await conn.beginTransaction();
 
 		const [contratos] = await conn.execute(
-			"SELECT id_contrato FROM alq_contrato WHERE id_contrato = ? LIMIT 1",
+			"SELECT id_contrato, nombre FROM alq_contrato WHERE id_contrato = ? LIMIT 1",
 			[idContrato],
 		);
 		if (!contratos.length) {
@@ -260,15 +261,23 @@ exports.registrarPagoAlquilerController = async (
 		}
 
 		const idPago = uuidv4();
+		const tasaDiaBcv = await getTodayBcvRate();
+		const normalized = normalizeUsdAmounts({
+			montoUsd: Number(monto),
+			tasaBcv: tasaDiaBcv,
+		});
 		await conn.execute(
 			`INSERT INTO alq_pago
-				(id_pago, id_contrato, fecha_pago, monto, metodo, referencia, id_usuario, creado_en)
-			VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+				(id_pago, id_contrato, fecha_pago, monto, monto_usd, monto_bs, tasa_dia_bcv, metodo, referencia, id_usuario, creado_en)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
 			[
 				idPago,
 				idContrato,
 				fecha_pago,
-				monto,
+				normalized.monto_usd,
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
 				metodo || "Transferencia",
 				referencia || null,
 				idUsuario,
@@ -280,6 +289,24 @@ exports.registrarPagoAlquilerController = async (
 			SET fecha_vencimiento = ?, estado = 'Pagado', actualizado_en = NOW()
 			WHERE id_contrato = ?`,
 			[fecha_proximo_pago, idContrato],
+		);
+
+		await conn.execute(
+			`INSERT INTO fac_movimiento
+				(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+			 VALUES
+				(UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'ALQ_PAGO', ?, ?, NOW())`,
+			[
+				fecha_pago,
+				normalized.monto_usd,
+				normalized.monto_usd,
+				normalized.monto_bs,
+				normalized.tasa_dia_bcv,
+				`Pago alquiler - ${contratos[0].nombre || idContrato}`,
+				referencia || idPago,
+				idPago,
+				idUsuario,
+			],
 		);
 
 		await conn.commit();
@@ -341,11 +368,28 @@ exports.updatePagoAlquilerController = async (idPago, payload) => {
 		await conn.beginTransaction();
 
 		const [existing] = await conn.execute(
-			"SELECT id_contrato FROM alq_pago WHERE id_pago = ? LIMIT 1",
+			"SELECT id_contrato, tasa_dia_bcv FROM alq_pago WHERE id_pago = ? LIMIT 1",
 			[idPago],
 		);
 		if (!existing.length) {
 			return null;
+		}
+
+		if (monto !== undefined) {
+			let tasaPago = Number(existing[0].tasa_dia_bcv || 0);
+			if (tasaPago <= 0) {
+				tasaPago = await getTodayBcvRate();
+			}
+			const normalizedMonto = normalizeUsdAmounts({
+				montoUsd: Number(monto),
+				tasaBcv: tasaPago,
+			});
+			fields.push("monto_usd = ?");
+			values.push(normalizedMonto.monto_usd);
+			fields.push("monto_bs = ?");
+			values.push(normalizedMonto.monto_bs);
+			fields.push("tasa_dia_bcv = ?");
+			values.push(normalizedMonto.tasa_dia_bcv);
 		}
 
 		if (fields.length > 0) {
@@ -362,6 +406,35 @@ exports.updatePagoAlquilerController = async (idPago, payload) => {
 				SET fecha_vencimiento = ?, estado = 'Pagado', actualizado_en = NOW()
 				WHERE id_contrato = ?`,
 				[fecha_proximo_pago, existing[0].id_contrato],
+			);
+		}
+
+		const [pagoRows] = await conn.execute(
+			`SELECT p.id_pago, p.fecha_pago, p.monto, p.monto_usd, p.monto_bs, p.tasa_dia_bcv, p.referencia, p.id_usuario, c.nombre AS nombre_contrato
+			 FROM alq_pago p
+			 INNER JOIN alq_contrato c ON c.id_contrato = p.id_contrato
+			 WHERE p.id_pago = ?
+			 LIMIT 1`,
+			[idPago],
+		);
+
+		if (pagoRows.length > 0) {
+			const pago = pagoRows[0];
+			await conn.execute(
+				`UPDATE fac_movimiento
+				 SET fecha = ?, monto = ?, monto_usd = ?, monto_bs = ?, tasa_dia_bcv = ?, descripcion = ?, referencia = ?, id_usuario = ?
+				 WHERE origen_modulo = 'ALQ_PAGO' AND origen_id = ?`,
+				[
+					pago.fecha_pago,
+					Number(pago.monto_usd || pago.monto || 0),
+					Number(pago.monto_usd || pago.monto || 0),
+					Number(pago.monto_bs || pago.monto || 0),
+					Number(pago.tasa_dia_bcv || 0),
+					`Pago alquiler - ${pago.nombre_contrato || existing[0].id_contrato}`,
+					pago.referencia || idPago,
+					pago.id_usuario,
+					idPago,
+				],
 			);
 		}
 
@@ -393,6 +466,11 @@ exports.updatePagoAlquilerController = async (idPago, payload) => {
 };
 
 exports.deletePagoAlquilerController = async (idPago) => {
+	await pool.execute(
+		"DELETE FROM fac_movimiento WHERE origen_modulo = 'ALQ_PAGO' AND origen_id = ?",
+		[idPago],
+	);
+
 	const [result] = await pool.execute(
 		"DELETE FROM alq_pago WHERE id_pago = ?",
 		[idPago],

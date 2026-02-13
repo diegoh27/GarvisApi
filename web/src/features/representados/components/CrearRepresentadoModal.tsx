@@ -8,7 +8,7 @@ type CrearRepresentadoModalProps = {
 	onSuccess?: () => void;
 };
 
-const GENEROS = ["Masculino", "Femenino", "Otro"] as const;
+const GENEROS = ["Masculino", "Femenino"] as const;
 
 const CrearRepresentadoModal = ({
 	onClose,

@@ -6,7 +6,7 @@ type LoginPayload = {
 type RegisterPayload = {
 	nombre: string;
 	apellido: string;
-	genero: "Masculino" | "Femenino" | "Otro";
+	genero: "Masculino" | "Femenino";
 	cedula: string;
 	correo: string;
 	telefono: string;
