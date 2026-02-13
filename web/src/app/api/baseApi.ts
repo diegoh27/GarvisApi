@@ -92,6 +92,10 @@ const baseApi = createApi({
 		"AlquilerPago",
 		// Inventario - Comisiones Especialistas
 		"EspecialistaComision",
+		// Inventario - Facturación
+		"Facturacion",
+		// Admin - Métodos de Pago
+		"MetodosPago",
 	],
 	endpoints: () => ({}),
 });

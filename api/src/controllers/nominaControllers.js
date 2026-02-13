@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const { v4: uuidv4 } = require("uuid");
+const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 // ==========================================
 // EMPLEADOS
@@ -373,11 +374,16 @@ exports.registrarPagoNominaController = async (
 	const { fecha_pago, fecha_proximo_pago, monto, metodo, referencia } = payload;
 
 	const idPago = uuidv4();
+	const tasaDiaBcv = await getTodayBcvRate();
+	const normalized = normalizeUsdAmounts({
+		montoUsd: Number(monto),
+		tasaBcv: tasaDiaBcv,
+	});
 
 	const query = `
     INSERT INTO nom_pago
-    (id_pago, id_empleado, fecha_pago, fecha_proximo_pago, monto, metodo, referencia, id_usuario, creado_en)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    (id_pago, id_empleado, fecha_pago, fecha_proximo_pago, monto, monto_usd, monto_bs, tasa_dia_bcv, metodo, referencia, id_usuario, creado_en)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
   `;
 
 	await pool.execute(query, [
@@ -386,10 +392,39 @@ exports.registrarPagoNominaController = async (
 		fecha_pago,
 		fecha_proximo_pago,
 		monto,
+		normalized.monto_usd,
+		normalized.monto_bs,
+		normalized.tasa_dia_bcv,
 		metodo || "Transferencia",
 		referencia || null,
 		idUsuario,
 	]);
+
+	const [empleadoRows] = await pool.execute(
+		"SELECT nombre, apellido FROM nom_empleado WHERE id_empleado = ? LIMIT 1",
+		[idEmpleado],
+	);
+	const nombreEmpleado =
+		`${empleadoRows[0]?.nombre || ""} ${empleadoRows[0]?.apellido || ""}`.trim() ||
+		"Empleado";
+
+	await pool.execute(
+		`INSERT INTO fac_movimiento
+			(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+		 VALUES
+			(UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'NOM_PAGO', ?, ?, NOW())`,
+		[
+			fecha_pago,
+			normalized.monto_usd,
+			normalized.monto_usd,
+			normalized.monto_bs,
+			normalized.tasa_dia_bcv,
+			`Pago nómina - ${nombreEmpleado}`,
+			referencia || idPago,
+			idPago,
+			idUsuario,
+		],
+	);
 
 	const [rows] = await pool.execute(
 		`SELECT
@@ -413,6 +448,18 @@ exports.registrarPagoNominaController = async (
 exports.updatePagoNominaController = async (idPago, payload) => {
 	const { fecha_pago, fecha_proximo_pago, monto, metodo, referencia } = payload;
 
+	const [beforeRows] = await pool.execute(
+		`SELECT p.id_pago, p.id_empleado, p.id_usuario, p.referencia, p.tasa_dia_bcv, e.nombre, e.apellido
+		 FROM nom_pago p
+		 INNER JOIN nom_empleado e ON e.id_empleado = p.id_empleado
+		 WHERE p.id_pago = ?
+		 LIMIT 1`,
+		[idPago],
+	);
+	if (!beforeRows.length) {
+		return null;
+	}
+
 	const fields = [];
 	const values = [];
 	let paramCount = 1;
@@ -430,6 +477,20 @@ exports.updatePagoNominaController = async (idPago, payload) => {
 	if (monto !== undefined) {
 		fields.push(`monto = ?`);
 		values.push(monto);
+		let tasaPago = Number(beforeRows[0].tasa_dia_bcv || 0);
+		if (tasaPago <= 0) {
+			tasaPago = await getTodayBcvRate();
+		}
+		const normalizedMonto = normalizeUsdAmounts({
+			montoUsd: Number(monto),
+			tasaBcv: tasaPago,
+		});
+		fields.push(`monto_usd = ?`);
+		values.push(normalizedMonto.monto_usd);
+		fields.push(`monto_bs = ?`);
+		values.push(normalizedMonto.monto_bs);
+		fields.push(`tasa_dia_bcv = ?`);
+		values.push(normalizedMonto.tasa_dia_bcv);
 		paramCount++;
 	}
 	if (metodo !== undefined) {
@@ -464,19 +525,51 @@ exports.updatePagoNominaController = async (idPago, payload) => {
 			fecha_pago,
 			fecha_proximo_pago,
 			monto,
+			monto_usd,
+			monto_bs,
+			tasa_dia_bcv,
 			metodo,
 			referencia,
+			id_usuario,
 			creado_en
 		FROM nom_pago
 		WHERE id_pago = ?`,
 		[idPago],
 	);
 
+	if (rows[0]) {
+		const pago = rows[0];
+		const empleadoNombre =
+			`${beforeRows[0].nombre || ""} ${beforeRows[0].apellido || ""}`.trim() ||
+			"Empleado";
+		await pool.execute(
+			`UPDATE fac_movimiento
+			 SET fecha = ?, monto = ?, monto_usd = ?, monto_bs = ?, tasa_dia_bcv = ?, descripcion = ?, referencia = ?, id_usuario = ?
+			 WHERE origen_modulo = 'NOM_PAGO' AND origen_id = ?`,
+			[
+				pago.fecha_pago,
+				Number(pago.monto_usd || pago.monto || 0),
+				Number(pago.monto_usd || pago.monto || 0),
+				Number(pago.monto_bs || pago.monto || 0),
+				Number(pago.tasa_dia_bcv || 0),
+				`Pago nómina - ${empleadoNombre}`,
+				pago.referencia || idPago,
+				pago.id_usuario,
+				idPago,
+			],
+		);
+	}
+
 	return rows[0] || null;
 };
 
 // Delete payment
 exports.deletePagoNominaController = async (idPago) => {
+	await pool.execute(
+		"DELETE FROM fac_movimiento WHERE origen_modulo = 'NOM_PAGO' AND origen_id = ?",
+		[idPago],
+	);
+
 	const query = `
 		DELETE FROM nom_pago
 		WHERE id_pago = ?

@@ -224,7 +224,7 @@ const AuthRegisterForm = () => {
 				nombre: form.nombre.trim(),
 				apellido: form.apellido.trim(),
 				correo: form.correo.trim(),
-				genero: form.genero as "Masculino" | "Femenino" | "Otro",
+				genero: form.genero as "Masculino" | "Femenino",
 				fecha_nacimiento: form.fecha_nacimiento,
 				cedula: form.cedula,
 				telefono: `${form.telefono_prefijo}${form.telefono_numero}`,
@@ -336,7 +336,6 @@ const AuthRegisterForm = () => {
 							<option value="">Selecciona género</option>
 							<option>Femenino</option>
 							<option>Masculino</option>
-							<option>Otro</option>
 						</select>
 						{fieldErrors.genero && (
 							<p className="mt-1 text-xs text-red-500">{fieldErrors.genero}</p>

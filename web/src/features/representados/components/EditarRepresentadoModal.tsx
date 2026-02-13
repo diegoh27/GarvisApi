@@ -9,7 +9,7 @@ type EditarRepresentadoModalProps = {
   onSuccess?: () => void;
 };
 
-const GENEROS = ["Masculino", "Femenino", "Otro"] as const;
+const GENEROS = ["Masculino", "Femenino"] as const;
 
 const EditarRepresentadoModal = ({
   representado,

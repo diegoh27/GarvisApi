@@ -3,3 +3,4 @@ export * from "./productosApi";
 export * from "./entesLegalesApi";
 export * from "./alquilerApi";
 export * from "./especialistasApi";
+export * from "./facturacionApi";

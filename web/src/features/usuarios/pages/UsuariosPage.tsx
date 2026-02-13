@@ -112,7 +112,7 @@ const UsuariosPage = () => {
 	const handleSaveEdit = async (formData: {
 		nombre: string;
 		apellido: string;
-		genero: "Masculino" | "Femenino" | "Otro";
+		genero: "Masculino" | "Femenino";
 		cedula: string;
 		correo: string;
 		telefono: string;
@@ -447,7 +447,7 @@ type EditUserModalProps = {
 	onSave: (data: {
 		nombre: string;
 		apellido: string;
-		genero: "Masculino" | "Femenino" | "Otro";
+		genero: "Masculino" | "Femenino";
 		cedula: string;
 		correo: string;
 		telefono: string;
@@ -489,7 +489,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 	const [form, setForm] = useState({
 		nombre: usuario.nombre,
 		apellido: usuario.apellido,
-		genero: usuario.genero as "Masculino" | "Femenino" | "Otro",
+		genero: usuario.genero as "Masculino" | "Femenino",
 		cedula: usuario.cedula,
 		correo: usuario.correo,
 		telefono: usuario.telefono,
@@ -679,7 +679,6 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 							>
 								<option value="Masculino">Masculino</option>
 								<option value="Femenino">Femenino</option>
-								<option value="Otro">Otro</option>
 							</select>
 						</div>
 					</div>

@@ -4,7 +4,7 @@
  * - Paciente: al reservar cita (flujo eco → especialistas → fechas → pago).
  */
 import { useState, useRef, useEffect, useMemo } from "react";
-import { AlertTriangle, X, Image as ImageIcon, Search, ChevronDown } from "lucide-react";
+import { AlertTriangle, X, Image as ImageIcon, Search, ChevronDown, Eye } from "lucide-react";
 import { useGetDolarOficialQuery } from "../../features/dolar/dolarApi";
 import imageCompression from "browser-image-compression";
 import Swal from "sweetalert2";
@@ -36,6 +36,19 @@ type FormularioPagoProps = {
 	autoUpload?: boolean; // Si es true, sube automáticamente. Si es false, espera a que se llame uploadImageManual
 	onImageReady?: (file: File) => void; // Callback cuando la imagen está comprimida y lista para subir
 	onOrdenMedicaReady?: (file: File) => void; // Callback cuando la orden médica está comprimida y lista para subir
+};
+
+type MetodoPagoDisponible = {
+	id_metodo_pago: string;
+	nombre: string;
+	banco_codigo: string;
+	banco_nombre: string;
+	tipo_pago: "Transferencia" | "PagoMovil";
+	moneda: "BS" | "USD";
+	titular_identificacion?: string | null;
+	telefono?: string | null;
+	numero_cuenta?: string | null;
+	imagen_url?: string | null;
 };
 
 const FormularioPago = ({
@@ -71,8 +84,68 @@ const FormularioPago = ({
 	const ordenMedicaInputRef = useRef<HTMLInputElement>(null);
 	const bancoOrigenRef = useRef<HTMLDivElement>(null);
 	const bancoDestinoRef = useRef<HTMLDivElement>(null);
+	const [metodosDisponibles, setMetodosDisponibles] = useState<MetodoPagoDisponible[]>([]);
+	const [loadingMetodosDisponibles, setLoadingMetodosDisponibles] = useState(false);
+	const [selectedMetodoDestinoId, setSelectedMetodoDestinoId] = useState("");
+	const [showMetodoDatosModal, setShowMetodoDatosModal] = useState(false);
+	const [showMetodoImagenAmplia, setShowMetodoImagenAmplia] = useState(false);
 
 	const { data: dolarOficial, isLoading: loadingDolar } = useGetDolarOficialQuery();
+
+	const opcionesMetodoSeleccionado = useMemo(
+		() => metodosDisponibles.filter((item) => item.tipo_pago === formData.metodo),
+		[metodosDisponibles, formData.metodo],
+	);
+
+	const metodoDestinoSeleccionado = useMemo(
+		() =>
+			opcionesMetodoSeleccionado.find(
+				(item) => item.id_metodo_pago === selectedMetodoDestinoId,
+			) || null,
+		[opcionesMetodoSeleccionado, selectedMetodoDestinoId],
+	);
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadMetodosDisponibles = async () => {
+			try {
+				setLoadingMetodosDisponibles(true);
+				const token = getToken();
+				if (!token) return;
+
+				const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+				const response = await fetch(`${baseUrl}/metodos-pago/disponibles`, {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				});
+
+				if (!response.ok) return;
+
+				const result = await response.json();
+				const list = Array.isArray(result?.data)
+					? (result.data as MetodoPagoDisponible[])
+					: [];
+
+				if (isMounted) {
+					setMetodosDisponibles(list.filter((item) => item.moneda === "BS"));
+				}
+			} catch (error) {
+				console.error("Error cargando métodos de pago disponibles:", error);
+			} finally {
+				if (isMounted) {
+					setLoadingMetodosDisponibles(false);
+				}
+			}
+		};
+
+		void loadMetodosDisponibles();
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	// Bancos filtrados por método: TRF = Transferencia, P2P = Pago móvil
 	const bancosPorMetodo = useMemo(() => {
@@ -140,6 +213,9 @@ const FormularioPago = ({
 	// Al cambiar método de pago, limpiar bancos si el valor actual no aplica
 	useEffect(() => {
 		const opts = bancosPorMetodo.map((b) => bancoLabel(b.Code, b.Name));
+		setSelectedMetodoDestinoId("");
+		setShowMetodoDatosModal(false);
+		setShowMetodoImagenAmplia(false);
 		setFormData((prev) => {
 			let next = { ...prev };
 			if (prev.banco_origen && !opts.includes(prev.banco_origen)) {
@@ -151,6 +227,22 @@ const FormularioPago = ({
 			return next;
 		});
 	}, [formData.metodo]);
+
+	useEffect(() => {
+		if (!metodoDestinoSeleccionado) return;
+		const bancoAuto = bancoLabel(
+			metodoDestinoSeleccionado.banco_codigo,
+			metodoDestinoSeleccionado.banco_nombre,
+		);
+		setFormData((prev) =>
+			prev.banco_destino === bancoAuto
+				? prev
+				: {
+					...prev,
+					banco_destino: bancoAuto,
+				},
+		);
+	}, [metodoDestinoSeleccionado]);
 
 	// Calcular monto en Bs basado en precio del eco en USD y tasa del BCV
 	const montoCalculado = precioEcoUSD && dolarOficial
@@ -498,6 +590,22 @@ const FormularioPago = ({
 		return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 	};
 
+	const copyToClipboard = async (value: string, label: string) => {
+		try {
+			const text = String(value || "").trim();
+			if (!text) {
+				void Swal.fire("Sin datos", `No hay ${label.toLowerCase()} para copiar`, "info");
+				return;
+			}
+
+			await navigator.clipboard.writeText(text);
+			void Swal.fire("Copiado", `${label} copiado al portapapeles`, "success");
+		} catch (error) {
+			console.error("Error al copiar al portapapeles:", error);
+			void Swal.fire("Error", "No se pudo copiar al portapapeles", "error");
+		}
+	};
+
 	return (
 		<div className="space-y-4">
 			{/* Warning si el monto fue modificado */}
@@ -529,6 +637,60 @@ const FormularioPago = ({
 					<option value="Transferencia">Transferencia</option>
 					<option value="PagoMovil">Pago Móvil</option>
 				</select>
+			</div>
+
+			{/* Métodos configurados por admin (según tipo seleccionado) */}
+			<div>
+				<label className="block text-sm font-medium text-brand-900 mb-1">
+					{formData.metodo === "PagoMovil"
+						? "Opciones de Pago Móvil"
+						: "Opciones de Transferencia"}
+				</label>
+				<div className="flex gap-2">
+					<select
+						value={selectedMetodoDestinoId}
+						onChange={(e) => {
+							const selectedId = e.target.value;
+							setSelectedMetodoDestinoId(selectedId);
+
+							const selected = opcionesMetodoSeleccionado.find(
+								(item) => item.id_metodo_pago === selectedId,
+							);
+
+							if (selected) {
+								setFormData((prev) => ({
+									...prev,
+									banco_destino: bancoLabel(selected.banco_codigo, selected.banco_nombre),
+								}));
+							}
+						}}
+						className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						disabled={isLoading || disabled || loadingMetodosDisponibles}
+					>
+						<option value="">
+							{loadingMetodosDisponibles
+								? "Cargando métodos..."
+								: "Seleccione una opción"}
+						</option>
+						{opcionesMetodoSeleccionado.map((item) => (
+							<option key={item.id_metodo_pago} value={item.id_metodo_pago}>
+								{item.nombre} · {bancoLabel(item.banco_codigo, item.banco_nombre)}
+							</option>
+						))}
+					</select>
+					<button
+						type="button"
+						onClick={() => setShowMetodoDatosModal(true)}
+						disabled={!metodoDestinoSeleccionado || isLoading || disabled}
+						className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<Eye className="h-4 w-4" />
+						Ver datos
+					</button>
+				</div>
+				<p className="mt-1 text-xs text-brand-600">
+					Al seleccionar una opción, el banco destino se asigna automáticamente.
+				</p>
 			</div>
 
 			{/* Tasa del día (solo lectura; se guarda en la tabla pago) */}
@@ -613,7 +775,7 @@ const FormularioPago = ({
 					type="button"
 					onClick={() => !disabled && !isLoading && setBancoDestinoOpen((o) => !o)}
 					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none text-left flex items-center justify-between gap-2"
-					disabled={isLoading || disabled}
+					disabled={isLoading || disabled || !!metodoDestinoSeleccionado}
 				>
 					<span className={formData.banco_destino ? "" : "text-brand-500"}>
 						{formData.banco_destino || "Buscar por código o nombre..."}
@@ -656,6 +818,118 @@ const FormularioPago = ({
 					</div>
 				)}
 			</div>
+
+			{showMetodoDatosModal && metodoDestinoSeleccionado && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+					<div className="w-full max-w-lg rounded-xl bg-paper shadow-xl max-h-[90vh] overflow-y-auto">
+						<div className="flex items-center justify-between border-b border-brand-200 px-4 py-3">
+							<h3 className="text-base font-semibold text-brand-900">Datos para {metodoDestinoSeleccionado.tipo_pago === "PagoMovil" ? "Pago Móvil" : "Transferencia"}</h3>
+							<button
+								type="button"
+								onClick={() => {
+									setShowMetodoDatosModal(false);
+									setShowMetodoImagenAmplia(false);
+								}}
+								className="rounded-md p-1 text-brand-700 hover:bg-brand-100"
+								aria-label="Cerrar modal"
+							>
+								<X className="h-5 w-5" />
+							</button>
+						</div>
+						<div className="space-y-3 p-4">
+							<p className="text-sm text-brand-800"><strong>Nombre:</strong> {metodoDestinoSeleccionado.nombre}</p>
+							<p className="text-sm text-brand-800"><strong>Banco:</strong> {bancoLabel(metodoDestinoSeleccionado.banco_codigo, metodoDestinoSeleccionado.banco_nombre)}</p>
+							<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
+								<p className="text-sm text-brand-800"><strong>Cédula:</strong> {metodoDestinoSeleccionado.titular_identificacion || "No disponible"}</p>
+								<button
+									type="button"
+									onClick={() => copyToClipboard(metodoDestinoSeleccionado.titular_identificacion || "", "Cédula")}
+									className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+								>
+									Copiar
+								</button>
+							</div>
+							{metodoDestinoSeleccionado.tipo_pago === "PagoMovil" ? (
+								<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
+									<p className="text-sm text-brand-800"><strong>Teléfono:</strong> {metodoDestinoSeleccionado.telefono || "No disponible"}</p>
+									<button
+										type="button"
+										onClick={() => copyToClipboard(metodoDestinoSeleccionado.telefono || "", "Teléfono")}
+										className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+									>
+										Copiar
+									</button>
+								</div>
+							) : (
+								<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
+									<p className="text-sm text-brand-800"><strong>Número de cuenta:</strong> {metodoDestinoSeleccionado.numero_cuenta || "No disponible"}</p>
+									<button
+										type="button"
+										onClick={() => copyToClipboard(metodoDestinoSeleccionado.numero_cuenta || "", "Número de cuenta")}
+										className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+									>
+										Copiar
+									</button>
+								</div>
+							)}
+
+							{metodoDestinoSeleccionado.imagen_url ? (
+								<div className="rounded-lg border border-brand-200 p-2">
+									<div className="mb-2 flex items-center justify-between gap-2">
+										<p className="text-xs text-brand-700">QR / Imagen de pago</p>
+										<button
+											type="button"
+											onClick={() => setShowMetodoImagenAmplia(true)}
+											className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+										>
+											Agrandar
+										</button>
+									</div>
+									<img
+										src={metodoDestinoSeleccionado.imagen_url}
+										alt="QR o imagen del método de pago"
+										className="mx-auto h-auto max-h-72 w-full rounded-lg border border-brand-200 object-contain bg-cloud"
+									/>
+								</div>
+							) : (
+								<p className="text-sm text-brand-600">Este método no tiene imagen disponible.</p>
+							)}
+						</div>
+						<div className="border-t border-brand-200 px-4 py-3">
+							<button
+								type="button"
+								onClick={() => {
+									setShowMetodoDatosModal(false);
+									setShowMetodoImagenAmplia(false);
+								}}
+								className="w-full rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
+							>
+								Cerrar
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{showMetodoImagenAmplia && metodoDestinoSeleccionado?.imagen_url && (
+				<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
+					<div className="relative w-full max-w-4xl rounded-xl bg-paper p-3 shadow-xl">
+						<button
+							type="button"
+							onClick={() => setShowMetodoImagenAmplia(false)}
+							className="absolute right-3 top-3 rounded-md bg-paper/80 p-1 text-brand-800 hover:bg-paper"
+							aria-label="Cerrar imagen ampliada"
+						>
+							<X className="h-5 w-5" />
+						</button>
+						<img
+							src={metodoDestinoSeleccionado.imagen_url}
+							alt="QR o imagen del método de pago ampliada"
+							className="h-auto max-h-[85vh] w-full rounded-lg object-contain bg-cloud"
+						/>
+					</div>
+				</div>
+			)}
 
 			{/* Monto */}
 			<div>

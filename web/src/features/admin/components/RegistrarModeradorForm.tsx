@@ -82,7 +82,7 @@ const RegistrarModeradorForm = () => {
 				apellido: form.apellido.trim(),
 				correo: form.correo.trim(),
 				contrasena: form.contrasena,
-				genero: "Otro", // Valor por defecto
+				genero: "Masculino", // Valor por defecto
 				cedula: `MOD-${Date.now()}`, // Generar cédula temporal única
 				telefono: "0000000000", // Valor por defecto
 				fecha_nacimiento: "1990-01-01", // Valor por defecto
@@ -139,9 +139,8 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, nombre: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-									fieldErrors.nombre ? "border-red-500" : "border-brand-300"
-								}`}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.nombre ? "border-red-500" : "border-brand-300"
+									}`}
 								placeholder="Ingresa el nombre"
 							/>
 							{fieldErrors.nombre && (
@@ -164,9 +163,8 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, apellido: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-									fieldErrors.apellido ? "border-red-500" : "border-brand-300"
-								}`}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.apellido ? "border-red-500" : "border-brand-300"
+									}`}
 								placeholder="Ingresa el apellido"
 							/>
 							{fieldErrors.apellido && (
@@ -190,9 +188,8 @@ const RegistrarModeradorForm = () => {
 									setFieldErrors((prev) => ({ ...prev, correo: error }));
 								}
 							}}
-							className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-								fieldErrors.correo ? "border-red-500" : "border-brand-300"
-							}`}
+							className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.correo ? "border-red-500" : "border-brand-300"
+								}`}
 							placeholder="correo@ejemplo.com"
 						/>
 						{fieldErrors.correo && (
@@ -214,9 +211,8 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, contrasena: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-									fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
-								}`}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
+									}`}
 								placeholder="Mínimo 6 caracteres"
 							/>
 							{fieldErrors.contrasena && (
@@ -237,9 +233,8 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, confirmar_contrasena: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-									fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
-								}`}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
+									}`}
 								placeholder="Repite la contraseña"
 							/>
 							{fieldErrors.confirmar_contrasena && (

@@ -574,6 +574,10 @@ IF NOT EXISTS pagos
 (100) NOT NULL,
   monto DECIMAL
 (10,2) NOT NULL,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
   cedula_pagador VARCHAR
 (20) NOT NULL,
   telefono_pagador VARCHAR
@@ -698,6 +702,12 @@ IF NOT EXISTS inv_producto_compra
 (10,2) NOT NULL,
   precio_total DECIMAL
 (10,2) NOT NULL,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL
+(12,4) NOT NULL DEFAULT 0,
   proveedor VARCHAR
 (120) NULL,
   referencia VARCHAR
@@ -843,6 +853,12 @@ IF NOT EXISTS leg_pago
   fecha_pago DATE NOT NULL,
   monto DECIMAL
 (10,2) NOT NULL DEFAULT 0,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL
+(12,4) NOT NULL DEFAULT 0,
   metodo ENUM
 ('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
   referencia VARCHAR
@@ -925,6 +941,12 @@ IF NOT EXISTS nom_pago
   fecha_proximo_pago DATE NULL,
   monto DECIMAL
 (10,2) NOT NULL,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL
+(12,4) NOT NULL DEFAULT 0,
   metodo ENUM
 ('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
   referencia VARCHAR
@@ -998,6 +1020,12 @@ IF NOT EXISTS alq_pago
   fecha_pago DATE NOT NULL,
   monto DECIMAL
 (10,2) NOT NULL,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL
+(12,4) NOT NULL DEFAULT 0,
   metodo ENUM
 ('Efectivo','Transferencia','PagoMovil','Zelle','Otro') NOT NULL DEFAULT 'Transferencia',
   referencia VARCHAR
@@ -1095,6 +1123,63 @@ DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 16.5) ADMIN - MÉTODOS DE PAGO
+-- =========================
+CREATE TABLE
+IF NOT EXISTS metodos_pago
+(
+  id_metodo_pago CHAR
+(36) NOT NULL,
+  nombre VARCHAR
+(140) NOT NULL,
+  banco_codigo VARCHAR
+(10) NOT NULL,
+  banco_nombre VARCHAR
+(120) NOT NULL,
+  tipo_pago VARCHAR
+(80) NOT NULL,
+  moneda ENUM
+('BS','USD') NOT NULL,
+  titular_nombre VARCHAR
+(160) NULL,
+  titular_identificacion VARCHAR
+(30) NULL,
+  correo VARCHAR
+(120) NULL,
+  telefono VARCHAR
+(20) NULL,
+  numero_cuenta VARCHAR
+(30) NULL,
+  imagen_url VARCHAR
+(255) NOT NULL,
+  activo TINYINT
+(1) NOT NULL DEFAULT 1,
+  creado_por CHAR
+(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_metodo_pago),
+  KEY idx_metodo_pago_activo
+(activo),
+  KEY idx_metodo_pago_moneda
+(moneda),
+  KEY idx_metodo_pago_banco
+(banco_codigo),
+
+  CONSTRAINT fk_metodo_pago_usuario
+    FOREIGN KEY
+(creado_por) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
 -- 17) ADMIN - FACTURACIÓN GLOBAL (ingresos + egresos)
 -- =========================
 CREATE TABLE
@@ -1107,6 +1192,12 @@ IF NOT EXISTS fac_movimiento
   fecha DATE NOT NULL,
   monto DECIMAL
 (12,2) NOT NULL,
+  monto_usd DECIMAL
+(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL
+(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL
+(12,4) NOT NULL DEFAULT 0,
   descripcion VARCHAR
 (255) NULL,
   referencia VARCHAR

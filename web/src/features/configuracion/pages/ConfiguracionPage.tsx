@@ -399,7 +399,6 @@ const ConfiguracionPage = () => {
                       <option value="">Selecciona</option>
                       <option value="Masculino">Masculino</option>
                       <option value="Femenino">Femenino</option>
-                      <option value="Otro">Otro</option>
                     </select>
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">

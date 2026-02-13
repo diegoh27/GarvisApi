@@ -28,7 +28,7 @@ const RegistrarEspecialistaForm = () => {
 		nombre: "",
 		apellido: "",
 		correo: "",
-		genero: "Masculino" as "Masculino" | "Femenino" | "Otro",
+		genero: "Masculino" as "Masculino" | "Femenino",
 		fecha_nacimiento: "",
 		cedula: "",
 		telefono_prefijo: "0412",
@@ -376,7 +376,6 @@ const RegistrarEspecialistaForm = () => {
 					>
 						<option value="Masculino">Masculino</option>
 						<option value="Femenino">Femenino</option>
-						<option value="Otro">Otro</option>
 					</select>
 				</div>
 			</div>

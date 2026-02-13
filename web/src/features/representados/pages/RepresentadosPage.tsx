@@ -11,10 +11,9 @@ import { CrearRepresentadoModal, EditarRepresentadoModal } from "../components";
 import Swal from "sweetalert2";
 
 const ITEMS_PER_PAGE = 5;
-const GENEROS: Array<"Masculino" | "Femenino" | "Otro"> = [
+const GENEROS: Array<"Masculino" | "Femenino"> = [
 	"Masculino",
 	"Femenino",
-	"Otro",
 ];
 
 const formatFecha = (value: string) => {
@@ -33,7 +32,7 @@ const RepresentadosPage = () => {
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState("");
 	const [filtroParentesco, setFiltroParentesco] = useState<string>("");
-	const [filtroGenero, setFiltroGenero] = useState<string>("");
+	const [filtroGenero, setFiltroGenero] = useState<"Masculino" | "Femenino" | "">("");
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [editingRepresentado, setEditingRepresentado] = useState<Representado | null>(null);
 
@@ -125,7 +124,7 @@ const RepresentadosPage = () => {
 						</select>
 						<select
 							value={filtroGenero}
-							onChange={(e) => setFiltroGenero(e.target.value)}
+							onChange={(e) => setFiltroGenero(e.target.value as "Masculino" | "Femenino" | "")}
 							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 						>
 							<option value="">Todos los géneros</option>

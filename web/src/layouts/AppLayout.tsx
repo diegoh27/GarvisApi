@@ -14,6 +14,7 @@ import {
 	UserPlus,
 	Users,
 	ListChecks,
+	CreditCard,
 } from "lucide-react";
 import { useAuth } from "../shared";
 import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
@@ -40,6 +41,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Usuarios", to: "/usuarios", icon: Users },
 		{ label: "Registrar especialista", to: "/admin/registrar-especialista", icon: UserPlus },
 		{ label: "Registrar moderador", to: "/admin/registrar-moderador", icon: UserPlus },
+		{ label: "Métodos de pago", to: "/admin/metodos-pago", icon: CreditCard },
 		// Configuración del sistema
 		{ label: "Especialidades", to: "/especialidades", icon: Stethoscope },
 		{ label: "Ecos", to: "/ecos", icon: FileCheck },
