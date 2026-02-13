@@ -3,9 +3,7 @@ const { pool } = require("../db");
 
 const authenticateToken = async (req, res, next) => {
 	const authHeader = req.headers.authorization || "";
-	const token = authHeader.startsWith("Bearer ")
-		? authHeader.slice(7)
-		: null;
+	const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
 	if (!token) {
 		return res.status(401).json({

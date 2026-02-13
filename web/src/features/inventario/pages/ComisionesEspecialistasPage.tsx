@@ -379,8 +379,8 @@ export default function ComisionesEspecialistasPage() {
                 setCurrentPageComisiones(1);
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
-                  ? "bg-teal-500 text-white"
-                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                ? "bg-teal-500 text-white"
+                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
             >
               Todas
@@ -392,8 +392,8 @@ export default function ComisionesEspecialistasPage() {
                 setCurrentPageComisiones(1);
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pendiente"
-                  ? "bg-teal-500 text-white"
-                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                ? "bg-teal-500 text-white"
+                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
             >
               Pendientes
@@ -405,8 +405,8 @@ export default function ComisionesEspecialistasPage() {
                 setCurrentPageComisiones(1);
               }}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pagada"
-                  ? "bg-teal-500 text-white"
-                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                ? "bg-teal-500 text-white"
+                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
             >
               Pagadas

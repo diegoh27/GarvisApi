@@ -12,13 +12,13 @@ async function isDatabaseEmpty() {
 	try {
 		const [tables] = await pool.execute(
 			"SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = ?",
-			[process.env.DB_NAME || "garvis"]
+			[process.env.DB_NAME || "garvis"],
 		);
 		return tables[0].count === 0;
 	} catch (error) {
 		console.error(
 			"❌ Error verificando si la base de datos está vacía:",
-			error.message
+			error.message,
 		);
 		return false;
 	}
@@ -49,7 +49,7 @@ async function createTables() {
 			.split(";")
 			.map((stmt) => stmt.trim())
 			.filter(
-				(stmt) => stmt.length > 0 && !stmt.toLowerCase().startsWith("use ")
+				(stmt) => stmt.length > 0 && !stmt.toLowerCase().startsWith("use "),
 			);
 
 		console.log("📦 Creando tablas...");
@@ -77,8 +77,8 @@ async function createTables() {
 						console.warn(
 							`⚠️  Advertencia al ejecutar statement: ${err.message.substring(
 								0,
-								100
-							)}`
+								100,
+							)}`,
 						);
 					}
 				}
@@ -87,7 +87,7 @@ async function createTables() {
 
 		if (errorCount === 0 || successCount > 0) {
 			console.log(
-				`✅ Tablas creadas exitosamente (${successCount} statements ejecutados)`
+				`✅ Tablas creadas exitosamente (${successCount} statements ejecutados)`,
 			);
 			return true;
 		} else {
@@ -106,7 +106,7 @@ async function createTables() {
 async function getOrCreateRole(nombre) {
 	const [rows] = await pool.execute(
 		"SELECT id_rol FROM roles WHERE nombre = ? LIMIT 1",
-		[nombre]
+		[nombre],
 	);
 	if (rows.length) return rows[0].id_rol;
 
@@ -150,7 +150,7 @@ async function createUsuario({
 			hashedPassword,
 			fecha_nacimiento,
 			id_rol,
-		]
+		],
 	);
 
 	return id_usuario;
@@ -327,7 +327,10 @@ async function seedExtendedData({
 		return date;
 	};
 
-	const [especialidad1, especialidad2] = [crypto.randomUUID(), crypto.randomUUID()];
+	const [especialidad1, especialidad2] = [
+		crypto.randomUUID(),
+		crypto.randomUUID(),
+	];
 	await pool.execute(
 		`INSERT INTO especialidad (id_especialidad, nombre) VALUES (?, ?), (?, ?)`,
 		[especialidad1, "Cardiología", especialidad2, "Radiología"],
@@ -383,7 +386,10 @@ async function seedExtendedData({
 		[especialistaIds[0], eco1, especialistaIds[1], eco2],
 	);
 
-	const [representado1, representado2] = [crypto.randomUUID(), crypto.randomUUID()];
+	const [representado1, representado2] = [
+		crypto.randomUUID(),
+		crypto.randomUUID(),
+	];
 	await pool.execute(
 		`INSERT INTO representado
 			(id_representado, id_paciente, nombre, apellido, fecha_nacimiento, cedula, genero, parentesco)
@@ -805,7 +811,7 @@ async function seedExtendedData({
 			(?, 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'NOM_PAGO', ?, ?),
 			(?, 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'NOM_PAGO', ?, ?),
 			(?, 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'ALQ_PAGO', ?, ?),
-			(?, 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'ALQ_PAGO', ?, ?)` ,
+			(?, 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'ALQ_PAGO', ?, ?)`,
 		[
 			crypto.randomUUID(),
 			formatDate(addDays(today, -2)),
@@ -927,7 +933,7 @@ async function initDatabase() {
 			const tablesCreated = await createTables();
 			if (!tablesCreated) {
 				console.error(
-					"❌ No se pudieron crear las tablas. Abortando inicialización."
+					"❌ No se pudieron crear las tablas. Abortando inicialización.",
 				);
 				return false;
 			}
@@ -943,14 +949,14 @@ async function initDatabase() {
 			return true;
 		} else {
 			console.log(
-				"✅ Base de datos ya contiene tablas. Saltando inicialización.\n"
+				"✅ Base de datos ya contiene tablas. Saltando inicialización.\n",
 			);
 			return true;
 		}
 	} catch (error) {
 		console.error(
 			"❌ Error en inicialización de base de datos:",
-			error.message
+			error.message,
 		);
 		return false;
 	}

@@ -358,7 +358,8 @@ IF NOT EXISTS cita
 (255) NOT NULL,
   id_disponibilidad CHAR
 (36) NULL,
-  origen_cita ENUM('web','mostrador') NOT NULL DEFAULT 'web',
+  origen_cita ENUM
+('web','mostrador') NOT NULL DEFAULT 'web',
 
   estado_cita TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Confirmada, 2 Cancelada, 3 Atendida
   estado_pago TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Pagado, 2 Rechazado

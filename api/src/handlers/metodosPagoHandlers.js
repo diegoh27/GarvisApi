@@ -9,10 +9,16 @@ const {
 	deleteMetodoPagoController,
 } = require("../controllers/metodosPagoControllers");
 
-const normalizeMoneda = (value = "") => String(value || "").trim().toUpperCase();
+const normalizeMoneda = (value = "") =>
+	String(value || "")
+		.trim()
+		.toUpperCase();
 
 const normalizeTipoBs = (value = "") => {
-	const raw = String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+	const raw = String(value || "")
+		.trim()
+		.toLowerCase()
+		.replace(/\s+/g, "");
 	if (raw === "transferencia") return "Transferencia";
 	if (raw === "pagomovil") return "PagoMovil";
 	return null;
@@ -29,7 +35,8 @@ const firstNonEmpty = (...values) => {
 
 const listMetodosPagoHandler = async (req, res) => {
 	try {
-		const soloActivos = String(req.query.activos || "").toLowerCase() === "true";
+		const soloActivos =
+			String(req.query.activos || "").toLowerCase() === "true";
 		const data = await listMetodosPagoController({ soloActivos });
 		return res.status(200).json({
 			ok: true,
@@ -51,7 +58,9 @@ const listMetodosPagoDisponiblesHandler = async (_req, res) => {
 		const filtered = data.filter((item) => {
 			const moneda = normalizeMoneda(item.moneda);
 			const tipoBs = normalizeTipoBs(item.tipo_pago);
-			return moneda === "BS" && ["Transferencia", "PagoMovil"].includes(tipoBs || "");
+			return (
+				moneda === "BS" && ["Transferencia", "PagoMovil"].includes(tipoBs || "")
+			);
 		});
 
 		return res.status(200).json({
@@ -209,7 +218,8 @@ const createMetodoPagoHandler = async (req, res) => {
 			if (!regexIdentificacion.test(titularIdentificacionValue)) {
 				return res.status(400).json({
 					ok: false,
-					message: "La identificación debe tener formato V/E/J seguido de números",
+					message:
+						"La identificación debe tener formato V/E/J seguido de números",
 				});
 			}
 
@@ -247,7 +257,10 @@ const createMetodoPagoHandler = async (req, res) => {
 			numeroCuentaValue = null;
 		}
 
-		const uploadResult = await uploadMulterFileToLocal(req.file, "garbis/metodos-pago");
+		const uploadResult = await uploadMulterFileToLocal(
+			req.file,
+			"garbis/metodos-pago",
+		);
 
 		let creadoPor = firstNonEmpty(req.user?.id, req.user?.id_usuario);
 		if (creadoPor) {
@@ -273,7 +286,8 @@ const createMetodoPagoHandler = async (req, res) => {
 		if (!creadoPor) {
 			return res.status(401).json({
 				ok: false,
-				message: "Sesión inválida para crear métodos de pago. Inicia sesión nuevamente.",
+				message:
+					"Sesión inválida para crear métodos de pago. Inicia sesión nuevamente.",
 			});
 		}
 
@@ -301,7 +315,8 @@ const createMetodoPagoHandler = async (req, res) => {
 		if (error?.code === "ER_NO_REFERENCED_ROW_2") {
 			return res.status(400).json({
 				ok: false,
-				message: "No se pudo asociar el método a un usuario válido. Inicia sesión nuevamente.",
+				message:
+					"No se pudo asociar el método a un usuario válido. Inicia sesión nuevamente.",
 			});
 		}
 
@@ -339,16 +354,22 @@ const updateMetodoPagoHandler = async (req, res) => {
 		);
 
 		if (!nombre) {
-			return res.status(400).json({ ok: false, message: "El nombre del método es requerido" });
+			return res
+				.status(400)
+				.json({ ok: false, message: "El nombre del método es requerido" });
 		}
 
 		if (!bancoCodigoRaw || !bancoNombreRaw) {
-			return res.status(400).json({ ok: false, message: "Debe indicar un banco válido" });
+			return res
+				.status(400)
+				.json({ ok: false, message: "Debe indicar un banco válido" });
 		}
 
 		const monedaValue = normalizeMoneda(monedaRaw);
 		if (!["BS", "USD"].includes(monedaValue)) {
-			return res.status(400).json({ ok: false, message: "La moneda debe ser BS o USD" });
+			return res
+				.status(400)
+				.json({ ok: false, message: "La moneda debe ser BS o USD" });
 		}
 
 		let tipoPagoValue = String(tipoPagoRaw || "").trim();
@@ -375,7 +396,11 @@ const updateMetodoPagoHandler = async (req, res) => {
 		let titularIdentificacionValue = titularIdentificacionRaw
 			? String(titularIdentificacionRaw).trim().toUpperCase()
 			: null;
-		if (!titularIdentificacionValue && identificacionTipoRaw && identificacionNumeroRaw) {
+		if (
+			!titularIdentificacionValue &&
+			identificacionTipoRaw &&
+			identificacionNumeroRaw
+		) {
 			titularIdentificacionValue = `${String(identificacionTipoRaw).toUpperCase()}${String(
 				identificacionNumeroRaw,
 			)
@@ -393,27 +418,53 @@ const updateMetodoPagoHandler = async (req, res) => {
 		if (monedaValue === "BS") {
 			const tipoBs = normalizeTipoBs(tipoPagoValue);
 			if (!tipoBs) {
-				return res.status(400).json({ ok: false, message: "Para BS solo se permite Transferencia o PagoMovil" });
+				return res
+					.status(400)
+					.json({
+						ok: false,
+						message: "Para BS solo se permite Transferencia o PagoMovil",
+					});
 			}
 			tipoPagoValue = tipoBs;
 			correoValue = null;
 
 			if (!titularIdentificacionValue) {
-				return res.status(400).json({ ok: false, message: "Para BS debe indicar la identificación del titular" });
+				return res
+					.status(400)
+					.json({
+						ok: false,
+						message: "Para BS debe indicar la identificación del titular",
+					});
 			}
 
 			const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
 			if (!regexIdentificacion.test(titularIdentificacionValue)) {
-				return res.status(400).json({ ok: false, message: "La identificación debe tener formato V/E/J seguido de números" });
+				return res
+					.status(400)
+					.json({
+						ok: false,
+						message:
+							"La identificación debe tener formato V/E/J seguido de números",
+					});
 			}
 
 			if (tipoPagoValue === "PagoMovil") {
 				if (!telefonoValue) {
-					return res.status(400).json({ ok: false, message: "Para PagoMovil debe indicar un teléfono" });
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message: "Para PagoMovil debe indicar un teléfono",
+						});
 				}
 				const telefonoDigits = String(telefonoValue).replace(/\D/g, "");
 				if (telefonoDigits.length < 10 || telefonoDigits.length > 11) {
-					return res.status(400).json({ ok: false, message: "Para PagoMovil el teléfono debe ser válido" });
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message: "Para PagoMovil el teléfono debe ser válido",
+						});
 				}
 				telefonoValue = telefonoDigits;
 				numeroCuentaValue = null;
@@ -421,22 +472,43 @@ const updateMetodoPagoHandler = async (req, res) => {
 
 			if (tipoPagoValue === "Transferencia") {
 				if (!numeroCuentaValue) {
-					return res.status(400).json({ ok: false, message: "Para Transferencia debe indicar un número de cuenta" });
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message: "Para Transferencia debe indicar un número de cuenta",
+						});
 				}
 				const cuentaDigits = String(numeroCuentaValue).replace(/\D/g, "");
 				if (cuentaDigits.length !== 20) {
-					return res.status(400).json({ ok: false, message: "Para Transferencia el número de cuenta debe tener 20 dígitos" });
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message:
+								"Para Transferencia el número de cuenta debe tener 20 dígitos",
+						});
 				}
 				numeroCuentaValue = cuentaDigits;
 				telefonoValue = null;
 			}
 		} else {
 			if (!tipoPagoValue) {
-				return res.status(400).json({ ok: false, message: "Para USD debe indicar el tipo de pago" });
+				return res
+					.status(400)
+					.json({
+						ok: false,
+						message: "Para USD debe indicar el tipo de pago",
+					});
 			}
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 			if (!correoValue || !emailRegex.test(String(correoValue))) {
-				return res.status(400).json({ ok: false, message: "Para USD debe indicar un correo válido" });
+				return res
+					.status(400)
+					.json({
+						ok: false,
+						message: "Para USD debe indicar un correo válido",
+					});
 			}
 			titularIdentificacionValue = null;
 			telefonoValue = null;
@@ -445,7 +517,10 @@ const updateMetodoPagoHandler = async (req, res) => {
 
 		let imagenUrl = currentMetodo.imagen_url;
 		if (req.file) {
-			const uploadResult = await uploadMulterFileToLocal(req.file, "garbis/metodos-pago");
+			const uploadResult = await uploadMulterFileToLocal(
+				req.file,
+				"garbis/metodos-pago",
+			);
 			imagenUrl = uploadResult.url;
 		}
 
@@ -464,13 +539,17 @@ const updateMetodoPagoHandler = async (req, res) => {
 			imagen_url: imagenUrl,
 		});
 
-		return res.status(200).json({ ok: true, message: "Método de pago actualizado", data });
+		return res
+			.status(200)
+			.json({ ok: true, message: "Método de pago actualizado", data });
 	} catch (error) {
 		if (error?.code === "METODO_PAGO_NOT_FOUND") {
 			return res.status(404).json({ ok: false, message: error.message });
 		}
 		console.error("Error en updateMetodoPagoHandler:", error);
-		return res.status(500).json({ ok: false, message: "Error al actualizar el método de pago" });
+		return res
+			.status(500)
+			.json({ ok: false, message: "Error al actualizar el método de pago" });
 	}
 };
 

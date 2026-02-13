@@ -135,8 +135,8 @@ export default function FacturacionPage() {
                   )
                 }
                 className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-colors ${isActive
-                    ? "bg-teal-600 text-white border-teal-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-teal-600 text-white border-teal-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >
                 {period.label}

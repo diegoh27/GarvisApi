@@ -4,7 +4,9 @@ const server = require("./src/app.js");
 const { PORT } = process.env;
 
 const { testConnection } = require("./src/db.js");
-const { startCleanupDisponibilidad } = require("./src/jobs/cleanupDisponibilidad.js");
+const {
+	startCleanupDisponibilidad,
+} = require("./src/jobs/cleanupDisponibilidad.js");
 const { initDatabase } = require("./src/utils/initDatabase.js");
 const { runMigrations } = require("./src/utils/migrations.js");
 const { deleteDatabaseOnStartup } = require("./src/utils/deleteDataBase.js");
@@ -14,13 +16,13 @@ const { deleteDatabaseOnStartup } = require("./src/utils/deleteDataBase.js");
 		await deleteDatabaseOnStartup();
 
 		await testConnection();
-		
+
 		// Inicializar base de datos si está vacía
 		await initDatabase();
-		
+
 		// Ejecutar migraciones para aplicar cambios en el esquema
 		await runMigrations();
-		
+
 		startCleanupDisponibilidad();
 
 		server.listen(PORT, () => {

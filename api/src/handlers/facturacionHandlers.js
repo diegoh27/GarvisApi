@@ -5,15 +5,8 @@ const {
 
 exports.listMovimientosFacturacionHandler = async (req, res) => {
 	try {
-		const {
-			tipo,
-			origen_modulo,
-			fecha_desde,
-			fecha_hasta,
-			q,
-			limit,
-			offset,
-		} = req.query;
+		const { tipo, origen_modulo, fecha_desde, fecha_hasta, q, limit, offset } =
+			req.query;
 
 		const data = await listMovimientosFacturacionController({
 			tipo,
