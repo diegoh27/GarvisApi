@@ -470,8 +470,8 @@ const RegistrarEspecialistaForm = () => {
 												>
 													<div
 														className={`flex h-4 w-4 items-center justify-center rounded border ${isSelected
-																? "border-brand-700 bg-brand-700"
-																: "border-brand-300 bg-paper"
+															? "border-brand-700 bg-brand-700"
+															: "border-brand-300 bg-paper"
 															}`}
 													>
 														{isSelected && <Check className="h-3 w-3 text-paper" />}

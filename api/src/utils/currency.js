@@ -3,7 +3,9 @@ const axios = require("axios");
 const round2 = (value) => Number(Number(value || 0).toFixed(2));
 
 const isBsPaymentMethod = (metodo = "") => {
-	const normalized = String(metodo || "").trim().toLowerCase();
+	const normalized = String(metodo || "")
+		.trim()
+		.toLowerCase();
 	return normalized === "transferencia" || normalized === "pagomovil";
 };
 
@@ -69,9 +71,12 @@ const getTodayBcvRate = async () => {
 		return forcedRate;
 	}
 
-	const response = await axios.get("https://ve.dolarapi.com/v1/dolares/oficial", {
-		timeout: 5000,
-	});
+	const response = await axios.get(
+		"https://ve.dolarapi.com/v1/dolares/oficial",
+		{
+			timeout: 5000,
+		},
+	);
 	const rate = Number(response?.data?.promedio);
 	if (!Number.isFinite(rate) || rate <= 0) {
 		throw new Error("No se pudo obtener tasa BCV válida");

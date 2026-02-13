@@ -29,7 +29,8 @@ const buildCitaContexto = ({
 	const paciente = paciente_nombre || "N/A";
 	const cedula = paciente_cedula || "N/A";
 	const especialista =
-		`${especialista_nombre || ""} ${especialista_apellido || ""}`.trim() || "N/A";
+		`${especialista_nombre || ""} ${especialista_apellido || ""}`.trim() ||
+		"N/A";
 	const fecha = formatFechaCorta(fecha_cita);
 	return `Eco: ${eco} · Paciente: ${paciente} (${cedula}) · Esp: ${especialista} · Cita: ${fecha}`;
 };
@@ -82,7 +83,8 @@ const sanitizeLimit = (limit, fallback = 200, max = 1000) => {
 	return Math.min(parsed, max);
 };
 
-const round2 = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+const round2 = (value) =>
+	Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
 
 // ==========================================
 // COMISIONES - LISTADO
@@ -281,7 +283,8 @@ exports.pagarComisionController = async ({
 			fecha_cita: comision.fecha_cita,
 			metodo: metodoFinal,
 		});
-		const referenciaValue = referencia || comision.pago_referencia || id_comision;
+		const referenciaValue =
+			referencia || comision.pago_referencia || id_comision;
 		const tasaDia = await getTodayBcvRate();
 
 		const montoComisionUsd = round2(Number(comision.monto || 0));
@@ -471,7 +474,8 @@ exports.editarPagoComisionController = async ({
 			fecha_cita: comision.fecha_cita,
 			metodo: metodoFinal,
 		});
-		const referenciaValue = referencia || comision.pago_referencia || id_comision;
+		const referenciaValue =
+			referencia || comision.pago_referencia || id_comision;
 		const [movRows] = await conn.execute(
 			`SELECT tasa_dia_bcv
 			 FROM fac_movimiento

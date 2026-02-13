@@ -384,9 +384,7 @@ const updatePagoObligacionController = async ({
 
 		const tasaLedger = Number(pago.tasa_dia_bcv || 0);
 		const montoUsdLedger = Number(
-			monto !== undefined
-				? montoNuevo
-				: pago.monto_usd || pago.monto || 0,
+			monto !== undefined ? montoNuevo : pago.monto_usd || pago.monto || 0,
 		);
 		const montoBsLedger =
 			tasaLedger > 0
@@ -411,7 +409,9 @@ const updatePagoObligacionController = async ({
 				montoBsLedger,
 				tasaLedger,
 				`Pago obligación ${obligacionRows[0]?.concepto || ""} - ${obligacionRows[0]?.nombre_ente || ""}`.trim(),
-				referencia !== undefined ? referencia || id_pago : pago.referencia || id_pago,
+				referencia !== undefined
+					? referencia || id_pago
+					: pago.referencia || id_pago,
 				pago.id_usuario,
 				id_pago,
 			],
