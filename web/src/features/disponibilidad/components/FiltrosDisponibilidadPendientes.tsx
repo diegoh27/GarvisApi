@@ -24,18 +24,31 @@ type FiltrosDisponibilidadPendientesProps = {
 	value: FiltrosDisponibilidadPendientesValues;
 	onChange: (value: FiltrosDisponibilidadPendientesValues) => void;
 	ecoOptions: { id: string; label: string }[];
+	onReset?: () => void;
 };
 
 const FiltrosDisponibilidadPendientes = ({
 	value,
 	onChange,
 	ecoOptions,
+	onReset,
 }: FiltrosDisponibilidadPendientesProps) => {
 	const update = (partial: Partial<FiltrosDisponibilidadPendientesValues>) =>
 		onChange({ ...value, ...partial });
 
 	return (
 		<div className="space-y-4 rounded-lg border border-brand-200 bg-paper p-4">
+			<div className="flex justify-end">
+				<button
+					type="button"
+					onClick={onReset}
+					disabled={!onReset}
+					className="rounded-full border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					Limpiar filtros
+				</button>
+			</div>
+
 			<div>
 				<label className="mb-2 block text-xs font-medium text-brand-700">
 					Buscar por eco, especialista o fecha

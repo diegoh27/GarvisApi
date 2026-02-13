@@ -15,6 +15,7 @@ const {
 	getCitaByIdHandler,
 	posponerCitaHandler,
 	getAllCitasHandler,
+	createCitaMostradorHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -30,14 +31,21 @@ citasRoutes.post(
 	"/",
 	authenticateToken,
 	authorizeRoles("paciente"),
-	createCitaHandler
+	createCitaHandler,
 );
 // POST /citas/asignar (admin/moderador o paciente) - Asignar cita completa con pago y resultado
 citasRoutes.post(
 	"/asignar",
 	authenticateToken,
 	authorizeRoles("admin", "moderador", "paciente"),
-	asignarCitaCompletaHandler
+	asignarCitaCompletaHandler,
+);
+// POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
+citasRoutes.post(
+	"/mostrador",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	createCitaMostradorHandler,
 );
 // POST /citas/upload-orden-medica (admin/moderador/paciente) - Subir orden médica
 citasRoutes.post(
@@ -45,98 +53,98 @@ citasRoutes.post(
 	authenticateToken,
 	authorizeRoles("moderador", "admin", "paciente"),
 	uploadOrdenMedica,
-	uploadOrdenMedicaHandler
+	uploadOrdenMedicaHandler,
 );
 // GET /citas/paciente/:id (admin/moderador)
 citasRoutes.get(
 	"/paciente/:id",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	listCitasByPacienteHandler
+	listCitasByPacienteHandler,
 );
 // GET /citas/especialista/:id (admin/moderador)
 citasRoutes.get(
 	"/especialista/:id",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	listCitasByEspecialistaHandler
+	listCitasByEspecialistaHandler,
 );
 // GET /citas/mi-especialista (especialista)
 citasRoutes.get(
 	"/mi-especialista",
 	authenticateToken,
 	authorizeRoles("especialista"),
-	listCitasByEspecialistaSelfHandler
+	listCitasByEspecialistaSelfHandler,
 );
 // PATCH /citas/:id/cancelar (admin/moderador)
 citasRoutes.patch(
 	"/:id/cancelar",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	cancelCitaHandler
+	cancelCitaHandler,
 );
 // PATCH /citas/:id/posponer (admin/moderador)
 citasRoutes.patch(
 	"/:id/posponer",
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
-	posponerCitaHandler
+	posponerCitaHandler,
 );
-// PATCH /citas/:id/atender (especialista o paciente para marcar su propia cita al abrir historial)
+// PATCH /citas/:id/atender (especialista/paciente o admin/moderador)
 citasRoutes.patch(
 	"/:id/atender",
 	authenticateToken,
-	authorizeRoles("especialista", "paciente"),
-	markCitaAtendidaHandler
+	authorizeRoles("especialista", "paciente", "admin", "moderador"),
+	markCitaAtendidaHandler,
 );
 // GET /citas/pendientes-pago (moderador/admin)
 citasRoutes.get(
 	"/pendientes-pago",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listCitasPendientesPagoHandler
+	listCitasPendientesPagoHandler,
 );
 // GET /citas/con-pagos (moderador/admin) - Todas las citas con pagos para verificación
 citasRoutes.get(
 	"/con-pagos",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listCitasConPagosHandler
+	listCitasConPagosHandler,
 );
 // PATCH /citas/:id/estado-pago (moderador/admin)
 citasRoutes.patch(
 	"/:id/estado-pago",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	updateEstadoPagoHandler
+	updateEstadoPagoHandler,
 );
 // GET /citas/por-fecha?fecha=YYYY-MM-DD (moderador/admin)
 citasRoutes.get(
 	"/por-fecha",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	listCitasByFechaHandler
+	listCitasByFechaHandler,
 );
 // GET /citas/todas (moderador/admin) - Todas las citas con información completa
 citasRoutes.get(
 	"/todas",
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
-	getAllCitasHandler
+	getAllCitasHandler,
 );
 // GET /citas/mis-citas (paciente) - Todas las citas del paciente con información completa
 citasRoutes.get(
 	"/mis-citas",
 	authenticateToken,
 	authorizeRoles("paciente"),
-	listMisCitasCompletasHandler
+	listMisCitasCompletasHandler,
 );
 // GET /citas/:id (moderador/admin/especialista/paciente)
 citasRoutes.get(
 	"/:id",
 	authenticateToken,
 	authorizeRoles("moderador", "admin", "especialista", "paciente"),
-	getCitaByIdHandler
+	getCitaByIdHandler,
 );
 
 module.exports = citasRoutes;

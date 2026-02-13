@@ -94,7 +94,7 @@ export default function HistorialComisionesTable({
     <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
       <div className="px-4 md:px-6 py-4 bg-gray-50 border-b">
         <h2 className="text-lg md:text-xl font-semibold text-gray-800">
-          Historial de Comisiones Pagadas
+          Historial de pagos
         </h2>
       </div>
       <div className="overflow-x-auto max-w-full">
@@ -109,7 +109,7 @@ export default function HistorialComisionesTable({
           }
           isLoading={isLoading}
           loadingState="Cargando historial..."
-          emptyState="No hay comisiones pagadas registradas"
+          emptyState="No hay pagos registrados"
         />
       </div>
     </div>

@@ -55,7 +55,9 @@ const VerPagoModal = ({
 	onRechazar,
 	isUpdating = false,
 }: VerPagoModalProps) => {
-	const puedeVerificar = showAcciones && id_cita && pago?.estado_pago === 0 && onAprobar && onRechazar;
+	const estadoPago = pago ? Number(pago.estado_pago) : null;
+	const puedeVerificar =
+		showAcciones && id_cita && estadoPago === 0 && onAprobar && onRechazar;
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [zoom, setZoom] = useState(1);
 	const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -140,16 +142,16 @@ const VerPagoModal = ({
 									<p className="text-xs font-semibold text-brand-700">Estado</p>
 									<p className="mt-0.5">
 										<span
-											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${pago.estado_pago === 0
+											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${estadoPago === 0
 												? "bg-amber-400 text-brand-900"
-												: pago.estado_pago === 1
+												: estadoPago === 1
 													? "bg-brand-700 text-paper"
 													: "bg-red-500 text-paper"
 												}`}
 										>
-											{pago.estado_pago === 0
+											{estadoPago === 0
 												? "Pendiente"
-												: pago.estado_pago === 1
+												: estadoPago === 1
 													? "Aprobado"
 													: "Rechazado"}
 										</span>

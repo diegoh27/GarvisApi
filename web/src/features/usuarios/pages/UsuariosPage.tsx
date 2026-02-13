@@ -118,7 +118,6 @@ const UsuariosPage = () => {
 		telefono: string;
 		fecha_nacimiento: string;
 		id_especialidad?: string;
-		codigo_colegiatura?: string;
 		porcentaje?: number;
 		id_ecos?: string[];
 		rif?: string;
@@ -454,7 +453,6 @@ type EditUserModalProps = {
 		telefono: string;
 		fecha_nacimiento: string;
 		id_especialidad?: string;
-		codigo_colegiatura?: string;
 		porcentaje?: number;
 		id_ecos?: string[];
 		rif?: string;
@@ -501,7 +499,6 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 				: usuario.fecha_nacimiento.slice(0, 10)
 			: "",
 		id_especialidad: "",
-		codigo_colegiatura: "",
 		porcentaje: "",
 		id_ecos: [] as string[],
 		rif: "",
@@ -513,7 +510,6 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 			setForm((prev) => ({
 				...prev,
 				id_especialidad: especialistaData.id_especialidad || "",
-				codigo_colegiatura: (especialistaData as any).codigo_colegiatura || "",
 				porcentaje:
 					especialistaData.porcentaje !== undefined &&
 						especialistaData.porcentaje !== null
@@ -611,11 +607,11 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 			return;
 		}
 		if (isPaciente) {
-			const { porcentaje, id_especialidad, codigo_colegiatura, id_ecos, ...rest } = form;
+			const { porcentaje, id_especialidad, id_ecos, ...rest } = form;
 			onSave(rest);
 			return;
 		}
-		const { porcentaje, id_especialidad, codigo_colegiatura, id_ecos, rif, ...rest } = form;
+		const { porcentaje, id_especialidad, id_ecos, rif, ...rest } = form;
 		onSave(rest);
 	};
 	const ecos = todosEcos;
@@ -766,18 +762,6 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 											</option>
 										))}
 									</select>
-								</div>
-								<div>
-									<label className="mb-1 block text-sm font-medium text-brand-700">
-										Código de colegiatura
-									</label>
-									<input
-										type="text"
-										value={form.codigo_colegiatura}
-										onChange={(e) => setForm({ ...form, codigo_colegiatura: e.target.value })}
-										className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-										placeholder="Ej: CMV-12345"
-									/>
 								</div>
 							</div>
 							<div>

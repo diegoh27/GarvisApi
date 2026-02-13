@@ -6,6 +6,8 @@ import {
   useGetHistorialComisionesQuery,
   useGenerarComisionesMutation,
   usePagarComisionMutation,
+  useEditarPagoComisionMutation,
+  useCrearCitaMostradorMutation,
 } from "../api/comisionesApi";
 import { useGetEspecialistasInventarioQuery } from "../api/especialistasApi";
 import type { EspecialistaComision } from "../api/comisionesApi";
@@ -14,26 +16,39 @@ import ComisionesTable from "../components/comisiones/ComisionesTable";
 import HistorialComisionesTable from "../components/comisiones/HistorialComisionesTable";
 import EspecialistasTable from "../components/comisiones/EspecialistasTable";
 import PagarComisionModal from "../components/comisiones/PagarComisionModal";
-import GenericTable from "../components/GenericTable";
+import EditarEspecialistaModal from "../components/comisiones/EditarEspecialistaModal";
+import RegistrarCitaMostradorModal from "../components/comisiones/RegistrarCitaMostradorModal";
 import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
+import { useUpdateEspecialistaMutation } from "../../usuarios/usuariosApi";
+import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 
 export default function ComisionesEspecialistasPage() {
+  const [filtroEstado, setFiltroEstado] = useState<"Todas" | "Pendiente" | "Pagada">("Todas");
   const { data: queryData, isLoading, error } = useListComisionesQuery({
-    estado: "Pendiente",
+    estado: filtroEstado === "Todas" ? undefined : filtroEstado,
   });
   const comisionesData = Array.isArray(queryData) ? queryData : [];
   const { data: historialData = [], isLoading: historialLoading } =
     useGetHistorialComisionesQuery();
-  const { data: especialistasData, isLoading: especialistasLoading } =
+  const { data: especialistasData, isLoading: especialistasLoading, refetch: refetchEspecialistas } =
     useGetEspecialistasInventarioQuery();
+  const { data: especialidades = [] } = useGetEspecialidadesQuery();
   const especialistas = especialistasData ?? [];
   const [generarComisiones] = useGenerarComisionesMutation();
   const [pagarComision] = usePagarComisionMutation();
+  const [editarPagoComision] = useEditarPagoComisionMutation();
+  const [crearCitaMostrador, { isLoading: isCreatingMostrador }] = useCrearCitaMostradorMutation();
+  const [updateEspecialista, { isLoading: isUpdatingEspecialista }] = useUpdateEspecialistaMutation();
 
   const [selectedComision, setSelectedComision] =
     useState<EspecialistaComision | null>(null);
+  const [selectedEspecialista, setSelectedEspecialista] =
+    useState<EspecialistaInventario | null>(null);
   const [showPagarModal, setShowPagarModal] = useState(false);
+  const [showEditarEspecialistaModal, setShowEditarEspecialistaModal] = useState(false);
+  const [showRegistrarMostradorModal, setShowRegistrarMostradorModal] = useState(false);
+  const [modoPago, setModoPago] = useState<"pagar" | "editar">("pagar");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchQueryEspecialistas, setSearchQueryEspecialistas] = useState("");
   const [currentPageComisiones, setCurrentPageComisiones] = useState(1);
@@ -75,7 +90,51 @@ export default function ComisionesEspecialistasPage() {
 
   const handlePagarComision = (comision: EspecialistaComision) => {
     setSelectedComision(comision);
+    setModoPago("pagar");
     setShowPagarModal(true);
+  };
+
+  const handleEditarPago = (comision: EspecialistaComision) => {
+    setSelectedComision(comision);
+    setModoPago("editar");
+    setShowPagarModal(true);
+  };
+
+  const handleEditarEspecialista = (especialista: EspecialistaInventario) => {
+    setSelectedEspecialista(especialista);
+    setShowEditarEspecialistaModal(true);
+  };
+
+  const handleGuardarEspecialista = async (payload: {
+    id_especialidad: string;
+    porcentaje: number;
+  }) => {
+    if (!selectedEspecialista) return;
+
+    try {
+      await updateEspecialista({
+        id: selectedEspecialista.id_especialista,
+        payload,
+      }).unwrap();
+
+      await Swal.fire({
+        icon: "success",
+        title: "Especialista actualizado",
+        text: "Los datos del especialista se guardaron correctamente.",
+        timer: 1800,
+        showConfirmButton: false,
+      });
+
+      setShowEditarEspecialistaModal(false);
+      setSelectedEspecialista(null);
+      refetchEspecialistas();
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error?.data?.message || "No se pudo actualizar el especialista",
+      });
+    }
   };
 
   const handleConfirmarPago = async (
@@ -85,19 +144,33 @@ export default function ComisionesEspecialistasPage() {
     referencia?: string,
   ) => {
     try {
-      await pagarComision({
-        idComision,
-        payload: {
-          fecha_pago,
-          metodo: (metodo as any) || undefined,
-          referencia: referencia || undefined,
-        },
-      }).unwrap();
+      if (modoPago === "editar") {
+        await editarPagoComision({
+          idComision,
+          payload: {
+            fecha_pago,
+            metodo: (metodo as any) || undefined,
+            referencia: referencia || undefined,
+          },
+        }).unwrap();
+      } else {
+        await pagarComision({
+          idComision,
+          payload: {
+            fecha_pago,
+            metodo: (metodo as any) || undefined,
+            referencia: referencia || undefined,
+          },
+        }).unwrap();
+      }
 
       Swal.fire({
         icon: "success",
-        title: "Comisión pagada",
-        text: "La comisión fue pagada correctamente.",
+        title: modoPago === "editar" ? "Pago actualizado" : "Pago registrado",
+        text:
+          modoPago === "editar"
+            ? "El pago fue actualizado correctamente."
+            : "El pago fue registrado correctamente.",
         timer: 2000,
         showConfirmButton: false,
       });
@@ -110,6 +183,39 @@ export default function ComisionesEspecialistasPage() {
         title: "Error",
         text: err?.data?.message || "No se pudo procesar el pago",
       });
+    }
+  };
+
+  const handleRegistrarCitaMostrador = async (payload: {
+    id_especialista: string;
+    id_eco: string;
+    fecha_cita: string;
+    metodo: "Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro";
+    monto: number;
+    tasa_dia_bcv: number;
+    nombre: string;
+    apellido: string;
+    cedula: string;
+    rif?: string;
+    referencia?: string;
+  }) => {
+    try {
+      await crearCitaMostrador(payload).unwrap();
+      await Swal.fire({
+        icon: "success",
+        title: "Cita registrada",
+        text: "La cita de mostrador quedó registrada como pagada y atendida.",
+        timer: 2200,
+        showConfirmButton: false,
+      });
+      setShowRegistrarMostradorModal(false);
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error?.data?.message || "No se pudo registrar la cita de mostrador",
+      });
+      throw error;
     }
   };
 
@@ -191,7 +297,7 @@ export default function ComisionesEspecialistasPage() {
   return (
     <div className="p-4 md:p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Comisiones de Especialistas</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Pagos a Especialistas</h1>
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           <SearchBar
             placeholder="Buscar comisiones..."
@@ -202,11 +308,18 @@ export default function ComisionesEspecialistasPage() {
             className="w-full md:w-64"
           />
           <button
+            onClick={() => setShowRegistrarMostradorModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-700 text-white rounded-lg hover:bg-brand-800 transition-colors w-full md:w-auto justify-center md:justify-start"
+          >
+            <Plus size={20} />
+            Registrar cita de mostrador
+          </button>
+          <button
             onClick={handleGenerarComisiones}
             className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors w-full md:w-auto justify-center md:justify-start"
           >
             <Plus size={20} />
-            Generar Comisiones
+            Generar pagos pendientes
           </button>
         </div>
       </div>
@@ -233,6 +346,7 @@ export default function ComisionesEspecialistasPage() {
               especialistas={currentEspecialistas}
               isLoading={especialistasLoading}
               startIndex={startIndexEspecialistas}
+              onEditar={handleEditarEspecialista}
             />
           </div>
         </div>
@@ -249,14 +363,59 @@ export default function ComisionesEspecialistasPage() {
         )}
       </div>
 
-      {/* Tabla de comisiones pendientes */}
+      {/* Tabla de citas con estado de pago */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Comisiones Pendientes</h2>
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <h2 className="text-lg font-semibold">Citas</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroEstado("Todas");
+                setCurrentPageComisiones(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
+                  ? "bg-teal-500 text-white"
+                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                }`}
+            >
+              Todas
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroEstado("Pendiente");
+                setCurrentPageComisiones(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pendiente"
+                  ? "bg-teal-500 text-white"
+                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                }`}
+            >
+              Pendientes
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroEstado("Pagada");
+                setCurrentPageComisiones(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pagada"
+                  ? "bg-teal-500 text-white"
+                  : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                }`}
+            >
+              Pagadas
+            </button>
+          </div>
+        </div>
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto max-w-full">
             <ComisionesTable
               comisiones={currentComisiones}
               onPagar={handlePagarComision}
+              onEditar={handleEditarPago}
+              startIndex={startIndex}
             />
           </div>
         </div>
@@ -273,7 +432,7 @@ export default function ComisionesEspecialistasPage() {
         )}
       </div>
 
-      {/* Historial de comisiones pagadas */}
+      {/* Historial de pagos */}
       <HistorialComisionesTable
         comisiones={currentHistorial}
         isLoading={historialLoading}
@@ -299,6 +458,29 @@ export default function ComisionesEspecialistasPage() {
             setShowPagarModal(false);
             setSelectedComision(null);
           }}
+          mode={modoPago}
+        />
+      )}
+
+      {selectedEspecialista && showEditarEspecialistaModal && (
+        <EditarEspecialistaModal
+          especialista={selectedEspecialista}
+          especialidades={especialidades}
+          isSaving={isUpdatingEspecialista}
+          onClose={() => {
+            setShowEditarEspecialistaModal(false);
+            setSelectedEspecialista(null);
+          }}
+          onSave={handleGuardarEspecialista}
+        />
+      )}
+
+      {showRegistrarMostradorModal && (
+        <RegistrarCitaMostradorModal
+          especialistas={especialistas}
+          isSaving={isCreatingMostrador}
+          onClose={() => setShowRegistrarMostradorModal(false)}
+          onSave={handleRegistrarCitaMostrador}
         />
       )}
     </div>

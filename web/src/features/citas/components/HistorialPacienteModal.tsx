@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { CitaPacienteCompleta } from "../citasApi";
-import { useMarcarAtendidaMutation } from "../citasApi";
 import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import PDFViewerModal from "../../especialista/components/PDFViewerModal";
 
@@ -37,14 +36,9 @@ const parseResultadoArchivos = (value: string | null): string[] => {
 	return trimmed ? [trimmed] : [];
 };
 
-const getDateKey = (value: string | null): string => {
-	if (!value) return "";
-	return value.includes("T") ? value.split("T")[0] : value;
-};
-
 const HistorialPacienteModal = ({
 	citas,
-	citaParaMarcarAtendida,
+	citaParaMarcarAtendida: _citaParaMarcarAtendida,
 	formatFecha,
 	formatHora,
 	onClose,
@@ -56,25 +50,6 @@ const HistorialPacienteModal = ({
 		idCita: string;
 	} | null>(null);
 	const [pdfViewer, setPdfViewer] = useState<{ url: string; title: string } | null>(null);
-
-	const [marcarAtendida] = useMarcarAtendidaMutation();
-
-	// Al abrir el historial, marcar la cita correspondiente como atendida si aplica
-	useEffect(() => {
-		if (!citaParaMarcarAtendida) return;
-		const cita = citaParaMarcarAtendida;
-		const estadoPago = cita.estado_pago ?? cita.pago_estado_pago ?? 0;
-		if (cita.estado_cita === 3) return; // ya atendida
-		if (cita.estado_cita === 2) return; // cancelada
-		if (estadoPago !== 1) return; // pago no aprobado
-		const today = new Date().toISOString().slice(0, 10);
-		const citaDateKey = getDateKey(cita.fecha_cita);
-		if (citaDateKey > today) return;
-		marcarAtendida(cita.id_cita).catch(() => {
-			// Silenciar error (ej. ya atendida o sin permiso)
-		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- solo al abrir con esta cita
-	}, [citaParaMarcarAtendida?.id_cita]);
 
 	return (
 		<>

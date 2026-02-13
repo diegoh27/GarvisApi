@@ -6,6 +6,7 @@ export type CitaPendientePago = {
 	id_representado: string | null;
 	id_especialista: string;
 	id_eco: string;
+	origen_cita?: "web" | "mostrador";
 	fecha_cita: string;
 	hora_cita: string;
 	estado_cita: number;
@@ -27,6 +28,7 @@ export type CitaCompleta = {
 	id_representado: string | null;
 	id_especialista: string;
 	id_eco: string;
+	origen_cita?: "web" | "mostrador";
 	fecha_cita: string;
 	hora_cita: string;
 	estado_cita: number;
@@ -160,13 +162,25 @@ const citasApi = baseApi.injectEndpoints({
 			invalidatesTags: ["Citas"],
 		}),
 		posponerCita: builder.mutation<
-			{ id_cita: string; fecha_cita: string; hora_cita: string },
-			{ id_cita: string; fecha_cita: string; hora_cita: string }
+			{
+				id_cita: string;
+				fecha_cita: string;
+				hora_cita: string;
+				id_especialista?: string | null;
+				id_disponibilidad?: string | null;
+			},
+			{
+				id_cita: string;
+				fecha_cita: string;
+				hora_cita: string;
+				id_especialista?: string;
+				id_disponibilidad?: string;
+			}
 		>({
-			query: ({ id_cita, fecha_cita, hora_cita }) => ({
+			query: ({ id_cita, fecha_cita, hora_cita, id_especialista, id_disponibilidad }) => ({
 				url: `/citas/${id_cita}/posponer`,
 				method: "PATCH",
-				body: { fecha_cita, hora_cita },
+				body: { fecha_cita, hora_cita, id_especialista, id_disponibilidad },
 			}),
 			invalidatesTags: ["Citas"],
 		}),
