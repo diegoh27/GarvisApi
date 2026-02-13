@@ -159,7 +159,7 @@ const MonthCalendar = ({
 								} ${status.isPast && isCurrentMonth ? "bg-cloud/60" : ""} ${status.isSelected && isCurrentMonth
 									? "bg-brand-200 border-brand-500 border-2"
 									: isCurrentMonth
-										? "cursor-pointer hover:bg-brand-50"
+										? "cursor-pointer hover:bg-cloud/50"
 										: ""
 								}`}
 							onClick={() => isCurrentMonth && onDateClick(dateKey)}
