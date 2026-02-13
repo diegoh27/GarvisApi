@@ -394,11 +394,10 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 					<button
 						key={item.id}
 						onClick={() => setFilter(item.id)}
-						className={`rounded-full px-3 py-1 ${
-							filter === item.id
+						className={`rounded-full px-3 py-1 ${filter === item.id
 								? "bg-brand-700 text-paper"
 								: "bg-cloud text-brand-800"
-						}`}
+							}`}
 					>
 						{item.label}
 					</button>
@@ -439,13 +438,12 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 													</p>
 												)}
 												<span
-													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${
-														estadoDisponibilidad === 0
+													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${estadoDisponibilidad === 0
 															? "bg-accent text-paper"
 															: estadoDisponibilidad === 1
 																? "bg-brand-700 text-paper"
 																: "bg-red-500 text-paper"
-													}`}
+														}`}
 												>
 													{estadoDisponibilidad === 0
 														? "Pendiente"
@@ -497,13 +495,12 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 													Eco: {cita.eco_nombre}
 												</p>
 												<span
-													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${
-														estadoCita === 3
+													className={`mt-2 inline-flex rounded-full px-2 py-1 text-[10px] ${estadoCita === 3
 															? "bg-green-600 text-paper"
 															: estadoPago === 0
 																? "bg-amber-400 text-brand-900"
 																: "bg-sky-500 text-paper"
-													}`}
+														}`}
 												>
 													{estadoCita === 3 ? "Atendida" : estadoPago === 0 ? "Pago pendiente" : "Cita aprobada"}
 												</span>

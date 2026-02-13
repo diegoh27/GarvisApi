@@ -2,6 +2,60 @@ const { pool } = require("../db");
 const crypto = require("crypto");
 const { getDolarOficialController } = require("./dolarControllers");
 
+const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
+const MOSTRADOR_CORREO = "mostrador@garvis.local";
+const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
+const MOSTRADOR_RIF = "J0000000000";
+
+const ensureMostradorPacienteBase = async (conn) => {
+	const [pacienteRows] = await conn.execute(
+		"SELECT id_paciente FROM paciente WHERE id_paciente = ? LIMIT 1",
+		[MOSTRADOR_PACIENTE_ID],
+	);
+	if (pacienteRows.length) {
+		return MOSTRADOR_PACIENTE_ID;
+	}
+
+	const [userRows] = await conn.execute(
+		"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+		[MOSTRADOR_PACIENTE_ID],
+	);
+
+	if (!userRows.length) {
+		const [rolRows] = await conn.execute(
+			"SELECT id_rol FROM roles WHERE nombre = 'paciente' LIMIT 1",
+		);
+		if (!rolRows.length) {
+			const err = new Error("Rol paciente no encontrado");
+			err.code = "ROL_NOT_FOUND";
+			throw err;
+		}
+
+		await conn.execute(
+			`INSERT INTO usuario
+				(id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
+			VALUES
+				(?, 'Paciente', 'Mostrador', 'Otro', ?, ?, '0000000000', 'MOSTRADOR_NO_LOGIN', 1, '1990-01-01', ?)`,
+			[
+				MOSTRADOR_PACIENTE_ID,
+				MOSTRADOR_CEDULA,
+				MOSTRADOR_CORREO,
+				rolRows[0].id_rol,
+			],
+		);
+	}
+
+	await conn.execute(
+		`INSERT INTO paciente
+			(id_paciente, tipo_sangre, descripcion, direccion, rif, contacto_emergencia_nombre, contacto_emergencia_telefono)
+		VALUES
+			(?, 'N/A', 'Paciente de mostrador', NULL, ?, NULL, NULL)`,
+		[MOSTRADOR_PACIENTE_ID, MOSTRADOR_RIF],
+	);
+
+	return MOSTRADOR_PACIENTE_ID;
+};
+
 const createCitaFromDisponibilidadController = async ({
 	id_paciente,
 	id_representado,
@@ -205,16 +259,17 @@ const listCitasByEspecialistaController = async (id_especialista) => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+			c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
       c.estado_pago,
       c.id_disponibilidad,
       c.orden,
-      u.nombre AS paciente_nombre,
-      u.apellido AS paciente_apellido,
+			COALESCE(cm.nombre, u.nombre) AS paciente_nombre,
+			COALESCE(cm.apellido, u.apellido) AS paciente_apellido,
       u.telefono AS paciente_telefono,
-      u.cedula AS paciente_cedula,
+			COALESCE(cm.cedula, u.cedula) AS paciente_cedula,
       u.correo AS paciente_correo,
       p.tipo_sangre AS paciente_tipo_sangre,
       p.contacto_emergencia_nombre AS paciente_contacto_nombre,
@@ -226,6 +281,7 @@ const listCitasByEspecialistaController = async (id_especialista) => {
     FROM cita c
     INNER JOIN usuario u ON u.id_usuario = c.id_paciente
     INNER JOIN paciente p ON p.id_paciente = c.id_paciente
+		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
     WHERE c.id_especialista = ?
@@ -346,21 +402,23 @@ const listCitasPendientesPagoController = async () => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+			c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
       c.estado_pago,
       c.id_disponibilidad,
       c.orden,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+			COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+			COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+			COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_paciente.telefono AS paciente_telefono,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     WHERE c.estado_pago = 0
@@ -380,21 +438,23 @@ const listCitasConPagosController = async () => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+			c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
       c.estado_pago,
       c.id_disponibilidad,
       c.orden,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+			COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+			COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+			COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_paciente.telefono AS paciente_telefono,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     WHERE EXISTS (
@@ -527,21 +587,23 @@ const listCitasByFechaController = async (fecha) => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+			c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
       c.estado_pago,
       c.id_disponibilidad,
       c.orden,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+			COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+			COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+			COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_paciente.telefono AS paciente_telefono,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     WHERE c.fecha_cita = ?
@@ -611,7 +673,9 @@ const posponerCitaController = async ({
 
 			const disponibilidad = dispRows[0];
 			if (![0, 1, 4].includes(Number(disponibilidad.estado))) {
-				const err = new Error("La disponibilidad seleccionada no puede usarse para posponer");
+				const err = new Error(
+					"La disponibilidad seleccionada no puede usarse para posponer",
+				);
 				err.code = "INVALID_STATE";
 				throw err;
 			}
@@ -620,19 +684,32 @@ const posponerCitaController = async ({
 				Number(disponibilidad.estado) === 4 &&
 				cita.id_disponibilidad !== disponibilidad.id_disponibilidad
 			) {
-				const err = new Error("La disponibilidad seleccionada ya está reservada");
+				const err = new Error(
+					"La disponibilidad seleccionada ya está reservada",
+				);
 				err.code = "INVALID_STATE";
 				throw err;
 			}
 
-			if (cita.id_eco && disponibilidad.id_eco && cita.id_eco !== disponibilidad.id_eco) {
-				const err = new Error("La disponibilidad seleccionada no corresponde al eco de la cita");
+			if (
+				cita.id_eco &&
+				disponibilidad.id_eco &&
+				cita.id_eco !== disponibilidad.id_eco
+			) {
+				const err = new Error(
+					"La disponibilidad seleccionada no corresponde al eco de la cita",
+				);
 				err.code = "INVALID_STATE";
 				throw err;
 			}
 
-			if (id_especialista && disponibilidad.id_especialista !== id_especialista) {
-				const err = new Error("La disponibilidad no pertenece al especialista seleccionado");
+			if (
+				id_especialista &&
+				disponibilidad.id_especialista !== id_especialista
+			) {
+				const err = new Error(
+					"La disponibilidad no pertenece al especialista seleccionado",
+				);
 				err.code = "INVALID_STATE";
 				throw err;
 			}
@@ -683,7 +760,13 @@ const posponerCitaController = async ({
            id_especialista = COALESCE(?, id_especialista),
            id_disponibilidad = COALESCE(?, id_disponibilidad)
        WHERE id_cita = ?`,
-			[targetFecha, targetHora, targetEspecialista, targetDisponibilidad, id_cita],
+			[
+				targetFecha,
+				targetHora,
+				targetEspecialista,
+				targetDisponibilidad,
+				id_cita,
+			],
 		);
 
 		await conn.commit();
@@ -711,6 +794,7 @@ const getCitaByIdController = async (id_cita) => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+	c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
@@ -719,14 +803,14 @@ const getCitaByIdController = async (id_cita) => {
       c.orden,
       c.creada_en,
       -- Datos del paciente
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+	COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+	COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+	COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_paciente.telefono AS paciente_telefono,
-      u_paciente.correo AS paciente_correo,
+	CASE WHEN c.origen_cita = 'mostrador' THEN NULL ELSE u_paciente.correo END AS paciente_correo,
       u_paciente.fecha_nacimiento AS paciente_fecha_nacimiento,
       p.tipo_sangre AS paciente_tipo_sangre,
-      p.rif AS paciente_rif,
+	COALESCE(cm.rif, p.rif) AS paciente_rif,
       p.contacto_emergencia_nombre AS paciente_contacto_nombre,
       p.contacto_emergencia_telefono AS paciente_contacto_telefono,
       -- Datos del especialista
@@ -766,6 +850,7 @@ const getCitaByIdController = async (id_cita) => {
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN paciente p ON p.id_paciente = c.id_paciente
+	LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
     INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
@@ -789,6 +874,7 @@ const getAllCitasController = async () => {
       c.id_representado,
       c.id_especialista,
       c.id_eco,
+	c.origen_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
@@ -797,11 +883,11 @@ const getAllCitasController = async () => {
       c.orden,
       c.creada_en,
       -- Datos del paciente
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+	COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+	COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+	COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_paciente.telefono AS paciente_telefono,
-      u_paciente.correo AS paciente_correo,
+	CASE WHEN c.origen_cita = 'mostrador' THEN NULL ELSE u_paciente.correo END AS paciente_correo,
       -- Datos del especialista
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
@@ -847,6 +933,7 @@ const getAllCitasController = async () => {
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN paciente p ON p.id_paciente = c.id_paciente
+	LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
     INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
@@ -860,6 +947,162 @@ const getAllCitasController = async () => {
   `;
 	const [rows] = await pool.execute(sql);
 	return rows;
+};
+
+const createCitaMostradorController = async ({
+	id_especialista,
+	id_eco,
+	fecha_cita,
+	hora_cita,
+	metodo,
+	monto,
+	tasa_dia_bcv,
+	nombre,
+	apellido,
+	cedula,
+	rif,
+	id_usuario,
+	referencia,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const montoValue = Number(monto);
+		const tasaValue = Number(tasa_dia_bcv);
+		if (!Number.isFinite(montoValue) || montoValue <= 0) {
+			const err = new Error("Monto inválido");
+			err.code = "INVALID_AMOUNT";
+			throw err;
+		}
+		if (!Number.isFinite(tasaValue) || tasaValue <= 0) {
+			const err = new Error("Tasa BCV inválida");
+			err.code = "INVALID_RATE";
+			throw err;
+		}
+
+		const [espRows] = await conn.execute(
+			"SELECT id_especialista, porcentaje FROM especialista WHERE id_especialista = ? LIMIT 1",
+			[id_especialista],
+		);
+		if (!espRows.length) {
+			const err = new Error("Especialista no encontrado");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+
+		const [ecoRows] = await conn.execute(
+			"SELECT id_eco, precio FROM eco WHERE id_eco = ? AND activo = 1 LIMIT 1",
+			[id_eco],
+		);
+		if (!ecoRows.length) {
+			const err = new Error("Eco no encontrado o inactivo");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+
+		const [espEcoRows] = await conn.execute(
+			"SELECT id_especialista FROM especialista_eco WHERE id_especialista = ? AND id_eco = ? LIMIT 1",
+			[id_especialista, id_eco],
+		);
+		if (!espEcoRows.length) {
+			const err = new Error("El especialista no tiene asignado este eco");
+			err.code = "ECO_NOT_AVAILABLE";
+			throw err;
+		}
+
+		const id_paciente = await ensureMostradorPacienteBase(conn);
+		const id_cita = crypto.randomUUID();
+		const id_pago = crypto.randomUUID();
+		const id_comision = crypto.randomUUID();
+		const horaFinal = hora_cita || new Date().toTimeString().slice(0, 8);
+		const metodoReal = String(metodo || "").trim() || "Transferencia";
+		const referenciaPago =
+			referencia || `MOST-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+		await conn.execute(
+			`INSERT INTO cita
+				(id_cita, id_paciente, id_representado, id_especialista, id_eco, fecha_cita, hora_cita, orden, id_disponibilidad, origen_cita, estado_cita, estado_pago)
+			VALUES
+				(?, ?, NULL, ?, ?, ?, ?, '', NULL, 'mostrador', 3, 1)`,
+			[id_cita, id_paciente, id_especialista, id_eco, fecha_cita, horaFinal],
+		);
+
+		await conn.execute(
+			`INSERT INTO cita_mostrador
+				(id_cita, nombre, apellido, cedula, rif)
+			VALUES
+				(?, ?, ?, ?, ?)`,
+			[id_cita, nombre, apellido, cedula, rif || null],
+		);
+
+		await conn.execute(
+			`INSERT INTO pagos
+				(id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, cedula_pagador, telefono_pagador, referencia, estado_pago, fecha_validacion, validado_por, tasa_dia_bcv)
+			VALUES
+				(?, ?, ?, ?, '', ?, 'Mostrador', ?, ?, '0000000000', ?, 1, CURRENT_TIMESTAMP, ?, ?)`,
+			[
+				id_pago,
+				id_cita,
+				id_paciente,
+				metodoReal,
+				`Mostrador-${metodoReal}`,
+				montoValue,
+				cedula,
+				referenciaPago,
+				id_usuario,
+				tasaValue,
+			],
+		);
+
+		await conn.execute(
+			`INSERT INTO fac_movimiento
+				(id_movimiento, tipo, fecha, monto, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+			VALUES
+				(UUID(), 'Ingreso', ?, ?, ?, ?, 'CITA_PAGO', ?, ?, NOW())`,
+			[
+				fecha_cita,
+				montoValue,
+				`Pago cita mostrador - ${nombre} ${apellido} (metodo: ${metodoReal})`,
+				referenciaPago,
+				id_pago,
+				id_usuario,
+			],
+		);
+
+		const porcentaje = Number(espRows[0].porcentaje || 0);
+		const ecoPrecio = Number(ecoRows[0].precio || 0);
+		const montoComision = Number(((ecoPrecio * porcentaje) / 100).toFixed(2));
+
+		await conn.execute(
+			`INSERT INTO esp_comision
+				(id_comision, id_cita, id_especialista, porcentaje, monto, estado, fecha_creacion, fecha_pago, id_usuario)
+			VALUES
+				(?, ?, ?, ?, ?, 'Pendiente', NOW(), NULL, ?)`,
+			[
+				id_comision,
+				id_cita,
+				id_especialista,
+				porcentaje,
+				montoComision,
+				id_usuario,
+			],
+		);
+
+		await conn.commit();
+		return {
+			id_cita,
+			id_pago,
+			id_comision,
+			referencia: referenciaPago,
+			origen_cita: "mostrador",
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
 };
 
 // Asignar cita completa: crear cita + pago + resultado en una transacción
@@ -1060,4 +1303,5 @@ module.exports = {
 	getCitaByIdController,
 	posponerCitaController,
 	getAllCitasController,
+	createCitaMostradorController,
 };

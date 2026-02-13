@@ -3,6 +3,7 @@ const {
 	listComisionesHandler,
 	generarComisionesPendientesHandler,
 	pagarComisionHandler,
+	editarPagoComisionHandler,
 } = require("../handlers/espComisionHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -20,5 +21,8 @@ espComisionRoutes.post("/generar", generarComisionesPendientesHandler);
 
 // POST /comisiones-especialistas/:idComision/pagar
 espComisionRoutes.post("/:idComision/pagar", pagarComisionHandler);
+
+// PUT /comisiones-especialistas/:idComision/pago
+espComisionRoutes.put("/:idComision/pago", editarPagoComisionHandler);
 
 module.exports = espComisionRoutes;

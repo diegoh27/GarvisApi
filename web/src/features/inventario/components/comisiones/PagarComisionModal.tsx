@@ -12,6 +12,7 @@ interface PagarComisionModalProps {
     referencia?: string,
   ) => void;
   onClose: () => void;
+  mode?: "pagar" | "editar";
 }
 
 const METODOS: Array<
@@ -22,18 +23,27 @@ export default function PagarComisionModal({
   comision,
   onConfirm,
   onClose,
+  mode = "pagar",
 }: PagarComisionModalProps) {
   const { data: dolarOficial, isLoading: loadingDolar } = useGetDolarOficialQuery();
 
+  const metodoFromDescripcion = (descripcion?: string | null) => {
+    if (!descripcion) return undefined;
+    const match = descripcion.match(/metodo:\s*([^\)]+)/i);
+    if (!match) return undefined;
+    const value = match[1].trim();
+    return METODOS.includes(value as any) ? (value as any) : undefined;
+  };
+
   const [formData, setFormData] = useState({
-    fecha_pago: new Date().toISOString().split("T")[0],
-    metodo: "Transferencia" as
+    fecha_pago: comision.fecha_pago || new Date().toISOString().split("T")[0],
+    metodo: (metodoFromDescripcion(comision.descripcion_pago) || "Transferencia") as
       | "Efectivo"
       | "Transferencia"
       | "PagoMovil"
       | "Zelle"
       | "Otro",
-    referencia: "",
+    referencia: comision.referencia_pago || "",
     monto_bs: "",
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +114,7 @@ export default function PagarComisionModal({
         {/* Encabezado */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">
-            Pagar Comisión
+            {mode === "editar" ? "Editar pago" : "Pagar cita"}
           </h2>
           <button
             onClick={onClose}
@@ -282,7 +292,11 @@ export default function PagarComisionModal({
                 disabled={isLoading}
                 className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Procesando..." : "Confirmar Pago"}
+                {isLoading
+                  ? "Procesando..."
+                  : mode === "editar"
+                    ? "Guardar cambios"
+                    : "Confirmar pago"}
               </button>
             </div>
           </form>

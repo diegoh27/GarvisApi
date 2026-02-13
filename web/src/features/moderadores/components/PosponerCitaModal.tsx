@@ -27,26 +27,26 @@ type DisponibilidadItem = {
 
 const formatFecha = (fecha: string) => {
 	if (!fecha) return "";
-	
+
 	// Si la fecha ya incluye información de tiempo (ISO format), extraer solo la parte de fecha
 	let fechaStr = fecha;
 	if (fecha.includes("T") || fecha.includes("Z")) {
 		// Extraer solo la parte YYYY-MM-DD antes de T o Z
 		fechaStr = fecha.split("T")[0].split("Z")[0];
 	}
-	
+
 	// Intentar parsear la fecha directamente primero
 	let date = new Date(fecha);
 	if (Number.isNaN(date.getTime())) {
 		// Si falla, intentar con formato YYYY-MM-DD
 		date = new Date(`${fechaStr}T00:00:00`);
 	}
-	
+
 	if (Number.isNaN(date.getTime())) {
 		// Si aún falla, devolver la fecha original
 		return fecha;
 	}
-	
+
 	return date.toLocaleDateString("es-VE", {
 		year: "numeric",
 		month: "2-digit",
@@ -87,18 +87,18 @@ const getDateKey = (value: string) => {
 // Normalizar fecha a formato YYYY-MM-DD para el API
 const normalizeFecha = (fecha: string): string => {
 	if (!fecha) return "";
-	
+
 	// Si ya está en formato YYYY-MM-DD, retornarlo directamente
 	if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
 		return fecha;
 	}
-	
+
 	// Si incluye información de tiempo (ISO format), extraer solo la parte de fecha
 	let fechaStr = fecha;
 	if (fecha.includes("T") || fecha.includes("Z")) {
 		fechaStr = fecha.split("T")[0].split("Z")[0];
 	}
-	
+
 	// Intentar parsear la fecha
 	const date = new Date(fechaStr);
 	if (Number.isNaN(date.getTime())) {
@@ -110,7 +110,7 @@ const normalizeFecha = (fecha: string): string => {
 		}
 		return date2.toISOString().split("T")[0];
 	}
-	
+
 	// Convertir a formato YYYY-MM-DD
 	return date.toISOString().split("T")[0];
 };
@@ -148,12 +148,12 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 	// Filtrar disponibilidades por el mismo eco y ordenar por fecha y hora
 	const disponibilidadesFiltradas = useMemo(() => {
 		if (!cita) return [];
-		
+
 		// Si no hay disponibilidades, retornar array vacío
 		if (!disponibilidades || disponibilidades.length === 0) {
 			return [];
 		}
-		
+
 		// Mostrar TODAS las disponibilidades del especialista que tengan el mismo tipo de eco
 		// Priorizar las que tienen el mismo eco, pero también incluir las que no tienen eco asignado
 		const filtradas = disponibilidades
@@ -183,7 +183,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 				}
 				return a.hora_inicio.localeCompare(b.hora_inicio);
 			});
-		
+
 		return filtradas;
 	}, [disponibilidades, cita]);
 
@@ -315,7 +315,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 		try {
 			// Normalizar la fecha a formato YYYY-MM-DD
 			const fechaNormalizada = normalizeFecha(selectedDisponibilidad.fecha);
-			
+
 			await posponerCita({
 				id_cita: cita.id_cita,
 				fecha_cita: fechaNormalizada,
@@ -451,11 +451,10 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 														key={dayKey}
 														type="button"
 														onClick={() => setSelectedDayKey(dayKey)}
-														className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
-															selected
+														className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${selected
 																? "border-brand-700 bg-brand-700 text-paper"
 																: "border-brand-300 bg-paper text-brand-800 hover:bg-cloud"
-														}`}
+															}`}
 													>
 														{formatFechaConDia(dayKey)}
 														<span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
@@ -488,69 +487,68 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 									) : (
 										<div className="space-y-2 max-h-[400px] overflow-y-auto">
 											{disponibilidadesDelDia.map((disp: DisponibilidadItem) => {
-										const isPendiente = disp.estado === 0;
-										const isAprobada = disp.estado === 1;
-										const isSelected = selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad;
+												const isPendiente = disp.estado === 0;
+												const isAprobada = disp.estado === 1;
+												const isSelected = selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad;
 
-										return (
-											<div
-												key={disp.id_disponibilidad}
-												onClick={() => !isLoading && setSelectedDisponibilidad(disp)}
-												className={`w-full rounded-lg border p-3 text-left transition-all ${
-													isSelected
-														? "border-brand-700 bg-brand-50"
-														: isPendiente
-														? "border-amber-300 bg-amber-50 hover:border-amber-400 hover:bg-amber-100"
-														: "border-brand-200 bg-paper hover:border-brand-300 hover:bg-cloud"
-												} ${isLoading ? "opacity-50" : "cursor-pointer"}`}
-											>
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-3">
-														<Calendar className="h-4 w-4 text-brand-600" />
-														<div>
-															<p className="text-sm font-medium text-brand-900">
-																{formatFecha(disp.fecha)}
-															</p>
-															<div className="flex items-center gap-1 mt-0.5">
-																<Clock className="h-3 w-3 text-brand-600" />
-																<p className="text-xs text-brand-600">
-																	{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
-																</p>
+												return (
+													<div
+														key={disp.id_disponibilidad}
+														onClick={() => !isLoading && setSelectedDisponibilidad(disp)}
+														className={`w-full rounded-lg border p-3 text-left transition-all ${isSelected
+																? "border-brand-700 bg-brand-50"
+																: isPendiente
+																	? "border-amber-300 bg-amber-50 hover:border-amber-400 hover:bg-amber-100"
+																	: "border-brand-200 bg-paper hover:border-brand-300 hover:bg-cloud"
+															} ${isLoading ? "opacity-50" : "cursor-pointer"}`}
+													>
+														<div className="flex items-center justify-between">
+															<div className="flex items-center gap-3">
+																<Calendar className="h-4 w-4 text-brand-600" />
+																<div>
+																	<p className="text-sm font-medium text-brand-900">
+																		{formatFecha(disp.fecha)}
+																	</p>
+																	<div className="flex items-center gap-1 mt-0.5">
+																		<Clock className="h-3 w-3 text-brand-600" />
+																		<p className="text-xs text-brand-600">
+																			{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
+																		</p>
+																	</div>
+																</div>
+															</div>
+															<div className="flex items-center gap-2">
+																{isSelected && (
+																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+																		Seleccionada
+																	</span>
+																)}
+																{isPendiente && (
+																	<span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-medium text-brand-900">
+																		Pendiente
+																	</span>
+																)}
+																{isAprobada && (
+																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+																		Aprobada
+																	</span>
+																)}
+																<button
+																	type="button"
+																	onClick={(event) => {
+																		event.stopPropagation();
+																		handleAceptarFecha(disp);
+																	}}
+																	disabled={isLoading}
+																	className="rounded-lg border border-brand-300 bg-paper px-3 py-1 text-xs font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+																>
+																	{isPendiente ? "Aceptar fecha" : isSelected ? "Fecha aceptada" : "Seleccionar fecha"}
+																</button>
 															</div>
 														</div>
 													</div>
-													<div className="flex items-center gap-2">
-														{isSelected && (
-															<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
-																Seleccionada
-															</span>
-														)}
-														{isPendiente && (
-															<span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-medium text-brand-900">
-																Pendiente
-															</span>
-														)}
-														{isAprobada && (
-															<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
-																Aprobada
-															</span>
-														)}
-														<button
-															type="button"
-															onClick={(event) => {
-																event.stopPropagation();
-																handleAceptarFecha(disp);
-															}}
-															disabled={isLoading}
-															className="rounded-lg border border-brand-300 bg-paper px-3 py-1 text-xs font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
-														>
-															{isPendiente ? "Aceptar fecha" : isSelected ? "Fecha aceptada" : "Seleccionar fecha"}
-														</button>
-													</div>
-												</div>
-											</div>
-										);
-										})}
+												);
+											})}
 										</div>
 									)}
 								</>

@@ -1,5 +1,16 @@
 const { pool } = require("../db");
 
+const buildComisionDescripcion = ({
+	especialista_nombre,
+	especialista_apellido,
+	metodo,
+}) => {
+	const nombre =
+		`${especialista_nombre || ""} ${especialista_apellido || ""}`.trim();
+	const metodoPart = metodo ? ` (metodo: ${metodo})` : "";
+	return `Pago comision especialista ${nombre}${metodoPart}`.trim();
+};
+
 const sanitizeLimit = (limit, fallback = 200, max = 1000) => {
 	const parsed = Number.parseInt(limit, 10);
 	if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
@@ -47,12 +58,15 @@ exports.listComisionesController = async ({
 			c.hora_cita,
 			eco.id_eco,
 			eco.nombre AS eco_nombre,
-			eco.precio AS eco_precio
+			eco.precio AS eco_precio,
+			fm.referencia AS referencia_pago,
+			fm.descripcion AS descripcion_pago
 		FROM esp_comision ec
 		INNER JOIN especialista esp ON esp.id_especialista = ec.id_especialista
 		INNER JOIN usuario u ON u.id_usuario = ec.id_especialista
 		INNER JOIN cita c ON c.id_cita = ec.id_cita
 		INNER JOIN eco eco ON eco.id_eco = c.id_eco
+		LEFT JOIN fac_movimiento fm ON fm.origen_modulo = 'ESP_COMISION' AND fm.origen_id = ec.id_comision
 		${whereClause}
 		ORDER BY ec.fecha_creacion DESC
 		LIMIT ${safeLimit}
@@ -101,6 +115,8 @@ exports.pagarComisionController = async ({
 	id_comision,
 	id_usuario,
 	fecha_pago,
+	metodo,
+	referencia,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -133,6 +149,12 @@ exports.pagarComisionController = async ({
 		}
 
 		const fechaPagoValue = fecha_pago || new Date().toISOString().slice(0, 10);
+		const descripcion = buildComisionDescripcion({
+			especialista_nombre: comision.especialista_nombre,
+			especialista_apellido: comision.especialista_apellido,
+			metodo,
+		});
+		const referenciaValue = referencia || id_comision;
 
 		await conn.execute(
 			`UPDATE esp_comision
@@ -149,11 +171,103 @@ exports.pagarComisionController = async ({
 			[
 				fechaPagoValue,
 				comision.monto,
-				`Pago comision especialista ${comision.especialista_nombre} ${comision.especialista_apellido}`,
-				id_comision,
+				descripcion,
+				referenciaValue,
 				id_comision,
 				id_usuario,
 			],
+		);
+
+		await conn.commit();
+
+		const [updatedRows] = await pool.execute(
+			`SELECT
+				ec.id_comision,
+				ec.id_cita,
+				ec.id_especialista,
+				u.nombre AS especialista_nombre,
+				u.apellido AS especialista_apellido,
+				ec.porcentaje,
+				ec.monto,
+				ec.estado,
+				ec.fecha_creacion,
+				ec.fecha_pago
+			FROM esp_comision ec
+			INNER JOIN usuario u ON u.id_usuario = ec.id_especialista
+			WHERE ec.id_comision = ?`,
+			[id_comision],
+		);
+
+		return updatedRows[0] || null;
+	} catch (error) {
+		await conn.rollback();
+		throw error;
+	} finally {
+		conn.release();
+	}
+};
+
+// ==========================================
+// COMISIONES - EDITAR PAGO
+// ==========================================
+
+exports.editarPagoComisionController = async ({
+	id_comision,
+	id_usuario,
+	fecha_pago,
+	metodo,
+	referencia,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [rows] = await conn.execute(
+			`SELECT
+				ec.id_comision,
+				ec.id_especialista,
+				ec.monto,
+				ec.estado,
+				u.nombre AS especialista_nombre,
+				u.apellido AS especialista_apellido
+			FROM esp_comision ec
+			INNER JOIN usuario u ON u.id_usuario = ec.id_especialista
+			WHERE ec.id_comision = ?
+			FOR UPDATE`,
+			[id_comision],
+		);
+
+		if (!rows.length) {
+			return null;
+		}
+
+		const comision = rows[0];
+		if (comision.estado !== "Pagada") {
+			const err = new Error("Solo se pueden editar pagos ya registrados");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		const fechaPagoValue = fecha_pago || new Date().toISOString().slice(0, 10);
+		const descripcion = buildComisionDescripcion({
+			especialista_nombre: comision.especialista_nombre,
+			especialista_apellido: comision.especialista_apellido,
+			metodo,
+		});
+		const referenciaValue = referencia || id_comision;
+
+		await conn.execute(
+			`UPDATE esp_comision
+			SET fecha_pago = ?, id_usuario = ?
+			WHERE id_comision = ?`,
+			[fechaPagoValue, id_usuario, id_comision],
+		);
+
+		await conn.execute(
+			`UPDATE fac_movimiento
+			SET fecha = ?, descripcion = ?, referencia = ?, id_usuario = ?
+			WHERE origen_modulo = 'ESP_COMISION' AND origen_id = ?`,
+			[fechaPagoValue, descripcion, referenciaValue, id_usuario, id_comision],
 		);
 
 		await conn.commit();

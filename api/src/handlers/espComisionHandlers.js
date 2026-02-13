@@ -2,6 +2,7 @@ const {
 	listComisionesController,
 	generarComisionesPendientesController,
 	pagarComisionController,
+	editarPagoComisionController,
 } = require("../controllers/espComisionControllers");
 
 // ==========================================
@@ -68,7 +69,7 @@ exports.generarComisionesPendientesHandler = async (req, res) => {
 exports.pagarComisionHandler = async (req, res) => {
 	try {
 		const { idComision } = req.params;
-		const { fecha_pago } = req.body;
+		const { fecha_pago, metodo, referencia } = req.body;
 		const id_usuario = req.user?.id;
 
 		if (!id_usuario) {
@@ -82,6 +83,8 @@ exports.pagarComisionHandler = async (req, res) => {
 			id_comision: idComision,
 			id_usuario,
 			fecha_pago,
+			metodo,
+			referencia,
 		});
 
 		if (!data) {
@@ -103,10 +106,68 @@ exports.pagarComisionHandler = async (req, res) => {
 				message: error.message,
 			});
 		}
+		if (error?.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: error.message,
+			});
+		}
 		console.error("Error in pagarComisionHandler:", error);
 		return res.status(500).json({
 			ok: false,
 			message: "Error al pagar comision",
+		});
+	}
+};
+
+// ==========================================
+// EDITAR PAGO
+// ==========================================
+
+exports.editarPagoComisionHandler = async (req, res) => {
+	try {
+		const { idComision } = req.params;
+		const { fecha_pago, metodo, referencia } = req.body;
+		const id_usuario = req.user?.id;
+
+		if (!id_usuario) {
+			return res.status(401).json({
+				ok: false,
+				message: "Usuario no autenticado",
+			});
+		}
+
+		const data = await editarPagoComisionController({
+			id_comision: idComision,
+			id_usuario,
+			fecha_pago,
+			metodo,
+			referencia,
+		});
+
+		if (!data) {
+			return res.status(404).json({
+				ok: false,
+				message: "Comision no encontrada",
+			});
+		}
+
+		return res.status(200).json({
+			ok: true,
+			message: "Pago actualizado",
+			data,
+		});
+	} catch (error) {
+		if (error?.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: error.message,
+			});
+		}
+		console.error("Error in editarPagoComisionHandler:", error);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al editar pago",
 		});
 	}
 };

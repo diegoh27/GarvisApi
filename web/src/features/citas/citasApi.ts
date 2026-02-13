@@ -6,6 +6,7 @@ export type CitaPendientePago = {
 	id_representado: string | null;
 	id_especialista: string;
 	id_eco: string;
+	origen_cita?: "web" | "mostrador";
 	fecha_cita: string;
 	hora_cita: string;
 	estado_cita: number;
@@ -27,6 +28,7 @@ export type CitaCompleta = {
 	id_representado: string | null;
 	id_especialista: string;
 	id_eco: string;
+	origen_cita?: "web" | "mostrador";
 	fecha_cita: string;
 	hora_cita: string;
 	estado_cita: number;

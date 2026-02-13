@@ -115,6 +115,7 @@ const TodasLasCitasPage = () => {
 	const [filterResultado, setFilterResultado] = useState("todas");
 	const [filterInforme, setFilterInforme] = useState("todas");
 	const [filterAtencion, setFilterAtencion] = useState("todas");
+	const [filterOrigen, setFilterOrigen] = useState("todas");
 	const [ordenFecha, setOrdenFecha] = useState<"reciente" | "antigua">("reciente");
 	const [query, setQuery] = useState("");
 	const itemsPerPage = 10;
@@ -152,6 +153,12 @@ const TodasLasCitasPage = () => {
 		{ id: "todas", label: "Todas" },
 		{ id: "atendidas", label: "Atendidas" },
 		{ id: "no-atendidas", label: "No atendidas" },
+	];
+
+	const filterOptionsOrigen = [
+		{ id: "todas", label: "Todas" },
+		{ id: "web", label: "Web" },
+		{ id: "mostrador", label: "Mostrador" },
 	];
 
 	// Filtrar citas según los filtros seleccionados y búsqueda
@@ -231,6 +238,13 @@ const TodasLasCitasPage = () => {
 			}
 		}
 
+		// Filtro por origen de cita
+		if (filterOrigen !== "todas") {
+			citasFiltradas = citasFiltradas.filter(
+				(cita) => (cita.origen_cita || "web") === filterOrigen,
+			);
+		}
+
 		// Ordenamiento por fecha
 		citasFiltradas = [...citasFiltradas].sort((a, b) => {
 			// Parsear fecha y hora correctamente
@@ -268,7 +282,7 @@ const TodasLasCitasPage = () => {
 		});
 
 		return citasFiltradas;
-	}, [citas, filterPago, filterResultado, filterInforme, filterAtencion, ordenFecha, filterOptionsPago, query]);
+	}, [citas, filterPago, filterResultado, filterInforme, filterAtencion, filterOrigen, ordenFecha, filterOptionsPago, query]);
 
 	// Paginación
 	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
@@ -280,7 +294,7 @@ const TodasLasCitasPage = () => {
 	// Resetear a página 1 cuando cambian los datos, los filtros o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filterPago, filterResultado, filterInforme, filterAtencion, ordenFecha, query]);
+	}, [citas.length, filterPago, filterResultado, filterInforme, filterAtencion, filterOrigen, ordenFecha, query]);
 
 	const handleAprobarPago = async (id_cita: string) => {
 		const confirmResult = await Swal.fire({
@@ -619,6 +633,23 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
+						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por origen</label>
+						<div className="flex flex-wrap gap-2">
+							{filterOptionsOrigen.map((option) => (
+								<button
+									key={option.id}
+									onClick={() => setFilterOrigen(option.id)}
+									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterOrigen === option.id
+										? "bg-brand-700 text-paper"
+										: "bg-cloud text-brand-800 hover:bg-mist"
+										}`}
+								>
+									{option.label}
+								</button>
+							))}
+						</div>
+					</div>
+					<div>
 						<label className="mb-2 block text-xs font-medium text-brand-700">Ordenar por fecha</label>
 						<div className="flex flex-wrap gap-2">
 							<button
@@ -650,7 +681,7 @@ const TodasLasCitasPage = () => {
 				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" || filterAtencion !== "todas" ? `con los filtros seleccionados` : ""}.`}
+							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" || filterAtencion !== "todas" || filterOrigen !== "todas" ? `con los filtros seleccionados` : ""}.`}
 						</p>
 					</div>
 				) : (
@@ -676,6 +707,14 @@ const TodasLasCitasPage = () => {
 													<h3 className="font-semibold text-brand-900">{fullName}</h3>
 													<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-paper">
 														{cita.eco_nombre}
+													</span>
+													<span
+														className={`rounded-full px-2 py-0.5 text-xs font-medium ${cita.origen_cita === "mostrador"
+																? "bg-violet-100 text-violet-700"
+																: "bg-slate-100 text-slate-700"
+															}`}
+													>
+														{cita.origen_cita === "mostrador" ? "Mostrador" : "Web"}
 													</span>
 													<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(estadoPago)}`}>
 														{getEstadoPagoLabel(estadoPago)}

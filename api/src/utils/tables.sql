@@ -363,6 +363,8 @@ IF NOT EXISTS cita
 (255) NOT NULL,
   id_disponibilidad CHAR
 (36) NULL,
+  origen_cita ENUM
+('web','mostrador') NOT NULL DEFAULT 'web',
 
   estado_cita TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Confirmada, 2 Cancelada, 3 Atendida
   estado_pago TINYINT NOT NULL DEFAULT 0, -- 0 Pendiente, 1 Pagado, 2 Rechazado
@@ -378,6 +380,8 @@ IF NOT EXISTS cita
 (id_especialista),
   KEY idx_cita_eco
 (id_eco),
+  KEY idx_cita_origen
+(origen_cita),
   UNIQUE KEY uk_cita_disponibilidad
 (id_disponibilidad),
   KEY idx_cita_paciente_representado
@@ -425,6 +429,41 @@ DELETE RESTRICT,
     ON
 UPDATE CASCADE
     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =========================
+-- 9.1) Cita mostrador (detalle de paciente no registrado)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS cita_mostrador
+(
+  id_cita CHAR
+(36) NOT NULL,
+  nombre VARCHAR
+(60) NOT NULL,
+  apellido VARCHAR
+(60) NOT NULL,
+  cedula VARCHAR
+(20) NOT NULL,
+  rif VARCHAR
+(15) NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_cita),
+  KEY idx_cita_mostrador_cedula
+(cedula),
+  KEY idx_cita_mostrador_rif
+(rif),
+
+  CONSTRAINT fk_cita_mostrador_cita
+    FOREIGN KEY
+(id_cita) REFERENCES cita
+(id_cita)
+    ON
+UPDATE CASCADE
+    ON
+DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
@@ -532,7 +571,7 @@ IF NOT EXISTS pagos
   id_paciente CHAR
 (36) NOT NULL,
   metodo ENUM
-('Transferencia','PagoMovil') NOT NULL,
+('Transferencia','PagoMovil','Efectivo','Zelle','Otro') NOT NULL,
   imagen VARCHAR
 (255) NOT NULL,
   banco_origen VARCHAR

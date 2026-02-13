@@ -13,6 +13,7 @@ const {
 	getCitaByIdController,
 	posponerCitaController,
 	getAllCitasController,
+	createCitaMostradorController,
 } = require("../controllers/citasControllers");
 
 const createCitaHandler = async (req, res) => {
@@ -442,7 +443,8 @@ const getCitaByIdHandler = async (req, res) => {
 const posponerCitaHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { fecha_cita, hora_cita, id_especialista, id_disponibilidad } = req.body;
+		const { fecha_cita, hora_cita, id_especialista, id_disponibilidad } =
+			req.body;
 
 		const missing = [];
 		if (!fecha_cita) missing.push("fecha_cita");
@@ -456,7 +458,10 @@ const posponerCitaHandler = async (req, res) => {
 			});
 		}
 
-		if ((id_especialista && !id_disponibilidad) || (!id_especialista && id_disponibilidad)) {
+		if (
+			(id_especialista && !id_disponibilidad) ||
+			(!id_especialista && id_disponibilidad)
+		) {
 			return res.status(400).json({
 				ok: false,
 				message:
@@ -575,6 +580,14 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			});
 		}
 
+		if (!["Transferencia", "PagoMovil"].includes(String(metodo))) {
+			return res.status(400).json({
+				ok: false,
+				message:
+					"Para citas online el metodo debe ser Transferencia o PagoMovil",
+			});
+		}
+
 		// Si es paciente, solo puede asignar cita para sí mismo
 		if (req.user.rol === "paciente" && id_paciente !== req.user.id) {
 			return res.status(403).json({
@@ -633,6 +646,106 @@ const asignarCitaCompletaHandler = async (req, res) => {
 	}
 };
 
+const createCitaMostradorHandler = async (req, res) => {
+	try {
+		const {
+			id_especialista,
+			id_eco,
+			fecha_cita,
+			hora_cita,
+			metodo,
+			monto,
+			tasa_dia_bcv,
+			nombre,
+			apellido,
+			cedula,
+			rif,
+			referencia,
+		} = req.body;
+
+		const missing = [];
+		if (!id_especialista) missing.push("id_especialista");
+		if (!id_eco) missing.push("id_eco");
+		if (!fecha_cita) missing.push("fecha_cita");
+		if (!metodo) missing.push("metodo");
+		if (!monto) missing.push("monto");
+		if (!tasa_dia_bcv) missing.push("tasa_dia_bcv");
+		if (!nombre) missing.push("nombre");
+		if (!apellido) missing.push("apellido");
+		if (!cedula) missing.push("cedula");
+
+		if (missing.length) {
+			return res.status(400).json({
+				ok: false,
+				message: `Faltan campos requeridos: ${missing.join(", ")}`,
+			});
+		}
+
+		if (
+			!["Transferencia", "PagoMovil", "Efectivo", "Zelle", "Otro"].includes(
+				String(metodo),
+			)
+		) {
+			return res.status(400).json({
+				ok: false,
+				message:
+					"Metodo invalido para mostrador. Valores permitidos: Transferencia, PagoMovil, Efectivo, Zelle, Otro",
+			});
+		}
+
+		const data = await createCitaMostradorController({
+			id_especialista,
+			id_eco,
+			fecha_cita,
+			hora_cita,
+			metodo,
+			monto,
+			tasa_dia_bcv,
+			nombre,
+			apellido,
+			cedula,
+			rif,
+			id_usuario: req.user?.id,
+			referencia,
+		});
+
+		return res.status(201).json({
+			ok: true,
+			message: "Cita de mostrador registrada",
+			data,
+		});
+	} catch (err) {
+		if (
+			err?.code === "NOT_FOUND" ||
+			err?.code === "INVALID_AMOUNT" ||
+			err?.code === "INVALID_RATE" ||
+			err?.code === "ECO_NOT_AVAILABLE"
+		) {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "ROL_NOT_FOUND") {
+			return res.status(500).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "ER_DUP_ENTRY") {
+			return res.status(409).json({
+				ok: false,
+				message: "La referencia de pago ya existe, intenta nuevamente",
+			});
+		}
+		console.error("Error al crear cita de mostrador:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	asignarCitaCompletaHandler,
@@ -649,4 +762,5 @@ module.exports = {
 	getCitaByIdHandler,
 	posponerCitaHandler,
 	getAllCitasHandler,
+	createCitaMostradorHandler,
 };

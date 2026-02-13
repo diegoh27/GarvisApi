@@ -18,6 +18,8 @@ export type EspecialistaComision = {
 	fecha_cita?: string;
 	eco_nombre?: string;
 	empresa_paciente?: string | null;
+	referencia_pago?: string | null;
+	descripcion_pago?: string | null;
 };
 
 export type ComisionPago = {
@@ -46,6 +48,21 @@ export type GenerarComisionesPayload = {
 export type PagarComisionPayload = {
 	fecha_pago: string;
 	metodo?: "Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro";
+	referencia?: string;
+};
+
+export type CrearCitaMostradorPayload = {
+	id_especialista: string;
+	id_eco: string;
+	fecha_cita: string;
+	hora_cita?: string;
+	metodo: "Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro";
+	monto: number;
+	tasa_dia_bcv: number;
+	nombre: string;
+	apellido: string;
+	cedula: string;
+	rif?: string;
 	referencia?: string;
 };
 
@@ -103,6 +120,36 @@ export const comisionesApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: EspecialistaComision }) => response,
 			invalidatesTags: ["EspecialistaComision"],
 		}),
+
+		// Editar pago de comisión
+		editarPagoComision: builder.mutation<
+			{ ok: boolean; data: EspecialistaComision },
+			{ idComision: string; payload: PagarComisionPayload }
+		>({
+			query: ({ idComision, payload }) => ({
+				url: `/comisiones-especialistas/${idComision}/pago`,
+				method: "PUT",
+				body: payload,
+			}),
+			transformResponse: (response: { ok: boolean; data: EspecialistaComision }) => response,
+			invalidatesTags: ["EspecialistaComision"],
+		}),
+
+		crearCitaMostrador: builder.mutation<
+			{
+				ok: boolean;
+				message: string;
+				data: { id_cita: string; id_pago: string; id_comision: string; referencia: string; origen_cita: "mostrador" };
+			},
+			CrearCitaMostradorPayload
+		>({
+			query: (body) => ({
+				url: "/citas/mostrador",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["EspecialistaComision", "Citas"],
+		}),
 	}),
 });
 
@@ -111,4 +158,6 @@ export const {
 	useGetHistorialComisionesQuery,
 	useGenerarComisionesMutation,
 	usePagarComisionMutation,
+	useEditarPagoComisionMutation,
+	useCrearCitaMostradorMutation,
 } = comisionesApi;

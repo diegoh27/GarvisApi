@@ -155,22 +155,19 @@ const MonthCalendar = ({
 					return (
 						<div
 							key={dateKey}
-							className={`border-b border-l border-mist p-2 transition-colors first:border-l-0 ${
-								!isCurrentMonth ? "bg-cloud/30 text-brand-400" : ""
-							} ${status.isPast && isCurrentMonth ? "bg-cloud/60" : ""} ${
-								status.isSelected && isCurrentMonth
+							className={`border-b border-l border-mist p-2 transition-colors first:border-l-0 ${!isCurrentMonth ? "bg-cloud/30 text-brand-400" : ""
+								} ${status.isPast && isCurrentMonth ? "bg-cloud/60" : ""} ${status.isSelected && isCurrentMonth
 									? "bg-brand-200 border-brand-500 border-2"
 									: isCurrentMonth
 										? "cursor-pointer hover:bg-brand-50"
 										: ""
-							}`}
+								}`}
 							onClick={() => isCurrentMonth && onDateClick(dateKey)}
 						>
 							<div className="flex items-center justify-between">
 								<span
-									className={`font-semibold ${
-										status.isToday ? "rounded-full bg-brand-700 px-2 py-0.5 text-paper" : ""
-									}`}
+									className={`font-semibold ${status.isToday ? "rounded-full bg-brand-700 px-2 py-0.5 text-paper" : ""
+										}`}
 								>
 									{day}
 								</span>

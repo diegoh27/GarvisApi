@@ -37,8 +37,7 @@ const RegistrarEspecialistaForm = () => {
 		confirmar_contrasena: "",
 		id_especialidad: "",
 		porcentaje: "",
-		codigo_colegiatura: "",
-		id_ecos: [] as string[], // Array de IDs de ecos seleccionados
+		id_ecos: [] as string[],
 	});
 	const [error, setError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -47,7 +46,6 @@ const RegistrarEspecialistaForm = () => {
 	const ecosDropdownRef = useRef<HTMLDivElement>(null);
 	const ecosButtonRef = useRef<HTMLButtonElement>(null);
 
-	// Cerrar dropdown al hacer click fuera
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
@@ -81,13 +79,11 @@ const RegistrarEspecialistaForm = () => {
 
 	const handleToggleDropdown = () => {
 		if (!isEcosDropdownOpen && ecosButtonRef.current) {
-			// Calcular si hay espacio abajo
 			const rect = ecosButtonRef.current.getBoundingClientRect();
 			const spaceBelow = window.innerHeight - rect.bottom;
 			const spaceAbove = rect.top;
-			const dropdownHeight = 240; // max-h-60 = 240px aproximadamente
+			const dropdownHeight = 240;
 
-			// Si no hay suficiente espacio abajo pero sí arriba, abrir hacia arriba
 			if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
 				setDropdownPosition("top");
 			} else {
@@ -161,8 +157,7 @@ const RegistrarEspecialistaForm = () => {
 		// Validar todos los campos
 		const errors: Record<string, string> = {};
 		Object.keys(form).forEach((field) => {
-			// Saltar campos que no se validan directamente
-			if (field === "telefono_prefijo" || field === "codigo_colegiatura") return;
+			if (field === "telefono_prefijo") return;
 
 			const fieldValue = form[field as keyof typeof form];
 			if (Array.isArray(fieldValue)) return;
@@ -195,7 +190,6 @@ const RegistrarEspecialistaForm = () => {
 			return;
 		}
 
-		// Validar que se haya seleccionado al menos un eco
 		if (!form.id_ecos || form.id_ecos.length === 0) {
 			setError("Debes seleccionar al menos un eco para el especialista.");
 			return;
@@ -225,7 +219,6 @@ const RegistrarEspecialistaForm = () => {
 				contrasena: form.contrasena,
 				id_especialidad: form.id_especialidad,
 				porcentaje: porcentajeValue,
-				codigo_colegiatura: form.codigo_colegiatura || undefined,
 				id_ecos: form.id_ecos,
 			}).unwrap();
 
@@ -511,8 +504,8 @@ const RegistrarEspecialistaForm = () => {
 												>
 													<div
 														className={`flex h-4 w-4 items-center justify-center rounded border ${isSelected
-															? "border-brand-700 bg-brand-700"
-															: "border-brand-300 bg-paper"
+																? "border-brand-700 bg-brand-700"
+																: "border-brand-300 bg-paper"
 															}`}
 													>
 														{isSelected && <Check className="h-3 w-3 text-paper" />}
@@ -530,22 +523,6 @@ const RegistrarEspecialistaForm = () => {
 					<p className="mt-1 text-xs text-red-500">{fieldErrors.id_ecos}</p>
 				)}
 			</div>
-
-			<div>
-				<label className="mb-1 block text-sm font-medium text-brand-700">
-					Código de colegiatura
-				</label>
-				<input
-					type="text"
-					name="codigo_colegiatura"
-					autoComplete="off"
-					className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-					value={form.codigo_colegiatura}
-					onChange={(e) => updateField("codigo_colegiatura", e.target.value)}
-					placeholder="Ej: CMV-12345"
-				/>
-			</div>
-
 
 			<div className="flex gap-3 pt-4">
 				<button
