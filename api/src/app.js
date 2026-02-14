@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const path = require("path");
 const { auth } = require("express-openid-connect");
 const routes = require("./routes/index");
+const { getUploadsDir } = require("./utils/uploadToLocal");
 
 const server = express();
 
@@ -68,7 +69,7 @@ server.use((err, req, res, next) => {
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
-server.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+server.use("/uploads", express.static(getUploadsDir()));
 
 // Main Rutes
 // server.use(auth(config));

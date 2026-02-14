@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../../shared";
 import { FormularioPago, type PagoFormData } from "../../../shared";
 import { useAsignarCitaCompletaMutation } from "../../moderadores/moderadoresApi";
+import { useResendVerificationMutation } from "../../auth";
 import { getToken } from "../../../shared/utils/token";
 import Swal from "sweetalert2";
 import type { Eco } from "../../ecos/ecosApi";
@@ -50,6 +51,8 @@ const ReservarCitaParaMiForm = ({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const [asignarCita, { isLoading: isAsignando }] = useAsignarCitaCompletaMutation();
+	const [resendVerification, { isLoading: isResending }] =
+		useResendVerificationMutation();
 
 	const handleReservar = async () => {
 		const idPaciente = user?.id_usuario;
@@ -184,10 +187,48 @@ const ReservarCitaParaMiForm = ({
 			onSuccess?.();
 			onClose();
 		} catch (err: unknown) {
-			const message =
+			const errData =
 				typeof err === "object" && err !== null && "data" in err
-					? (err as { data?: { message?: string } }).data?.message
-					: "No se pudo reservar la cita";
+					? (err as { data?: { message?: string; code?: string } }).data
+					: undefined;
+			const message = errData?.message || "No se pudo reservar la cita";
+
+			if (errData?.code === "EMAIL_NOT_VERIFIED") {
+				const result = await Swal.fire({
+					icon: "warning",
+					title: "Cuenta sin verificar",
+					text: message,
+					showCancelButton: true,
+					confirmButtonText: "Reenviar correo",
+					cancelButtonText: "Cerrar",
+				});
+
+				if (result.isConfirmed && user?.correo) {
+					try {
+						await resendVerification({ correo: user.correo }).unwrap();
+						await Swal.fire({
+							icon: "success",
+							title: "Correo enviado",
+							text: "Te reenviamos el correo de verificacion.",
+						});
+					} catch (resendErr) {
+						const resendMessage =
+							typeof resendErr === "object" &&
+								resendErr !== null &&
+								"data" in resendErr
+								? (resendErr as { data?: { message?: string } }).data
+									?.message
+								: "No se pudo reenviar el correo";
+						await Swal.fire({
+							icon: "error",
+							title: "Error",
+							text: resendMessage,
+						});
+					}
+				}
+				return;
+			}
+
 			Swal.fire({
 				icon: "error",
 				title: "Error",
@@ -198,7 +239,7 @@ const ReservarCitaParaMiForm = ({
 		}
 	};
 
-	const isLoading = isAsignando || isSubmitting;
+	const isLoading = isAsignando || isSubmitting || isResending;
 
 	return (
 		<>

@@ -103,7 +103,11 @@ const AppLayout = () => {
 
 	const { data: notificacionesNoLeidas = [] } = useGetMisNotificacionesQuery(
 		{ solo_no_leidas: true, limit: 200 },
-		{ skip: !token },
+		{
+			skip: !token,
+			pollingInterval: 20000,
+			refetchOnFocus: true,
+		},
 	);
 	const unreadCount = notificacionesNoLeidas.length;
 	const navItemsWithBadges = navItems.map((item) =>

@@ -47,7 +47,10 @@ const DashboardEspecialista = () => {
 	});
 
 	const { data: notificaciones = [], isLoading: loadingNotificaciones } =
-		useGetMisNotificacionesQuery({ limit: 5 });
+		useGetMisNotificacionesQuery(
+			{ limit: 5 },
+			{ pollingInterval: 20000, refetchOnFocus: true },
+		);
 	const notifications = notificaciones.map((n) => ({
 		id: n.id_notificacion,
 		title: n.titulo,

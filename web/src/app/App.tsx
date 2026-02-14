@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AppLayout from "../layouts/AppLayout";
-import { AuthForgot, AuthLogin, AuthRegister } from "../features/auth";
+import { AuthForgot, AuthLogin, AuthRegister, AuthReset } from "../features/auth";
 import { CitasPage } from "../features/citas";
 import { DashboardPage } from "../features/dashboard";
 import {
@@ -75,6 +75,14 @@ const App = () => {
 						element={
 							<GuestRoute>
 								<AuthRegister />
+							</GuestRoute>
+						}
+					/>
+					<Route
+						path="auth/reset"
+						element={
+							<GuestRoute>
+								<AuthReset />
 							</GuestRoute>
 						}
 					/>

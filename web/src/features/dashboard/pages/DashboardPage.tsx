@@ -1,4 +1,4 @@
-import { useAuth } from "../../../shared";
+import { EmailVerificationBanner, useAuth } from "../../../shared";
 import DashboardAdmin from "../components/DashboardAdmin";
 import DashboardEspecialista from "../components/DashboardEspecialista";
 import DashboardModerador from "../components/DashboardModerador";
@@ -13,15 +13,19 @@ import DashboardModerador from "../components/DashboardModerador";
 const DashboardPage = () => {
 	const { user } = useAuth();
 
+	let content = <DashboardEspecialista />;
 	if (user?.rol === "admin") {
-		return <DashboardAdmin />;
-	}
-	if (user?.rol === "moderador") {
-		return <DashboardModerador />;
+		content = <DashboardAdmin />;
+	} else if (user?.rol === "moderador") {
+		content = <DashboardModerador />;
 	}
 
-	// Especialista y cualquier otro rol (incl. paciente cuando se implemente)
-	return <DashboardEspecialista />;
+	return (
+		<div className="space-y-6">
+			<EmailVerificationBanner />
+			{content}
+		</div>
+	);
 };
 
 export default DashboardPage;

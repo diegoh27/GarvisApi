@@ -20,9 +20,10 @@ const formatFecha = (value: string) => {
  * para evitar peticiones no autorizadas (ej. 403 en /citas/mi-especialista).
  */
 const DashboardAdmin = () => {
-	const { data: notificaciones = [], isLoading } = useGetMisNotificacionesQuery({
-		limit: 5,
-	});
+	const { data: notificaciones = [], isLoading } = useGetMisNotificacionesQuery(
+		{ limit: 5 },
+		{ pollingInterval: 20000, refetchOnFocus: true },
+	);
 	const notifications = notificaciones.map((n) => ({
 		id: n.id_notificacion,
 		title: n.titulo,

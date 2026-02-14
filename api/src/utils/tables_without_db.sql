@@ -112,6 +112,9 @@ IF NOT EXISTS paciente
 (120) NULL,
   rif VARCHAR
 (15) NOT NULL,
+  email_verificado TINYINT
+(1) NOT NULL DEFAULT 0,
+  fecha_verificacion TIMESTAMP NULL DEFAULT NULL,
   contacto_emergencia_nombre VARCHAR
 (80) NULL,
   contacto_emergencia_telefono VARCHAR
@@ -126,6 +129,70 @@ IF NOT EXISTS paciente
   CONSTRAINT fk_paciente_usuario
     FOREIGN KEY
 (id_paciente) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
+-- 4.1) Email verificacion (solo paciente)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS email_verificacion
+(
+  id_verificacion CHAR
+(36) NOT NULL,
+  id_paciente CHAR
+(36) NOT NULL,
+  token_hash VARCHAR
+(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_verificacion),
+  UNIQUE KEY uk_email_verificacion_token
+(token_hash),
+  KEY idx_email_verificacion_paciente
+(id_paciente),
+  CONSTRAINT fk_email_verificacion_paciente
+    FOREIGN KEY
+(id_paciente) REFERENCES paciente
+(id_paciente)
+    ON
+UPDATE CASCADE
+    ON
+DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
+-- 4.2) Password reset
+-- =========================
+CREATE TABLE
+IF NOT EXISTS password_reset
+(
+  id_reset CHAR
+(36) NOT NULL,
+  id_usuario CHAR
+(36) NOT NULL,
+  token_hash VARCHAR
+(64) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY
+(id_reset),
+  UNIQUE KEY uk_password_reset_token
+(token_hash),
+  KEY idx_password_reset_usuario
+(id_usuario),
+  CONSTRAINT fk_password_reset_usuario
+    FOREIGN KEY
+(id_usuario) REFERENCES usuario
 (id_usuario)
     ON
 UPDATE CASCADE

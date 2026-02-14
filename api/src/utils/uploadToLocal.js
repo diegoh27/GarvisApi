@@ -142,4 +142,5 @@ const uploadMulterFileToLocal = async (file, folder = "garbis") => {
 module.exports = {
 	uploadBufferToLocal,
 	uploadMulterFileToLocal,
+	getUploadsDir,
 };

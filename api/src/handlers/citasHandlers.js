@@ -62,6 +62,13 @@ const createCitaHandler = async (req, res) => {
 				message: err.message,
 			});
 		}
+		if (err?.code === "EMAIL_NOT_VERIFIED") {
+			return res.status(403).json({
+				ok: false,
+				message: err.message,
+				code: "EMAIL_NOT_VERIFIED",
+			});
+		}
 		if (err?.code === "INVALID_STATE") {
 			return res.status(409).json({
 				ok: false,
@@ -604,6 +611,7 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			id_disponibilidad,
 			orden: orden_medica || "", // Usar orden_medica como orden (URL de la orden médica)
 			aprobado_por: req.user.rol === "paciente" ? null : req.user.id, // Paciente no aprueba; admin/moderador sí
+			role: req.user.rol,
 			metodo,
 			imagen,
 			banco_origen,
@@ -624,6 +632,13 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			return res.status(404).json({
 				ok: false,
 				message: err.message,
+			});
+		}
+		if (err?.code === "EMAIL_NOT_VERIFIED") {
+			return res.status(403).json({
+				ok: false,
+				message: err.message,
+				code: "EMAIL_NOT_VERIFIED",
 			});
 		}
 		if (err.code === "INVALID_STATE") {

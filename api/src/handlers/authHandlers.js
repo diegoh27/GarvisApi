@@ -1,7 +1,15 @@
 const {
 	registerPaciente,
 	loginUser,
+	verifyEmail,
+	resendVerificationEmail,
+	requestPasswordReset,
+	resetPassword,
+	getWebBaseUrl,
 } = require("../controllers/authControllers");
+
+const wantsHtml = (req) =>
+	req.headers.accept && req.headers.accept.includes("text/html");
 
 const registerPacienteHandler = async (req, res) => {
 	try {
@@ -68,7 +76,7 @@ const registerPacienteHandler = async (req, res) => {
 
 		return res.status(201).json({
 			ok: true,
-			message: "Paciente registrado",
+			message: "Paciente registrado. Revisa tu correo para verificarlo",
 			data: created,
 		});
 	} catch (err) {
@@ -141,6 +149,12 @@ const loginHandler = async (req, res) => {
 				message: "Credenciales inválidas",
 			});
 		}
+		if (err?.code === "EMAIL_NOT_VERIFIED") {
+			return res.status(403).json({
+				ok: false,
+				message: "Debes verificar tu correo antes de iniciar sesion",
+			});
+		}
 		if (err?.code === "JWT_SECRET_MISSING") {
 			return res.status(500).json({
 				ok: false,
@@ -155,7 +169,150 @@ const loginHandler = async (req, res) => {
 	}
 };
 
+const verifyEmailHandler = async (req, res) => {
+	try {
+		const { token } = req.query;
+		await verifyEmail({ token: token ? String(token) : "" });
+		if (wantsHtml(req)) {
+			const webUrl = getWebBaseUrl();
+			return res.redirect(302, `${webUrl}/auth/login?verified=1`);
+		}
+		return res.status(200).json({
+			ok: true,
+			message: "Correo verificado",
+		});
+	} catch (err) {
+		const message = err?.message || "Token invalido";
+		if (wantsHtml(req)) {
+			const webUrl = getWebBaseUrl();
+			const errorParam = encodeURIComponent(message);
+			return res.redirect(
+				302,
+				`${webUrl}/auth/login?verified=0&error=${errorParam}`,
+			);
+		}
+		return res.status(400).json({
+			ok: false,
+			message,
+		});
+	}
+};
+
+const isValidEmailFormat = (email) =>
+	email && typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+const forgotPasswordHandler = async (req, res) => {
+	try {
+		const { correo } = req.body;
+		if (!correo) {
+			return res.status(400).json({
+				ok: false,
+				message: "El correo electrónico es requerido",
+			});
+		}
+		if (!isValidEmailFormat(correo)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Ingresa un correo electrónico válido",
+			});
+		}
+
+		await requestPasswordReset({ correo });
+		return res.status(200).json({
+			ok: true,
+			message:
+				"Si tu correo está registrado, recibirás un correo con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada y correo no deseado.",
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const resetPasswordHandler = async (req, res) => {
+	try {
+		const token = req.body.token || req.query.token;
+		const contrasena = req.body.contrasena || req.body.password;
+		await resetPassword({
+			token: token ? String(token) : "",
+			contrasena,
+		});
+		if (wantsHtml(req)) {
+			const webUrl = getWebBaseUrl();
+			return res.redirect(302, `${webUrl}/auth/login?passwordReset=1`);
+		}
+		return res.status(200).json({
+			ok: true,
+			message: "Contrasena actualizada",
+		});
+	} catch (err) {
+		const message = err?.message || "Token invalido";
+		if (wantsHtml(req)) {
+			const webUrl = getWebBaseUrl();
+			const errorParam = encodeURIComponent(message);
+			return res.redirect(
+				302,
+				`${webUrl}/auth/login?passwordReset=0&error=${errorParam}`,
+			);
+		}
+		return res.status(400).json({
+			ok: false,
+			message,
+		});
+	}
+};
+
+const resendVerificationHandler = async (req, res) => {
+	try {
+		const { correo } = req.body;
+		if (!correo) {
+			return res.status(400).json({
+				ok: false,
+				message: "correo es requerido",
+			});
+		}
+
+		await resendVerificationEmail({ correo });
+		return res.status(200).json({
+			ok: true,
+			message: "Si el correo existe, reenviamos la verificacion",
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const resetPasswordFormHandler = (req, res) => {
+	const token = req.query.token ? String(req.query.token) : "";
+	if (!token) {
+		return res
+			.status(400)
+			.send("<h2>Token requerido</h2><p>Enlace invalido.</p>");
+	}
+
+	return res.send(`
+    <h2>Restablecer contrasena</h2>
+    <form method="POST" action="/auth/reset?token=${encodeURIComponent(token)}">
+      <label>Nueva contrasena</label><br />
+      <input type="password" name="contrasena" required />
+      <button type="submit">Actualizar</button>
+    </form>
+  `);
+};
+
 module.exports = {
 	registerPacienteHandler,
 	loginHandler,
+	verifyEmailHandler,
+	resendVerificationHandler,
+	forgotPasswordHandler,
+	resetPasswordHandler,
+	resetPasswordFormHandler,
 };

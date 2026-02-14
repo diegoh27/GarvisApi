@@ -31,9 +31,42 @@ const authApi = baseApi.injectEndpoints({
 				}),
 			},
 		),
+		resendVerification: builder.mutation<
+			{ ok: boolean; message: string },
+			{ correo: string }
+		>({
+			query: (body) => ({
+				url: "/auth/resend-verification",
+				method: "POST",
+				body,
+			}),
+		}),
+		resetPassword: builder.mutation<
+			{ ok: boolean; message: string },
+			{ token: string; contrasena: string }
+		>({
+			query: (body) => ({
+				url: "/auth/reset",
+				method: "POST",
+				body,
+			}),
+		}),
 	}),
 });
 
-const { useLoginMutation, useRegisterMutation, useForgotPasswordMutation } = authApi;
+const {
+	useLoginMutation,
+	useRegisterMutation,
+	useForgotPasswordMutation,
+	useResendVerificationMutation,
+	useResetPasswordMutation,
+} = authApi;
 
-export { authApi, useLoginMutation, useRegisterMutation, useForgotPasswordMutation };
+export {
+	authApi,
+	useLoginMutation,
+	useRegisterMutation,
+	useForgotPasswordMutation,
+	useResendVerificationMutation,
+	useResetPasswordMutation,
+};

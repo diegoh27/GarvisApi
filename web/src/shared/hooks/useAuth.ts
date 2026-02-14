@@ -90,14 +90,6 @@ const useAuth = () => {
 				const response = await forgotPasswordMutation({ correo }).unwrap();
 				return { ok: response.ok, message: response.message };
 			} catch (err) {
-				const status = (err as FetchBaseQueryError | undefined)?.status;
-				if (status === 404) {
-					return {
-						ok: true,
-						message: "Funcionalidad en construcción",
-						mocked: true,
-					};
-				}
 				return {
 					ok: false,
 					message: getErrorMessage(err),

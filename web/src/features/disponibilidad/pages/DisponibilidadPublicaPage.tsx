@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import PageShell from "../../../shared/components/PageShell";
+import { EmailVerificationBanner, useAuth } from "../../../shared";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 import {
 	useGetDisponibilidadPublicaPorEcoQuery,
@@ -8,6 +9,7 @@ import {
 } from "../disponibilidadApi";
 import { ReservarCitaElegirModal } from "../components";
 import { formatFecha, formatHora } from "../utils/dateUtils";
+import { useGetPacienteSelfQuery } from "../../usuarios/usuariosApi";
 
 function groupByFecha(
 	items: DisponibilidadPublicaPorEcoItem[],
@@ -24,6 +26,7 @@ function groupByFecha(
 }
 
 const DisponibilidadPublicaPage = () => {
+	const { user } = useAuth();
 	const [idEco, setIdEco] = useState<string>("");
 	const [blockToReservar, setBlockToReservar] =
 		useState<DisponibilidadPublicaPorEcoItem | null>(null);
@@ -32,6 +35,15 @@ const DisponibilidadPublicaPage = () => {
 	const [selectedDate, setSelectedDate] = useState<string>("");
 	const [slotPage, setSlotPage] = useState(1);
 	const pageSize = 5;
+	const isPaciente = user?.rol === "paciente";
+
+	const { data: pacienteSelf } = useGetPacienteSelfQuery(undefined, {
+		skip: !isPaciente,
+	});
+
+	const isEmailVerified = !isPaciente
+		? true
+		: Number(pacienteSelf?.email_verificado) === 1;
 
 	const { data: ecos = [], isLoading: loadingEcos } = useGetEcosQuery(undefined, {
 		selectFromResult: ({ data, isLoading }) => ({
@@ -113,12 +125,15 @@ const DisponibilidadPublicaPage = () => {
 		setSlotPage(1);
 	}, [selectedDate]);
 
+
 	return (
 		<PageShell
 			title="Agendar cita"
 			description="Selecciona un tipo de eco para ver fechas y especialistas disponibles (bloques aprobados)."
 		>
 			<div className="space-y-6">
+				<EmailVerificationBanner />
+
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-end">
 					<div className="w-full sm:max-w-md">
 						<label
@@ -270,7 +285,12 @@ const DisponibilidadPublicaPage = () => {
 													<button
 														type="button"
 														onClick={() => setBlockToReservar(b)}
-														className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+														disabled={isPaciente && !isEmailVerified}
+														className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+															isPaciente && !isEmailVerified
+																	? "bg-brand-800 text-paper/90 cursor-not-allowed"
+																	: "bg-brand-700 text-paper hover:bg-brand-800"
+														}`}
 													>
 														<CalendarPlus className="h-4 w-4" />
 														Reservar cita
