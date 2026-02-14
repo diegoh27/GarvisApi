@@ -74,6 +74,8 @@ export const usuariosApi = baseApi.injectEndpoints({
 				correo: string;
 				telefono: string;
 				rif: string | null;
+				email_verificado?: number;
+				fecha_verificacion?: string | null;
 			},
 			string
 		>({
@@ -81,6 +83,24 @@ export const usuariosApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: any }) => {
 				return response.data;
 			},
+			providesTags: ["Usuarios"],
+		}),
+		getPacienteSelf: builder.query<
+			{
+				id_paciente: string;
+				nombre: string;
+				apellido: string;
+				cedula: string;
+				correo: string;
+				telefono: string;
+				rif: string | null;
+				email_verificado: number;
+				fecha_verificacion: string | null;
+			},
+			void
+		>({
+			query: () => "/pacientes/mi-perfil",
+			transformResponse: (response: { ok: boolean; data: any }) => response.data,
 			providesTags: ["Usuarios"],
 		}),
 		updateUser: builder.mutation<Usuario, { id: string; payload: UpdateUsuarioPayload }>({
@@ -150,6 +170,7 @@ export const {
 	useGetUserByIdQuery,
 	useGetEspecialistaByIdQuery,
 	useGetPacienteByIdQuery,
+	useGetPacienteSelfQuery,
 	useUpdateUserMutation,
 	useUpdateEspecialistaMutation,
 	useUpdatePacienteMutation,

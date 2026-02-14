@@ -1,4 +1,4 @@
-import { PageShell } from "../../../shared";
+import { EmailVerificationBanner, PageShell } from "../../../shared";
 import { Bell, CheckCircle, MailOpen } from "lucide-react";
 import {
   useGetMisNotificacionesQuery,
@@ -23,9 +23,13 @@ const NotificacionesPage = () => {
     data: notificaciones = [],
     isLoading,
     error,
-  } = useGetMisNotificacionesQuery({
-    limit: 100,
-  });
+  } = useGetMisNotificacionesQuery(
+    { limit: 100 },
+    {
+      pollingInterval: 15000,
+      refetchOnFocus: true,
+    },
+  );
   const [markLeida, { isLoading: marking }] = useMarkNotificacionLeidaMutation();
 
   return (
@@ -33,7 +37,9 @@ const NotificacionesPage = () => {
       title="Notificaciones"
       description="Alertas y mensajes recientes del sistema."
     >
-      <div className="rounded-2xl bg-paper p-5 shadow-sm">
+      <div className="space-y-4">
+        <EmailVerificationBanner />
+        <div className="rounded-2xl bg-paper p-5 shadow-sm">
         {error ? (
           <div className="flex items-center gap-2 text-sm text-red-700">
             <Bell className="h-4 w-4" />
@@ -90,6 +96,7 @@ const NotificacionesPage = () => {
             ))}
           </div>
         )}
+        </div>
       </div>
     </PageShell>
   );

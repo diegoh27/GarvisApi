@@ -1,5 +1,5 @@
+const crypto = require("crypto");
 const { pool } = require("../db");
-const { v4: uuidv4 } = require("uuid");
 const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 // ==========================================
@@ -106,7 +106,7 @@ exports.getEmpleadoController = async (idEmpleado) => {
 exports.createEmpleadoController = async (payload) => {
 	const { nombre, apellido, cedula, cargo, periodo, sueldo } = payload;
 
-	const idEmpleado = uuidv4();
+	const idEmpleado = crypto.randomUUID();
 
 	const query = `
     INSERT INTO nom_empleado
@@ -373,7 +373,7 @@ exports.registrarPagoNominaController = async (
 ) => {
 	const { fecha_pago, fecha_proximo_pago, monto, metodo, referencia } = payload;
 
-	const idPago = uuidv4();
+	const idPago = crypto.randomUUID();
 	const tasaDiaBcv = await getTodayBcvRate();
 	const normalized = normalizeUsdAmounts({
 		montoUsd: Number(monto),

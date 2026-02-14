@@ -1,7 +1,7 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { PasswordField, useAuth } from "../../../shared";
+import { EmailVerificationBanner, PasswordField, useAuth } from "../../../shared";
 import { apiClient } from "../../../services/apiClient";
 
 type PerfilData = {
@@ -275,6 +275,7 @@ const ConfiguracionPage = () => {
 
   return (
     <div className="space-y-6">
+      <EmailVerificationBanner />
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-brand-900">Configuración</h1>
         <p className="text-sm text-brand-800">

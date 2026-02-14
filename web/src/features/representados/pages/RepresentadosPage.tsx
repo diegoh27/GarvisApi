@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { UserPlus, ChevronLeft, ChevronRight, Search, Pencil, Trash2 } from "lucide-react";
 import PageShell from "../../../shared/components/PageShell";
+import { EmailVerificationBanner, useAuth } from "../../../shared";
 import {
 	useGetRepresentadosQuery,
 	useGetParentescosQuery,
@@ -9,6 +10,7 @@ import {
 } from "../representadosApi";
 import { CrearRepresentadoModal, EditarRepresentadoModal } from "../components";
 import Swal from "sweetalert2";
+import { useGetPacienteSelfQuery } from "../../usuarios/usuariosApi";
 
 const ITEMS_PER_PAGE = 5;
 const GENEROS: Array<"Masculino" | "Femenino"> = [
@@ -30,6 +32,7 @@ const formatFecha = (value: string) => {
 
 const RepresentadosPage = () => {
 	const [page, setPage] = useState(1);
+	const { user } = useAuth();
 	const [search, setSearch] = useState("");
 	const [filtroParentesco, setFiltroParentesco] = useState<string>("");
 	const [filtroGenero, setFiltroGenero] = useState<"Masculino" | "Femenino" | "">("");
@@ -46,6 +49,13 @@ const RepresentadosPage = () => {
 
 	const { data: parentescos = [] } = useGetParentescosQuery();
 	const [deleteRepresentado, { isLoading: isDeleting }] = useDeleteRepresentadoMutation();
+	const isPaciente = user?.rol === "paciente";
+	const { data: pacienteSelf } = useGetPacienteSelfQuery(undefined, {
+		skip: !isPaciente,
+	});
+	const isEmailVerified = !isPaciente
+		? true
+		: Number(pacienteSelf?.email_verificado) === 1;
 
 	const representados = data?.data ?? [];
 	const total = data?.total ?? 0;
@@ -97,6 +107,7 @@ const RepresentadosPage = () => {
 			description="Gestiona las personas que representas (hijos, familiares, etc.) para agendar citas a su nombre."
 		>
 			<div className="space-y-6">
+				<EmailVerificationBanner />
 				{/* Barra: búsqueda, filtros, botón crear */}
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-wrap items-center gap-3">
@@ -138,7 +149,12 @@ const RepresentadosPage = () => {
 					<button
 						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
-						className="inline-flex items-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
+						disabled={!isEmailVerified}
+						className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+							!isEmailVerified
+								? "bg-brand-800 text-paper/90 cursor-not-allowed"
+								: "bg-brand-700 text-paper hover:bg-brand-800"
+						}`}
 					>
 						<UserPlus className="h-4 w-4" />
 						Crear representado

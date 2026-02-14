@@ -1,4 +1,5 @@
 export { default as PageShell } from "./components/PageShell";
+export { default as EmailVerificationBanner } from "./components/EmailVerificationBanner";
 export { default as PasswordField } from "./components/PasswordField";
 export { useAuth } from "./hooks/useAuth";
 export { useAppDispatch, useAppSelector } from "./hooks/useStore";

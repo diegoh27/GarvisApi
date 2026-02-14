@@ -3,6 +3,46 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { getRolIdByName } = require("../utils/roles");
+const { sendEmail } = require("../utils/email");
+const {
+	getVerificationEmailHtml,
+	getVerificationEmailText,
+	getPasswordResetEmailHtml,
+	getPasswordResetEmailText,
+} = require("../utils/htmlEmail");
+
+const EMAIL_VERIFICATION_TTL_HOURS = 24;
+const PASSWORD_RESET_TTL_MINUTES = 60;
+
+const normalizeBaseUrl = (value, fallback) => {
+	const raw = value || fallback;
+	return raw ? raw.replace(/\/+$/g, "") : "";
+};
+
+const getAppBaseUrl = () =>
+	normalizeBaseUrl(process.env.APP_BASE_URL, "http://localhost:3001");
+
+const getWebBaseUrl = () =>
+	normalizeBaseUrl(
+		process.env.WEB_BASE_URL || process.env.FRONTEND_URL,
+		getAppBaseUrl(),
+	);
+
+const createTokenPair = () => {
+	const token = crypto.randomBytes(32).toString("hex");
+	const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+	return { token, tokenHash };
+};
+
+const buildVerifyEmailLink = (token) => {
+	const baseUrl = getAppBaseUrl();
+	return `${baseUrl}/auth/verify?token=${encodeURIComponent(token)}`;
+};
+
+const buildResetPasswordLink = (token) => {
+	const baseUrl = getWebBaseUrl();
+	return `${baseUrl}/auth/reset?token=${encodeURIComponent(token)}`;
+};
 
 const registerPaciente = async (payload) => {
 	const conn = await pool.getConnection();
@@ -66,11 +106,11 @@ const registerPaciente = async (payload) => {
 		const hashedPassword = await bcrypt.hash(payload.contrasena, 10);
 
 		const sqlUsuario = `
-      INSERT INTO usuario
-        (id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
-      VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-    `;
+			INSERT INTO usuario
+				(id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
+			VALUES
+				(?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+		`;
 
 		await conn.execute(sqlUsuario, [
 			id_usuario,
@@ -86,11 +126,11 @@ const registerPaciente = async (payload) => {
 		]);
 
 		const sqlPaciente = `
-      INSERT INTO paciente
-        (id_paciente, tipo_sangre, descripcion, direccion, rif, contacto_emergencia_nombre, contacto_emergencia_telefono)
-      VALUES
-        (?, ?, ?, ?, ?, ?, ?)
-    `;
+			INSERT INTO paciente
+				(id_paciente, tipo_sangre, descripcion, direccion, rif, email_verificado, contacto_emergencia_nombre, contacto_emergencia_telefono)
+			VALUES
+				(?, ?, ?, ?, ?, 0, ?, ?)
+		`;
 
 		await conn.execute(sqlPaciente, [
 			id_usuario,
@@ -102,7 +142,47 @@ const registerPaciente = async (payload) => {
 			payload.contacto_emergencia_telefono ?? null,
 		]);
 
+		const { token, tokenHash } = createTokenPair();
+		await conn.execute(
+			`INSERT INTO email_verificacion
+        (id_verificacion, id_paciente, token_hash, expires_at)
+       VALUES
+        (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))`,
+			[
+				crypto.randomUUID(),
+				id_usuario,
+				tokenHash,
+				EMAIL_VERIFICATION_TTL_HOURS,
+			],
+		);
+
 		await conn.commit();
+
+		const verifyLink = buildVerifyEmailLink(token);
+		const subject = "¡Bienvenido a Garbis! Verifica tu correo";
+		const html = getVerificationEmailHtml({
+			tipo: "welcome",
+			nombre: payload.nombre,
+			verifyLink,
+			ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+		});
+		const text = getVerificationEmailText({
+			tipo: "welcome",
+			nombre: payload.nombre,
+			verifyLink,
+			ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+		});
+
+		try {
+			await sendEmail({
+				to: payload.correo,
+				subject,
+				html,
+				text,
+			});
+		} catch (emailErr) {
+			console.error("Error enviando verificacion de correo:", emailErr);
+		}
 
 		return {
 			id_usuario,
@@ -122,18 +202,20 @@ const registerPaciente = async (payload) => {
 
 const loginUser = async ({ correo, contrasena }) => {
 	const sql = `
-    SELECT
-      u.id_usuario,
-      u.nombre,
-      u.apellido,
-      u.correo,
-      u.contrasena,
-      r.nombre AS rol
-    FROM usuario u
-    INNER JOIN roles r ON r.id_rol = u.id_rol
-    WHERE u.correo = ? AND u.activo = 1
-    LIMIT 1
-  `;
+		SELECT
+			u.id_usuario,
+			u.nombre,
+			u.apellido,
+			u.correo,
+			u.contrasena,
+			r.nombre AS rol,
+			p.email_verificado AS paciente_email_verificado
+		FROM usuario u
+		INNER JOIN roles r ON r.id_rol = u.id_rol
+		LEFT JOIN paciente p ON p.id_paciente = u.id_usuario
+		WHERE u.correo = ? AND u.activo = 1
+		LIMIT 1
+	`;
 
 	const [rows] = await pool.execute(sql, [correo]);
 	if (!rows.length) {
@@ -143,6 +225,7 @@ const loginUser = async ({ correo, contrasena }) => {
 	}
 
 	const user = rows[0];
+
 	const ok = await bcrypt.compare(contrasena, user.contrasena);
 	if (!ok) {
 		const err = new Error("Credenciales inválidas");
@@ -178,7 +261,281 @@ const loginUser = async ({ correo, contrasena }) => {
 	};
 };
 
+const verifyEmail = async ({ token }) => {
+	if (!token) {
+		const err = new Error("Token requerido");
+		err.code = "TOKEN_REQUIRED";
+		throw err;
+	}
+
+	const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [rows] = await conn.execute(
+			`SELECT id_verificacion, id_paciente, used_at, expires_at
+       FROM email_verificacion
+       WHERE token_hash = ?
+       LIMIT 1
+       FOR UPDATE`,
+			[tokenHash],
+		);
+
+		if (!rows.length) {
+			const err = new Error("Token invalido");
+			err.code = "TOKEN_INVALID";
+			throw err;
+		}
+
+		const record = rows[0];
+		if (record.used_at) {
+			const err = new Error("Token ya utilizado");
+			err.code = "TOKEN_USED";
+			throw err;
+		}
+
+		if (record.expires_at && new Date(record.expires_at) < new Date()) {
+			const err = new Error("Token expirado");
+			err.code = "TOKEN_EXPIRED";
+			throw err;
+		}
+
+		await conn.execute(
+			"UPDATE email_verificacion SET used_at = NOW() WHERE id_verificacion = ?",
+			[record.id_verificacion],
+		);
+		await conn.execute(
+			"UPDATE paciente SET email_verificado = 1, fecha_verificacion = NOW() WHERE id_paciente = ?",
+			[record.id_paciente],
+		);
+
+		await conn.commit();
+		return { id_usuario: record.id_paciente };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+const resendVerificationEmail = async ({ correo }) => {
+	if (!correo) {
+		const err = new Error("correo es requerido");
+		err.code = "EMAIL_REQUIRED";
+		throw err;
+	}
+
+	const [rows] = await pool.execute(
+		`SELECT u.id_usuario, u.nombre, u.correo, p.email_verificado
+     FROM usuario u
+     INNER JOIN paciente p ON p.id_paciente = u.id_usuario
+     WHERE u.correo = ?
+     LIMIT 1`,
+		[correo],
+	);
+
+	if (!rows.length) {
+		return { ok: true };
+	}
+
+	const user = rows[0];
+	if (Number(user.email_verificado)) {
+		return { ok: true };
+	}
+
+	const { token, tokenHash } = createTokenPair();
+	await pool.execute(
+		`INSERT INTO email_verificacion
+      (id_verificacion, id_paciente, token_hash, expires_at)
+     VALUES
+      (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))`,
+		[
+			crypto.randomUUID(),
+			user.id_usuario,
+			tokenHash,
+			EMAIL_VERIFICATION_TTL_HOURS,
+		],
+	);
+
+	const verifyLink = buildVerifyEmailLink(token);
+	const subject = "Garbis: verifica tu cuenta de correo";
+	const html = getVerificationEmailHtml({
+		tipo: "reminder",
+		nombre: user.nombre,
+		verifyLink,
+		ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+	});
+	const text = getVerificationEmailText({
+		tipo: "reminder",
+		nombre: user.nombre,
+		verifyLink,
+		ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+	});
+
+	try {
+		await sendEmail({
+			to: user.correo,
+			subject,
+			html,
+			text,
+		});
+	} catch (emailErr) {
+		console.error("Error reenviando verificacion de correo:", emailErr);
+	}
+
+	return { ok: true };
+};
+
+const PASSWORD_RESET_COOLDOWN_MINUTES = 1;
+
+const isValidEmail = (email) => {
+	if (!email || typeof email !== "string") return false;
+	const trimmed = email.trim();
+	if (trimmed.length < 5) return false;
+	const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return re.test(trimmed);
+};
+
+const requestPasswordReset = async ({ correo }) => {
+	if (!isValidEmail(correo)) {
+		return { ok: true };
+	}
+
+	const [rows] = await pool.execute(
+		"SELECT id_usuario, nombre, correo, activo FROM usuario WHERE correo = ? LIMIT 1",
+		[correo.trim()],
+	);
+
+	if (!rows.length || !rows[0].activo) {
+		return { ok: true };
+	}
+
+	const user = rows[0];
+
+	const [recentRows] = await pool.execute(
+		`SELECT created_at FROM password_reset 
+     WHERE id_usuario = ? 
+     ORDER BY created_at DESC 
+     LIMIT 1`,
+		[user.id_usuario],
+	);
+	if (recentRows.length > 0) {
+		const lastCreated = new Date(recentRows[0].created_at);
+		const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+		if (lastCreated > oneMinuteAgo) {
+			return { ok: true, rateLimited: true };
+		}
+	}
+
+	const { token, tokenHash } = createTokenPair();
+	await pool.execute(
+		`INSERT INTO password_reset
+      (id_reset, id_usuario, token_hash, expires_at)
+     VALUES
+      (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))`,
+		[
+			crypto.randomUUID(),
+			user.id_usuario,
+			tokenHash,
+			PASSWORD_RESET_TTL_MINUTES,
+		],
+	);
+
+	const resetLink = buildResetPasswordLink(token);
+	const subject = "Recuperar contraseña - Garbis Online";
+	const html = getPasswordResetEmailHtml({
+		nombre: user.nombre,
+		resetLink,
+		ttlMinutes: PASSWORD_RESET_TTL_MINUTES,
+	});
+	const text = getPasswordResetEmailText({
+		nombre: user.nombre,
+		resetLink,
+		ttlMinutes: PASSWORD_RESET_TTL_MINUTES,
+	});
+
+	try {
+		await sendEmail({
+			to: user.correo,
+			subject,
+			html,
+			text,
+		});
+	} catch (emailErr) {
+		console.error("Error enviando recuperacion de contrasena:", emailErr);
+	}
+
+	return { ok: true };
+};
+
+const resetPassword = async ({ token, contrasena }) => {
+	if (!token || !contrasena) {
+		const err = new Error("Token y contrasena son requeridos");
+		err.code = "RESET_REQUIRED";
+		throw err;
+	}
+
+	const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [rows] = await conn.execute(
+			`SELECT id_reset, id_usuario, used_at, expires_at
+       FROM password_reset
+       WHERE token_hash = ?
+       LIMIT 1
+       FOR UPDATE`,
+			[tokenHash],
+		);
+
+		if (!rows.length) {
+			const err = new Error("Token invalido");
+			err.code = "TOKEN_INVALID";
+			throw err;
+		}
+
+		const record = rows[0];
+		if (record.used_at) {
+			const err = new Error("Token ya utilizado");
+			err.code = "TOKEN_USED";
+			throw err;
+		}
+
+		if (record.expires_at && new Date(record.expires_at) < new Date()) {
+			const err = new Error("Token expirado");
+			err.code = "TOKEN_EXPIRED";
+			throw err;
+		}
+
+		const hashedPassword = await bcrypt.hash(contrasena, 10);
+		await conn.execute(
+			"UPDATE usuario SET contrasena = ? WHERE id_usuario = ?",
+			[hashedPassword, record.id_usuario],
+		);
+		await conn.execute(
+			"UPDATE password_reset SET used_at = NOW() WHERE id_reset = ?",
+			[record.id_reset],
+		);
+
+		await conn.commit();
+		return { id_usuario: record.id_usuario };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	registerPaciente,
 	loginUser,
+	verifyEmail,
+	resendVerificationEmail,
+	requestPasswordReset,
+	resetPassword,
+	getWebBaseUrl,
 };

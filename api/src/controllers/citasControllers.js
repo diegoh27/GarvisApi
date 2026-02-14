@@ -2,11 +2,34 @@ const { pool } = require("../db");
 const crypto = require("crypto");
 const { getDolarOficialController } = require("./dolarControllers");
 const { normalizeCitaAmounts, round2 } = require("../utils/currency");
+const { sendEmail } = require("../utils/email");
+const {
+	sendCitaReservadaEmailsAndNotifications,
+	formatFechaCita,
+	formatHoraCita,
+} = require("../utils/citaEmails");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
 const MOSTRADOR_CORREO = "mostrador@garvis.local";
 const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
 const MOSTRADOR_RIF = "J0000000000";
+
+const ensurePacienteVerificado = async (conn, id_paciente) => {
+	const [rows] = await conn.execute(
+		"SELECT email_verificado FROM paciente WHERE id_paciente = ? LIMIT 1",
+		[id_paciente],
+	);
+	if (!rows.length) {
+		const err = new Error("Paciente no encontrado");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+	if (!Number(rows[0].email_verificado)) {
+		const err = new Error("Debe verificar su correo antes de agendar una cita");
+		err.code = "EMAIL_NOT_VERIFIED";
+		throw err;
+	}
+};
 
 const resolveExistingUsuarioId = async (conn, candidateId) => {
 	if (!candidateId) return null;
@@ -76,6 +99,8 @@ const createCitaFromDisponibilidadController = async ({
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
+
+		await ensurePacienteVerificado(conn, id_paciente);
 
 		const [rows] = await conn.execute(
 			`SELECT id_especialista, fecha, hora_inicio, hora_fin, estado
@@ -156,6 +181,14 @@ const createCitaFromDisponibilidadController = async ({
 		);
 
 		await conn.commit();
+
+		sendCitaReservadaEmailsAndNotifications({
+			id_cita,
+			id_paciente,
+			id_especialista: bloque.id_especialista,
+			enviarAPaciente: true,
+		}).catch((e) => console.error("Error enviando correos cita reservada:", e));
+
 		return {
 			id_cita,
 			id_paciente,
@@ -484,14 +517,21 @@ const updateEstadoPagoController = async ({
 	motivo_rechazo = null,
 }) => {
 	const conn = await pool.getConnection();
+	let emailPayload = null;
 	try {
 		await conn.beginTransaction();
 
 		const [rows] = await conn.execute(
 			`SELECT c.estado_cita, c.estado_pago, c.id_paciente, c.id_representado,
-		c.fecha_cita, c.hora_cita, e.nombre AS eco_nombre
+		c.fecha_cita, c.hora_cita, e.nombre AS eco_nombre,
+		u_paciente.correo AS paciente_correo,
+		u_paciente.nombre AS paciente_nombre,
+		u_paciente.apellido AS paciente_apellido,
+		u_esp.nombre AS especialista_nombre, u_esp.apellido AS especialista_apellido
 	FROM cita c
 	LEFT JOIN eco e ON e.id_eco = c.id_eco
+	INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+	INNER JOIN usuario u_esp ON u_esp.id_usuario = c.id_especialista
 	WHERE c.id_cita = ?
 	FOR UPDATE`,
 			[id_cita],
@@ -564,16 +604,57 @@ const updateEstadoPagoController = async ({
 					[aprobado_por || cita.id_paciente, id_cita],
 				);
 			}
+
+			if (cita.paciente_correo) {
+				const fecha = formatFechaCita(cita.fecha_cita);
+				const hora = formatHoraCita(cita.hora_cita);
+				const ecoNombre = cita.eco_nombre ? ` (${cita.eco_nombre})` : "";
+				const subject = "Pago aprobado - Garbis";
+				const html = `
+          <p>Hola ${cita.paciente_nombre || ""},</p>
+          <p>Tu pago para la cita ${fecha} ${hora}${ecoNombre} fue aprobado.</p>
+          <p>Gracias por tu confianza.</p>
+        `;
+				const text = `Hola ${cita.paciente_nombre || ""},\n\nTu pago para la cita ${fecha} ${hora}${ecoNombre} fue aprobado.\n\nGracias por tu confianza.`;
+				emailPayload = {
+					to: cita.paciente_correo,
+					subject,
+					html,
+					text,
+				};
+			}
+
+			// Notificación al paciente: pago aprobado
+			if (cita.id_paciente) {
+				const fecha = formatFechaCita(cita.fecha_cita);
+				const hora = formatHoraCita(cita.hora_cita);
+				const ecoNombre = cita.eco_nombre ? ` (${cita.eco_nombre})` : "";
+				const espNombre = [cita.especialista_nombre, cita.especialista_apellido].filter(Boolean).join(" ") || "Especialista";
+				let mensaje = `Tu pago para la cita con ${espNombre}${ecoNombre} el ${fecha} a las ${hora} fue aprobado. Cita confirmada.`;
+				if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+				await conn.execute(
+					`INSERT INTO notificacion (id_notificacion, id_usuario, titulo, mensaje, tipo, leida)
+           VALUES (?, ?, ?, ?, ?, 0)`,
+					[
+						crypto.randomUUID(),
+						cita.id_paciente,
+						"Pago aprobado",
+						mensaje,
+						"pago_aprobado",
+					],
+				);
+			}
 		}
 
 		// Crear notificación si el pago fue rechazado
 		if (estado_pago === 2 && cita.id_paciente) {
 			const titulo = "Pago rechazado";
-			const fecha = cita.fecha_cita || "";
-			const hora = cita.hora_cita || "";
+			const fecha = formatFechaCita(cita.fecha_cita);
+			const hora = formatHoraCita(cita.hora_cita);
 			const ecoNombre = cita.eco_nombre ? ` (${cita.eco_nombre})` : "";
+			const espNombre = [cita.especialista_nombre, cita.especialista_apellido].filter(Boolean).join(" ") || "Especialista";
 			const motivo = motivo_rechazo ? motivo_rechazo.trim() : "";
-			let mensaje = `Tu pago para la cita ${fecha} ${hora}${ecoNombre} fue rechazado. Motivo: ${motivo}.`;
+			let mensaje = `Tu pago para la cita con ${espNombre}${ecoNombre} el ${fecha} a las ${hora} fue rechazado. Motivo: ${motivo}.`;
 			if (mensaje.length > 255) {
 				mensaje = `${mensaje.slice(0, 252)}...`;
 			}
@@ -588,6 +669,22 @@ const updateEstadoPagoController = async ({
 					"pago_rechazado",
 				],
 			);
+
+			if (cita.paciente_correo) {
+				const subject = "Pago rechazado - Garbis";
+				const html = `
+          <p>Hola ${cita.paciente_nombre || ""},</p>
+          <p>Tu pago para la cita ${fecha} ${hora}${ecoNombre} fue rechazado.</p>
+          <p>Motivo: ${motivo || "No especificado"}</p>
+        `;
+				const text = `Hola ${cita.paciente_nombre || ""},\n\nTu pago para la cita ${fecha} ${hora}${ecoNombre} fue rechazado.\nMotivo: ${motivo || "No especificado"}`;
+				emailPayload = {
+					to: cita.paciente_correo,
+					subject,
+					html,
+					text,
+				};
+			}
 		}
 
 		// Si se rechaza el pago, crear notificación para el paciente/representado
@@ -611,6 +708,14 @@ const updateEstadoPagoController = async ({
 		}
 
 		await conn.commit();
+
+		if (emailPayload) {
+			try {
+				await sendEmail(emailPayload);
+			} catch (emailErr) {
+				console.error("Error enviando correo de pago:", emailErr);
+			}
+		}
 		return { id_cita, estado_pago, estado_cita: nuevoEstadoCita };
 	} catch (err) {
 		await conn.rollback();
@@ -1126,6 +1231,14 @@ const createCitaMostradorController = async ({
 		);
 
 		await conn.commit();
+
+		sendCitaReservadaEmailsAndNotifications({
+			id_cita,
+			id_paciente,
+			id_especialista,
+			enviarAPaciente: false,
+		}).catch((e) => console.error("Error enviando correos cita mostrador:", e));
+
 		return {
 			id_cita,
 			id_pago,
@@ -1150,6 +1263,7 @@ const asignarCitaCompletaController = async ({
 	id_disponibilidad,
 	orden,
 	aprobado_por, // ID del admin/moderador que está asignando
+	role,
 	// Datos del pago
 	metodo,
 	imagen,
@@ -1163,6 +1277,10 @@ const asignarCitaCompletaController = async ({
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
+
+		if (role === "paciente") {
+			await ensurePacienteVerificado(conn, id_paciente);
+		}
 
 		// 1. Verificar y obtener disponibilidad
 		const [dispRows] = await conn.execute(
@@ -1311,6 +1429,14 @@ const asignarCitaCompletaController = async ({
 		await conn.execute(sqlResultado, [id_resultado, id_cita, id_especialista]);
 
 		await conn.commit();
+
+		sendCitaReservadaEmailsAndNotifications({
+			id_cita,
+			id_paciente,
+			id_especialista,
+			enviarAPaciente: true,
+		}).catch((e) => console.error("Error enviando correos cita asignada:", e));
+
 		return {
 			id_cita,
 			id_pago,

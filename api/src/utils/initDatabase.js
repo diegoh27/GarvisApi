@@ -253,6 +253,18 @@ async function seedBasicData() {
 			id_rol: pacienteRole,
 			contrasena: defaultPassword,
 		});
+
+		const paciente3 = await createUsuario({
+			nombre: "Diego",
+			apellido: "Briceno",
+			genero: "Masculino",
+			cedula: "V-28025174",
+			correo: "zulfarrak092700@gmail.com",
+			telefono: "0412-0251740",
+			fecha_nacimiento: "2000-07-27",
+			id_rol: pacienteRole,
+			contrasena: defaultPassword,
+		});
 		console.log("✅ Pacientes creados");
 
 		// Crear 2 especialistas
@@ -285,7 +297,7 @@ async function seedBasicData() {
 		await seedExtendedData({
 			adminId: admin1,
 			moderadorId: moderador1,
-			pacienteIds: [paciente1, paciente2],
+			pacienteIds: [paciente1, paciente2, paciente3],
 			especialistaIds: [especialista1, especialista2],
 		});
 		console.log("✅ Datos extendidos creados");
@@ -302,6 +314,7 @@ async function seedBasicData() {
 		console.log("\n🧪 Nuevos usuarios de prueba:");
 		console.log(`   • paciente1@garvis.com (${defaultPassword})`);
 		console.log(`   • paciente2@garvis.com (${defaultPassword})`);
+		console.log(`   • zulfarrak092700@gmail.com (${defaultPassword})`);
 		console.log(`   • especialista1@garvis.com (${defaultPassword})`);
 		console.log(`   • especialista2@garvis.com (${defaultPassword})`);
 		console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -338,8 +351,11 @@ async function seedExtendedData({
 
 	await pool.execute(
 		`INSERT INTO paciente
-			(id_paciente, tipo_sangre, descripcion, direccion, rif, contacto_emergencia_nombre, contacto_emergencia_telefono)
-		 VALUES (?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?)`,
+			(id_paciente, tipo_sangre, descripcion, direccion, rif, email_verificado, fecha_verificacion, contacto_emergencia_nombre, contacto_emergencia_telefono)
+		 VALUES
+			(?, ?, ?, ?, ?, 1, NOW(), ?, ?),
+			(?, ?, ?, ?, ?, 1, NOW(), ?, ?),
+			(?, ?, ?, ?, ?, 0, NULL, ?, ?)`,
 		[
 			pacienteIds[0],
 			"O+",
@@ -355,6 +371,13 @@ async function seedExtendedData({
 			"J0000000002",
 			"Contacto Dos",
 			"04120000002",
+			pacienteIds[2],
+			"O+",
+			"Paciente de prueba 3",
+			"Av. Local 3",
+			"V280251743",
+			"Contacto Tres",
+			"04120000003",
 		],
 	);
 

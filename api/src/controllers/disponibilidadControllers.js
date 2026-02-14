@@ -1,5 +1,6 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const { createNotificacionController } = require("./notificacionesControllers");
 
 const hasOverlap = async (
 	conn,
@@ -86,6 +87,12 @@ const createDisponibilidadController = async ({
 		]);
 
 		await conn.commit();
+
+		notificarAdminModeradorDisponibilidadPendiente({
+			cantidad: 1,
+			id_especialista,
+		}).catch((e) => console.error("Error notificando disponibilidad:", e));
+
 		return {
 			id_disponibilidad,
 			id_especialista,
@@ -100,6 +107,49 @@ const createDisponibilidadController = async ({
 		throw err;
 	} finally {
 		conn.release();
+	}
+};
+
+const notificarAdminModeradorDisponibilidadPendiente = async ({
+	cantidad,
+	id_especialista,
+}) => {
+	try {
+		let especialistaNombre = "";
+		if (id_especialista) {
+			const [espRows] = await pool.execute(
+				`SELECT nombre, apellido FROM usuario WHERE id_usuario = ?`,
+				[id_especialista],
+			);
+			if (espRows.length) {
+				especialistaNombre = [espRows[0].nombre, espRows[0].apellido].filter(Boolean).join(" ") || "";
+			}
+		}
+		const [adminModRows] = await pool.execute(
+			`SELECT u.id_usuario FROM usuario u
+       INNER JOIN roles r ON r.id_rol = u.id_rol
+       WHERE r.nombre IN ('admin', 'moderador') AND u.activo = 1`,
+		);
+		const bloqueTexto = cantidad === 1 ? "1 bloque" : `${cantidad} bloques`;
+		const mensaje = especialistaNombre
+			? `Dr./Dra. ${especialistaNombre} solicitó ${bloqueTexto} de disponibilidad pendientes de aprobación.`
+			: cantidad === 1
+				? "Hay 1 nueva solicitud de disponibilidad pendiente de aprobación."
+				: `Hay ${cantidad} nuevas solicitudes de disponibilidad pendientes de aprobación.`;
+		for (const row of adminModRows) {
+			try {
+				await createNotificacionController({
+					id_usuario: row.id_usuario,
+					titulo: "Disponibilidad pendiente",
+					mensaje,
+					tipo: "disponibilidad",
+				});
+			} catch (e) {
+				console.error("Error notificando admin/moderador disponibilidad:", e);
+			}
+		}
+	} catch (err) {
+		console.error("Error en notificarAdminModeradorDisponibilidadPendiente:", err);
 	}
 };
 
@@ -184,6 +234,12 @@ const createDisponibilidadBatchController = async ({
 			creados.push(id_disponibilidad);
 		}
 		await conn.commit();
+
+		notificarAdminModeradorDisponibilidadPendiente({
+			cantidad: creados.length,
+			id_especialista,
+		}).catch((e) => console.error("Error notificando disponibilidad batch:", e));
+
 		return { creados: creados.length, ids: creados };
 	} catch (err) {
 		await conn.rollback();

@@ -137,7 +137,9 @@ const getPacienteByIdController = async (id_paciente) => {
       p.tipo_sangre,
       p.descripcion,
       p.direccion,
-	p.rif,
+			p.rif,
+			p.email_verificado,
+			p.fecha_verificacion,
       p.contacto_emergencia_nombre,
       p.contacto_emergencia_telefono
     FROM paciente p

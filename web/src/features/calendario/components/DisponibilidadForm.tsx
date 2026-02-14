@@ -92,7 +92,8 @@ const DisponibilidadForm = ({
 	onCancel,
 }: DisponibilidadFormProps) => {
 	const useCalendarSelection = selectedCellsCount > 0;
-	const [modoRango, setModoRango] = useState(false);
+	// Especialista: solo "Por rango" (Una fecha/hora comentado)
+	const [modoRango, setModoRango] = useState(true);
 	const [fechaDesde, setFechaDesde] = useState("");
 	const [fechaHasta, setFechaHasta] = useState("");
 	const [horaInicioRango, setHoraInicioRango] = useState("");
@@ -321,7 +322,8 @@ const DisponibilidadForm = ({
 				<span className="text-[10px] text-brand-800">Bloques de 20 minutos</span>
 			</div>
 			{!useCalendarSelection && (
-				<div className="mt-2 flex gap-1 rounded-lg border border-mist p-1">
+				<div className="mt-2 rounded-lg border border-mist p-1">
+					{/* Una fecha/hora - comentado; solo Por rango para especialista
 					<button
 						type="button"
 						onClick={() => {
@@ -337,11 +339,11 @@ const DisponibilidadForm = ({
 					>
 						Una fecha/hora
 					</button>
+					*/}
 					<button
 						type="button"
 						onClick={() => setModoRango(true)}
-						className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${modoRango ? "bg-brand-700 text-paper" : "text-brand-800 hover:bg-cloud"
-							}`}
+						className="w-full rounded-md px-3 py-1.5 text-xs font-medium transition-colors bg-brand-700 text-paper"
 					>
 						Por rango
 					</button>

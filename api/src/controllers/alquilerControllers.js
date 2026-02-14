@@ -1,5 +1,5 @@
+const crypto = require("crypto");
 const { pool } = require("../db");
-const { v4: uuidv4 } = require("uuid");
 const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 
 const sanitizeLimit = (limit, fallback = 200, max = 1000) => {
@@ -62,7 +62,7 @@ exports.createContratoController = async (payload) => {
 		fecha_vencimiento,
 	} = payload;
 
-	const idContrato = uuidv4();
+	const idContrato = crypto.randomUUID();
 
 	await pool.execute(
 		`INSERT INTO alq_contrato
@@ -260,7 +260,7 @@ exports.registrarPagoAlquilerController = async (
 			throw err;
 		}
 
-		const idPago = uuidv4();
+		const idPago = crypto.randomUUID();
 		const tasaDiaBcv = await getTodayBcvRate();
 		const normalized = normalizeUsdAmounts({
 			montoUsd: Number(monto),
