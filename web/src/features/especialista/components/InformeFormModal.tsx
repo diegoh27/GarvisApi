@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import {
-	useGetInformeByCitaQuery,
+	useInformeByCita,
 	useCreateOrUpdateInformeMutation,
 	type CrearInformePayload,
 } from "../informesApi";
@@ -26,9 +26,7 @@ const InformeFormModal = ({
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
 
 	const { data: informeExistente, isLoading: loadingInforme } =
-		useGetInformeByCitaQuery(cita.id_cita, {
-			skip: !cita.id_cita,
-		});
+		useInformeByCita(cita.id_cita, { skip: !cita.id_cita });
 
 	const [createOrUpdateInforme, { isLoading: saving }] =
 		useCreateOrUpdateInformeMutation();
