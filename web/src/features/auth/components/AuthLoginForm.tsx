@@ -18,6 +18,7 @@ const AuthLoginForm = () => {
 	useEffect(() => {
 		const verified = searchParams.get("verified");
 		const passwordReset = searchParams.get("passwordReset");
+		const sessionExpired = searchParams.get("session_expired");
 		const err = searchParams.get("error");
 		if (verified === "1") {
 			setBanner({
@@ -29,6 +30,12 @@ const AuthLoginForm = () => {
 			setBanner({
 				type: "success",
 				message: "¡Contraseña actualizada! Ya puedes iniciar sesión con tu nueva contraseña.",
+			});
+			setSearchParams({}, { replace: true });
+		} else if (sessionExpired === "1") {
+			setBanner({
+				type: "error",
+				message: "Tu sesión ya no es válida. Inicia sesión de nuevo.",
 			});
 			setSearchParams({}, { replace: true });
 		} else if (verified === "0" || passwordReset === "0" || err) {

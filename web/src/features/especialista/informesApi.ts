@@ -41,10 +41,34 @@ const {
 	useCreateOrUpdateInformeMutation,
 } = informesApi;
 
+/**
+ * Devuelve el informe por cita. El 404 (no existe informe) se trata como data: null
+ * en lugar de error, para que la UI no muestre error cuando simplemente no hay informe.
+ */
+function useInformeByCita(
+	id_cita: string,
+	options?: { skip?: boolean },
+) {
+	const result = useGetInformeByCitaQuery(id_cita, {
+		skip: options?.skip ?? !id_cita,
+	});
+	const is404 =
+		result.isError &&
+		"status" in (result.error ?? {}) &&
+		(result.error as { status?: number }).status === 404;
+	return {
+		...result,
+		data: is404 ? null : result.data ?? null,
+		isError: result.isError && !is404,
+		error: is404 ? undefined : result.error,
+	};
+}
+
 export {
 	informesApi,
 	useGetMisInformesQuery,
 	useGetInformeByCitaQuery,
+	useInformeByCita,
 	useCreateOrUpdateInformeMutation,
 };
 export type { CrearInformePayload };

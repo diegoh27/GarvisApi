@@ -1,10 +1,32 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getToken } from "../../shared/utils/token";
+import { clearAuth } from "../../features/auth/authSlice";
+
+const LOGIN_PATH = "/auth/login";
+const PUBLIC_PATHS = ["/auth/login", "/auth/register", "/auth/forgot", "/"];
+
+let redirectingToLogin = false;
+
+function isPublicPath(pathname: string): boolean {
+	return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+/** Ante 401: limpia sesión y redirige a login una sola vez (evita múltiples redirects). */
+function handleUnauthorized(dispatch: (a: unknown) => void): void {
+	dispatch(clearAuth());
+	const pathname = window.location.pathname;
+	if (isPublicPath(pathname)) return;
+	if (redirectingToLogin) return;
+	redirectingToLogin = true;
+	window.location.href = `${LOGIN_PATH}?session_expired=1`;
+}
 
 const baseUrl =
 	(import.meta.env.VITE_API_URL as string | undefined) ??
 	"http://localhost:3001";
 
+// Content-Type: fetchBaseQuery lo setea automáticamente para JSON cuando hay body objeto.
+// No setearlo acá evita romper FormData, text/plain, requests sin body, etc.
 const baseQueryWithErrorHandling = fetchBaseQuery({
 	baseUrl: baseUrl.replace(/\/$/, ""),
 	prepareHeaders: (headers) => {
@@ -12,25 +34,15 @@ const baseQueryWithErrorHandling = fetchBaseQuery({
 		if (token) {
 			headers.set("Authorization", `Bearer ${token}`);
 		}
-		headers.set("Content-Type", "application/json");
 		return headers;
 	},
 });
 
-// Wrapper para manejar errores 404 específicamente para informes
-const baseQuery = async (args: any, api: any, extraOptions: any) => {
+/** Wrapper que ante 401 desloguea y redirige a login. */
+const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
 	const result = await baseQueryWithErrorHandling(args, api, extraOptions);
-	// Si es un 404 en /informes/cita/, no es un error real (el informe simplemente no existe)
-	if (result.error && "status" in result.error && result.error.status === 404) {
-		const url =
-			typeof args === "string"
-				? args
-				: typeof args === "object" && args.url
-					? args.url
-					: "";
-		if (url.includes("/informes/cita/")) {
-			return { data: null };
-		}
+	if (result.error && "status" in result.error && result.error.status === 401) {
+		handleUnauthorized(api.dispatch);
 	}
 	return result;
 };
@@ -51,14 +63,16 @@ const baseQueryWithFormData = async (args: any, api: any, extraOptions: any) => 
 				if (token) {
 					headers.set("Authorization", `Bearer ${token}`);
 				}
-				// No establecer Content-Type para FormData - el navegador lo hará automáticamente
 				return headers;
 			},
 		});
-		return formDataQuery(args, api, extraOptions);
+		const result = await formDataQuery(args, api, extraOptions);
+		if (result.error && "status" in result.error && result.error.status === 401) {
+			handleUnauthorized(api.dispatch);
+		}
+		return result;
 	}
-	// Para otros casos, usar el baseQuery normal
-	return baseQuery(args, api, extraOptions);
+	return baseQueryWithAuth(args, api, extraOptions);
 };
 
 const baseApi = createApi({
@@ -96,6 +110,8 @@ const baseApi = createApi({
 		"Facturacion",
 		// Admin - Métodos de Pago
 		"MetodosPago",
+		// Configuración - Perfil
+		"Perfil",
 	],
 	endpoints: () => ({}),
 });

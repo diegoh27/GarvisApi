@@ -1,96 +1,82 @@
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { EmailVerificationBanner, PasswordField, useAuth } from "../../../shared";
-import { apiClient } from "../../../services/apiClient";
+import {
+	type PerfilData,
+	type PerfilRol,
+	useGetPerfilQuery,
+	useUpdatePerfilMutation,
+} from "../configuracionApi";
 
-type PerfilData = {
-  nombre?: string;
-  apellido?: string;
-  genero?: string | null;
-  correo?: string;
-  cedula?: string;
-  telefono?: string;
-  especialidad?: string;
-  fecha_nacimiento?: string | null;
-  tipo_sangre?: string | null;
-  descripcion?: string | null;
-  direccion?: string | null;
-  contacto_emergencia_nombre?: string | null;
-  contacto_emergencia_telefono?: string | null;
-};
+const PERFIL_ROLES: PerfilRol[] = ["paciente", "especialista", "moderador", "admin"];
 
 const ConfiguracionPage = () => {
-  const { user, token } = useAuth();
-  const [perfil, setPerfil] = useState<PerfilData | null>(null);
-  const [nombre, setNombre] = useState("");
-  const [apellido, setApellido] = useState("");
-  const [genero, setGenero] = useState("");
-  const [correo, setCorreo] = useState("");
-  const [cedula, setCedula] = useState("");
-  const [fechaNacimiento, setFechaNacimiento] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [tipoSangre, setTipoSangre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [contactoNombre, setContactoNombre] = useState("");
-  const [contactoTelefono, setContactoTelefono] = useState("");
-  const [contrasena, setContrasena] = useState("");
-  const [confirmar, setConfirmar] = useState("");
-  const [editTelefono, setEditTelefono] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+	const { user, token } = useAuth();
+	const perfilRol: PerfilRol | null =
+		user?.rol && PERFIL_ROLES.includes(user.rol as PerfilRol)
+			? (user.rol as PerfilRol)
+			: null;
 
-  const isEspecialista = user?.rol === "especialista";
-  const isPaciente = user?.rol === "paciente";
-  const isModerador = user?.rol === "moderador";
-  const isAdmin = user?.rol === "admin";
+	const { data: perfil = null, isLoading: loading, isError: queryError, error: queryErrorData } = useGetPerfilQuery(
+		perfilRol ?? "paciente",
+		{ skip: !token || !perfilRol },
+	);
+	const [updatePerfil, { isPending: saving }] = useUpdatePerfilMutation();
 
-  const fetchPerfil = useCallback(async () => {
-    if (!token) return;
-    if (!isPaciente && !isEspecialista && !isModerador && !isAdmin) return;
-    setLoading(true);
-    setError(null);
-    try {
-      let endpoint = "";
-      if (isEspecialista) {
-        endpoint = "/medicos/mi-perfil";
-      } else if (isPaciente) {
-        endpoint = "/pacientes/mi-perfil";
-      } else if (isModerador) {
-        endpoint = "/moderadores/mi-perfil";
-      } else if (isAdmin) {
-        endpoint = "/users/mi-perfil";
-      }
-      const response = await apiClient.get<{ ok: boolean; data: PerfilData }>(
-        endpoint,
-      );
-      const data = response.data;
-      setPerfil(data);
-      setNombre(data?.nombre ?? "");
-      setApellido(data?.apellido ?? "");
-      setGenero(data?.genero ?? "");
-      setCorreo(data?.correo ?? "");
-      setCedula(data?.cedula ?? "");
-      setFechaNacimiento(data?.fecha_nacimiento?.slice(0, 10) ?? "");
-      setTelefono(data?.telefono ?? "");
-      setTipoSangre(data?.tipo_sangre ?? "");
-      setDescripcion(data?.descripcion ?? "");
-      setDireccion(data?.direccion ?? "");
-      setContactoNombre(data?.contacto_emergencia_nombre ?? "");
-      setContactoTelefono(data?.contacto_emergencia_telefono ?? "");
-      setEditTelefono(false);
-    } catch (err) {
-      setError((err as Error).message ?? "No se pudo cargar el perfil");
-    } finally {
-      setLoading(false);
-    }
-  }, [isEspecialista, isPaciente, isModerador, isAdmin, token]);
+	const [nombre, setNombre] = useState("");
+	const [apellido, setApellido] = useState("");
+	const [genero, setGenero] = useState("");
+	const [correo, setCorreo] = useState("");
+	const [cedula, setCedula] = useState("");
+	const [fechaNacimiento, setFechaNacimiento] = useState("");
+	const [telefono, setTelefono] = useState("");
+	const [tipoSangre, setTipoSangre] = useState("");
+	const [descripcion, setDescripcion] = useState("");
+	const [direccion, setDireccion] = useState("");
+	const [contactoNombre, setContactoNombre] = useState("");
+	const [contactoTelefono, setContactoTelefono] = useState("");
+	const [contrasena, setContrasena] = useState("");
+	const [confirmar, setConfirmar] = useState("");
+	const [editTelefono, setEditTelefono] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPerfil();
-  }, [fetchPerfil]);
+	const isEspecialista = user?.rol === "especialista";
+	const isPaciente = user?.rol === "paciente";
+	const isModerador = user?.rol === "moderador";
+	const isAdmin = user?.rol === "admin";
+
+	// Sincronizar formulario con datos del perfil (carga inicial y tras actualizar)
+	useEffect(() => {
+		if (!perfil) return;
+		setNombre(perfil.nombre ?? "");
+		setApellido(perfil.apellido ?? "");
+		setGenero(perfil.genero ?? "");
+		setCorreo(perfil.correo ?? "");
+		setCedula(perfil.cedula ?? "");
+		setFechaNacimiento(perfil.fecha_nacimiento?.slice(0, 10) ?? "");
+		setTelefono(perfil.telefono ?? "");
+		setTipoSangre(perfil.tipo_sangre ?? "");
+		setDescripcion(perfil.descripcion ?? "");
+		setDireccion(perfil.direccion ?? "");
+		setContactoNombre(perfil.contacto_emergencia_nombre ?? "");
+		setContactoTelefono(perfil.contacto_emergencia_telefono ?? "");
+		setEditTelefono(false);
+	}, [perfil]);
+
+	// Mostrar error de carga
+	useEffect(() => {
+		if (queryError && queryErrorData) {
+			const msg =
+				(queryErrorData as { data?: { message?: string }; message?: string })
+					?.data?.message ??
+				(queryErrorData as Error).message ??
+				"No se pudo cargar el perfil";
+			setError(msg);
+		} else if (perfil !== undefined) {
+			setError(null);
+		}
+	}, [queryError, queryErrorData, perfil]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -173,22 +159,12 @@ const ConfiguracionPage = () => {
       return;
     }
 
-    setSaving(true);
+    if (!perfilRol) return;
+
     try {
-      let endpoint = "";
-      if (isEspecialista) {
-        endpoint = "/medicos/mi-perfil";
-      } else if (isPaciente) {
-        endpoint = "/pacientes/mi-perfil";
-      } else if (isModerador) {
-        endpoint = "/moderadores/mi-perfil";
-      } else if (isAdmin) {
-        endpoint = "/users/mi-perfil";
-      }
-      await apiClient.patch(endpoint, payload);
+      await updatePerfil({ rol: perfilRol, payload }).unwrap();
       setContrasena("");
       setConfirmar("");
-      await fetchPerfil();
       await Swal.fire({
         title: "Cambios guardados",
         text: "Tu información se actualizó correctamente.",
@@ -198,8 +174,6 @@ const ConfiguracionPage = () => {
       });
     } catch (err) {
       setError((err as Error).message ?? "No se pudo guardar");
-    } finally {
-      setSaving(false);
     }
   };
 
