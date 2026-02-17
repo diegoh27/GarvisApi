@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
-import { useGetMisCitasCompletasQuery } from "../citasApi";
-import type { CitaPacienteCompleta } from "../citasApi";
+import {
+	useGetMisCitasCompletasQuery,
+	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
+	useVincularCitasMostradorMutation,
+} from "../citasApi";
+import type { CitaPacienteCompleta, CitaMostradorDisponible } from "../citasApi";
 import { VerCitaPacienteModal } from "../components";
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Eye, Link2, X } from "lucide-react";
 
 const PAGE_SIZE = 5;
 
@@ -22,12 +26,19 @@ const formatFecha = (value: string | null) => {
 
 const formatHora = (value: string) => {
 	if (!value) return "";
-	const [hourStr, minuteStr = "00"] = value.split(":");
+	// Si viene como ISO (ej. 1970-01-01T06:00:00.000Z por columna TIME en MySQL), usar solo la parte de hora
+	let timePart = String(value).trim();
+	if (timePart.includes("T") && timePart.includes(":")) {
+		const t = timePart.split("T")[1];
+		timePart = t ? t.replace(/\.\d+Z?$/i, "").slice(0, 8) : timePart;
+	}
+	const [hourStr, minuteStr = "00"] = timePart.split(":");
+	const minute = (minuteStr || "00").replace(/\D/g, "").slice(0, 2) || "00";
 	const hour = Number(hourStr);
 	if (Number.isNaN(hour)) return value;
 	const period = hour >= 12 ? "PM" : "AM";
 	const hour12 = hour % 12 === 0 ? 12 : hour % 12;
-	return `${hour12}:${minuteStr} ${period}`;
+	return `${hour12}:${minute.padStart(2, "0")} ${period}`;
 };
 
 const getEstadoPagoLabel = (estado: number) => {
@@ -49,7 +60,15 @@ const CitasPage = () => {
 	const [page, setPage] = useState(1);
 	const [selectedCita, setSelectedCita] = useState<CitaPacienteCompleta | null>(null);
 
+	// Reclamar citas de mostrador
+	const [cedulaMostrador, setCedulaMostrador] = useState("");
+	const [disponibles, setDisponibles] = useState<CitaMostradorDisponible[] | null>(null);
+	const [mensajeVinculacion, setMensajeVinculacion] = useState<string | null>(null);
+
 	const { data: citas = [], isLoading, isError } = useGetMisCitasCompletasQuery();
+	const [buscarDisponibles, { data: citasDisponibles = [], isFetching: buscandoDisponibles }] =
+		useLazyGetCitasMostradorDisponiblesParaVincularQuery();
+	const [vincular, { isLoading: vinculando }] = useVincularCitasMostradorMutation();
 
 	const filtered = useMemo(() => {
 		let list = [...citas];
@@ -86,6 +105,105 @@ const CitasPage = () => {
 				<p className="text-sm text-brand-800">
 					Consulta el estado de tus citas, pagos y documentos (resultados, informe y orden médica).
 				</p>
+			</div>
+
+			{/* Reclamar citas de mostrador */}
+			<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4">
+				<div className="flex items-center gap-2 text-brand-800">
+					<Link2 className="h-5 w-5 shrink-0" />
+					<h2 className="text-sm font-semibold">¿Viniste antes por mostrador?</h2>
+				</div>
+				<p className="mt-1 text-xs text-brand-700">
+					Si te atendieron en mostrador, puedes asociar esas citas a tu cuenta con tu cédula para verlas aquí y que te suban los resultados.
+				</p>
+				<div className="mt-3 flex flex-wrap items-end gap-2">
+					<div>
+						<label htmlFor="cedula-mostrador" className="sr-only">Cédula</label>
+						<input
+							id="cedula-mostrador"
+							type="text"
+							value={cedulaMostrador}
+							onChange={(e) => {
+								setCedulaMostrador(e.target.value);
+								setDisponibles(null);
+								setMensajeVinculacion(null);
+							}}
+							placeholder="Ej: V28025174"
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 placeholder:text-brand-500 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-[140px]"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={async () => {
+							const ced = cedulaMostrador.trim();
+							if (!ced) return;
+							const result = await buscarDisponibles(ced);
+							setDisponibles(Array.isArray(result.data) ? result.data : []);
+						}}
+						disabled={buscandoDisponibles || !cedulaMostrador.trim()}
+						className="rounded-lg bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:opacity-50"
+					>
+						{buscandoDisponibles ? "Buscando…" : "Buscar citas"}
+					</button>
+				</div>
+				{disponibles !== null && (
+					<div className="mt-3">
+						{disponibles.length === 0 ? (
+							<p className="text-sm text-brand-700">
+								No hay citas de mostrador sin asociar con esa cédula. Si ya las asociaste, aparecen en la lista de abajo.
+							</p>
+						) : (
+							<>
+								<p className="text-sm font-medium text-brand-800">
+									{disponibles.length} {disponibles.length === 1 ? "cita encontrada" : "citas encontradas"} con esa cédula:
+								</p>
+								<ul className="mt-2 space-y-1 rounded-lg border border-brand-200 bg-paper p-2 text-sm text-brand-900">
+									{disponibles.map((c) => (
+										<li key={c.id_cita} className="flex flex-wrap items-center gap-2">
+											<span>{formatFecha(c.fecha_cita)}</span>
+											<span>{c.eco_nombre}</span>
+											<span className="text-brand-600">
+												{c.especialista_nombre} {c.especialista_apellido}
+											</span>
+										</li>
+									))}
+								</ul>
+								<button
+									type="button"
+									onClick={async () => {
+										setMensajeVinculacion(null);
+										try {
+											const res = await vincular({ id_citas: disponibles!.map((c) => c.id_cita) }).unwrap();
+											setMensajeVinculacion(
+												res.vinculadas > 0
+													? `Se asociaron ${res.vinculadas} cita(s) a tu cuenta. Ya aparecen en "Mis citas".`
+													: res.message || "No se pudo asociar ninguna cita. Verifica que la cédula coincida con la de tu perfil."
+											);
+											if (res.vinculadas > 0) {
+												setDisponibles(null);
+												setCedulaMostrador("");
+											}
+										} catch (e: unknown) {
+											const msg = e && typeof e === "object" && "data" in e && e.data && typeof e.data === "object" && "message" in e.data
+												? String((e.data as { message: string }).message)
+												: "Error al asociar. Intenta de nuevo.";
+											setMensajeVinculacion(msg);
+										}
+									}}
+									disabled={vinculando}
+									className="mt-2 rounded-lg bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:opacity-50"
+								>
+									{vinculando ? "Asociando…" : "Asociar todas a mi cuenta"}
+								</button>
+							</>
+						)}
+						{mensajeVinculacion && (
+							<p className={`mt-2 text-sm ${mensajeVinculacion.startsWith("Se asociaron") ? "text-emerald-700" : "text-amber-800"}`}>
+								{mensajeVinculacion}
+							</p>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Filtros */}
@@ -164,7 +282,16 @@ const CitasPage = () => {
 											const estadoPago = cita.estado_pago ?? cita.pago_estado_pago ?? 0;
 											return (
 												<tr key={cita.id_cita} className="hover:bg-cloud/30">
-													<td className="px-4 py-3 text-brand-900">{formatFecha(cita.fecha_cita)}</td>
+													<td className="px-4 py-3 text-brand-900">
+														<div className="flex items-center gap-1.5">
+															{formatFecha(cita.fecha_cita)}
+															{cita.es_vinculada_mostrador && (
+																<span className="rounded bg-brand-200 px-1.5 py-0.5 text-[10px] font-medium text-brand-800" title="Cita de mostrador asociada a tu cuenta">
+																	Mostrador
+																</span>
+															)}
+														</div>
+													</td>
 													<td className="px-4 py-3 text-brand-900">{formatHora(cita.hora_cita)}</td>
 													<td className="px-4 py-3 text-brand-900">
 														{cita.especialista_nombre} {cita.especialista_apellido}
@@ -223,6 +350,9 @@ const CitasPage = () => {
 												<div>
 													<p className="text-xs font-semibold text-brand-700">
 														{formatFecha(cita.fecha_cita)} • {formatHora(cita.hora_cita)}
+														{cita.es_vinculada_mostrador && (
+															<span className="ml-1.5 rounded bg-brand-200 px-1.5 py-0.5 text-[10px] font-medium text-brand-800">Mostrador</span>
+														)}
 													</p>
 													<p className="mt-1 text-sm font-semibold text-brand-900">
 														{cita.eco_nombre}

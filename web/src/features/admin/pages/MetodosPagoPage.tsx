@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Swal from "sweetalert2";
-import { PageShell, TelefonoField } from "../../../shared";
+import {
+  PageShell,
+  TelefonoField,
+  parseTelefonoDisplay,
+  validarNumeroTelefono,
+  MENSAJE_TELEFONO_7_DIGITOS,
+} from "../../../shared";
 import { BANCOS_VENEZUELA } from "../../../data/bancosVenezuela";
 import {
   useCrearMetodoPagoMutation,
@@ -9,6 +15,8 @@ import {
   useUpdateMetodoPagoMutation,
   useUpdateEstadoMetodoPagoMutation,
 } from "../adminApi";
+
+type FormErrors = Record<string, string>;
 
 const MetodosPagoPage = () => {
   const [form, setForm] = useState({
@@ -24,6 +32,7 @@ const MetodosPagoPage = () => {
     numero_cuenta: "",
     imagen: null as File | null,
   });
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const { data: metodos = [], isLoading } = useListMetodosPagoQuery();
   const [crearMetodoPago, { isLoading: isCreating }] = useCrearMetodoPagoMutation();
@@ -142,6 +151,15 @@ const MetodosPagoPage = () => {
       numero_cuenta: "",
       imagen: null,
     });
+    setErrors({});
+  };
+
+  const clearError = (field: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const onSubmit = async (event: FormEvent) => {
@@ -154,24 +172,20 @@ const MetodosPagoPage = () => {
       .trim();
     const identificacionCompuesta = `${form.titular_identificacion_tipo}${identificacionNumero}`;
 
+    const nextErrors: FormErrors = {};
+
     if (!form.nombre.trim()) {
-      void Swal.fire("Validación", "El nombre del método es requerido", "warning");
-      return;
+      nextErrors.nombre = "El nombre del método es requerido.";
     }
 
     if (!isUsd && !form.banco_codigo) {
-      void Swal.fire("Validación", "Debe seleccionar un banco", "warning");
-      return;
-    }
-
-    if (!isUsd && !selectedBanco) {
-      void Swal.fire("Validación", "Banco inválido", "warning");
-      return;
+      nextErrors.banco_codigo = "Debe seleccionar un banco.";
+    } else if (!isUsd && !selectedBanco && form.banco_codigo) {
+      nextErrors.banco_codigo = "Banco inválido.";
     }
 
     if (!form.imagen && !editingMetodoId && !editingImageUrl) {
-      void Swal.fire("Validación", "Debe subir una imagen del método", "warning");
-      return;
+      nextErrors.imagen = "Debe subir una imagen del método.";
     }
 
     const tipoPago = isUsd ? form.tipo_pago_usd.trim() : form.tipo_pago_bs;
@@ -181,57 +195,56 @@ const MetodosPagoPage = () => {
       : String(selectedBanco?.Name || "");
 
     if (!tipoPago) {
-      void Swal.fire("Validación", "Debe indicar el tipo de pago", "warning");
-      return;
+      if (isUsd) {
+        nextErrors.tipo_pago_usd = "Debe indicar el tipo de pago (ej: Zelle, PayPal).";
+      } else {
+        nextErrors.tipo_pago_bs = "Debe indicar el tipo de pago.";
+      }
     }
 
     if (isUsd) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.correo.trim())) {
-        void Swal.fire("Validación", "Para USD debe indicar un correo válido", "warning");
-        return;
+      if (!form.correo.trim()) {
+        nextErrors.correo = "El correo es requerido para métodos en USD.";
+      } else if (!emailRegex.test(form.correo.trim())) {
+        nextErrors.correo = "Debe indicar un correo válido.";
       }
     } else {
       if (!identificacionNumero) {
-        void Swal.fire(
-          "Validación",
-          "Debe indicar la identificación del titular",
-          "warning",
-        );
-        return;
+        nextErrors.titular_identificacion_numero = "La identificación del titular es requerida.";
+      } else {
+        const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
+        if (!regexIdentificacion.test(identificacionCompuesta)) {
+          nextErrors.titular_identificacion_numero =
+            "Formato V/E/J seguido de 5 a 12 dígitos.";
+        }
       }
 
-      const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
-      if (!regexIdentificacion.test(identificacionCompuesta)) {
-        void Swal.fire(
-          "Validación",
-          "La identificación debe tener formato V/E/J seguido de números",
-          "warning",
-        );
-        return;
-      }
-
-      if (form.tipo_pago_bs === "PagoMovil" && !form.telefono.trim()) {
-        void Swal.fire(
-          "Validación",
-          "Para Pago móvil debe indicar un teléfono",
-          "warning",
-        );
-        return;
+      if (form.tipo_pago_bs === "PagoMovil") {
+        if (!form.telefono.trim()) {
+          nextErrors.telefono = "Para Pago móvil debe indicar un teléfono.";
+        } else {
+          const { number } = parseTelefonoDisplay(form.telefono);
+          if (!validarNumeroTelefono(number)) {
+            nextErrors.telefono = MENSAJE_TELEFONO_7_DIGITOS;
+          }
+        }
       }
 
       if (
         form.tipo_pago_bs === "Transferencia" &&
         !form.numero_cuenta.trim()
       ) {
-        void Swal.fire(
-          "Validación",
-          "Para Transferencia debe indicar un número de cuenta",
-          "warning",
-        );
-        return;
+        nextErrors.numero_cuenta = "Para Transferencia debe indicar el número de cuenta.";
       }
+    }
 
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      const firstKey = Object.keys(nextErrors)[0];
+      const el = document.getElementById(`field-${firstKey}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
     }
 
     try {
@@ -349,17 +362,29 @@ const MetodosPagoPage = () => {
               </select>
             </div>
 
-            <div>
+            <div id="field-nombre">
               <label className="mb-1 block text-sm font-medium text-brand-700">
-                Nombre
+                Nombre <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={form.nombre}
-                onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, nombre: e.target.value }));
+                  clearError("nombre");
+                }}
                 placeholder="Ej: Banco de Venezuela Pago Móvil"
-                className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                  errors.nombre ? "border-red-500" : "border-brand-300"
+                }`}
+                aria-invalid={!!errors.nombre}
+                aria-describedby={errors.nombre ? "error-nombre" : undefined}
               />
+              {errors.nombre ? (
+                <p id="error-nombre" className="mt-1 text-xs text-red-600" role="alert">
+                  {errors.nombre}
+                </p>
+              ) : null}
             </div>
 
             {form.moneda === "BS" ? (
@@ -389,17 +414,21 @@ const MetodosPagoPage = () => {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-brand-700">Banco</label>
+                <div id="field-banco_codigo">
+                  <label className="mb-1 block text-sm font-medium text-brand-700">
+                    Banco <span className="text-red-500">*</span>
+                  </label>
                   <select
                     value={form.banco_codigo}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        banco_codigo: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, banco_codigo: e.target.value }));
+                      clearError("banco_codigo");
+                    }}
+                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      errors.banco_codigo ? "border-red-500" : "border-brand-300"
+                    }`}
+                    aria-invalid={!!errors.banco_codigo}
+                    aria-describedby={errors.banco_codigo ? "error-banco_codigo" : undefined}
                   >
                     <option value="">Seleccione un banco</option>
                     {bancosDisponibles.map((banco) => (
@@ -408,10 +437,15 @@ const MetodosPagoPage = () => {
                       </option>
                     ))}
                   </select>
+                  {errors.banco_codigo ? (
+                    <p id="error-banco_codigo" className="mt-1 text-xs text-red-600" role="alert">
+                      {errors.banco_codigo}
+                    </p>
+                  ) : null}
                 </div>
-                <div>
+                <div id="field-titular_identificacion_numero">
                   <label className="mb-1 block text-sm font-medium text-brand-700">
-                    Identificación
+                    Identificación <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-[88px_1fr] gap-2">
                     <select
@@ -432,91 +466,154 @@ const MetodosPagoPage = () => {
                     <input
                       type="text"
                       value={form.titular_identificacion_numero}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setForm((prev) => ({
                           ...prev,
                           titular_identificacion_numero: e.target.value.replace(
                             /\D/g,
                             "",
                           ),
-                        }))
-                      }
+                        }));
+                        clearError("titular_identificacion_numero");
+                      }}
                       placeholder="Ej: 28025174"
-                      className="h-10 rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                      className={`h-10 rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                        errors.titular_identificacion_numero ? "border-red-500" : "border-brand-300"
+                      }`}
+                      aria-invalid={!!errors.titular_identificacion_numero}
+                      aria-describedby={errors.titular_identificacion_numero ? "error-titular_identificacion_numero" : undefined}
                     />
                   </div>
+                  {errors.titular_identificacion_numero ? (
+                    <p id="error-titular_identificacion_numero" className="mt-1 text-xs text-red-600" role="alert">
+                      {errors.titular_identificacion_numero}
+                    </p>
+                  ) : null}
                 </div>
                 {form.tipo_pago_bs === "PagoMovil" ? (
-                  <TelefonoField
-                    label="Teléfono"
-                    value={form.telefono}
-                    onChange={(prefijo, numero) =>
-                      setForm((prev) => ({ ...prev, telefono: prefijo + numero }))
-                    }
-                    required
-                    inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
-                    selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
-                  />
+                  <div id="field-telefono">
+                    <TelefonoField
+                      label="Teléfono"
+                      value={form.telefono}
+                      onChange={(prefijo, numero) => {
+                        setForm((prev) => ({ ...prev, telefono: prefijo + numero }));
+                        clearError("telefono");
+                      }}
+                      required
+                      error={errors.telefono}
+                      inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+                      selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+                    />
+                  </div>
                 ) : null}
                 {form.tipo_pago_bs === "Transferencia" ? (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-brand-700">
-                      Número de cuenta
-                    </label>
+                  <div id="field-numero_cuenta">
+                    <div className="flex items-center justify-between">
+                      <label className="mb-1 block text-sm font-medium text-brand-700">
+                        Número de cuenta <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-xs text-brand-600" aria-live="polite">
+                        {form.numero_cuenta.replace(/\D/g, "").length} dígitos
+                      </span>
+                    </div>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={form.numero_cuenta}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          numero_cuenta: e.target.value,
-                        }))
-                      }
+                      onChange={(e) => {
+                        const soloNumeros = e.target.value.replace(/\D/g, "");
+                        setForm((prev) => ({ ...prev, numero_cuenta: soloNumeros }));
+                        clearError("numero_cuenta");
+                      }}
                       placeholder="Ej: 01021234123412341234"
-                      className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                        errors.numero_cuenta ? "border-red-500" : "border-brand-300"
+                      }`}
+                      aria-invalid={!!errors.numero_cuenta}
+                      aria-describedby={errors.numero_cuenta ? "error-numero_cuenta" : undefined}
                     />
+                    {errors.numero_cuenta ? (
+                      <p id="error-numero_cuenta" className="mt-1 text-xs text-red-600" role="alert">
+                        {errors.numero_cuenta}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
               </>
             ) : (
               <>
-                <div>
+                <div id="field-tipo_pago_usd">
                   <label className="mb-1 block text-sm font-medium text-brand-700">
-                    Tipo de pago (libre)
+                    Tipo de pago (libre) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={form.tipo_pago_usd}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, tipo_pago_usd: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, tipo_pago_usd: e.target.value }));
+                      clearError("tipo_pago_usd");
+                    }}
                     placeholder="Ej: Zelle, PayPal, Binance..."
-                    className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      errors.tipo_pago_usd ? "border-red-500" : "border-brand-300"
+                    }`}
+                    aria-invalid={!!errors.tipo_pago_usd}
+                    aria-describedby={errors.tipo_pago_usd ? "error-tipo_pago_usd" : undefined}
                   />
+                  {errors.tipo_pago_usd ? (
+                    <p id="error-tipo_pago_usd" className="mt-1 text-xs text-red-600" role="alert">
+                      {errors.tipo_pago_usd}
+                    </p>
+                  ) : null}
                 </div>
-                <div>
+                <div id="field-correo">
                   <label className="mb-1 block text-sm font-medium text-brand-700">
-                    Correo
+                    Correo <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
                     value={form.correo}
-                    onChange={(e) => setForm((prev) => ({ ...prev, correo: e.target.value }))}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, correo: e.target.value }));
+                      clearError("correo");
+                    }}
                     placeholder="correo@ejemplo.com"
-                    className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      errors.correo ? "border-red-500" : "border-brand-300"
+                    }`}
+                    aria-invalid={!!errors.correo}
+                    aria-describedby={errors.correo ? "error-correo" : undefined}
                   />
+                  {errors.correo ? (
+                    <p id="error-correo" className="mt-1 text-xs text-red-600" role="alert">
+                      {errors.correo}
+                    </p>
+                  ) : null}
                 </div>
               </>
             )}
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-brand-700">Imagen</label>
+            <div id="field-imagen">
+              <label className="mb-1 block text-sm font-medium text-brand-700">
+                Imagen <span className="text-red-500">*</span>
+              </label>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg,image/webp"
-                onChange={onFileChange}
+                onChange={(e) => {
+                  onFileChange(e);
+                  clearError("imagen");
+                }}
                 className="block w-full text-sm text-brand-800 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-900 hover:file:bg-brand-200"
+                aria-invalid={!!errors.imagen}
+                aria-describedby={errors.imagen ? "error-imagen" : undefined}
               />
+              {errors.imagen ? (
+                <p id="error-imagen" className="mt-1 text-xs text-red-600" role="alert">
+                  {errors.imagen}
+                </p>
+              ) : null}
               {previewImagenFinal ? (
                 <div className="mt-3 rounded-lg border border-brand-200 p-2">
                   <p className="mb-2 text-xs text-brand-700">Previsualización</p>

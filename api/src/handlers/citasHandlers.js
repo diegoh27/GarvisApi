@@ -14,6 +14,9 @@ const {
 	posponerCitaController,
 	getAllCitasController,
 	createCitaMostradorController,
+	getOcupacionEspecialistaPorFechaController,
+	getDatosPorCedulaController,
+	buscarRepresentadoPorNombreController,
 	getUltimoPacienteMostradorPorCedulaController,
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
@@ -680,18 +683,22 @@ const createCitaMostradorHandler = async (req, res) => {
 			cedula,
 			rif,
 			referencia,
+			id_paciente,
+			id_representado,
 		} = req.body;
 
 		const missing = [];
 		if (!id_especialista) missing.push("id_especialista");
 		if (!id_eco) missing.push("id_eco");
 		if (!fecha_cita) missing.push("fecha_cita");
+		if (!hora_cita) missing.push("hora_cita");
 		if (!metodo) missing.push("metodo");
 		if (!monto) missing.push("monto");
 		if (!tasa_dia_bcv) missing.push("tasa_dia_bcv");
 		if (!nombre) missing.push("nombre");
 		if (!apellido) missing.push("apellido");
-		if (!cedula) missing.push("cedula");
+		const esRepresentadoSinCedula = id_paciente && id_representado && (!cedula || String(cedula).trim() === "");
+		if (!cedula && !esRepresentadoSinCedula) missing.push("cedula");
 
 		if (missing.length) {
 			return res.status(400).json({
@@ -712,12 +719,16 @@ const createCitaMostradorHandler = async (req, res) => {
 			});
 		}
 
-		const cedulaResult = validarCedula(cedula);
-		if (!cedulaResult.valid) {
-			return res.status(400).json({
-				ok: false,
-				message: cedulaResult.message,
-			});
+		let cedulaNormalizada = "";
+		if (cedula && String(cedula).trim() !== "") {
+			const cedulaResult = validarCedula(cedula);
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			cedulaNormalizada = cedulaResult.value;
 		}
 
 		const data = await createCitaMostradorController({
@@ -730,10 +741,12 @@ const createCitaMostradorHandler = async (req, res) => {
 			tasa_dia_bcv,
 			nombre,
 			apellido,
-			cedula: cedulaResult.value,
+			cedula: cedulaNormalizada,
 			rif,
 			id_usuario: req.user?.id,
 			referencia,
+			id_paciente: id_paciente || undefined,
+			id_representado: id_representado || undefined,
 		});
 
 		return res.status(201).json({
@@ -753,6 +766,18 @@ const createCitaMostradorHandler = async (req, res) => {
 				message: err.message,
 			});
 		}
+		if (err?.code === "CONFLICT_HORARIO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "MISSING_CEDULA") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
 		if (err?.code === "ROL_NOT_FOUND") {
 			return res.status(500).json({
 				ok: false,
@@ -766,6 +791,81 @@ const createCitaMostradorHandler = async (req, res) => {
 			});
 		}
 		console.error("Error al crear cita de mostrador:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
+const getOcupacionEspecialistaHandler = async (req, res) => {
+	try {
+		const id_especialista = req.query.id_especialista;
+		const fecha = req.query.fecha;
+		if (!id_especialista || !fecha) {
+			return res.status(400).json({
+				ok: false,
+				message: "Se requieren id_especialista y fecha",
+			});
+		}
+		const data = await getOcupacionEspecialistaPorFechaController(
+			id_especialista,
+			fecha,
+		);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error("Error al obtener ocupación especialista:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
+const buscarRepresentadoPorNombreHandler = async (req, res) => {
+	try {
+		const nombre = req.query.nombre;
+		const apellido = req.query.apellido;
+		if (!nombre && !apellido) {
+			return res.status(400).json({
+				ok: false,
+				message: "Indica al menos nombre o apellido para buscar.",
+			});
+		}
+		const data = await buscarRepresentadoPorNombreController(
+			nombre ? String(nombre).trim() : "",
+			apellido ? String(apellido).trim() : "",
+		);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error("Error al buscar representado por nombre:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
+const getDatosPorCedulaHandler = async (req, res) => {
+	try {
+		const cedulaRaw = req.query.cedula;
+		if (!cedulaRaw || String(cedulaRaw).trim() === "") {
+			return res.status(400).json({
+				ok: false,
+				message: "Se requiere el parámetro cedula",
+			});
+		}
+		const cedulaResult = validarCedula(cedulaRaw);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+		const data = await getDatosPorCedulaController(cedulaResult.value);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error("Error al obtener datos por cédula:", err);
 		return res.status(500).json({
 			ok: false,
 			message: "Error interno del servidor",
@@ -892,6 +992,9 @@ module.exports = {
 	posponerCitaHandler,
 	getAllCitasHandler,
 	createCitaMostradorHandler,
+	getOcupacionEspecialistaHandler,
+	getDatosPorCedulaHandler,
+	buscarRepresentadoPorNombreHandler,
 	getUltimoPacienteMostradorHandler,
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,

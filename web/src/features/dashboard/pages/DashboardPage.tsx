@@ -2,19 +2,18 @@ import { EmailVerificationBanner, useAuth } from "../../../shared";
 import DashboardAdmin from "../components/DashboardAdmin";
 import DashboardEspecialista from "../components/DashboardEspecialista";
 import DashboardModerador from "../components/DashboardModerador";
+import DashboardPaciente from "../components/DashboardPaciente";
 
 /**
- * Dashboard compartido por todos los roles. Cada rol ve su propia vista:
- * - Admin: accesos rápidos (sin llamar APIs de especialista/moderador).
- * - Moderador: resumen de pagos, disponibilidades, resultados y acciones rápidas.
- * - Especialista: próxima cita, resumen del día, citas por resultado y por verificación de pago.
- * - Paciente: se puede añadir vista propia más adelante.
+ * Dashboard por rol: paciente, especialista, moderador, admin.
  */
 const DashboardPage = () => {
 	const { user } = useAuth();
 
 	let content = <DashboardEspecialista />;
-	if (user?.rol === "admin") {
+	if (user?.rol === "paciente") {
+		content = <DashboardPaciente />;
+	} else if (user?.rol === "admin") {
 		content = <DashboardAdmin />;
 	} else if (user?.rol === "moderador") {
 		content = <DashboardModerador />;

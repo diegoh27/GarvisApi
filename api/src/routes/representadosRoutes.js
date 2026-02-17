@@ -4,6 +4,7 @@ const { authorizeRoles } = require("../middleware/authorizeRoles");
 const {
 	listRepresentadosHandler,
 	createRepresentadoHandler,
+	createRepresentadoPorCedulaTitularHandler,
 	listParentescosHandler,
 	updateRepresentadoHandler,
 	deleteRepresentadoHandler,
@@ -33,6 +34,14 @@ representadosRoutes.post(
 	authenticateToken,
 	authorizeRoles("paciente"),
 	createRepresentadoHandler,
+);
+
+// POST /representados/crear-por-cedula-titular (admin/moderador) - Crear representado y asignarlo al titular por cédula (mostrador)
+representadosRoutes.post(
+	"/crear-por-cedula-titular",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	createRepresentadoPorCedulaTitularHandler,
 );
 
 // PUT /representados/:id (paciente)

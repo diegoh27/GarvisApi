@@ -16,6 +16,9 @@ const {
 	posponerCitaHandler,
 	getAllCitasHandler,
 	createCitaMostradorHandler,
+	getOcupacionEspecialistaHandler,
+	getDatosPorCedulaHandler,
+	buscarRepresentadoPorNombreHandler,
 	getUltimoPacienteMostradorHandler,
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
@@ -43,7 +46,21 @@ citasRoutes.post(
 	authorizeRoles("admin", "moderador", "paciente"),
 	asignarCitaCompletaHandler,
 );
-// GET /citas/mostrador/ultimo-paciente (admin/moderador) - Último paciente mostrador por cédula
+// GET /citas/mostrador/datos-por-cedula (admin/moderador) - Datos por cédula: paciente registrado, representado y/o última cita mostrador
+citasRoutes.get(
+	"/mostrador/datos-por-cedula",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	getDatosPorCedulaHandler,
+);
+// GET /citas/mostrador/buscar-representado (admin/moderador) - Buscar representados por nombre/apellido (menores sin cédula)
+citasRoutes.get(
+	"/mostrador/buscar-representado",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	buscarRepresentadoPorNombreHandler,
+);
+// GET /citas/mostrador/ultimo-paciente (admin/moderador) - Último paciente mostrador por cédula (legacy)
 citasRoutes.get(
 	"/mostrador/ultimo-paciente",
 	authenticateToken,
@@ -63,6 +80,13 @@ citasRoutes.post(
 	authenticateToken,
 	authorizeRoles("paciente"),
 	vincularCitasMostradorHandler,
+);
+// GET /citas/ocupacion-especialista (admin/moderador) - Horas ocupadas por el especialista en una fecha (para mostrador)
+citasRoutes.get(
+	"/ocupacion-especialista",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	getOcupacionEspecialistaHandler,
 );
 // POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
 citasRoutes.post(

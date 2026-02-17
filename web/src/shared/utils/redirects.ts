@@ -1,7 +1,7 @@
 const getHomeByRole = (role?: string | null) => {
 	switch (role) {
 		case "paciente":
-			return "/disponibilidad";
+			return "/dashboard";
 		case "especialista":
 			return "/dashboard";
 		case "admin":
