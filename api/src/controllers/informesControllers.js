@@ -256,9 +256,15 @@ const createOrUpdateInformeController = async ({
 
 		await conn.commit();
 
-		// Notificar al paciente que el especialista envió el informe
+		// Notificar al paciente que el especialista envió el informe (si es cita vinculada, al paciente que la asoció)
 		try {
-			const id_paciente = citaInfo.id_paciente;
+			const [vinculacionRows] = await pool.execute(
+				"SELECT id_paciente FROM cita_mostrador_vinculacion WHERE id_cita = ? LIMIT 1",
+				[id_cita],
+			);
+			const id_paciente = vinculacionRows.length
+				? vinculacionRows[0].id_paciente
+				: citaInfo.id_paciente;
 			if (id_paciente) {
 				const fecha = formatFechaCita(citaInfo.fecha_cita);
 				const hora = formatHoraCita(citaInfo.hora_cita);
@@ -335,26 +341,28 @@ const listAllInformesController = async () => {
 	return rows;
 };
 
-// Listar citas atendidas sin informe (para moderadores)
+// Listar citas atendidas sin informe (para moderadores; incluye citas de mostrador)
 const listCitasAtendidasSinInformeController = async () => {
 	const sql = `
-    SELECT 
+    SELECT
       c.id_cita,
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
-      u_paciente.cedula AS paciente_cedula,
+      c.origen_cita,
+      COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+      COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
+      COALESCE(cm.cedula, u_paciente.cedula) AS paciente_cedula,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN informe i ON i.id_cita = c.id_cita
-    WHERE c.origen_cita = 'web'
+    WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
       AND i.id_informe IS NULL
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC

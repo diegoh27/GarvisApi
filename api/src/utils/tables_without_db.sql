@@ -552,6 +552,27 @@ DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 9.2) Cita mostrador vinculación (citas de mostrador asociadas a un paciente registrado)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS cita_mostrador_vinculacion
+(
+  id_cita CHAR(36) NOT NULL,
+  id_paciente CHAR(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id_cita),
+  KEY idx_cita_mostrador_vinculacion_paciente (id_paciente),
+
+  CONSTRAINT fk_cm_vinculacion_cita
+    FOREIGN KEY (id_cita) REFERENCES cita (id_cita)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_cm_vinculacion_paciente
+    FOREIGN KEY (id_paciente) REFERENCES paciente (id_paciente)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- 9) Resultado
 -- =========================
 CREATE TABLE

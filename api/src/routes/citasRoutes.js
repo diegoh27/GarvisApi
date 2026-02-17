@@ -17,6 +17,8 @@ const {
 	getAllCitasHandler,
 	createCitaMostradorHandler,
 	getUltimoPacienteMostradorHandler,
+	listCitasMostradorDisponiblesParaVincularHandler,
+	vincularCitasMostradorHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -47,6 +49,20 @@ citasRoutes.get(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	getUltimoPacienteMostradorHandler,
+);
+// GET /citas/mostrador/disponibles-vincular (paciente) - Citas de mostrador por cédula que aún no están vinculadas
+citasRoutes.get(
+	"/mostrador/disponibles-vincular",
+	authenticateToken,
+	authorizeRoles("paciente"),
+	listCitasMostradorDisponiblesParaVincularHandler,
+);
+// POST /citas/mostrador/vincular (paciente) - Asociar citas de mostrador a la cuenta del paciente
+citasRoutes.post(
+	"/mostrador/vincular",
+	authenticateToken,
+	authorizeRoles("paciente"),
+	vincularCitasMostradorHandler,
 );
 // POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
 citasRoutes.post(

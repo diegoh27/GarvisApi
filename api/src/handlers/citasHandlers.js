@@ -15,6 +15,8 @@ const {
 	getAllCitasController,
 	createCitaMostradorController,
 	getUltimoPacienteMostradorPorCedulaController,
+	listCitasMostradorDisponiblesParaVincularController,
+	vincularCitasMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 
@@ -800,6 +802,79 @@ const getUltimoPacienteMostradorHandler = async (req, res) => {
 	}
 };
 
+const listCitasMostradorDisponiblesParaVincularHandler = async (req, res) => {
+	try {
+		const cedulaRaw = req.query.cedula;
+		if (!cedulaRaw || String(cedulaRaw).trim() === "") {
+			return res.status(400).json({
+				ok: false,
+				message: "Se requiere el parámetro cedula",
+			});
+		}
+		const cedulaResult = validarCedula(cedulaRaw);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+		const data =
+			await listCitasMostradorDisponiblesParaVincularController(
+				cedulaResult.value,
+			);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error("Error al listar citas mostrador disponibles:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
+const vincularCitasMostradorHandler = async (req, res) => {
+	try {
+		const id_paciente = req.user?.id;
+		if (!id_paciente) {
+			return res.status(401).json({
+				ok: false,
+				message: "No autorizado",
+			});
+		}
+		const { id_citas } = req.body;
+		if (!Array.isArray(id_citas)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Se requiere body con id_citas (array de UUID)",
+			});
+		}
+		const ids = id_citas.filter(
+			(id) => typeof id === "string" && id.trim().length > 0,
+		);
+		const result = await vincularCitasMostradorController(id_paciente, ids);
+		return res.status(200).json({
+			ok: true,
+			message:
+				result.vinculadas > 0
+					? `Se asociaron ${result.vinculadas} cita(s) a tu cuenta.`
+					: result.message || "No se pudo asociar ninguna cita.",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND" || err?.code === "NO_CEDULA") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error("Error al vincular citas mostrador:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	asignarCitaCompletaHandler,
@@ -818,4 +893,6 @@ module.exports = {
 	getAllCitasHandler,
 	createCitaMostradorHandler,
 	getUltimoPacienteMostradorHandler,
+	listCitasMostradorDisponiblesParaVincularHandler,
+	vincularCitasMostradorHandler,
 };
