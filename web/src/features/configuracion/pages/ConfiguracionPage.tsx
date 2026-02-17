@@ -585,8 +585,8 @@ const ConfiguracionPage = () => {
                   />
                   {fieldErrors.direccion && <p className="mt-1 text-xs text-red-500">{fieldErrors.direccion}</p>}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1 text-xs text-brand-800">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="min-w-0 space-y-1 text-xs text-brand-800">
                     <label className="font-semibold">Contacto emergencia (nombre)</label>
                     <input
                       value={contactoNombre}
@@ -599,7 +599,7 @@ const ConfiguracionPage = () => {
                     />
                     {fieldErrors.contacto_emergencia_nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.contacto_emergencia_nombre}</p>}
                   </div>
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="min-w-0 space-y-1 text-xs text-brand-800">
                     <TelefonoField
                       label={<span className="font-semibold">Teléfono emergencia</span>}
                       value={contactoTelefono}

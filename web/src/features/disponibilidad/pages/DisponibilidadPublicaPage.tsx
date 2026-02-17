@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+	CalendarPlus,
+	ChevronLeft,
+	ChevronRight,
+	Stethoscope,
+	CheckCircle2,
+	Calendar,
+	Clock,
+	AlertTriangle,
+	Phone,
+} from "lucide-react";
 import PageShell from "../../../shared/components/PageShell";
 import { EmailVerificationBanner, useAuth } from "../../../shared";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
@@ -129,95 +139,176 @@ const DisponibilidadPublicaPage = () => {
 	return (
 		<PageShell
 			title="Agendar cita"
-			description="Selecciona un tipo de eco para ver fechas y especialistas disponibles (bloques aprobados)."
+			description="Elige tu tipo de ecografía y reserva en pocos pasos."
 		>
-			<div className="space-y-6">
+			<div className="space-y-8">
 				<EmailVerificationBanner />
 
-				<div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-					<div className="w-full sm:max-w-md">
-						<label
-							htmlFor="eco-select"
-							className="mb-2 block text-sm font-medium text-brand-800"
-						>
-							Tipo de eco
+				{/* Aviso: orden médica y asesoría */}
+				<div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
+					<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+					<div className="min-w-0 flex-1 text-sm">
+						<p>
+							La <strong>orden médica</strong> (puede ser una foto) es solicitada para dejar registro de que su médico indicó este estudio. Si tiene dudas, puede ponerse en contacto con nosotros para asesoría.
+						</p>
+						<p className="mt-1 flex items-center gap-1.5 text-amber-800">
+							<Phone className="h-3.5 w-3.5" />
+							Consulte por teléfono o correo para más información.
+						</p>
+					</div>
+				</div>
+
+				{/* Hero: pasos del flujo */}
+				<div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 p-6 text-paper shadow-lg sm:p-8">
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-center gap-4">
+							<div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur sm:h-16 sm:w-16">
+								<CalendarPlus className="h-7 w-7 sm:h-8 sm:w-8" />
+							</div>
+							<div>
+								<h2 className="text-xl font-bold sm:text-2xl">Agenda tu ecografía</h2>
+								<p className="mt-1 text-sm text-white/90">
+									En 3 pasos: elige el estudio, la fecha y confirma tu cita.
+								</p>
+							</div>
+						</div>
+						<div className="flex flex-wrap items-center gap-2 sm:gap-3">
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+								<Stethoscope className="h-3.5 w-3.5" />
+								Paso 1: Tipo de eco
+							</span>
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+								<Calendar className="h-3.5 w-3.5" />
+								Paso 2: Fecha y hora
+							</span>
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+								<CheckCircle2 className="h-3.5 w-3.5" />
+								Paso 3: Confirmar
+							</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Paso 1: Tipo de eco (tarjetas) */}
+				<section className="space-y-4">
+					<div className="flex items-center gap-2">
+						<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-paper">
+							1
+						</span>
+						<h3 className="text-lg font-semibold text-brand-900">Elige el tipo de ecografía</h3>
+					</div>
+					{loadingEcos ? (
+						<div className="flex flex-wrap gap-3">
+							{[1, 2, 3].map((i) => (
+								<div
+									key={i}
+									className="h-24 w-full min-w-[140px] max-w-[200px] animate-pulse rounded-xl bg-mist"
+								/>
+							))}
+						</div>
+					) : (
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+							{ecos.map((eco) => {
+								const selected = idEco === eco.id_eco;
+								const precio = eco.precio != null && Number(eco.precio) > 0
+									? Number(eco.precio)
+									: null;
+								return (
+									<button
+										key={eco.id_eco}
+										type="button"
+										onClick={() => setIdEco(eco.id_eco)}
+										className={`group relative flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all duration-200 hover:shadow-md ${
+											selected
+												? "border-brand-700 bg-brand-50 shadow ring-2 ring-brand-700/30"
+												: "border-mist bg-paper hover:border-brand-300 hover:bg-cloud/50"
+										}`}
+									>
+										{selected && (
+											<span className="absolute right-3 top-3 text-brand-700">
+												<CheckCircle2 className="h-5 w-5" />
+											</span>
+										)}
+										<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700 group-hover:bg-brand-200">
+											<Stethoscope className="h-6 w-6" />
+										</div>
+										<div className="min-w-0 flex-1 pr-8">
+											<p className="font-semibold text-brand-900">{eco.nombre}</p>
+											{precio != null && (
+												<p className="mt-1 text-sm font-medium text-brand-700">
+													${precio.toLocaleString("es-VE")} USD
+												</p>
+											)}
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					)}
+					{!idEco && ecos.length > 0 && (
+						<p className="text-sm text-brand-600">
+							Selecciona un tipo de eco para ver fechas y horarios disponibles.
+						</p>
+					)}
+				</section>
+
+				{/* Filtro por especialista (cuando hay eco elegido) */}
+				{idEco && especialistas.length > 0 && (
+					<div className="flex flex-wrap items-center gap-3 rounded-xl border border-mist bg-paper p-4">
+						<label htmlFor="especialista-select" className="text-sm font-medium text-brand-800">
+							Filtrar por especialista (opcional):
 						</label>
 						<select
-							id="eco-select"
-							value={idEco}
-							onChange={(e) => setIdEco(e.target.value)}
-							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-brand-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-							disabled={loadingEcos}
+							id="especialista-select"
+							value={selectedEspecialista}
+							onChange={(e) => setSelectedEspecialista(e.target.value)}
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+							disabled={loadingBloques}
 						>
-							<option value="">Selecciona un tipo de eco</option>
-							{ecos.map((eco) => (
-								<option key={eco.id_eco} value={eco.id_eco}>
-									{eco.nombre}
-									{eco.precio != null && eco.precio > 0
-										? ` — $ ${eco.precio.toLocaleString("es-VE")}`
-										: ""}
+							<option value="">Todos los especialistas</option>
+							{especialistas.map((esp) => (
+								<option key={esp.id} value={esp.id}>
+									{esp.nombre}
 								</option>
 							))}
 						</select>
 					</div>
-
-					{idEco && (
-						<div className="w-full sm:max-w-md">
-							<label
-								htmlFor="especialista-select"
-								className="mb-2 block text-sm font-medium text-brand-800"
-							>
-								Filtrar por especialista (opcional)
-							</label>
-							<select
-								id="especialista-select"
-								value={selectedEspecialista}
-								onChange={(e) => setSelectedEspecialista(e.target.value)}
-								className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-brand-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-								disabled={loadingBloques || especialistas.length === 0}
-							>
-								<option value="">Todos los especialistas</option>
-								{especialistas.map((esp) => (
-									<option key={esp.id} value={esp.id}>
-										{esp.nombre}
-									</option>
-								))}
-							</select>
-						</div>
-					)}
-				</div>
-
-				{!idEco && (
-					<p className="text-sm text-brand-600">
-						Elige un tipo de eco arriba para ver las fechas y especialistas
-						disponibles.
-					</p>
 				)}
 
 				{idEco && loadingBloques && (
-					<p className="text-sm text-brand-600">Cargando disponibilidad…</p>
-				)}
-
-				{idEco && !loadingBloques && bloques.length === 0 && (
-					<div className="rounded-lg border border-brand-200 bg-paper p-4 text-center text-brand-600">
-						No hay bloques de disponibilidad aprobados para este eco en fechas
-						futuras.
+					<div className="flex items-center justify-center gap-3 rounded-xl border border-mist bg-paper py-12">
+						<div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
+						<span className="text-brand-700">Buscando fechas disponibles…</span>
 					</div>
 				)}
 
-				{idEco && !loadingBloques && (
-					<div className="space-y-6">
-						<h2 className="text-lg font-semibold text-brand-900">
-							Fechas disponibles
-						</h2>
+				{idEco && !loadingBloques && bloques.length === 0 && (
+					<div className="rounded-xl border border-brand-200 bg-paper p-8 text-center shadow-sm">
+						<Calendar className="mx-auto h-12 w-12 text-brand-300" />
+						<p className="mt-3 font-medium text-brand-800">Sin disponibilidad por ahora</p>
+						<p className="mt-1 text-sm text-brand-600">
+							No hay bloques aprobados para este eco en fechas futuras. Prueba otro tipo de eco o vuelve más tarde.
+						</p>
+					</div>
+				)}
+
+				{/* Paso 2: Fechas y horarios */}
+				{idEco && !loadingBloques && bloques.length > 0 && (
+					<section className="space-y-4">
+						<div className="flex items-center gap-2">
+							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-paper">
+								2
+							</span>
+							<h3 className="text-lg font-semibold text-brand-900">Elige fecha y horario</h3>
+						</div>
 						<div className="flex flex-wrap items-center gap-2">
 							<button
 								type="button"
 								onClick={() => setDayOffset((prev) => Math.max(0, prev - 5))}
-								className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-cloud"
+								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud disabled:opacity-50"
 								disabled={dayOffset === 0}
 							>
-								← Anteriores 5 días
+								<ChevronLeft className="inline h-4 w-4" /> Anteriores
 							</button>
 							<div className="flex flex-wrap items-center gap-2">
 								{dateKeys.map((key) => {
@@ -228,15 +319,15 @@ const DisponibilidadPublicaPage = () => {
 											key={key}
 											type="button"
 											onClick={() => setSelectedDate(key)}
-											className={
-												`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${isActive
-													? "border-brand-700 bg-brand-700 text-paper"
-													: "border-brand-300 bg-paper text-brand-800 hover:bg-cloud"
-												}`
-											}
+											className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-sm font-medium transition-all ${
+												isActive
+													? "border-brand-700 bg-brand-700 text-paper shadow"
+													: "border-mist bg-paper text-brand-800 hover:border-brand-300 hover:bg-cloud/50"
+											}`}
 										>
+											<Clock className="h-4 w-4 shrink-0" />
 											{formatFecha(key)}
-											<span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
+											<span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
 												{count}
 											</span>
 										</button>
@@ -246,93 +337,94 @@ const DisponibilidadPublicaPage = () => {
 							<button
 								type="button"
 								onClick={() => setDayOffset((prev) => prev + 5)}
-								className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-cloud"
+								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud"
 							>
-								Siguientes 5 días →
+								Siguientes <ChevronRight className="inline h-4 w-4" />
 							</button>
 						</div>
 
 						{selectedItems.length === 0 ? (
-							<div className="rounded-lg border border-brand-200 bg-paper p-4 text-center text-brand-600">
-								No hay fechas disponibles para esta fecha.
+							<div className="rounded-xl border border-mist bg-paper p-6 text-center text-brand-600">
+								No hay turnos para esta fecha. Elige otra.
 							</div>
 						) : (
-							<>
-								<div className="rounded-lg border border-brand-200 bg-paper">
-									<div className="border-b border-brand-200 bg-brand-50 px-4 py-3">
-										<span className="font-medium text-brand-900">
-											{formatFecha(selectedDate)}
-										</span>
-									</div>
-									<ul className="divide-y divide-brand-100">
-										{pagedSlots.map((b) => {
-											const puedeReservar = isSlotAtLeast2HoursFromNow(b.fecha, b.hora_inicio);
-											const deshabilitar = (isPaciente && !isEmailVerified) || !puedeReservar;
-											return (
-												<li
-													key={b.id_disponibilidad}
-													className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:flex-nowrap"
-												>
-													<div className="flex items-center gap-2">
-														<span className="font-medium text-brand-900">
+							<div className="overflow-hidden rounded-xl border border-brand-200 bg-paper shadow-sm">
+								<div className="border-b border-mist bg-brand-50/80 px-4 py-3">
+									<span className="font-semibold text-brand-900">
+										{formatFecha(selectedDate)} — {selectedItems.length} turno{selectedItems.length !== 1 ? "s" : ""} disponible{selectedItems.length !== 1 ? "s" : ""}
+									</span>
+								</div>
+								<ul className="divide-y divide-mist">
+									{pagedSlots.map((b) => {
+										const puedeReservar = isSlotAtLeast2HoursFromNow(b.fecha, b.hora_inicio);
+										const deshabilitar = (isPaciente && !isEmailVerified) || !puedeReservar;
+										return (
+											<li
+												key={b.id_disponibilidad}
+												className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:flex-nowrap"
+											>
+												<div className="flex items-center gap-3">
+													<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700">
+														<Stethoscope className="h-5 w-5" />
+													</div>
+													<div>
+														<p className="font-medium text-brand-900">
 															{b.especialista_nombre} {b.especialista_apellido}
-														</span>
-														<span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
-															{b.especialidad_nombre}
-														</span>
+														</p>
+														<p className="text-xs text-brand-600">{b.especialidad_nombre}</p>
 													</div>
-													<div className="flex items-center gap-2">
-														<span className="text-sm text-brand-600">
-															{formatHora(b.hora_inicio)} – {formatHora(b.hora_fin)}
-														</span>
-														<button
-															type="button"
-															onClick={() => puedeReservar && setBlockToReservar(b)}
-															disabled={deshabilitar}
-															title={!puedeReservar ? "Solo se puede reservar con al menos 2 horas de anticipación" : undefined}
-															className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-																deshabilitar
-																	? "bg-brand-800/60 text-paper/80 cursor-not-allowed"
-																	: "bg-brand-700 text-paper hover:bg-brand-800"
-															}`}
-														>
-															<CalendarPlus className="h-4 w-4" />
-															Reservar cita
-														</button>
-													</div>
-												</li>
-											);
-										})}
-									</ul>
-									<div className="flex items-center justify-between border-t border-mist bg-cloud/30 px-4 py-3">
-										<p className="text-xs text-brand-700">
-											Página {slotPage} de {totalSlotPages}
-										</p>
-										<div className="flex items-center gap-2">
-											<button
-												type="button"
-												onClick={() => setSlotPage((prev) => Math.max(1, prev - 1))}
-												disabled={slotPage === 1}
-												className="rounded-lg border border-brand-300 bg-paper p-2 text-brand-800 hover:bg-cloud disabled:opacity-50 disabled:pointer-events-none"
-												aria-label="Anterior"
-											>
-												<ChevronLeft className="h-4 w-4" />
-											</button>
-											<button
-												type="button"
-												onClick={() => setSlotPage((prev) => Math.min(totalSlotPages, prev + 1))}
-												disabled={slotPage >= totalSlotPages}
-												className="rounded-lg border border-brand-300 bg-paper p-2 text-brand-800 hover:bg-cloud disabled:opacity-50 disabled:pointer-events-none"
-												aria-label="Siguiente"
-											>
-												<ChevronRight className="h-4 w-4" />
-											</button>
-										</div>
+												</div>
+												<div className="flex items-center gap-3">
+													<span className="text-sm font-medium text-brand-700">
+														{formatHora(b.hora_inicio)} – {formatHora(b.hora_fin)}
+													</span>
+													<button
+														type="button"
+														onClick={() => puedeReservar && setBlockToReservar(b)}
+														disabled={deshabilitar}
+														title={!puedeReservar ? "Solo se puede reservar con al menos 2 horas de anticipación" : undefined}
+														className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+															deshabilitar
+																? "cursor-not-allowed bg-brand-200 text-paper/80"
+																: "bg-brand-700 text-paper shadow hover:bg-brand-800 hover:shadow-md"
+														}`}
+													>
+														<CalendarPlus className="h-4 w-4" />
+														Reservar
+													</button>
+												</div>
+											</li>
+										);
+									})}
+								</ul>
+								<div className="flex items-center justify-between border-t border-mist bg-cloud/40 px-4 py-3">
+									<p className="text-xs font-medium text-brand-700">
+										Página {slotPage} de {totalSlotPages}
+									</p>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setSlotPage((prev) => Math.max(1, prev - 1))}
+											disabled={slotPage === 1}
+											className="rounded-lg border border-brand-300 bg-paper p-2 text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:pointer-events-none"
+											aria-label="Anterior"
+										>
+											<ChevronLeft className="h-4 w-4" />
+										</button>
+										<button
+											type="button"
+											onClick={() => setSlotPage((prev) => Math.min(totalSlotPages, prev + 1))}
+											disabled={slotPage >= totalSlotPages}
+											className="rounded-lg border border-brand-300 bg-paper p-2 text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:pointer-events-none"
+											aria-label="Siguiente"
+										>
+											<ChevronRight className="h-4 w-4" />
+										</button>
 									</div>
 								</div>
-							</>
+							</div>
 						)}
-					</div>
+					</section>
 				)}
 
 				{blockToReservar && ecoSeleccionado && (

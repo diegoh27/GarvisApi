@@ -243,9 +243,9 @@ const App = () => {
 					<Route
 						path="resultados"
 						element={
-							<ProtectedRoute>
+							<RoleRoute allowed={["admin", "moderador", "especialista"]}>
 								<ResultadosPage />
-							</ProtectedRoute>
+							</RoleRoute>
 						}
 					/>
 					<Route

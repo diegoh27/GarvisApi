@@ -51,18 +51,18 @@ export function TelefonoField({
 	const errorInput = error ? "border-red-500" : "border-brand-300 bg-paper";
 
 	return (
-		<div>
+		<div className="min-w-0">
 			{label != null && (
 				<label className="mb-1 block text-sm font-medium text-brand-700">
 					{label}
 				</label>
 			)}
-			<div className="flex gap-2">
+			<div className="flex min-w-0 gap-2">
 				<select
 					value={prefix}
 					onChange={handlePrefixChange}
 					disabled={disabled}
-					className={`w-24 ${baseInput} ${errorInput} ${selectClassName}`.trim()}
+					className={`w-20 shrink-0 sm:w-24 ${baseInput} ${errorInput} ${selectClassName}`.trim()}
 					aria-label="Prefijo telefónico"
 				>
 					{TELEFONO_PREFIXES.map((p) => (
@@ -80,7 +80,7 @@ export function TelefonoField({
 					required={required}
 					disabled={disabled}
 					maxLength={NUMERO_LENGTH}
-					className={`flex-1 ${baseInput} ${errorInput} ${inputClassName}`.trim()}
+					className={`min-w-0 flex-1 ${baseInput} ${errorInput} ${inputClassName}`.trim()}
 					aria-label="Número de teléfono (7 dígitos)"
 				/>
 			</div>
