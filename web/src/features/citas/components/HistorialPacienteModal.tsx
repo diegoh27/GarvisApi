@@ -162,7 +162,6 @@ const HistorialPacienteModal = ({
 					archivos={selectedCitaForResultados.archivos}
 					pacienteNombre={selectedCitaForResultados.pacienteNombre}
 					ecoNombre={selectedCitaForResultados.ecoNombre}
-					idCita={selectedCitaForResultados.idCita}
 					onClose={() => setSelectedCitaForResultados(null)}
 				/>
 			)}

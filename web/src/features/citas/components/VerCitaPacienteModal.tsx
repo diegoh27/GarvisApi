@@ -421,7 +421,6 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 						archivos={archivos}
 						pacienteNombre={pacienteNombre}
 						ecoNombre={cita.eco_nombre ?? ""}
-						idCita={cita.id_cita}
 						onClose={() => setShowResultados(false)}
 					/>
 				);

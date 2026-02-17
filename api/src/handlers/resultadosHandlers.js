@@ -191,6 +191,8 @@ const deleteArchivoFromResultadoHandler = async (req, res) => {
 		const data = await deleteArchivoFromResultadoController({
 			id_cita,
 			archivoUrl: archivo_url,
+			id_usuario_actual: req.user?.id,
+			rol: req.user?.rol,
 		});
 
 		return res.status(200).json({
@@ -207,6 +209,12 @@ const deleteArchivoFromResultadoHandler = async (req, res) => {
 		}
 		if (error?.code === "INVALID_STATE") {
 			return res.status(409).json({
+				ok: false,
+				message: error.message,
+			});
+		}
+		if (error?.code === "FORBIDDEN") {
+			return res.status(403).json({
 				ok: false,
 				message: error.message,
 			});
