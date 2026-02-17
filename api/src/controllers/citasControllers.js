@@ -1128,6 +1128,8 @@ const createCitaMostradorController = async ({
 	rif,
 	id_usuario,
 	referencia,
+	id_paciente: id_paciente_titular,
+	id_representado,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -1176,13 +1178,67 @@ const createCitaMostradorController = async ({
 			throw err;
 		}
 
-		const id_paciente = await ensureMostradorPacienteBase(conn);
+		// Normalizar hora (bloques de 20 min): HH:MM o HH:MM:SS -> HH:MM:00 (hora_cita es obligatorio desde el handler)
+		const rawHora = String(hora_cita || "").trim() || new Date().toTimeString().slice(0, 8);
+		const horaFinal = /^\d{1,2}:\d{2}(:\d{2})?$/.test(rawHora)
+			? String(rawHora).trim().padEnd(8, ":00").slice(0, 8)
+			: rawHora;
+
+		// Verificar que no choque con otra cita del mismo especialista ese día (bloques de 20 min)
+		const [conflictRows] = await conn.execute(
+			`SELECT 1 FROM cita
+       WHERE id_especialista = ? AND fecha_cita = ? AND estado_cita != 2
+         AND hora_cita < ADDTIME(?, '00:20:00')
+         AND ADDTIME(hora_cita, '00:20:00') > ?
+       LIMIT 1`,
+			[id_especialista, fecha_cita, horaFinal, horaFinal],
+		);
+		if (conflictRows.length > 0) {
+			const err = new Error(
+				"El horario elegido coincide con otra cita del especialista. Elige otro slot (bloques de 20 min).",
+			);
+			err.code = "CONFLICT_HORARIO";
+			throw err;
+		}
+
+		let id_paciente;
+		let id_representado_final = null;
+		if (id_paciente_titular && id_representado) {
+			const [repRows] = await conn.execute(
+				`SELECT id_representado, id_paciente FROM representado
+				 WHERE id_representado = ? AND id_paciente = ?
+				 LIMIT 1`,
+				[id_representado, id_paciente_titular],
+			);
+			if (repRows.length) {
+				id_paciente = id_paciente_titular;
+				id_representado_final = id_representado;
+			}
+		}
+		if (id_paciente == null) {
+			id_paciente = await ensureMostradorPacienteBase(conn);
+		}
+		let cedulaParaPago = cedula ? String(cedula).trim() : "";
+		let rifParaMostrador = rif != null ? String(rif).trim() || null : null;
+		if (id_representado_final && id_paciente && (!cedulaParaPago || !cedulaParaPago.replace(/\D/g, ""))) {
+			const [titularRows] = await conn.execute(
+				"SELECT cedula FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[id_paciente],
+			);
+			if (titularRows.length && titularRows[0].cedula) {
+				cedulaParaPago = String(titularRows[0].cedula).trim();
+			}
+		}
+		if (!cedulaParaPago) {
+			const err = new Error("Se requiere la cédula del paciente o del titular (representado sin cédula).");
+			err.code = "MISSING_CEDULA";
+			throw err;
+		}
 		const usuarioValido =
 			(await resolveExistingUsuarioId(conn, id_usuario)) || id_paciente;
 		const id_cita = crypto.randomUUID();
 		const id_pago = crypto.randomUUID();
 		const id_comision = crypto.randomUUID();
-		const horaFinal = hora_cita || new Date().toTimeString().slice(0, 8);
 		const metodoReal = String(metodo || "").trim() || "Transferencia";
 		const referenciaPago =
 			referencia || `MOST-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -1196,8 +1252,8 @@ const createCitaMostradorController = async ({
 			`INSERT INTO cita
 				(id_cita, id_paciente, id_representado, id_especialista, id_eco, fecha_cita, hora_cita, orden, id_disponibilidad, origen_cita, estado_cita, estado_pago)
 			VALUES
-				(?, ?, NULL, ?, ?, ?, ?, '', NULL, 'mostrador', 3, 1)`,
-			[id_cita, id_paciente, id_especialista, id_eco, fecha_cita, horaFinal],
+				(?, ?, ?, ?, ?, ?, ?, '', NULL, 'mostrador', 3, 1)`,
+			[id_cita, id_paciente, id_representado_final, id_especialista, id_eco, fecha_cita, horaFinal],
 		);
 
 		await conn.execute(
@@ -1205,7 +1261,7 @@ const createCitaMostradorController = async ({
 				(id_cita, nombre, apellido, cedula, rif)
 			VALUES
 				(?, ?, ?, ?, ?)`,
-			[id_cita, nombre, apellido, cedula, rif || null],
+			[id_cita, nombre, apellido, cedulaParaPago, rifParaMostrador],
 		);
 
 		await conn.execute(
@@ -1222,7 +1278,7 @@ const createCitaMostradorController = async ({
 				montoValue,
 				normalizedPago.monto_usd,
 				normalizedPago.monto_bs,
-				cedula,
+				cedulaParaPago,
 				referenciaPago,
 				usuarioValido,
 				normalizedPago.tasa_dia_bcv,
@@ -1272,6 +1328,24 @@ const createCitaMostradorController = async ({
 	}
 };
 
+/** Horas ya ocupadas por citas del especialista en una fecha (para mostrador: evitar choques; bloques de 20 min). */
+const getOcupacionEspecialistaPorFechaController = async (id_especialista, fecha) => {
+	const [rows] = await pool.execute(
+		`SELECT hora_cita FROM cita
+     WHERE id_especialista = ? AND fecha_cita = ? AND estado_cita != 2
+     ORDER BY hora_cita ASC`,
+		[id_especialista, fecha],
+	);
+	const ocupados = rows.map((r) => {
+		const h = r.hora_cita;
+		if (!h) return "";
+		if (h instanceof Date) return h.toTimeString().slice(0, 8);
+		const s = String(h).trim();
+		return s.padEnd(8, ":00").slice(0, 8);
+	});
+	return { ocupados: ocupados.filter(Boolean) };
+};
+
 /** Obtiene el último paciente de mostrador registrado con esa cédula (para reutilizar nombre/apellido/rif en otra cita). */
 const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
 	const [rows] = await pool.execute(
@@ -1291,6 +1365,97 @@ const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
 		cedula: r.cedula || "",
 		rif: r.rif ?? "",
 	};
+};
+
+/** Datos por cédula: paciente registrado, representado y/o última cita de mostrador. */
+const getDatosPorCedulaController = async (cedula) => {
+	const [pacienteRows] = await pool.execute(
+		`SELECT u.nombre, u.apellido, u.cedula, p.rif
+		 FROM usuario u
+		 INNER JOIN paciente p ON p.id_paciente = u.id_usuario
+		 WHERE u.cedula = ?
+		 LIMIT 1`,
+		[cedula],
+	);
+	const [representadoRows] = await pool.execute(
+		`SELECT r.id_representado, r.id_paciente, r.nombre, r.apellido, r.cedula
+		 FROM representado r
+		 WHERE r.cedula = ?
+		 LIMIT 1`,
+		[cedula],
+	);
+	const [mostradorRows] = await pool.execute(
+		`SELECT cm.nombre, cm.apellido, cm.cedula, cm.rif
+		 FROM cita_mostrador cm
+		 INNER JOIN cita c ON c.id_cita = cm.id_cita
+		 WHERE cm.cedula = ?
+		 ORDER BY c.fecha_cita DESC, c.id_cita DESC
+		 LIMIT 1`,
+		[cedula],
+	);
+	const paciente = pacienteRows.length
+		? {
+			nombre: pacienteRows[0].nombre || "",
+			apellido: pacienteRows[0].apellido || "",
+			cedula: pacienteRows[0].cedula || "",
+			rif: pacienteRows[0].rif ?? "",
+		}
+		: null;
+	const representado = representadoRows.length
+		? {
+			id_representado: representadoRows[0].id_representado,
+			id_paciente: representadoRows[0].id_paciente,
+			nombre: representadoRows[0].nombre || "",
+			apellido: representadoRows[0].apellido || "",
+			cedula: representadoRows[0].cedula || "",
+		}
+		: null;
+	const mostrador = mostradorRows.length
+		? {
+			nombre: mostradorRows[0].nombre || "",
+			apellido: mostradorRows[0].apellido || "",
+			cedula: mostradorRows[0].cedula || "",
+			rif: mostradorRows[0].rif ?? "",
+		}
+		: null;
+	return { paciente, representado, mostrador };
+};
+
+/** Buscar representados por nombre y/o apellido (para menores sin cédula). Devuelve titular_cedula para usar en pago. */
+const buscarRepresentadoPorNombreController = async (nombre, apellido) => {
+	const nombreTrim = String(nombre || "").trim();
+	const apellidoTrim = String(apellido || "").trim();
+	if (!nombreTrim && !apellidoTrim) return [];
+	const conditions = [];
+	const params = [];
+	if (nombreTrim) {
+		conditions.push("r.nombre LIKE ?");
+		params.push(`%${nombreTrim}%`);
+	}
+	if (apellidoTrim) {
+		conditions.push("r.apellido LIKE ?");
+		params.push(`%${apellidoTrim}%`);
+	}
+	const sql = `
+		SELECT r.id_representado, r.id_paciente, r.nombre, r.apellido, r.cedula AS representado_cedula,
+		       u.cedula AS titular_cedula, u.nombre AS titular_nombre, u.apellido AS titular_apellido
+		FROM representado r
+		INNER JOIN usuario u ON u.id_usuario = r.id_paciente
+		WHERE ${conditions.join(" AND ")}
+		ORDER BY r.apellido ASC, r.nombre ASC
+		LIMIT 20
+	`;
+	const [rows] = await pool.execute(sql, params);
+	return rows.map((row) => ({
+		id_representado: row.id_representado,
+		id_paciente: row.id_paciente,
+		nombre: row.nombre || "",
+		apellido: row.apellido || "",
+		representado_cedula: row.representado_cedula || null,
+		titular_cedula: row.titular_cedula || "",
+		titular_nombre: row.titular_nombre || "",
+		titular_apellido: row.titular_apellido || "",
+	}));
 };
 
 /** Lista citas de mostrador con la cédula indicada que aún no están vinculadas a ningún paciente (para que el usuario las reclame). */
@@ -1644,6 +1809,9 @@ module.exports = {
 	posponerCitaController,
 	getAllCitasController,
 	createCitaMostradorController,
+	getOcupacionEspecialistaPorFechaController,
+	getDatosPorCedulaController,
+	buscarRepresentadoPorNombreController,
 	getUltimoPacienteMostradorPorCedulaController,
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,

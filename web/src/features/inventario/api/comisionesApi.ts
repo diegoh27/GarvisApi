@@ -68,6 +68,9 @@ export type CrearCitaMostradorPayload = {
 	cedula: string;
 	rif?: string;
 	referencia?: string;
+	/** Si la cita es para un representado, enviar para vincular al titular y que aparezca en Mis citas */
+	id_paciente?: string;
+	id_representado?: string;
 };
 
 // ==========================================
@@ -175,6 +178,128 @@ export const comisionesApi = baseApi.injectEndpoints({
 				response: { ok: boolean; data: { nombre: string; apellido: string; cedula: string; rif: string } | null },
 			) => response.data,
 		}),
+
+		// Buscar representados por nombre/apellido (para menores sin cédula)
+		buscarRepresentadoPorNombre: builder.query<
+			Array<{
+				id_representado: string;
+				id_paciente: string;
+				nombre: string;
+				apellido: string;
+				representado_cedula: string | null;
+				titular_cedula: string;
+				titular_nombre: string;
+				titular_apellido: string;
+			}>,
+			{ nombre?: string; apellido?: string }
+		>({
+			query: ({ nombre = "", apellido = "" }) =>
+				`/citas/mostrador/buscar-representado?nombre=${encodeURIComponent(nombre)}&apellido=${encodeURIComponent(apellido)}`,
+			transformResponse: (
+				response: { ok: boolean; data: Array<{
+					id_representado: string;
+					id_paciente: string;
+					nombre: string;
+					apellido: string;
+					representado_cedula: string | null;
+					titular_cedula: string;
+					titular_nombre: string;
+					titular_apellido: string;
+				}> },
+			) => response.data,
+		}),
+
+		// Datos por cédula: paciente registrado, representado y/o última cita de mostrador
+		getDatosPorCedula: builder.query<
+			{
+				paciente: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+				representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
+				mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+			},
+			string
+		>({
+			query: (cedula) =>
+				`/citas/mostrador/datos-por-cedula?cedula=${encodeURIComponent(cedula)}`,
+			transformResponse: (
+				response: {
+					ok: boolean;
+					data: {
+						paciente: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+						representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
+						mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+					};
+				},
+			) => response.data,
+		}),
+
+		// Horas ocupadas por un especialista en una fecha (bloques 20 min; para mostrador)
+		getOcupacionEspecialista: builder.query<
+			{ ocupados: string[] },
+			{ id_especialista: string; fecha: string }
+		>({
+			query: ({ id_especialista, fecha }) =>
+				`/citas/ocupacion-especialista?id_especialista=${encodeURIComponent(id_especialista)}&fecha=${encodeURIComponent(fecha)}`,
+			transformResponse: (response: { ok: boolean; data: { ocupados: string[] } }) =>
+				response.data,
+		}),
+
+		// Crear representado por cédula del titular (mostrador; admin/moderador). Si titular no existe, enviar nombre_titular y apellido_titular para darlo de alta y crear el representado.
+		crearRepresentadoPorCedulaTitular: builder.mutation<
+			{
+				id_representado: string;
+				id_paciente: string;
+				nombre: string;
+				apellido: string;
+				cedula: string | null;
+				fecha_nacimiento: string;
+				genero: string;
+				parentesco: string | null;
+				titular_cedula: string;
+				/** Presente cuando se dio de alta al titular en el mismo paso */
+				titular_creado?: boolean;
+				titular_nombre?: string;
+				titular_apellido?: string;
+			},
+			{
+				cedula_titular: string;
+				nombre: string;
+				apellido: string;
+				cedula?: string | null;
+				fecha_nacimiento: string;
+				genero: "Masculino" | "Femenino";
+				parentesco?: string | null;
+				/** Si el titular no está registrado, enviar todos para darlo de alta y crear el representado en un solo paso */
+				nombre_titular?: string;
+				apellido_titular?: string;
+				genero_titular?: "Masculino" | "Femenino";
+				fecha_nacimiento_titular?: string;
+			}
+		>({
+			query: (body) => ({
+				url: "/representados/crear-por-cedula-titular",
+				method: "POST",
+				body,
+			}),
+			transformResponse: (
+				response: {
+					ok: boolean;
+					data: {
+						id_representado: string;
+						id_paciente: string;
+						nombre: string;
+						apellido: string;
+						cedula: string | null;
+						fecha_nacimiento: string;
+						genero: string;
+						parentesco: string | null;
+						titular_cedula: string;
+						titular_creado?: boolean;
+						titular_nombre?: string;
+						titular_apellido?: string;
+					};
+				},
+			) => response.data,
+		}),
 	}),
 });
 
@@ -187,4 +312,8 @@ export const {
 	useDeletePagoComisionMutation,
 	useCrearCitaMostradorMutation,
 	useLazyGetUltimoPacienteMostradorQuery,
+	useLazyGetDatosPorCedulaQuery,
+	useLazyBuscarRepresentadoPorNombreQuery,
+	useGetOcupacionEspecialistaQuery,
+	useCrearRepresentadoPorCedulaTitularMutation,
 } = comisionesApi;

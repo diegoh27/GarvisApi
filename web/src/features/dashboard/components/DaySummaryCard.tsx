@@ -6,16 +6,22 @@ type SummaryItem = {
 type DaySummaryCardProps = {
 	dateLabel: string;
 	items: SummaryItem[];
+	/** Si se pasa, reemplaza el título por defecto "Resumen del día" */
+	title?: string;
 };
 
-const DaySummaryCard = ({ dateLabel, items }: DaySummaryCardProps) => {
+const DaySummaryCard = ({ dateLabel, items, title }: DaySummaryCardProps) => {
 	return (
-		<div className="rounded-2xl bg-paper p-5 shadow-sm">
+		<div className="flex h-full min-h-0 flex-col rounded-2xl bg-paper p-5 shadow-sm">
 			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold text-brand-900">Resumen del día</h3>
-				<span className="text-[11px] font-semibold text-brand-800">
-					{dateLabel}
-				</span>
+				<h3 className="text-sm font-semibold text-brand-900">
+					{title ?? "Resumen del día"}
+				</h3>
+				{title == null && (
+					<span className="text-[11px] font-semibold text-brand-800">
+						{dateLabel}
+					</span>
+				)}
 			</div>
 			<div className="mt-4 grid gap-3 sm:grid-cols-2">
 				{items.map((item) => (

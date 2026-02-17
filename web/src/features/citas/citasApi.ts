@@ -98,6 +98,8 @@ export type CitaPacienteCompleta = {
 	estado_pago: number;
 	id_disponibilidad: string;
 	orden: string;
+	origen_cita?: "web" | "mostrador";
+	es_vinculada_mostrador?: boolean;
 	especialista_nombre: string;
 	especialista_apellido: string;
 	paciente_nombre: string;
@@ -124,6 +126,21 @@ export type CitaPacienteCompleta = {
 	pago_monto: number | string | null;
 	pago_referencia: string | null;
 	pago_estado_pago: number | null;
+};
+
+/** Cita de mostrador que aún no está vinculada a ninguna cuenta (para reclamar). */
+export type CitaMostradorDisponible = {
+	id_cita: string;
+	fecha_cita: string;
+	hora_cita: string;
+	estado_cita: number;
+	estado_pago: number;
+	eco_nombre: string;
+	paciente_nombre: string;
+	paciente_apellido: string;
+	paciente_cedula: string;
+	especialista_nombre: string;
+	especialista_apellido: string;
 };
 
 const citasApi = baseApi.injectEndpoints({
@@ -203,6 +220,31 @@ const citasApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Citas"],
 		}),
+		getCitasMostradorDisponiblesParaVincular: builder.query<
+			CitaMostradorDisponible[],
+			string
+		>({
+			query: (cedula) =>
+				`/citas/mostrador/disponibles-vincular?cedula=${encodeURIComponent(cedula)}`,
+			transformResponse: (response: { ok: boolean; data: CitaMostradorDisponible[] }) =>
+				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
+		vincularCitasMostrador: builder.mutation<
+			{ vinculadas: number; rechazadas: number; message?: string },
+			{ id_citas: string[] }
+		>({
+			query: (body) => ({
+				url: "/citas/mostrador/vincular",
+				method: "POST",
+				body,
+			}),
+			transformResponse: (response: {
+				ok: boolean;
+				data: { vinculadas: number; rechazadas: number; message?: string };
+			}) => response.data,
+			invalidatesTags: ["Citas"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -216,6 +258,8 @@ export const {
 	useGetAllCitasQuery,
 	useGetMisCitasCompletasQuery,
 	useMarcarAtendidaMutation,
+	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
+	useVincularCitasMostradorMutation,
 } = citasApi;
 
 export { citasApi };
