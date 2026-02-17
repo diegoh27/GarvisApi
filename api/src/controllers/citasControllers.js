@@ -471,7 +471,8 @@ const listCitasPendientesPagoController = async () => {
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
-    WHERE c.estado_pago = 0
+    WHERE c.origen_cita = 'web'
+      AND c.estado_pago = 0
       AND c.estado_cita IN (0, 1)
     ORDER BY c.fecha_cita ASC, c.hora_cita ASC
   `;
@@ -507,7 +508,8 @@ const listCitasConPagosController = async () => {
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
-    WHERE EXISTS (
+    WHERE c.origen_cita = 'web'
+      AND EXISTS (
       SELECT 1 FROM pagos p WHERE p.id_cita = c.id_cita
     )
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
@@ -1104,6 +1106,7 @@ const getAllCitasController = async () => {
     LEFT JOIN informe inf ON inf.id_cita = c.id_cita
     LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
     LEFT JOIN usuario u_validador ON u_validador.id_usuario = pag.validado_por
+    WHERE c.origen_cita = 'web'
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);
@@ -1266,6 +1269,27 @@ const createCitaMostradorController = async ({
 	} finally {
 		conn.release();
 	}
+};
+
+/** Obtiene el último paciente de mostrador registrado con esa cédula (para reutilizar nombre/apellido/rif en otra cita). */
+const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
+	const [rows] = await pool.execute(
+		`SELECT cm.nombre, cm.apellido, cm.cedula, cm.rif
+		 FROM cita_mostrador cm
+		 INNER JOIN cita c ON c.id_cita = cm.id_cita
+		 WHERE cm.cedula = ?
+		 ORDER BY c.fecha_cita DESC, c.id_cita DESC
+		 LIMIT 1`,
+		[cedula],
+	);
+	if (!rows.length) return null;
+	const r = rows[0];
+	return {
+		nombre: r.nombre || "",
+		apellido: r.apellido || "",
+		cedula: r.cedula || "",
+		rif: r.rif ?? "",
+	};
 };
 
 // Asignar cita completa: crear cita + pago + resultado en una transacción
@@ -1487,4 +1511,5 @@ module.exports = {
 	posponerCitaController,
 	getAllCitasController,
 	createCitaMostradorController,
+	getUltimoPacienteMostradorPorCedulaController,
 };

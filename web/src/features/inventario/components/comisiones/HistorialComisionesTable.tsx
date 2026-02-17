@@ -42,6 +42,14 @@ export default function HistorialComisionesTable({
       render: (row: EspecialistaComision) => row.eco_nombre || "-",
     },
     {
+      key: "rif",
+      header: "RIF",
+      headerClassName:
+        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      render: (row: EspecialistaComision) => row.paciente_rif || "-",
+    },
+    {
       key: "fecha_cita",
       header: "Fecha Cita",
       headerClassName:

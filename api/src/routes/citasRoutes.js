@@ -16,6 +16,7 @@ const {
 	posponerCitaHandler,
 	getAllCitasHandler,
 	createCitaMostradorHandler,
+	getUltimoPacienteMostradorHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -39,6 +40,13 @@ citasRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin", "moderador", "paciente"),
 	asignarCitaCompletaHandler,
+);
+// GET /citas/mostrador/ultimo-paciente (admin/moderador) - Último paciente mostrador por cédula
+citasRoutes.get(
+	"/mostrador/ultimo-paciente",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	getUltimoPacienteMostradorHandler,
 );
 // POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
 citasRoutes.post(

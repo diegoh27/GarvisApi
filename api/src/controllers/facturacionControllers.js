@@ -142,6 +142,7 @@ exports.listMovimientosFacturacionController = async ({
 				NULLIF(p_cita.cedula_pagador, ''),
 				'Sin cédula'
 			) AS paciente_cedula,
+			COALESCE(NULLIF(cm.rif, ''), NULLIF(pac.rif, '')) AS paciente_rif,
 			u_esp.nombre AS especialista_nombre,
 			u_esp.apellido AS especialista_apellido,
 			f.id_usuario,
@@ -155,6 +156,7 @@ exports.listMovimientosFacturacionController = async ({
 		LEFT JOIN eco eco ON eco.id_eco = c.id_eco
 		LEFT JOIN usuario u_esp ON u_esp.id_usuario = c.id_especialista
 		LEFT JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+		LEFT JOIN paciente pac ON pac.id_paciente = c.id_paciente
 		LEFT JOIN representado rep ON rep.id_representado = c.id_representado
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
 		LEFT JOIN usuario u ON u.id_usuario = f.id_usuario
