@@ -7,6 +7,7 @@ const {
 	setUserActiveController,
 	listUsersController,
 } = require("../controllers/usersControllers");
+const { validarTelefono } = require("../utils/validacionTelefono");
 
 const userCreateHandler = (req, res) => {
 	const obj = req.body;
@@ -139,6 +140,32 @@ const updateUserSelfHandler = async (req, res) => {
 		const id_usuario = req.user?.id;
 		const payload = req.body;
 
+		// No permitir campos vacíos cuando se envían
+		if (payload.nombre !== undefined && String(payload.nombre).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El nombre no puede estar vacío." });
+		}
+		if (payload.apellido !== undefined && String(payload.apellido).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El apellido no puede estar vacío." });
+		}
+		if (payload.genero !== undefined && String(payload.genero).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El género no puede estar vacío." });
+		}
+		if (payload.cedula !== undefined && String(payload.cedula).trim() === "") {
+			return res.status(400).json({ ok: false, message: "La cédula no puede estar vacía." });
+		}
+		if (payload.correo !== undefined && String(payload.correo).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El correo no puede estar vacío." });
+		}
+		if (payload.fecha_nacimiento !== undefined && String(payload.fecha_nacimiento).trim() === "") {
+			return res.status(400).json({ ok: false, message: "La fecha de nacimiento no puede estar vacía." });
+		}
+		if (payload.telefono !== undefined && String(payload.telefono).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El teléfono no puede estar vacío." });
+		}
+		if (payload.telefono !== undefined && payload.telefono !== null && String(payload.telefono).trim() !== "") {
+			const v = validarTelefono(payload.telefono);
+			if (!v.valid) return res.status(400).json({ ok: false, message: v.message });
+		}
 		if (
 			payload.genero &&
 			!["Masculino", "Femenino", "Otro"].includes(payload.genero)
