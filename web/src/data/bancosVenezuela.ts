@@ -46,5 +46,5 @@ export const BANCOS_VENEZUELA: BancoVenezuela[] = [
 /** Opciones de tipo de cédula (Venezuela) */
 export const CEDULA_PREFIXES = ["V", "J", "E", "P", "G"] as const;
 
-/** Prefijos de teléfono móvil Venezuela (Digitel: 412/422, Movistar: 414/424, Movilnet: 416/426) */
-export const TELEFONO_PREFIXES = ["0412", "0422", "0414", "0424", "0416", "0426"] as const;
+/** Prefijos de teléfono móvil Venezuela (mismo orden que registro: 0412, 0414, 0416, 0421, 0422, 0424, 0426) */
+export const TELEFONO_PREFIXES = ["0412", "0414", "0416", "0421", "0422", "0424", "0426"] as const;

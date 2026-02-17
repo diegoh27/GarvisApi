@@ -1,7 +1,7 @@
 import { useState, type FormEvent, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { PasswordField } from "../../../shared";
+import { PasswordField, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, TelefonoField } from "../../../shared";
 import { useCrearEspecialistaMutation } from "../moderadoresApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
@@ -13,16 +13,6 @@ const RegistrarEspecialistaForm = () => {
 		useGetEspecialidadesQuery();
 	const { data: ecos = [], isLoading: loadingEcos } = useGetEcosQuery();
 	const [crearEspecialista, { isLoading }] = useCrearEspecialistaMutation();
-	// Prefijos telefónicos venezolanos (móviles)
-	const prefijosTelefonicos = [
-		"0412",
-		"0414",
-		"0416",
-		"0421",
-		"0422",
-		"0424",
-		"0426",
-	];
 
 	const [form, setForm] = useState({
 		nombre: "",
@@ -30,6 +20,7 @@ const RegistrarEspecialistaForm = () => {
 		correo: "",
 		genero: "Masculino" as "Masculino" | "Femenino",
 		fecha_nacimiento: "",
+		tipo_cedula: "V" as const,
 		cedula: "",
 		telefono_prefijo: "0412",
 		telefono_numero: "",
@@ -97,6 +88,29 @@ const RegistrarEspecialistaForm = () => {
 
 	const validateField = (field: keyof typeof form, value: string): string => {
 		switch (field) {
+			case "nombre":
+				if (!value.trim()) return "El nombre es requerido";
+				if (value.length > 36) return "El nombre no puede superar 36 caracteres";
+				return "";
+			case "apellido":
+				if (!value.trim()) return "El apellido es requerido";
+				if (value.length > 36) return "El apellido no puede superar 36 caracteres";
+				return "";
+			case "cedula":
+				if (!value.trim()) return "La cédula es requerida";
+				if (!/^\d+$/.test(value)) return "La cédula solo puede contener números";
+				if (!validarRangoCedula(value)) return MENSAJE_RANGO_CEDULA;
+				return "";
+			case "fecha_nacimiento": {
+				if (!value.trim()) return "La fecha de nacimiento es requerida";
+				const birth = new Date(value);
+				const today = new Date();
+				let age = today.getFullYear() - birth.getFullYear();
+				const m = today.getMonth() - birth.getMonth();
+				if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+				if (age < 18) return "El especialista debe ser mayor de edad (18 años o más)";
+				return "";
+			}
 			case "telefono_numero":
 				if (!value.trim()) return "El número de teléfono es requerido";
 				if (!/^\d{7}$/.test(value)) return "El número debe tener 7 dígitos";
@@ -198,12 +212,12 @@ const RegistrarEspecialistaForm = () => {
 
 		try {
 			await crearEspecialista({
-				nombre: form.nombre,
-				apellido: form.apellido,
-				correo: form.correo,
+				nombre: formatNombreApellido(form.nombre),
+				apellido: formatNombreApellido(form.apellido),
+				correo: form.correo.trim(),
 				genero: form.genero,
-				fecha_nacimiento: form.fecha_nacimiento,
-				cedula: form.cedula,
+				fecha_nacimiento: form.fecha_nacimiento.trim(),
+				cedula: `${form.tipo_cedula}${form.cedula}`.trim(),
 				telefono: `${form.telefono_prefijo}${form.telefono_numero}`,
 				contrasena: form.contrasena,
 				id_especialidad: form.id_especialidad,
@@ -247,10 +261,14 @@ const RegistrarEspecialistaForm = () => {
 					<input
 						type="text"
 						required
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+						maxLength={36}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.nombre ? "border-red-500" : "border-brand-300"}`}
 						value={form.nombre}
 						onChange={(e) => updateField("nombre", e.target.value)}
 					/>
+					{fieldErrors.nombre && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>
+					)}
 				</div>
 				<div>
 					<label className="mb-1 block text-sm font-medium text-brand-700">
@@ -259,10 +277,14 @@ const RegistrarEspecialistaForm = () => {
 					<input
 						type="text"
 						required
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+						maxLength={36}
+						className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.apellido ? "border-red-500" : "border-brand-300"}`}
 						value={form.apellido}
 						onChange={(e) => updateField("apellido", e.target.value)}
 					/>
+					{fieldErrors.apellido && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>
+					)}
 				</div>
 			</div>
 
@@ -286,37 +308,22 @@ const RegistrarEspecialistaForm = () => {
 					)}
 				</div>
 				<div>
-					<label className="mb-1 block text-sm font-medium text-brand-700">
-						Teléfono <span className="text-red-500">*</span>
-					</label>
-					<div className="flex gap-2">
-						<select
-							className="h-11 w-24 rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-							value={form.telefono_prefijo}
-							onChange={(e) => updateField("telefono_prefijo", e.target.value)}
-						>
-							{prefijosTelefonicos.map((prefijo) => (
-								<option key={prefijo} value={prefijo}>
-									{prefijo}
-								</option>
-							))}
-						</select>
-						<div className="flex-1">
-							<input
-								type="tel"
-								required
-								placeholder="Número (7 dígitos)"
-								className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.telefono_numero ? "border-red-500" : "border-brand-300"
-									}`}
-								value={form.telefono_numero}
-								onChange={(e) => updateField("telefono_numero", e.target.value.replace(/\D/g, ""))}
-								maxLength={7}
-							/>
-							{fieldErrors.telefono_numero && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono_numero}</p>
-							)}
-						</div>
-					</div>
+					<TelefonoField
+						label={
+							<>
+								Teléfono <span className="text-red-500">*</span>
+							</>
+						}
+						value={`${form.telefono_prefijo}${form.telefono_numero}`}
+						onChange={(prefijo, numero) => {
+							setForm((f) => ({ ...f, telefono_prefijo: prefijo, telefono_numero: numero }));
+							setFieldErrors((prev) => (prev.telefono_numero ? { ...prev, telefono_numero: "" } : prev));
+						}}
+						error={fieldErrors.telefono_numero}
+						required
+						inputClassName="h-11 rounded-lg bg-paper text-sm"
+						selectClassName="h-11 rounded-lg bg-paper text-sm"
+					/>
 				</div>
 			</div>
 
@@ -351,15 +358,21 @@ const RegistrarEspecialistaForm = () => {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>
-					<label className="mb-1 block text-sm font-medium text-brand-700">
-						Cédula <span className="text-red-500">*</span>
-					</label>
-					<input
-						type="text"
+					<CedulaField
+						label={
+							<>
+								Cédula <span className="text-red-500">*</span>
+							</>
+						}
+						value={`${form.tipo_cedula}${form.cedula}`}
+						onChange={(tipo, numero) => {
+							setForm((f) => ({ ...f, tipo_cedula: tipo, cedula: numero }));
+							setFieldErrors((prev) => (prev.cedula ? { ...prev, cedula: "" } : prev));
+						}}
+						error={fieldErrors.cedula}
 						required
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-						value={form.cedula}
-						onChange={(e) => updateField("cedula", e.target.value)}
+						inputClassName="h-11 rounded-lg bg-paper text-sm"
+						selectClassName="h-11 rounded-lg bg-paper text-sm"
 					/>
 				</div>
 				<div>
@@ -388,10 +401,13 @@ const RegistrarEspecialistaForm = () => {
 					<input
 						type="date"
 						required
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+						className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
 						value={form.fecha_nacimiento}
 						onChange={(e) => updateField("fecha_nacimiento", e.target.value)}
 					/>
+					{fieldErrors.fecha_nacimiento && (
+						<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+					)}
 				</div>
 				<div>
 					<label className="mb-1 block text-sm font-medium text-brand-700">

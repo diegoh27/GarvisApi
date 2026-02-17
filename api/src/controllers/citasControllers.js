@@ -360,6 +360,13 @@ const cancelCitaController = async ({ id_cita }) => {
 		await conn.execute("UPDATE pagos SET estado_pago = 2 WHERE id_cita = ?", [
 			id_cita,
 		]);
+		// Eliminar el ingreso en facturación asociado al pago de esta cita
+		await conn.execute(
+			`DELETE f FROM fac_movimiento f
+			 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
+			 WHERE p.id_cita = ?`,
+			[id_cita],
+		);
 
 		const { id_disponibilidad, fecha_cita } = rows[0];
 		if (
@@ -575,6 +582,13 @@ const updateEstadoPagoController = async ({
 				estado_pago,
 				id_cita,
 			]);
+			// Si el pago se revierte (0) o se rechaza (2), eliminar el ingreso en facturación
+			await conn.execute(
+				`DELETE f FROM fac_movimiento f
+				 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
+				 WHERE p.id_cita = ?`,
+				[id_cita],
+			);
 		}
 
 		if (estado_pago === 1 && estadoPagoAnterior !== 1) {

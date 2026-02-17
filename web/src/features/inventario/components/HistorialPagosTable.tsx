@@ -99,7 +99,7 @@ export default function HistorialPagosTable({
         cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
         render: (row: HistorialRow) => (row as CompraProducto).proveedor || "-",
       },
-      ...(onEditar
+      ...(onEditar || onEliminar
         ? [
           {
             key: "actions",
@@ -108,13 +108,26 @@ export default function HistorialPagosTable({
               "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-center",
             render: (row: HistorialRow) => (
-              <button
-                onClick={() => onEditar(row)}
-                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
-                title="Editar compra"
-              >
-                <Edit size={18} />
-              </button>
+              <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
+                {onEditar && (
+                  <button
+                    onClick={() => onEditar(row)}
+                    className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                    title="Editar compra"
+                  >
+                    <Edit size={18} />
+                  </button>
+                )}
+                {onEliminar && (
+                  <button
+                    onClick={() => onEliminar((row as CompraProducto).id_compra)}
+                    className="text-red-600 hover:text-red-800 transition-colors p-1"
+                    title="Eliminar compra"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+              </div>
             ),
           },
         ]
@@ -159,7 +172,7 @@ export default function HistorialPagosTable({
         },
         {
           key: "monto",
-          header: "Monto",
+          header: "Monto ($)",
           headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
           cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900 font-semibold",
           render: (row: HistorialRow) => {
@@ -253,7 +266,7 @@ export default function HistorialPagosTable({
           },
           {
             key: "monto",
-            header: "Monto",
+            header: "Monto ($)",
             headerClassName:
               "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
             cellClassName:
@@ -375,7 +388,7 @@ export default function HistorialPagosTable({
                 day: "numeric",
               }),
           },
-          ...(onEditar
+          ...(onEditar || onEliminar
             ? [
               {
                 key: "actions",
@@ -384,13 +397,26 @@ export default function HistorialPagosTable({
                   "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
                 cellClassName: "px-3 md:px-6 py-4 text-center",
                 render: (row: HistorialRow) => (
-                  <button
-                    onClick={() => onEditar(row)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors p-1"
-                    title="Editar pago"
-                  >
-                    <Edit size={18} />
-                  </button>
+                  <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
+                    {onEditar && (
+                      <button
+                        onClick={() => onEditar(row)}
+                        className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                        title="Editar pago"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
+                    {onEliminar && (
+                      <button
+                        onClick={() => onEliminar((row as HistorialEnteLegal).id_historial)}
+                        className="text-red-600 hover:text-red-800 transition-colors p-1"
+                        title="Eliminar pago"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
                 ),
               },
             ]

@@ -72,6 +72,19 @@ const registerPaciente = async (payload) => {
 			throw err;
 		}
 
+		// 2b. Verificar teléfono duplicado
+		if (payload.telefono) {
+			const [telefonoExists] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE telefono = ? LIMIT 1",
+				[payload.telefono],
+			);
+			if (telefonoExists.length > 0) {
+				const err = new Error("Ya existe un usuario con este número de teléfono");
+				err.code = "DUPLICATE_TELEFONO";
+				throw err;
+			}
+		}
+
 		// 3. Determinar RIF final:
 		//    - Si el frontend envía un RIF, usarlo.
 		//    - Si no envía RIF, usar la cédula como fallback.

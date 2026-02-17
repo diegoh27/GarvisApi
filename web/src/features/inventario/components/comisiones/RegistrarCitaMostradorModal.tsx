@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { useGetEcosByEspecialistaQuery } from "../../../ecos/ecosApi";
 import { useGetDolarOficialQuery } from "../../../dolar/dolarApi";
-import { calculateRIF } from "../../../../shared";
+import { calculateRIF, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField } from "../../../../shared";
 import type { EspecialistaInventario } from "../../api/especialistasApi";
+import { sanitizeMonto, validarMonto } from "../../utils/validation";
 
 const METODOS: Array<"Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro"> = [
   "Efectivo",
@@ -47,6 +48,7 @@ export default function RegistrarCitaMostradorModal({
     tasa_dia_bcv: "",
     nombre: "",
     apellido: "",
+    tipo_cedula: "V",
     cedula: "",
     rif_tipo: "V",
     referencia: "",
@@ -109,7 +111,8 @@ export default function RegistrarCitaMostradorModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "monto" ? sanitizeMonto(value) : value;
+    setForm((prev) => ({ ...prev, [name]: nextValue }));
     setError("");
   };
 
@@ -120,13 +123,34 @@ export default function RegistrarCitaMostradorModal({
       setError("Completa los campos obligatorios.");
       return;
     }
-
-    const monto = Number(form.monto);
-    const tasa = Number(form.tasa_dia_bcv);
-    if (!Number.isFinite(monto) || monto <= 0) {
-      setError("El monto debe ser mayor a 0.");
+    if (form.nombre.trim().length > 36) {
+      setError("El nombre no puede superar 36 caracteres.");
       return;
     }
+    if (form.apellido.trim().length > 36) {
+      setError("El apellido no puede superar 36 caracteres.");
+      return;
+    }
+    if (!/^\d+$/.test(form.cedula.trim())) {
+      setError("La cédula solo puede contener números.");
+      return;
+    }
+    if (!validarRangoCedula(form.cedula)) {
+      setError(MENSAJE_RANGO_CEDULA);
+      return;
+    }
+    if (form.referencia.trim().length > 80) {
+      setError("La referencia no puede superar 80 caracteres.");
+      return;
+    }
+
+    const errMonto = validarMonto(form.monto);
+    if (errMonto) {
+      setError(errMonto);
+      return;
+    }
+    const monto = Number(form.monto);
+    const tasa = Number(form.tasa_dia_bcv);
     if (isMetodoEnBs && (!Number.isFinite(tasa) || tasa <= 0)) {
       setError("La tasa BCV debe ser mayor a 0.");
       return;
@@ -146,9 +170,9 @@ export default function RegistrarCitaMostradorModal({
       metodo: form.metodo,
       monto,
       tasa_dia_bcv: tasaFinal,
-      nombre: form.nombre.trim(),
-      apellido: form.apellido.trim(),
-      cedula: form.cedula.trim(),
+      nombre: formatNombreApellido(form.nombre),
+      apellido: formatNombreApellido(form.apellido),
+      cedula: `${form.tipo_cedula}${form.cedula}`.trim(),
       rif: rifCalculado || undefined,
       referencia: form.referencia.trim() || undefined,
     });
@@ -282,6 +306,7 @@ export default function RegistrarCitaMostradorModal({
                 name="referencia"
                 value={form.referencia}
                 onChange={handleChange}
+                maxLength={80}
                 className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
                 placeholder="Se genera automática si la dejas vacía"
               />
@@ -296,6 +321,7 @@ export default function RegistrarCitaMostradorModal({
                 name="nombre"
                 value={form.nombre}
                 onChange={handleChange}
+                maxLength={36}
                 className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
                 required
               />
@@ -307,21 +333,21 @@ export default function RegistrarCitaMostradorModal({
                 name="apellido"
                 value={form.apellido}
                 onChange={handleChange}
+                maxLength={36}
                 className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
                 required
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Cédula *</label>
-              <input
-                type="text"
-                name="cedula"
-                value={form.cedula}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, cedula: e.target.value.replace(/\D/g, "") }))
+              <CedulaField
+                label="Cédula *"
+                value={`${form.tipo_cedula}${form.cedula}`}
+                onChange={(tipo, numero) =>
+                  setForm((prev) => ({ ...prev, tipo_cedula: tipo, cedula: numero }))
                 }
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
                 required
+                inputClassName="h-10 rounded-md border-gray-300 text-sm"
+                selectClassName="h-10 rounded-md border-gray-300 text-sm"
               />
             </div>
           </div>

@@ -8,6 +8,7 @@ const {
 	deleteEnteLegalHandler,
 	listHistorialPagosEntesHandler,
 	registrarPagoEnteLegalHandler,
+	deletePagoEnteLegalHandler,
 } = require("../handlers/entesLegalesHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -56,6 +57,14 @@ entesLegalesRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	registrarPagoEnteLegalHandler,
+);
+
+// DELETE /entes-legales/pagos/:idPago - eliminar un pago
+entesLegalesRoutes.delete(
+	"/pagos/:idPago",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	deletePagoEnteLegalHandler,
 );
 
 // GET /entes/:id - obtener un ente legal

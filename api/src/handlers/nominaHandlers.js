@@ -10,6 +10,7 @@ const {
 	updatePagoNominaController,
 	deletePagoNominaController,
 } = require("../controllers/nominaControllers");
+const { validarCedula } = require("../utils/validacionCedula");
 
 // ==========================================
 // EMPLEADOS HANDLERS
@@ -50,10 +51,21 @@ exports.createEmpleadoHandler = async (req, res) => {
 			});
 		}
 
+		let cedulaValue = cedula;
+		if (cedula && String(cedula).trim()) {
+			const cedulaResult = validarCedula(cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					message: cedulaResult.message,
+				});
+			}
+			cedulaValue = cedulaResult.value;
+		}
+
 		const empleado = await createEmpleadoController({
 			nombre,
 			apellido,
-			cedula,
+			cedula: cedulaValue,
 			cargo,
 			periodo,
 			sueldo: parseFloat(sueldo) || 0,
@@ -86,10 +98,21 @@ exports.updateEmpleadoHandler = async (req, res) => {
 		const estatusPagoManualValue =
 			estatus_pago_manual === "" ? null : estatus_pago_manual;
 
+		let cedulaPayload = cedula;
+		if (cedula !== undefined && cedula !== null && String(cedula).trim()) {
+			const cedulaResult = validarCedula(cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					message: cedulaResult.message,
+				});
+			}
+			cedulaPayload = cedulaResult.value;
+		}
+
 		const empleado = await updateEmpleadoController(idEmpleado, {
 			nombre,
 			apellido,
-			cedula,
+			cedula: cedulaPayload,
 			cargo,
 			periodo,
 			sueldo: sueldo ? parseFloat(sueldo) : undefined,

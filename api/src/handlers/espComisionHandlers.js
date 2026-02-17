@@ -3,6 +3,7 @@ const {
 	generarComisionesPendientesController,
 	pagarComisionController,
 	editarPagoComisionController,
+	deletePagoComisionController,
 } = require("../controllers/espComisionControllers");
 
 // ==========================================
@@ -168,6 +169,39 @@ exports.editarPagoComisionHandler = async (req, res) => {
 		return res.status(500).json({
 			ok: false,
 			message: "Error al editar pago",
+		});
+	}
+};
+
+// ==========================================
+// ELIMINAR PAGO
+// ==========================================
+
+exports.deletePagoComisionHandler = async (req, res) => {
+	try {
+		const { idComision } = req.params;
+		await deletePagoComisionController(idComision);
+		return res.status(200).json({
+			ok: true,
+			message: "Pago de comisión eliminado correctamente",
+		});
+	} catch (error) {
+		if (error?.code === "COMISION_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: error.message,
+			});
+		}
+		if (error?.code === "COMISION_NO_PAGADA") {
+			return res.status(400).json({
+				ok: false,
+				message: error.message,
+			});
+		}
+		console.error("Error in deletePagoComisionHandler:", error);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al eliminar pago de comisión",
 		});
 	}
 };

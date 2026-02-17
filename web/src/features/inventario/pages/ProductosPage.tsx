@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
-import { useGetProductosQuery, useGetHistorialComprasQuery, type CompraProducto } from "../api";
+import Swal from "sweetalert2";
+import { useGetProductosQuery, useGetHistorialComprasQuery, useDeleteCompraMutation, type CompraProducto } from "../api";
 import ComprarProductoModal from "../components/productos/ComprarProductoModal.tsx";
 import EditarCompraModal from "../components/productos/EditarCompraModal.tsx";
 import CambiarCantidadModal from "../components/productos/CambiarCantidadModal.tsx";
@@ -15,6 +16,7 @@ import SearchBar from "../components/SearchBar";
 export default function ProductosPage() {
   const { data: productos = [], isLoading, refetch } = useGetProductosQuery();
   const { data: historialCompras = [], isLoading: loadingHistorial } = useGetHistorialComprasQuery();
+  const [deleteCompra] = useDeleteCompraMutation();
   const [selectedProducto, setSelectedProducto] = useState<string | null>(null);
   const [selectedCompra, setSelectedCompra] = useState<CompraProducto | null>(null);
   const [showComprarModal, setShowComprarModal] = useState(false);
@@ -50,6 +52,37 @@ export default function ProductosPage() {
     setSelectedProducto(id);
     setHistorialType(type);
     setShowHistorialModal(true);
+  };
+
+  const handleEliminarCompra = async (idCompra: string) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar compra?",
+      text: "¿Está seguro que desea eliminar esta compra? Se descontará el stock del producto.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (result.isConfirmed) {
+      try {
+        await deleteCompra(idCompra).unwrap();
+        await Swal.fire({
+          icon: "success",
+          title: "Compra eliminada",
+          text: "La compra fue eliminada correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err?.data?.message || "No se pudo eliminar la compra",
+        });
+      }
+    }
   };
 
   // Filter productos by search query
@@ -140,6 +173,7 @@ export default function ProductosPage() {
           setSelectedCompra(row as CompraProducto);
           setShowEditarCompraModal(true);
         }}
+        onEliminar={handleEliminarCompra}
       />
       {!loadingHistorial && historialCompras.length > 0 && (
         <Pagination

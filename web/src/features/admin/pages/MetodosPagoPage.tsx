@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Swal from "sweetalert2";
-import { PageShell } from "../../../shared";
+import { PageShell, TelefonoField } from "../../../shared";
 import { BANCOS_VENEZUELA } from "../../../data/bancosVenezuela";
 import {
   useCrearMetodoPagoMutation,
@@ -447,20 +447,16 @@ const MetodosPagoPage = () => {
                   </div>
                 </div>
                 {form.tipo_pago_bs === "PagoMovil" ? (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-brand-700">
-                      Teléfono
-                    </label>
-                    <input
-                      type="text"
-                      value={form.telefono}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, telefono: e.target.value }))
-                      }
-                      placeholder="Ej: 04141234567"
-                      className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-                    />
-                  </div>
+                  <TelefonoField
+                    label="Teléfono"
+                    value={form.telefono}
+                    onChange={(prefijo, numero) =>
+                      setForm((prev) => ({ ...prev, telefono: prefijo + numero }))
+                    }
+                    required
+                    inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+                    selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+                  />
                 ) : null}
                 {form.tipo_pago_bs === "Transferencia" ? (
                   <div>

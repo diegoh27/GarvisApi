@@ -38,6 +38,10 @@ export default function EditarEnteModal({
       setError("El nombre del ente es obligatorio");
       return;
     }
+    if (nombre.trim().length > 120) {
+      setError("El nombre del ente no puede superar 120 caracteres");
+      return;
+    }
 
     if (!ente) return;
 
@@ -85,6 +89,7 @@ export default function EditarEnteModal({
               type="text"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
+              maxLength={120}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Ej: SENIAT, IVSS, BANAVIH, Alcaldía..."
               required

@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 import { useGetDolarOficialQuery } from "../../../dolar/dolarApi";
+import { validarMonto, sanitizeMonto, MONTO_MIN, MONTO_MAX } from "../../utils/validation";
 
 interface PagarComisionModalProps {
   comision: EspecialistaComision;
@@ -76,9 +77,10 @@ export default function PagarComisionModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    const nextValue = name === "monto_bs" ? sanitizeMonto(value) : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
     setError("");
   };
@@ -91,8 +93,13 @@ export default function PagarComisionModal({
       return;
     }
 
-    if (!formData.monto_bs || parseFloat(formData.monto_bs) <= 0) {
-      setError("El monto en Bs es requerido y debe ser mayor a 0");
+    const errMonto = validarMonto(formData.monto_bs);
+    if (errMonto) {
+      setError(errMonto);
+      return;
+    }
+    if ((formData.referencia || "").length > 80) {
+      setError("La referencia no puede superar 80 caracteres");
       return;
     }
 
@@ -236,9 +243,10 @@ export default function PagarComisionModal({
                 name="monto_bs"
                 value={formData.monto_bs}
                 onChange={handleInputChange}
-                placeholder="0.00"
+                placeholder="0.01"
                 step="0.01"
-                min="0"
+                min={MONTO_MIN}
+                max={MONTO_MAX}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
@@ -283,6 +291,7 @@ export default function PagarComisionModal({
                 name="referencia"
                 value={formData.referencia}
                 onChange={handleInputChange}
+                maxLength={80}
                 placeholder="Ej: Número de transferencia"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               />

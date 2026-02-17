@@ -5,6 +5,7 @@ const {
 	updateProductoController,
 	registrarCompraProductoController,
 	updateCompraProductoController,
+	deleteCompraProductoController,
 	listComprasProductoController,
 	listHistorialComprasController,
 	registrarAjusteStockController,
@@ -273,6 +274,29 @@ const listHistorialComprasHandler = async (req, res) => {
 	}
 };
 
+const deleteCompraProductoHandler = async (req, res) => {
+	try {
+		const { idCompra } = req.params;
+		await deleteCompraProductoController(idCompra);
+		return res.status(200).json({
+			ok: true,
+			message: "Compra eliminada correctamente",
+		});
+	} catch (err) {
+		if (err?.code === "COMPRA_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al eliminar la compra",
+		});
+	}
+};
+
 // ==========================================
 // AJUSTES DE STOCK
 // ==========================================
@@ -367,6 +391,7 @@ module.exports = {
 	// Compras
 	registrarCompraProductoHandler,
 	updateCompraProductoHandler,
+	deleteCompraProductoHandler,
 	listComprasProductoHandler,
 	listHistorialComprasHandler,
 	// Ajustes

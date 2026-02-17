@@ -27,10 +27,21 @@ export type PagoFormData = {
 	referencia: string;
 };
 
+export type FormularioPagoInvalidField =
+	| "banco_origen"
+	| "banco_destino"
+	| "monto"
+	| "cedula_pagador"
+	| "telefono_pagador"
+	| "referencia"
+	| "imagen"
+	| "orden_medica";
+
 type FormularioPagoProps = {
 	precioEcoUSD: number | null; // Precio del eco en USD
 	onChange: (data: PagoFormData) => void;
 	initialData?: Partial<PagoFormData>;
+	invalidFields?: FormularioPagoInvalidField[]; // Campos a marcar en rojo cuando falla validación al enviar
 	isLoading?: boolean;
 	disabled?: boolean;
 	autoUpload?: boolean; // Si es true, sube automáticamente. Si es false, espera a que se llame uploadImageManual
@@ -55,12 +66,15 @@ const FormularioPago = ({
 	precioEcoUSD,
 	onChange,
 	initialData,
+	invalidFields = [],
 	isLoading = false,
 	disabled = false,
 	autoUpload = true, // Por defecto sube automáticamente
 	onImageReady,
 	onOrdenMedicaReady,
 }: FormularioPagoProps) => {
+	const isInvalid = (field: FormularioPagoInvalidField) => invalidFields.includes(field);
+	const invalidClass = "border-2 border-red-500 bg-red-50 ring-2 ring-red-500/50 focus:border-red-500 focus:ring-red-500/50";
 	const [formData, setFormData] = useState<PagoFormData>({
 		metodo: initialData?.metodo || "Transferencia",
 		imagen: initialData?.imagen || "",
@@ -83,7 +97,6 @@ const FormularioPago = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const ordenMedicaInputRef = useRef<HTMLInputElement>(null);
 	const bancoOrigenRef = useRef<HTMLDivElement>(null);
-	const bancoDestinoRef = useRef<HTMLDivElement>(null);
 	const [metodosDisponibles, setMetodosDisponibles] = useState<MetodoPagoDisponible[]>([]);
 	const [loadingMetodosDisponibles, setLoadingMetodosDisponibles] = useState(false);
 	const [selectedMetodoDestinoId, setSelectedMetodoDestinoId] = useState("");
@@ -157,9 +170,7 @@ const FormularioPago = ({
 
 	// Búsqueda en bancos (origen y destino)
 	const [bancoOrigenSearch, setBancoOrigenSearch] = useState("");
-	const [bancoDestinoSearch, setBancoDestinoSearch] = useState("");
 	const [bancoOrigenOpen, setBancoOrigenOpen] = useState(false);
-	const [bancoDestinoOpen, setBancoDestinoOpen] = useState(false);
 
 	const bancosOrigenFiltrados = useMemo(() => {
 		const q = bancoOrigenSearch.trim().toLowerCase();
@@ -170,16 +181,6 @@ const FormularioPago = ({
 				b.Name.toLowerCase().includes(q)
 		);
 	}, [bancosPorMetodo, bancoOrigenSearch]);
-
-	const bancosDestinoFiltrados = useMemo(() => {
-		const q = bancoDestinoSearch.trim().toLowerCase();
-		if (!q) return bancosPorMetodo;
-		return bancosPorMetodo.filter(
-			(b) =>
-				b.Code.toLowerCase().includes(q) ||
-				b.Name.toLowerCase().includes(q)
-		);
-	}, [bancosPorMetodo, bancoDestinoSearch]);
 
 	const bancoLabel = (code: string, name: string) => `${code} - ${name}`;
 
@@ -200,11 +201,10 @@ const FormularioPago = ({
 		return { prefix: pref, number: digits.slice(pref.length).slice(0, 7) };
 	};
 
-	// Cerrar dropdowns de banco al hacer clic fuera
+	// Cerrar dropdown de banco origen al hacer clic fuera
 	useEffect(() => {
 		const handleClickOutside = (e: MouseEvent) => {
 			if (bancoOrigenRef.current && !bancoOrigenRef.current.contains(e.target as Node)) setBancoOrigenOpen(false);
-			if (bancoDestinoRef.current && !bancoDestinoRef.current.contains(e.target as Node)) setBancoDestinoOpen(false);
 		};
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -274,10 +274,12 @@ const FormularioPago = ({
 		}
 	}, [formData.monto, precioEcoUSD, montoCalculado]);
 
-	// Notificar cambios al componente padre
+	// Notificar cambios al componente padre (ref evita bucle si el padre pasa onChange inline)
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
 	useEffect(() => {
-		onChange(formData);
-	}, [formData, onChange]);
+		onChangeRef.current(formData);
+	}, [formData]);
 
 	// Manejar selección de archivo
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -625,12 +627,15 @@ const FormularioPago = ({
 				</label>
 				<select
 					value={formData.metodo}
-					onChange={(e) =>
+					onChange={(e) => {
+						const nuevoMetodo = e.target.value as "Transferencia" | "PagoMovil";
 						setFormData((prev) => ({
 							...prev,
-							metodo: e.target.value as "Transferencia" | "PagoMovil",
-						}))
-					}
+							metodo: nuevoMetodo,
+							banco_destino: "",
+						}));
+						setSelectedMetodoDestinoId("");
+					}}
 					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
 					disabled={isLoading || disabled}
 				>
@@ -662,6 +667,9 @@ const FormularioPago = ({
 									...prev,
 									banco_destino: bancoLabel(selected.banco_codigo, selected.banco_nombre),
 								}));
+							} else {
+								// Al volver a "Seleccione una opción", quitar banco destino
+								setFormData((prev) => ({ ...prev, banco_destino: "" }));
 							}
 						}}
 						className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
@@ -715,13 +723,13 @@ const FormularioPago = ({
 
 			{/* Banco origen */}
 			<div ref={bancoOrigenRef} className="relative">
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("banco_origen") ? "text-red-600" : "text-brand-900"}`}>
 					Banco origen *
 				</label>
 				<button
 					type="button"
 					onClick={() => !disabled && !isLoading && setBancoOrigenOpen((o) => !o)}
-					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none text-left flex items-center justify-between gap-2"
+					className={`w-full rounded-lg border px-3 py-2 text-sm text-left flex items-center justify-between gap-2 focus:outline-none ${isInvalid("banco_origen") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					disabled={isLoading || disabled}
 				>
 					<span className={formData.banco_origen ? "" : "text-brand-500"}>
@@ -764,59 +772,29 @@ const FormularioPago = ({
 						</ul>
 					</div>
 				)}
+				{isInvalid("banco_origen") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
-			{/* Banco destino */}
-			<div ref={bancoDestinoRef} className="relative">
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+			{/* Banco destino: solo lectura; se asigna solo al elegir una opción (Transferencia o Pago Móvil) */}
+			<div>
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("banco_destino") ? "text-red-600" : "text-brand-900"}`}>
 					Banco destino *
 				</label>
-				<button
-					type="button"
-					onClick={() => !disabled && !isLoading && setBancoDestinoOpen((o) => !o)}
-					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none text-left flex items-center justify-between gap-2"
-					disabled={isLoading || disabled || !!metodoDestinoSeleccionado}
+				<div
+					className={`rounded-lg border px-3 py-2 text-sm ${isInvalid("banco_destino") ? invalidClass : "border-brand-300 bg-brand-50 text-brand-900"}`}
 				>
-					<span className={formData.banco_destino ? "" : "text-brand-500"}>
-						{formData.banco_destino || "Buscar por código o nombre..."}
-					</span>
-					<ChevronDown className="h-4 w-4 flex-shrink-0" />
-				</button>
-				{bancoDestinoOpen && (
-					<div className="absolute z-20 mt-1 w-full min-w-[200px] rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-hidden flex flex-col">
-						<div className="p-2 border-b border-brand-200 flex items-center gap-1">
-							<Search className="h-4 w-4 text-brand-500 flex-shrink-0" />
-							<input
-								type="text"
-								value={bancoDestinoSearch}
-								onChange={(e) => setBancoDestinoSearch(e.target.value)}
-								placeholder="Buscar por código o nombre..."
-								className="flex-1 rounded border border-brand-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none"
-							/>
-						</div>
-						<ul className="overflow-y-auto max-h-48 py-1">
-							{bancosDestinoFiltrados.length === 0 ? (
-								<li className="px-3 py-2 text-sm text-brand-500">Sin resultados</li>
-							) : (
-								bancosDestinoFiltrados.map((b) => (
-									<li key={b.Code}>
-										<button
-											type="button"
-											onClick={() => {
-												setFormData((prev) => ({ ...prev, banco_destino: bancoLabel(b.Code, b.Name) }));
-												setBancoDestinoOpen(false);
-												setBancoDestinoSearch("");
-											}}
-											className="w-full text-left px-3 py-2 text-sm hover:bg-brand-100 focus:bg-brand-100 focus:outline-none"
-										>
-											{bancoLabel(b.Code, b.Name)}
-										</button>
-									</li>
-								))
-							)}
-						</ul>
-					</div>
-				)}
+					{formData.banco_destino ? (
+						<>
+							<span>{formData.banco_destino}</span>
+							<span className="ml-2 text-brand-600 text-xs">(asignado por la opción de pago)</span>
+						</>
+					) : (
+						<span className="text-brand-500">
+							Seleccione una opción de {formData.metodo === "PagoMovil" ? "Pago Móvil" : "Transferencia"} arriba para asignar el banco destino
+						</span>
+					)}
+				</div>
+				{isInvalid("banco_destino") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{showMetodoDatosModal && metodoDestinoSeleccionado && (
@@ -933,7 +911,7 @@ const FormularioPago = ({
 
 			{/* Monto */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("monto") ? "text-red-600" : "text-brand-900"}`}>
 					Monto (Bs) *
 				</label>
 				<input
@@ -943,7 +921,8 @@ const FormularioPago = ({
 					onChange={(e) =>
 						setFormData((prev) => ({ ...prev, monto: e.target.value }))
 					}
-					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+					onWheel={(e) => e.currentTarget.blur()}
+					className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("monto") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					placeholder="0.00"
 					disabled={isLoading || disabled || loadingDolar}
 				/>
@@ -968,11 +947,12 @@ const FormularioPago = ({
 						)}
 					</div>
 				)}
+				{isInvalid("monto") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Cédula pagador: prefijo (V, J, E, P, G) + número */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("cedula_pagador") ? "text-red-600" : "text-brand-900"}`}>
 					Cédula del pagador *
 				</label>
 				<div className="flex gap-2">
@@ -982,7 +962,7 @@ const FormularioPago = ({
 							const { number } = parseCedula(formData.cedula_pagador);
 							setFormData((prev) => ({ ...prev, cedula_pagador: `${e.target.value}-${number}` }));
 						}}
-						className="w-20 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						className={`w-20 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("cedula_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 						disabled={isLoading || disabled}
 					>
 						{CEDULA_PREFIXES.map((p) => (
@@ -998,16 +978,17 @@ const FormularioPago = ({
 							const { prefix } = parseCedula(formData.cedula_pagador);
 							setFormData((prev) => ({ ...prev, cedula_pagador: v ? `${prefix}-${v}` : "" }));
 						}}
-						className="flex-1 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("cedula_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 						placeholder="12345678"
 						disabled={isLoading || disabled}
 					/>
 				</div>
+				{isInvalid("cedula_pagador") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Teléfono pagador: prefijo móvil Venezuela + 7 dígitos */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("telefono_pagador") ? "text-red-600" : "text-brand-900"}`}>
 					Teléfono del pagador *
 				</label>
 				<div className="flex gap-2">
@@ -1017,7 +998,7 @@ const FormularioPago = ({
 							const { number } = parseTelefono(formData.telefono_pagador);
 							setFormData((prev) => ({ ...prev, telefono_pagador: e.target.value + number }));
 						}}
-						className="w-24 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						className={`w-24 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("telefono_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 						disabled={isLoading || disabled}
 					>
 						{TELEFONO_PREFIXES.map((p) => (
@@ -1033,16 +1014,17 @@ const FormularioPago = ({
 							const { prefix } = parseTelefono(formData.telefono_pagador);
 							setFormData((prev) => ({ ...prev, telefono_pagador: prefix + v }));
 						}}
-						className="flex-1 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("telefono_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 						placeholder="1234567"
 						disabled={isLoading || disabled}
 					/>
 				</div>
+				{isInvalid("telefono_pagador") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Referencia */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("referencia") ? "text-red-600" : "text-brand-900"}`}>
 					Referencia *
 				</label>
 				<input
@@ -1051,15 +1033,16 @@ const FormularioPago = ({
 					onChange={(e) =>
 						setFormData((prev) => ({ ...prev, referencia: e.target.value }))
 					}
-					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+					className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("referencia") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					placeholder="Número de referencia del pago"
 					disabled={isLoading || disabled}
 				/>
+				{isInvalid("referencia") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Orden médica */}
-			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+			<div className={isInvalid("orden_medica") ? "rounded-lg border-2 border-red-500 bg-red-50/30 p-2 -m-2" : ""}>
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("orden_medica") ? "text-red-600" : "text-brand-900"}`}>
 					Orden médica *
 				</label>
 				{!formData.orden_medica && !ordenMedicaPreview ? (
@@ -1111,11 +1094,12 @@ const FormularioPago = ({
 						)}
 					</div>
 				)}
+				{isInvalid("orden_medica") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Imagen del comprobante */}
-			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+			<div className={isInvalid("imagen") ? "rounded-lg border-2 border-red-500 bg-red-50/30 p-2 -m-2" : ""}>
+				<label className={`block text-sm font-medium mb-1 ${isInvalid("imagen") ? "text-red-600" : "text-brand-900"}`}>
 					Imagen del comprobante *
 				</label>
 				{!formData.imagen && !imagePreview ? (
@@ -1167,6 +1151,7 @@ const FormularioPago = ({
 						)}
 					</div>
 				)}
+				{isInvalid("imagen") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 		</div>
 	);

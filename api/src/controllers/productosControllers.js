@@ -589,6 +589,48 @@ const updateCompraProductoController = async ({
 	}
 };
 
+/**
+ * Elimina una compra de producto: quita el movimiento de facturación, resta stock y borra la compra
+ */
+const deleteCompraProductoController = async (id_compra) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [compraRows] = await conn.execute(
+			"SELECT id_compra, id_producto, cantidad FROM inv_producto_compra WHERE id_compra = ? LIMIT 1",
+			[id_compra],
+		);
+		if (!compraRows.length) {
+			const err = new Error("Compra no encontrada");
+			err.code = "COMPRA_NOT_FOUND";
+			throw err;
+		}
+		const { id_producto, cantidad } = compraRows[0];
+		const cantidadNum = Number(cantidad);
+
+		await conn.execute(
+			"DELETE FROM fac_movimiento WHERE origen_modulo = 'INV_COMPRA' AND origen_id = ?",
+			[id_compra],
+		);
+		await conn.execute(
+			"UPDATE inv_producto SET stock_actual = stock_actual - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+			[cantidadNum, id_producto],
+		);
+		await conn.execute("DELETE FROM inv_producto_compra WHERE id_compra = ?", [
+			id_compra,
+		]);
+
+		await conn.commit();
+		return { message: "Compra eliminada correctamente" };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	// Productos
 	listProductosController,
@@ -598,6 +640,7 @@ module.exports = {
 	// Compras
 	registrarCompraProductoController,
 	updateCompraProductoController,
+	deleteCompraProductoController,
 	listComprasProductoController,
 	listHistorialComprasController,
 	// Ajustes

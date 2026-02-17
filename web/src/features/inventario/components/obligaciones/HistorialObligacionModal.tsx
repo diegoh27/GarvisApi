@@ -58,7 +58,7 @@ export default function HistorialObligacionModal({
     },
     {
       key: "monto",
-      header: "Monto",
+      header: "Monto ($)",
       headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
       render: (row: HistorialRow) => `$${Number(row.precio_unitario).toFixed(2)}`,

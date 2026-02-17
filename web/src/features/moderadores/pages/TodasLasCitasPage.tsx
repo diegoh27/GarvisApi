@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import { PageShell } from "../../../shared";
 import {
@@ -16,7 +16,7 @@ import VerPagoModal from "../components/VerPagoModal";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import PosponerCitaModal from "../components/PosponerCitaModal";
 import RechazarPagoModal from "../components/RechazarPagoModal";
-import { FileText, Download, Eye, Check, X } from "lucide-react";
+import { FileText, Download, Eye, Check, X, ChevronDown } from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
 const formatFecha = (value: string) => {
@@ -101,6 +101,8 @@ const TodasLasCitasPage = () => {
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
 	const [citaToReject, setCitaToReject] = useState<{ id_cita: string; nombre: string } | null>(null);
+	const [openAccionesCitaId, setOpenAccionesCitaId] = useState<string | null>(null);
+	const accionesDropdownRef = useRef<HTMLDivElement>(null);
 
 	// Obtener datos del pago cuando se selecciona una cita
 	const {
@@ -110,6 +112,22 @@ const TodasLasCitasPage = () => {
 	} = useGetPagoByCitaQuery(selectedCitaForPago || "", {
 		skip: !selectedCitaForPago,
 	});
+
+	// Cerrar menú Acciones al hacer clic fuera
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				openAccionesCitaId &&
+				accionesDropdownRef.current &&
+				!accionesDropdownRef.current.contains(event.target as Node)
+			) {
+				setOpenAccionesCitaId(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [openAccionesCitaId]);
+
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filterPago, setFilterPago] = useState("todas");
 	const [filterResultado, setFilterResultado] = useState("todas");
@@ -562,16 +580,16 @@ const TodasLasCitasPage = () => {
 					/>
 				</div>
 
-				{/* Filtros */}
-				<div className="space-y-3">
+				{/* Filtros en grid para ocupar menos altura */}
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por estado de pago</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Estado de pago</label>
+						<div className="flex flex-wrap gap-1.5">
 							{filterOptionsPago.map((option) => (
 								<button
 									key={option.id}
 									onClick={() => setFilterPago(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterPago === option.id
+									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterPago === option.id
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
@@ -582,13 +600,13 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por resultados</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Resultados</label>
+						<div className="flex flex-wrap gap-1.5">
 							{filterOptionsResultado.map((option) => (
 								<button
 									key={option.id}
 									onClick={() => setFilterResultado(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterResultado === option.id
+									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterResultado === option.id
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
@@ -599,13 +617,13 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por informe (de especialista)</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Informe</label>
+						<div className="flex flex-wrap gap-1.5">
 							{filterOptionsInforme.map((option) => (
 								<button
 									key={option.id}
 									onClick={() => setFilterInforme(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterInforme === option.id
+									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterInforme === option.id
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
@@ -616,13 +634,13 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por atención</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Atención</label>
+						<div className="flex flex-wrap gap-1.5">
 							{filterOptionsAtencion.map((option) => (
 								<button
 									key={option.id}
 									onClick={() => setFilterAtencion(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterAtencion === option.id
+									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterAtencion === option.id
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
@@ -633,13 +651,13 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Filtrar por origen</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Origen</label>
+						<div className="flex flex-wrap gap-1.5">
 							{filterOptionsOrigen.map((option) => (
 								<button
 									key={option.id}
 									onClick={() => setFilterOrigen(option.id)}
-									className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filterOrigen === option.id
+									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterOrigen === option.id
 										? "bg-brand-700 text-paper"
 										: "bg-cloud text-brand-800 hover:bg-mist"
 										}`}
@@ -650,25 +668,25 @@ const TodasLasCitasPage = () => {
 						</div>
 					</div>
 					<div>
-						<label className="mb-2 block text-xs font-medium text-brand-700">Ordenar por fecha</label>
-						<div className="flex flex-wrap gap-2">
+						<label className="mb-1.5 block text-xs font-medium text-brand-700">Orden fecha</label>
+						<div className="flex flex-wrap gap-1.5">
 							<button
 								onClick={() => setOrdenFecha("reciente")}
-								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "reciente"
+								className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${ordenFecha === "reciente"
 									? "bg-brand-700 text-paper"
 									: "bg-cloud text-brand-800 hover:bg-mist"
 									}`}
 							>
-								Más reciente primero
+								Reciente
 							</button>
 							<button
 								onClick={() => setOrdenFecha("antigua")}
-								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${ordenFecha === "antigua"
+								className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${ordenFecha === "antigua"
 									? "bg-brand-700 text-paper"
 									: "bg-cloud text-brand-800 hover:bg-mist"
 									}`}
 							>
-								Más antigua primero
+								Antigua
 							</button>
 						</div>
 					</div>
@@ -777,159 +795,187 @@ const TodasLasCitasPage = () => {
 													</div>
 												)}
 											</div>
-											<div className="flex items-center gap-2 flex-wrap">
+											<div
+												className="relative"
+												ref={openAccionesCitaId === cita.id_cita ? accionesDropdownRef : undefined}
+											>
 												<button
 													type="button"
-													onClick={() => setSelectedCitaIdForView(cita.id_cita)}
-													className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+													onClick={() =>
+														setOpenAccionesCitaId((id) => (id === cita.id_cita ? null : cita.id_cita))
+													}
+													className="inline-flex items-center gap-2 rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
 												>
-													Ver cita
+													Acciones
+													<ChevronDown
+														className={`h-4 w-4 transition-transform ${openAccionesCitaId === cita.id_cita ? "rotate-180" : ""}`}
+													/>
 												</button>
-												{/* Botón "Ver pago" - aparece siempre que haya un pago */}
-												{cita.id_pago && (
-													<button
-														type="button"
-														onClick={() => setSelectedCitaForPago(cita.id_cita)}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-													>
-														Ver pago
-													</button>
-												)}
-												{/* Botones de aprobar y rechazar - solo cuando el pago está pendiente */}
-												{estadoPago === 0 && cita.id_pago && (
-													<>
+												{openAccionesCitaId === cita.id_cita && (
+													<div className="absolute left-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-mist bg-paper py-1 shadow-lg">
 														<button
 															type="button"
 															onClick={() => {
-																setSelectedCita(cita.id_cita);
-																handleAprobarPago(cita.id_cita);
+																setSelectedCitaIdForView(cita.id_cita);
+																setOpenAccionesCitaId(null);
 															}}
-															disabled={isUpdating || selectedCita === cita.id_cita}
-															className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+															className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
 														>
-															{isUpdating && selectedCita === cita.id_cita
-																? "Procesando..."
-																: "Aprobar pago"}
+															Ver cita
 														</button>
-														<button
-															type="button"
-															onClick={() => {
-																setSelectedCita(cita.id_cita);
-																handleRechazarPago(cita.id_cita);
-															}}
-															disabled={isUpdating || selectedCita === cita.id_cita}
-															className="rounded-lg border border-red-500 bg-paper px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
-														>
-															Rechazar
-														</button>
-													</>
-												)}
-												{tieneResultado ? (
-													<>
-														<button
-															type="button"
-															onClick={() => {
-																setSelectedCitaForResultados({
-																	archivos,
-																	pacienteNombre: fullName,
-																	ecoNombre: cita.eco_nombre,
-																	idCita: cita.id_cita,
-																});
-															}}
-															className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
-														>
-															Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
-														</button>
-														<button
-															type="button"
-															onClick={() => setSelectedCitaForUpload(cita)}
-															className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-														>
-															Subir más archivos
-														</button>
-													</>
-												) : (
-													<button
-														type="button"
-														onClick={() => setSelectedCitaForUpload(cita)}
-														className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-													>
-														Subir resultados
-													</button>
-												)}
-												{tieneInforme ? (
-													<button
-														type="button"
-														onClick={() => handleViewInforme(cita.informe_pdf_url)}
-														className="rounded-lg border border-blue-500 bg-paper px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 flex items-center gap-2"
-													>
-														<FileText className="h-4 w-4" />
-														Ver informe
-													</button>
-												) : (
-													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
-														Sin informe
-													</span>
-												)}
-												{/* Botón "Ver orden médica" comentado - ya está disponible en el modal de cita */}
-												{/* {cita.orden && (
-													<button
-														type="button"
-														onClick={() => handleViewOrdenMedica(cita.orden)}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
-													>
-														<Eye className="h-4 w-4" />
-														Ver orden médica
-													</button>
-												)} */}
-												{estadoCita !== 2 && estadoCita !== 3 && (
-													<>
-														<button
-															type="button"
-															onClick={() => {
-																// Convertir CitaCompleta a CitaPendientePago para el modal
-																const citaParaPosponer: CitaPendientePago = {
-																	id_cita: cita.id_cita,
-																	id_paciente: cita.id_paciente,
-																	id_representado: cita.id_representado,
-																	id_especialista: cita.id_especialista,
-																	id_eco: cita.id_eco,
-																	fecha_cita: cita.fecha_cita,
-																	hora_cita: cita.hora_cita,
-																	estado_cita: estadoCita,
-																	estado_pago: estadoPago,
-																	id_disponibilidad: cita.id_disponibilidad,
-																	orden: cita.orden,
-																	paciente_nombre: cita.paciente_nombre,
-																	paciente_apellido: cita.paciente_apellido,
-																	paciente_cedula: cita.paciente_cedula,
-																	paciente_telefono: cita.paciente_telefono,
-																	especialista_nombre: cita.especialista_nombre,
-																	especialista_apellido: cita.especialista_apellido,
-																	eco_nombre: cita.eco_nombre,
-																};
-																setSelectedCitaForPosponer(citaParaPosponer);
-															}}
-															className="rounded-lg border border-amber-500 bg-paper px-4 py-2 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-50"
-														>
-															Posponer cita
-														</button>
-														<button
-															type="button"
-															onClick={() => handleCancelarCita(cita.id_cita, fullName)}
-															className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-red-600"
-														>
-															Cancelar cita
-														</button>
-														<button
-															type="button"
-															onClick={() => handleMarcarAtendida(cita.id_cita, fullName)}
-															disabled={isMarkingAtendida}
-															className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-green-700 disabled:opacity-50"
-														>
-															{isMarkingAtendida ? "Marcando..." : "Marcar atendida"}
-														</button>
-													</>
+														{cita.id_pago && (
+															<button
+																type="button"
+																onClick={() => {
+																	setSelectedCitaForPago(cita.id_cita);
+																	setOpenAccionesCitaId(null);
+																}}
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
+															>
+																Ver pago
+															</button>
+														)}
+														{estadoPago === 0 && cita.id_pago && (
+															<>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedCita(cita.id_cita);
+																		handleAprobarPago(cita.id_cita);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	disabled={isUpdating || selectedCita === cita.id_cita}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud disabled:opacity-50"
+																>
+																	{isUpdating && selectedCita === cita.id_cita ? "Procesando..." : "Aprobar pago"}
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedCita(cita.id_cita);
+																		handleRechazarPago(cita.id_cita);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	disabled={isUpdating || selectedCita === cita.id_cita}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+																>
+																	Rechazar
+																</button>
+															</>
+														)}
+														{tieneResultado ? (
+															<>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedCitaForResultados({
+																			archivos,
+																			pacienteNombre: fullName,
+																			ecoNombre: cita.eco_nombre,
+																			idCita: cita.id_cita,
+																		});
+																		setOpenAccionesCitaId(null);
+																	}}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
+																>
+																	Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setSelectedCitaForUpload(cita);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud"
+																>
+																	Subir más archivos
+																</button>
+															</>
+														) : (
+															<button
+																type="button"
+																onClick={() => {
+																	setSelectedCitaForUpload(cita);
+																	setOpenAccionesCitaId(null);
+																}}
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud"
+															>
+																Subir resultados
+															</button>
+														)}
+														{tieneInforme ? (
+															<button
+																type="button"
+																onClick={() => {
+																	handleViewInforme(cita.informe_pdf_url);
+																	setOpenAccionesCitaId(null);
+																}}
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50"
+															>
+																<FileText className="h-4 w-4 shrink-0" />
+																Ver informe
+															</button>
+														) : (
+															<div className="px-4 py-2 text-sm text-brand-500">
+																Sin informe
+															</div>
+														)}
+														{estadoCita !== 2 && estadoCita !== 3 && (
+															<>
+																<button
+																	type="button"
+																	onClick={() => {
+																		const citaParaPosponer: CitaPendientePago = {
+																			id_cita: cita.id_cita,
+																			id_paciente: cita.id_paciente,
+																			id_representado: cita.id_representado,
+																			id_especialista: cita.id_especialista,
+																			id_eco: cita.id_eco,
+																			fecha_cita: cita.fecha_cita,
+																			hora_cita: cita.hora_cita,
+																			estado_cita: estadoCita,
+																			estado_pago: estadoPago,
+																			id_disponibilidad: cita.id_disponibilidad,
+																			orden: cita.orden,
+																			paciente_nombre: cita.paciente_nombre,
+																			paciente_apellido: cita.paciente_apellido,
+																			paciente_cedula: cita.paciente_cedula,
+																			paciente_telefono: cita.paciente_telefono,
+																			especialista_nombre: cita.especialista_nombre,
+																			especialista_apellido: cita.especialista_apellido,
+																			eco_nombre: cita.eco_nombre,
+																		};
+																		setSelectedCitaForPosponer(citaParaPosponer);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-amber-600 hover:bg-amber-50"
+																>
+																	Posponer cita
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleCancelarCita(cita.id_cita, fullName);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+																>
+																	Cancelar cita
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		handleMarcarAtendida(cita.id_cita, fullName);
+																		setOpenAccionesCitaId(null);
+																	}}
+																	disabled={isMarkingAtendida}
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 disabled:opacity-50"
+																>
+																	{isMarkingAtendida ? "Marcando..." : "Marcar atendida"}
+																</button>
+															</>
+														)}
+													</div>
 												)}
 											</div>
 										</div>

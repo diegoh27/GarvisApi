@@ -7,7 +7,8 @@ const { getTodayBcvRate, normalizeUsdAmounts } = require("../utils/currency");
 // ==========================================
 
 /**
- * Lista todas las obligaciones con información del ente
+ * Lista todas las obligaciones con información del ente.
+ * El estado se calcula en lectura: si está Pendiente y la fecha de vencimiento ya pasó, se devuelve Vencido.
  */
 const listObligacionesController = async () => {
 	const sql = `
@@ -19,7 +20,11 @@ const listObligacionesController = async () => {
 			o.periodo,
 			o.fecha_vencimiento,
 			o.monto,
-			o.estado,
+			CASE
+				WHEN o.estado = 'Pagado' THEN 'Pagado'
+				WHEN o.fecha_vencimiento IS NOT NULL AND o.fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE o.estado
+			END AS estado,
 			o.recordatorio_dias,
 			o.creado_en,
 			o.actualizado_en
@@ -33,7 +38,8 @@ const listObligacionesController = async () => {
 };
 
 /**
- * Obtiene una obligación específica
+ * Obtiene una obligación específica.
+ * El estado se calcula en lectura: Pendiente + fecha vencida => Vencido.
  */
 const getObligacionController = async (id_obligacion) => {
 	const sql = `
@@ -45,7 +51,11 @@ const getObligacionController = async (id_obligacion) => {
 			o.periodo,
 			o.fecha_vencimiento,
 			o.monto,
-			o.estado,
+			CASE
+				WHEN o.estado = 'Pagado' THEN 'Pagado'
+				WHEN o.fecha_vencimiento IS NOT NULL AND o.fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE o.estado
+			END AS estado,
 			o.recordatorio_dias,
 			o.creado_en,
 			o.actualizado_en
@@ -122,6 +132,7 @@ const createObligacionController = async ({
  */
 const updateObligacionController = async (id_obligacion, updates) => {
 	const allowedFields = [
+		"id_ente",
 		"concepto",
 		"periodo",
 		"fecha_vencimiento",
@@ -131,6 +142,19 @@ const updateObligacionController = async (id_obligacion, updates) => {
 	];
 	const fields = [];
 	const values = [];
+
+	// Si se actualiza id_ente, validar que el ente exista y esté activo
+	if (updates.id_ente !== undefined) {
+		const [enteRows] = await pool.execute(
+			"SELECT id_ente FROM leg_ente WHERE id_ente = ? AND activo = 1",
+			[updates.id_ente],
+		);
+		if (!enteRows.length) {
+			const err = new Error("El ente legal no existe o está inactivo");
+			err.code = "ENTE_NOT_FOUND";
+			throw err;
+		}
+	}
 
 	Object.keys(updates).forEach((key) => {
 		if (allowedFields.includes(key) && updates[key] !== undefined) {

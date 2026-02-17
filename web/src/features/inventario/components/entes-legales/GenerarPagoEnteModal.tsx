@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { EnteLegal } from "../../api";
 import { useRegistrarPagoEnteLegalMutation } from "../../api";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 
 interface GenerarPagoEnteModalProps {
   isOpen: boolean;
@@ -42,8 +43,9 @@ export default function GenerarPagoEnteModal({
       return;
     }
 
-    if (!formData.monto || Number(formData.monto) <= 0) {
-      setError("El monto debe ser mayor a 0");
+    const errMonto = validarMonto(formData.monto);
+    if (errMonto) {
+      setError(errMonto);
       return;
     }
 
@@ -111,18 +113,19 @@ export default function GenerarPagoEnteModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Monto *
+              Monto ($) *
             </label>
             <input
               type="number"
               step="0.01"
-              min="0"
+              min={MONTO_MIN}
+              max={MONTO_MAX}
               value={formData.monto}
               onChange={(e) =>
-                setFormData({ ...formData, monto: e.target.value })
+                setFormData({ ...formData, monto: sanitizeMonto(e.target.value) })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="0.00"
+              placeholder="0.01"
               required
             />
           </div>

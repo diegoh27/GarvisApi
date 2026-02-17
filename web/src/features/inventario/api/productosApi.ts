@@ -183,6 +183,15 @@ const productosApi = baseApi.injectEndpoints({
 			providesTags: ["HistorialCompras"],
 		}),
 
+		// DELETE /productos/compras/:idCompra - eliminar compra
+		deleteCompra: builder.mutation<{ message: string }, string>({
+			query: (idCompra) => ({
+				url: `/productos/compras/${idCompra}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Productos", "Compras", "HistorialCompras"],
+		}),
+
 		// ==========================================
 		// AJUSTES
 		// ==========================================
@@ -239,6 +248,7 @@ export const {
 	useUpdateProductoMutation,
 	useRegistrarCompraMutation,
 	useUpdateCompraMutation,
+	useDeleteCompraMutation,
 	useGetComprasProductoQuery,
 	useGetHistorialComprasQuery,
 	useRegistrarAjusteMutation,

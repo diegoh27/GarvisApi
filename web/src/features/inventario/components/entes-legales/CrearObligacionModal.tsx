@@ -39,6 +39,10 @@ export default function CrearObligacionModal({
       setError("El concepto es obligatorio");
       return;
     }
+    if (formData.concepto.trim().length > 200) {
+      setError("El concepto no puede superar 200 caracteres");
+      return;
+    }
 
     try {
       const payload: CreateObligacionPayload = {
@@ -117,6 +121,7 @@ export default function CrearObligacionModal({
               onChange={(e) =>
                 setFormData({ ...formData, concepto: e.target.value })
               }
+              maxLength={200}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Ej: IVA, ISLR, Retención..."
               required

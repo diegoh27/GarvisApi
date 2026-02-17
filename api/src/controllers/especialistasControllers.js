@@ -8,6 +8,18 @@ const createEspecialistaController = async (payload) => {
 	try {
 		await conn.beginTransaction();
 
+		if (payload.telefono) {
+			const [telefonoExists] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE telefono = ? LIMIT 1",
+				[payload.telefono],
+			);
+			if (telefonoExists.length > 0) {
+				const err = new Error("Ya existe un usuario con este número de teléfono");
+				err.code = "DUPLICATE_TELEFONO";
+				throw err;
+			}
+		}
+
 		const id_usuario = crypto.randomUUID();
 		const id_rol = await getRolIdByName(conn, "especialista");
 		const hashedPassword = await bcrypt.hash(payload.contrasena, 10);
@@ -208,6 +220,18 @@ const updateEspecialistaController = async (id_especialista, payload) => {
 			throw err;
 		}
 
+		if (payload.telefono) {
+			const [telefonoExists] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE telefono = ? AND id_usuario != ? LIMIT 1",
+				[payload.telefono, id_especialista],
+			);
+			if (telefonoExists.length > 0) {
+				const err = new Error("Ya existe otro usuario con este número de teléfono");
+				err.code = "DUPLICATE_TELEFONO";
+				throw err;
+			}
+		}
+
 		const userFields = [
 			"nombre",
 			"apellido",
@@ -250,6 +274,21 @@ const updateEspecialistaController = async (id_especialista, payload) => {
         WHERE id_especialista = ?
       `;
 			await conn.execute(sqlEsp, [...espParams, id_especialista]);
+		}
+
+		// Si se actualizó el porcentaje, recalcular montos en comisiones pendientes de este especialista
+		if (payload.porcentaje !== undefined) {
+			const newPorcentaje = Number(payload.porcentaje);
+			if (Number.isFinite(newPorcentaje)) {
+				await conn.execute(
+					`UPDATE esp_comision ec
+					 INNER JOIN cita c ON c.id_cita = ec.id_cita
+					 INNER JOIN eco e ON e.id_eco = c.id_eco
+					 SET ec.porcentaje = ?, ec.monto = ROUND((e.precio * ?) / 100, 2)
+					 WHERE ec.id_especialista = ? AND ec.estado = 'Pendiente'`,
+					[newPorcentaje, newPorcentaje, id_especialista],
+				);
+			}
 		}
 
 		// Actualizar ecos si se proporcionaron

@@ -1,0 +1,96 @@
+import type { TelefonoPrefix } from "../utils/telefonoDisplay";
+import {
+	TELEFONO_PREFIXES,
+	parseTelefonoDisplay,
+	validarNumeroTelefono,
+	MENSAJE_TELEFONO_REQUERIDO,
+	MENSAJE_TELEFONO_7_DIGITOS,
+} from "../utils/telefonoDisplay";
+
+export type TelefonoFieldProps = {
+	/** Valor completo: "04121234567" o solo "1234567" */
+	value: string;
+	/** Cambio: (prefijo, numero) - numero son 7 dígitos */
+	onChange: (prefijo: TelefonoPrefix, numero: string) => void;
+	label?: React.ReactNode;
+	error?: string;
+	placeholder?: string;
+	required?: boolean;
+	disabled?: boolean;
+	inputClassName?: string;
+	selectClassName?: string;
+};
+
+const NUMERO_LENGTH = 7;
+
+export function TelefonoField({
+	value,
+	onChange,
+	label,
+	error,
+	placeholder = "1234567",
+	required,
+	disabled,
+	inputClassName = "",
+	selectClassName = "",
+}: TelefonoFieldProps) {
+	const { prefix, number } = parseTelefonoDisplay(value);
+
+	const handlePrefixChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+		const p = e.target.value as TelefonoPrefix;
+		if (TELEFONO_PREFIXES.includes(p)) onChange(p, number);
+	};
+
+	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const v = e.target.value.replace(/\D/g, "").slice(0, NUMERO_LENGTH);
+		onChange(prefix, v);
+	};
+
+	const baseInput =
+		"rounded-lg border px-3 py-2 text-sm outline-none focus:border-brand-500";
+	const errorInput = error ? "border-red-500" : "border-brand-300 bg-paper";
+
+	return (
+		<div>
+			{label != null && (
+				<label className="mb-1 block text-sm font-medium text-brand-700">
+					{label}
+				</label>
+			)}
+			<div className="flex gap-2">
+				<select
+					value={prefix}
+					onChange={handlePrefixChange}
+					disabled={disabled}
+					className={`w-24 ${baseInput} ${errorInput} ${selectClassName}`.trim()}
+					aria-label="Prefijo telefónico"
+				>
+					{TELEFONO_PREFIXES.map((p) => (
+						<option key={p} value={p}>
+							{p}
+						</option>
+					))}
+				</select>
+				<input
+					type="tel"
+					inputMode="numeric"
+					value={number}
+					onChange={handleNumberChange}
+					placeholder={placeholder}
+					required={required}
+					disabled={disabled}
+					maxLength={NUMERO_LENGTH}
+					className={`flex-1 ${baseInput} ${errorInput} ${inputClassName}`.trim()}
+					aria-label="Número de teléfono (7 dígitos)"
+				/>
+			</div>
+			{error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+		</div>
+	);
+}
+
+export {
+	validarNumeroTelefono,
+	MENSAJE_TELEFONO_REQUERIDO,
+	MENSAJE_TELEFONO_7_DIGITOS,
+};

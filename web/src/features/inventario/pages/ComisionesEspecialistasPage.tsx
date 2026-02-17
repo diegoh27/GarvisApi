@@ -7,6 +7,7 @@ import {
   useGenerarComisionesMutation,
   usePagarComisionMutation,
   useEditarPagoComisionMutation,
+  useDeletePagoComisionMutation,
   useCrearCitaMostradorMutation,
 } from "../api/comisionesApi";
 import { useGetEspecialistasInventarioQuery } from "../api/especialistasApi";
@@ -38,6 +39,7 @@ export default function ComisionesEspecialistasPage() {
   const [generarComisiones] = useGenerarComisionesMutation();
   const [pagarComision] = usePagarComisionMutation();
   const [editarPagoComision] = useEditarPagoComisionMutation();
+  const [deletePagoComision] = useDeletePagoComisionMutation();
   const [crearCitaMostrador, { isLoading: isCreatingMostrador }] = useCrearCitaMostradorMutation();
   const [updateEspecialista, { isLoading: isUpdatingEspecialista }] = useUpdateEspecialistaMutation();
 
@@ -98,6 +100,37 @@ export default function ComisionesEspecialistasPage() {
     setSelectedComision(comision);
     setModoPago("editar");
     setShowPagarModal(true);
+  };
+
+  const handleEliminarPago = async (idComision: string) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar pago?",
+      text: "Se revertirá esta comisión a Pendiente y se quitará el movimiento de facturación.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (result.isConfirmed) {
+      try {
+        await deletePagoComision(idComision).unwrap();
+        await Swal.fire({
+          icon: "success",
+          title: "Pago eliminado",
+          text: "El pago de comisión fue eliminado correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err?.data?.message || "No se pudo eliminar el pago",
+        });
+      }
+    }
   };
 
   const handleEditarEspecialista = (especialista: EspecialistaInventario) => {
@@ -440,6 +473,7 @@ export default function ComisionesEspecialistasPage() {
       <HistorialComisionesTable
         comisiones={currentHistorial}
         isLoading={historialLoading}
+        onEliminar={handleEliminarPago}
       />
 
       {!historialLoading && historialData.length > 0 && (

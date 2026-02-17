@@ -105,10 +105,26 @@ export const facturacionApi = baseApi.injectEndpoints({
 			}) => response.data,
 			providesTags: ["Facturacion"],
 		}),
+
+		deleteMovimiento: builder.mutation<{ message: string }, string>({
+			query: (id) => ({
+				url: `/facturacion/movimientos/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: [
+				"Facturacion",
+				"HistorialEnteLegal",
+				"HistorialCompras",
+				"Productos",
+				"NominaPago",
+				"AlquilerPago",
+			],
+		}),
 	}),
 });
 
 export const {
 	useGetResumenFacturacionQuery,
 	useListMovimientosFacturacionQuery,
+	useDeleteMovimientoMutation,
 } = facturacionApi;

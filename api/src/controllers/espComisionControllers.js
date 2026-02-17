@@ -602,3 +602,40 @@ exports.editarPagoComisionController = async ({
 		conn.release();
 	}
 };
+
+// COMISIONES - ELIMINAR PAGO (revertir a Pendiente y quitar movimiento facturación)
+exports.deletePagoComisionController = async (id_comision) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		const [rows] = await conn.execute(
+			"SELECT id_comision, estado FROM esp_comision WHERE id_comision = ? LIMIT 1",
+			[id_comision],
+		);
+		if (!rows.length) {
+			const err = new Error("Comisión no encontrada");
+			err.code = "COMISION_NOT_FOUND";
+			throw err;
+		}
+		if (rows[0].estado !== "Pagada") {
+			const err = new Error("Solo se puede eliminar el pago de una comisión ya pagada");
+			err.code = "COMISION_NO_PAGADA";
+			throw err;
+		}
+		await conn.execute(
+			"DELETE FROM fac_movimiento WHERE origen_modulo = 'ESP_COMISION' AND origen_id = ?",
+			[id_comision],
+		);
+		await conn.execute(
+			"UPDATE esp_comision SET estado = 'Pendiente', fecha_pago = NULL WHERE id_comision = ?",
+			[id_comision],
+		);
+		await conn.commit();
+		return { message: "Pago de comisión eliminado correctamente" };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};

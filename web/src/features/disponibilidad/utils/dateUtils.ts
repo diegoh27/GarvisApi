@@ -47,3 +47,21 @@ export const formatFechaCorta = (dateKey: string): string => {
 		year: "numeric",
 	});
 };
+
+/** Anticipación mínima en horas para reservar/asignar una cita */
+const HORAS_ANTICIPACION_MINIMA = 2;
+
+/**
+ * Indica si un slot (fecha + hora de inicio) está al menos 2 horas en el futuro.
+ * Sirve para no permitir reservar o asignar citas en horarios que ya pasaron o están muy próximos.
+ */
+export function isSlotAtLeast2HoursFromNow(fecha: string, horaInicio: string): boolean {
+	if (!fecha || !horaInicio) return false;
+	const dateKey = fecha.includes("T") ? fecha.split("T")[0] : fecha.slice(0, 10);
+	const [h = "0", m = "0"] = horaInicio.trim().split(":");
+	const slotStart = new Date(`${dateKey}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`);
+	if (Number.isNaN(slotStart.getTime())) return false;
+	const minAllowed = new Date();
+	minAllowed.setTime(minAllowed.getTime() + HORAS_ANTICIPACION_MINIMA * 60 * 60 * 1000);
+	return slotStart.getTime() >= minAllowed.getTime();
+}

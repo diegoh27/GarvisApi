@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { PasswordField } from "../../../shared";
+import { PasswordField, formatNombreApellido, TelefonoField, parseTelefonoDisplay, validarNumeroTelefono, MENSAJE_TELEFONO_REQUERIDO, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared";
 import { useCrearModeradorMutation } from "../adminApi";
 
 const RegistrarModeradorForm = () => {
@@ -12,6 +12,7 @@ const RegistrarModeradorForm = () => {
 		nombre: "",
 		apellido: "",
 		correo: "",
+		telefono: "",
 		contrasena: "",
 		confirmar_contrasena: "",
 	});
@@ -46,6 +47,10 @@ const RegistrarModeradorForm = () => {
 				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 				if (!emailRegex.test(value)) return "El correo no es válido";
 				break;
+			case "telefono":
+				if (!value.trim()) return MENSAJE_TELEFONO_REQUERIDO;
+				if (!validarNumeroTelefono(parseTelefonoDisplay(value).numero)) return MENSAJE_TELEFONO_7_DIGITOS;
+				break;
 			case "contrasena":
 				if (!value) return "La contraseña es requerida";
 				if (value.length < 6) return "La contraseña debe tener al menos 6 caracteres";
@@ -78,13 +83,13 @@ const RegistrarModeradorForm = () => {
 		try {
 			// El backend requiere más campos, así que enviamos valores por defecto
 			await crearModerador({
-				nombre: form.nombre.trim(),
-				apellido: form.apellido.trim(),
+				nombre: formatNombreApellido(form.nombre),
+				apellido: formatNombreApellido(form.apellido),
 				correo: form.correo.trim(),
+				telefono: form.telefono.trim(),
 				contrasena: form.contrasena,
 				genero: "Masculino", // Valor por defecto
 				cedula: `MOD-${Date.now()}`, // Generar cédula temporal única
-				telefono: "0000000000", // Valor por defecto
 				fecha_nacimiento: "1990-01-01", // Valor por defecto
 			}).unwrap();
 
@@ -171,6 +176,28 @@ const RegistrarModeradorForm = () => {
 								<p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>
 							)}
 						</div>
+					</div>
+
+					<div>
+						<TelefonoField
+							label={
+								<>
+									Teléfono <span className="text-red-500">*</span>
+								</>
+							}
+							value={form.telefono}
+							onChange={(prefijo, numero) => {
+								const full = prefijo + numero;
+								setForm((prev) => ({ ...prev, telefono: full }));
+								if (fieldErrors.telefono) {
+									setFieldErrors((prev) => ({ ...prev, telefono: "" }));
+								}
+							}}
+							error={fieldErrors.telefono}
+							required
+							inputClassName="h-10 rounded-lg bg-paper text-sm"
+							selectClassName="h-10 rounded-lg bg-paper text-sm"
+						/>
 					</div>
 
 					<div>

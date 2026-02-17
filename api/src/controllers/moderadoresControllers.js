@@ -8,6 +8,18 @@ const createModeradorController = async (payload) => {
 	try {
 		await conn.beginTransaction();
 
+		if (payload.telefono) {
+			const [telefonoExists] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE telefono = ? LIMIT 1",
+				[payload.telefono],
+			);
+			if (telefonoExists.length > 0) {
+				const err = new Error("Ya existe un usuario con este número de teléfono");
+				err.code = "DUPLICATE_TELEFONO";
+				throw err;
+			}
+		}
+
 		const id_usuario = crypto.randomUUID();
 		const id_rol = await getRolIdByName(conn, "moderador");
 		const hashedPassword = await bcrypt.hash(payload.contrasena, 10);
@@ -106,6 +118,18 @@ const getModeradorByIdController = async (id_moderador) => {
 };
 
 const updateModeradorController = async (id_moderador, payload) => {
+	if (payload.telefono) {
+		const [telefonoExists] = await pool.execute(
+			"SELECT id_usuario FROM usuario WHERE telefono = ? AND id_usuario != ? LIMIT 1",
+			[payload.telefono, id_moderador],
+		);
+		if (telefonoExists.length > 0) {
+			const err = new Error("Ya existe otro usuario con este número de teléfono");
+			err.code = "DUPLICATE_TELEFONO";
+			throw err;
+		}
+	}
+
 	const fields = [
 		"nombre",
 		"apellido",

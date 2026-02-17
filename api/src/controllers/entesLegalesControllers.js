@@ -304,6 +304,29 @@ const registrarPagoEnteLegalController = async ({
 	}
 };
 
+/**
+ * Elimina un registro de pago de ente legal (leg_pago) y su movimiento en facturación (fac_movimiento)
+ */
+const deletePagoEnteLegalController = async (id_pago) => {
+	const [rows] = await pool.execute(
+		"SELECT id_pago FROM leg_pago WHERE id_pago = ? LIMIT 1",
+		[id_pago],
+	);
+	if (!rows.length) {
+		const err = new Error("Pago no encontrado");
+		err.code = "PAGO_NOT_FOUND";
+		throw err;
+	}
+	// Eliminar primero el movimiento en facturación (origen_modulo = LEG_PAGO)
+	await pool.execute(
+		"DELETE FROM fac_movimiento WHERE origen_modulo = 'LEG_PAGO' AND origen_id = ?",
+		[id_pago],
+	);
+	// Luego eliminar el pago
+	await pool.execute("DELETE FROM leg_pago WHERE id_pago = ?", [id_pago]);
+	return { message: "Pago eliminado correctamente" };
+};
+
 module.exports = {
 	listEntesSimpleController,
 	listEntesLegalesController,
@@ -313,4 +336,5 @@ module.exports = {
 	deleteEnteLegalController,
 	listHistorialPagosEntesController,
 	registrarPagoEnteLegalController,
+	deletePagoEnteLegalController,
 };

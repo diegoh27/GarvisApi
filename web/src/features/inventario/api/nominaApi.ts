@@ -16,7 +16,7 @@ export type Empleado = {
 	proximo_pago?: string | null;
 	proximo_pago_manual?: string | null;
 	estatus_pago_manual?: "Pendiente" | "Pagada" | null;
-	estatus_pago?: "Pendiente" | "Pagada";
+	estatus_pago?: "Pendiente" | "Pagada" | "Vencido";
 	creado_en: string;
 	actualizado_en: string | null;
 };

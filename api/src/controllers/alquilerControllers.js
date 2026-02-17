@@ -12,6 +12,9 @@ const sanitizeLimit = (limit, fallback = 200, max = 1000) => {
 // CONTRATOS
 // ==========================================
 
+/**
+ * Lista contratos. Estado calculado en lectura: Pendiente + fecha_vencimiento pasada => Vencido.
+ */
 exports.listContratosController = async (limit = 200) => {
 	const safeLimit = sanitizeLimit(limit, 200, 1000);
 	const query = `
@@ -21,7 +24,11 @@ exports.listContratosController = async (limit = 200) => {
 			descripcion,
 			periodo,
 			monto,
-			estado,
+			CASE
+				WHEN estado = 'Pagado' THEN 'Pagado'
+				WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE estado
+			END AS estado,
 			fecha_vencimiento,
 			creado_en,
 			actualizado_en
@@ -33,6 +40,9 @@ exports.listContratosController = async (limit = 200) => {
 	return rows;
 };
 
+/**
+ * Obtiene un contrato. Estado calculado: Pendiente + fecha vencida => Vencido.
+ */
 exports.getContratoController = async (idContrato) => {
 	const [rows] = await pool.execute(
 		`SELECT
@@ -41,7 +51,11 @@ exports.getContratoController = async (idContrato) => {
 			descripcion,
 			periodo,
 			monto,
-			estado,
+			CASE
+				WHEN estado = 'Pagado' THEN 'Pagado'
+				WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE estado
+			END AS estado,
 			fecha_vencimiento,
 			creado_en,
 			actualizado_en
@@ -86,7 +100,11 @@ exports.createContratoController = async (payload) => {
 			descripcion,
 			periodo,
 			monto,
-			estado,
+			CASE
+				WHEN estado = 'Pagado' THEN 'Pagado'
+				WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE estado
+			END AS estado,
 			fecha_vencimiento,
 			creado_en,
 			actualizado_en
@@ -151,7 +169,11 @@ exports.updateContratoController = async (idContrato, payload) => {
 			descripcion,
 			periodo,
 			monto,
-			estado,
+			CASE
+				WHEN estado = 'Pagado' THEN 'Pagado'
+				WHEN fecha_vencimiento IS NOT NULL AND fecha_vencimiento < CURDATE() THEN 'Vencido'
+				ELSE estado
+			END AS estado,
 			fecha_vencimiento,
 			creado_en,
 			actualizado_en

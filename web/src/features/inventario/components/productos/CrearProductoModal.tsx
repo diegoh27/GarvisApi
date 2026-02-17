@@ -38,6 +38,15 @@ export default function CrearProductoModal({
       setError("El nombre es obligatorio");
       return;
     }
+    if (formData.nombre.trim().length > 120) {
+      setError("El nombre del producto no puede superar 120 caracteres");
+      return;
+    }
+    const stock = Number(formData.stock_actual);
+    if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
+      setError("La cantidad inicial debe ser un número entero mayor o igual a 0");
+      return;
+    }
 
     try {
       await createProducto({
@@ -89,6 +98,7 @@ export default function CrearProductoModal({
               onChange={(e) =>
                 setFormData({ ...formData, nombre: e.target.value })
               }
+              maxLength={120}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Ej: Guantes de látex"
               required

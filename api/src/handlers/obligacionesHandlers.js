@@ -123,7 +123,8 @@ const updateObligacionHandler = async (req, res) => {
 		console.error(error);
 		if (
 			error.code === "OBLIGACION_NOT_FOUND" ||
-			error.code === "NO_VALID_FIELDS"
+			error.code === "NO_VALID_FIELDS" ||
+			error.code === "ENTE_NOT_FOUND"
 		) {
 			return res.status(400).json({ ok: false, message: error.message });
 		}

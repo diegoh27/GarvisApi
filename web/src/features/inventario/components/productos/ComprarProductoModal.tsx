@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRegistrarCompraMutation, useGetProductoQuery } from "../../api";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import { X } from "lucide-react";
 
 interface ComprarProductoModalProps {
@@ -68,13 +69,22 @@ export default function ComprarProductoModal({
       return;
     }
 
-    if (precio < 0) {
-      setError("El precio no puede ser negativo");
+    const errPrecio = validarMonto(precio);
+    if (errPrecio) {
+      setError(errPrecio);
+      return;
+    }
+    if (formData.proveedor.trim().length > 120) {
+      setError("El proveedor no puede superar 120 caracteres");
+      return;
+    }
+    if (formData.referencia.trim().length > 80) {
+      setError("La referencia no puede superar 80 caracteres");
       return;
     }
 
     try {
-      const precioTotal = parseFloat(formData.precio_total);
+      const precioTotal = cantidad * precio;
 
       await registrarCompra({
         id: idProducto,
@@ -82,7 +92,7 @@ export default function ComprarProductoModal({
           fecha_ingreso: formData.fecha_ingreso,
           cantidad,
           precio_unitario: precio,
-          precio_total: !isNaN(precioTotal) ? precioTotal : undefined,
+          precio_total: precioTotal,
           proveedor: formData.proveedor || undefined,
           referencia: formData.referencia || undefined,
         },
@@ -167,46 +177,42 @@ export default function ComprarProductoModal({
           {/* Precio Unitario */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Precio Unitario *
+              Precio Unitario ($) * (mín. 0,01)
             </label>
             <input
               type="number"
               step="0.01"
-              min="0"
+              min={MONTO_MIN}
+              max={MONTO_MAX}
               value={formData.precio_unitario}
               onChange={(e) =>
                 setFormData({
                   ...formData,
-                  precio_unitario: e.target.value,
+                  precio_unitario: sanitizeMonto(e.target.value),
                 })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="0.00"
+              placeholder="0.01"
               required
             />
           </div>
 
-          {/* Precio Total */}
+          {/* Precio Total (solo calculado) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Precio Total
+              Precio Total ($)
             </label>
             <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.precio_total}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  precio_total: e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              type="text"
+              readOnly
+              value={formData.precio_total || "—"}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="0.00"
+              tabIndex={-1}
+              aria-label="Precio total (calculado)"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Se calcula automáticamente, pero puedes editarlo
+              Calculado automáticamente (cantidad × precio unitario)
             </p>
           </div>
 
@@ -221,6 +227,7 @@ export default function ComprarProductoModal({
               onChange={(e) =>
                 setFormData({ ...formData, proveedor: e.target.value })
               }
+              maxLength={120}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="(Opcional)"
             />
@@ -237,6 +244,7 @@ export default function ComprarProductoModal({
               onChange={(e) =>
                 setFormData({ ...formData, referencia: e.target.value })
               }
+              maxLength={80}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="(Opcional)"
             />
