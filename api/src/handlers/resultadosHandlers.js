@@ -86,12 +86,14 @@ const uploadResultadoHandler = async (req, res) => {
 		// Guardar las URLs como JSON array
 		const archivoUrlsJson = JSON.stringify(archivoUrls);
 
-		// Crear o actualizar resultado en la base de datos
+		// Crear o actualizar resultado en la base de datos (si es especialista, solo sus citas)
 		const data = await createOrUpdateResultadoController({
 			id_cita,
 			id_especialista: null, // Se obtendrá de la cita
 			archivo_url: archivoUrlsJson, // Guardar como JSON array
 			nombre: nombre || null,
+			id_usuario_actual: req.user?.id,
+			rol: req.user?.rol,
 		});
 
 		return res.status(200).json({
@@ -114,6 +116,12 @@ const uploadResultadoHandler = async (req, res) => {
 		}
 		if (error?.code === "INVALID_STATE") {
 			return res.status(409).json({
+				ok: false,
+				message: error.message,
+			});
+		}
+		if (error?.code === "FORBIDDEN") {
+			return res.status(403).json({
 				ok: false,
 				message: error.message,
 			});

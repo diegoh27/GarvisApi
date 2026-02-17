@@ -30,6 +30,29 @@ IF NOT EXISTS roles
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 1.1) Permisos inventario moderador
+-- =========================
+CREATE TABLE
+IF NOT EXISTS moderador_permisos_inventario
+(
+  seccion VARCHAR
+(50) NOT NULL,
+  permitido TINYINT
+(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY
+(seccion)
+) ENGINE=InnoDB;
+
+-- Valores por defecto: todo permitido excepto facturacion
+INSERT IGNORE INTO moderador_permisos_inventario (seccion, permitido) VALUES
+  ('productos', 1),
+  ('entes', 1),
+  ('nomina', 1),
+  ('alquiler', 1),
+  ('comisiones', 1),
+  ('facturacion', 0);
+
+-- =========================
 -- 2) Usuario (tabla base)
 -- =========================
 CREATE TABLE

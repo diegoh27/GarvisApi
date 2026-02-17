@@ -7,6 +7,8 @@ const createOrUpdateResultadoController = async ({
 	id_especialista,
 	archivo_url,
 	nombre,
+	id_usuario_actual,
+	rol,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -31,6 +33,12 @@ const createOrUpdateResultadoController = async ({
 				"Solo se pueden subir resultados para citas atendidas"
 			);
 			err.code = "INVALID_STATE";
+			throw err;
+		}
+		// Si es especialista, solo puede subir resultados para sus propias citas
+		if (rol === "especialista" && id_usuario_actual && cita.id_especialista !== id_usuario_actual) {
+			const err = new Error("Solo puedes subir resultados para tus propias citas.");
+			err.code = "FORBIDDEN";
 			throw err;
 		}
 

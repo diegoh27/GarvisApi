@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { RefreshCw } from "lucide-react";
 import { baseApi } from "../../../app/api/baseApi";
+import { useAuth } from "../../../shared";
+import { useGetPermisosInventarioQuery } from "../../roles/rolesApi";
 import ProductosPage from "./ProductosPage";
 import ObligacionesPage from "./ObligacionesPage";
 import NominaPage from "./NominaPage";
@@ -34,25 +36,59 @@ type TabType =
 	| "comisiones"
 	| "facturacion";
 
+const ALL_TABS: { id: TabType; label: string }[] = [
+	{ id: "productos", label: "Producto" },
+	{ id: "entes", label: "Entes Legales" },
+	{ id: "nomina", label: "Nómina" },
+	{ id: "alquiler", label: "Alquiler" },
+	{ id: "comisiones", label: "Comisiones" },
+	{ id: "facturacion", label: "Facturación" },
+];
+
 export default function InventarioPage() {
 	const dispatch = useDispatch();
+	const { user } = useAuth();
+	const { data: permisos, isLoading: permisosLoading } =
+		useGetPermisosInventarioQuery(undefined, {
+			skip: user?.rol !== "admin" && user?.rol !== "moderador",
+		});
 	const [activeTab, setActiveTab] = useState<TabType>("productos");
 	const [isRefreshing, setIsRefreshing] = useState(false);
+
+	const isAdmin = user?.rol === "admin";
+	const isModerador = user?.rol === "moderador";
+
+	const tabs = useMemo(() => {
+		if (isAdmin) return ALL_TABS;
+		if (isModerador && permisos) {
+			const list = ALL_TABS.filter((t) => permisos[t.id] === true);
+			// Si por config quedan cero pestañas, mostrar al menos Producto para no dejar la barra vacía
+			return list.length > 0 ? list : [ALL_TABS[0]];
+		}
+		// Moderador sin permisos cargados aún: conservador (sin facturación)
+		if (isModerador && permisosLoading) {
+			return ALL_TABS.filter((t) => t.id !== "facturacion");
+		}
+		return ALL_TABS.filter((t) => t.id !== "facturacion");
+	}, [isAdmin, isModerador, permisos, permisosLoading]);
+
+	// Si el tab activo ya no está permitido (ej. era facturacion y dejó de ser admin), ir al primero
+	const safeActiveTab = useMemo(() => {
+		const allowed = tabs.map((t) => t.id);
+		return allowed.includes(activeTab) ? activeTab : (tabs[0]?.id ?? "productos");
+	}, [activeTab, tabs]);
+
+	useEffect(() => {
+		if (!tabs.some((t) => t.id === activeTab)) {
+			setActiveTab((tabs[0]?.id ?? "productos") as TabType);
+		}
+	}, [tabs, activeTab]);
 
 	const handleRefrescar = () => {
 		setIsRefreshing(true);
 		dispatch(baseApi.util.invalidateTags(INVENTARIO_TAGS as unknown as string[]));
 		setTimeout(() => setIsRefreshing(false), 400);
 	};
-
-	const tabs: { id: TabType; label: string }[] = [
-		{ id: "productos", label: "Producto" },
-		{ id: "entes", label: "Entes Legales" },
-		{ id: "nomina", label: "Nómina" },
-		{ id: "alquiler", label: "Alquiler" },
-		{ id: "comisiones", label: "Comisiones" },
-		{ id: "facturacion", label: "Facturación" },
-	];
 
 	return (
 		<div className="min-h-screen bg-gray-100">
@@ -66,7 +102,7 @@ export default function InventarioPage() {
 									<button
 										key={tab.id}
 										onClick={() => setActiveTab(tab.id)}
-										className={`px-6 py-4 font-medium text-sm transition-colors ${activeTab === tab.id
+										className={`px-6 py-4 font-medium text-sm transition-colors ${safeActiveTab === tab.id
 											? "text-teal-600 border-b-2 border-teal-600"
 											: "text-gray-600 hover:text-gray-900"
 											}`}
@@ -96,12 +132,12 @@ export default function InventarioPage() {
 
 			{/* Tab Content */}
 			<div className="max-w-7xl mx-auto">
-				{activeTab === "productos" && <ProductosPage />}
-				{activeTab === "entes" && <ObligacionesPage />}
-				{activeTab === "nomina" && <NominaPage />}
-				{activeTab === "alquiler" && <AlquilerPage />}
-				{activeTab === "comisiones" && <ComisionesEspecialistasPage />}
-				{activeTab === "facturacion" && <FacturacionPage />}
+				{safeActiveTab === "productos" && <ProductosPage />}
+				{safeActiveTab === "entes" && <ObligacionesPage />}
+				{safeActiveTab === "nomina" && <NominaPage />}
+				{safeActiveTab === "alquiler" && <AlquilerPage />}
+				{safeActiveTab === "comisiones" && <ComisionesEspecialistasPage />}
+				{safeActiveTab === "facturacion" && <FacturacionPage />}
 			</div>
 		</div>
 	);

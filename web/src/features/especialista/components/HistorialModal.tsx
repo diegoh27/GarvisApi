@@ -3,10 +3,12 @@ import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import type { CitaEspecialista } from "../types";
 import { useMarcarAtendidaMutation } from "../especialistaApi";
+import { useUploadResultadoMutation } from "../../resultados/resultadosApi";
 import { Check, X } from "lucide-react";
 import VerResultadosModal from "./VerResultadosModal";
 import InformeFormModal from "./InformeFormModal";
 import VerCitaEspecialistaModal from "./VerCitaEspecialistaModal";
+import SubirResultadoModal from "./SubirResultadoModal";
 
 type InformeItem = { informe_pdf_url: string | null };
 
@@ -77,12 +79,41 @@ const HistorialModal = ({
 		idCita: string;
 	} | null>(null);
 	const [selectedCitaParaInforme, setSelectedCitaParaInforme] = useState<CitaEspecialista | null>(null);
+	const [selectedCitaParaSubirResultado, setSelectedCitaParaSubirResultado] = useState<CitaEspecialista | null>(null);
 	const [selectedCitaParaVer, setSelectedCitaParaVer] = useState<{
 		cita: CitaEspecialista;
 		informePdfUrl: string | null;
 	} | null>(null);
 
 	const [marcarAtendida] = useMarcarAtendidaMutation();
+	const [uploadResultado, { isLoading: isUploading }] = useUploadResultadoMutation();
+
+	const handleSubirResultado = async (id_cita: string, archivos: File[]) => {
+		try {
+			const cita = citas.find((c) => c.id_cita === id_cita);
+			const nombre = cita
+				? `${cita.paciente_nombre}_${cita.paciente_apellido}_${cita.eco_nombre}_${cita.fecha_cita}`
+				: undefined;
+			await uploadResultado({ id_cita, archivos, nombre }).unwrap();
+			await Swal.fire({
+				icon: "success",
+				title: "Resultados subidos",
+				text: `Se subieron ${archivos.length} archivo${archivos.length > 1 ? "s" : ""} exitosamente.`,
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			setSelectedCitaParaSubirResultado(null);
+		} catch (error: unknown) {
+			const msg = error && typeof error === "object" && "data" in error && typeof (error as { data?: { message?: string } }).data?.message === "string"
+				? (error as { data: { message: string } }).data.message
+				: "No se pudieron subir los resultados.";
+			await Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: msg,
+			});
+		}
+	};
 
 	const handleMarcarAtendida = async (cita: CitaEspecialista) => {
 		if (cita.estado_pago === 0) {
@@ -272,31 +303,47 @@ const HistorialModal = ({
 										<td className="px-3 py-3 text-center">
 											{(() => {
 												const informe = informesMap.get(cita.id_cita);
+												const isAtendida = cita.estado_cita === 3;
+												const botonSubirResultado = isAtendida ? (
+													<button
+														type="button"
+														onClick={() => setSelectedCitaParaSubirResultado(cita)}
+														className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+													>
+														Subir resultado
+													</button>
+												) : null;
 												if (informe?.informe_pdf_url) {
 													return (
-														<button
-															type="button"
-															onClick={() =>
-																onVerPdf?.(
-																	informe.informe_pdf_url!,
-																	`Informe-${paciente.name}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-")
-																)
-															}
-															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-														>
-															Ver PDF
-														</button>
+														<div className="flex flex-wrap items-center justify-center gap-1">
+															<button
+																type="button"
+																onClick={() =>
+																	onVerPdf?.(
+																		informe.informe_pdf_url!,
+																		`Informe-${paciente.name}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-")
+																	)
+																}
+																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+															>
+																Ver PDF
+															</button>
+															{botonSubirResultado}
+														</div>
 													);
 												}
-												if (cita.estado_cita === 3) {
+												if (isAtendida) {
 													return (
-														<button
-															type="button"
-															onClick={() => setSelectedCitaParaInforme(cita)}
-															className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-														>
-															Llenar
-														</button>
+														<div className="flex flex-wrap items-center justify-center gap-1">
+															<button
+																type="button"
+																onClick={() => setSelectedCitaParaInforme(cita)}
+																className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+															>
+																Llenar
+															</button>
+															{botonSubirResultado}
+														</div>
 													);
 												}
 												return (
@@ -356,6 +403,26 @@ const HistorialModal = ({
 					pacienteName={paciente.name}
 					onClose={() => setSelectedCitaParaVer(null)}
 					onVerPdf={onVerPdf}
+				/>
+			)}
+
+			{selectedCitaParaSubirResultado && (
+				<SubirResultadoModal
+					cita={{
+						id_cita: selectedCitaParaSubirResultado.id_cita,
+						paciente_nombre: selectedCitaParaSubirResultado.paciente_nombre,
+						paciente_apellido: selectedCitaParaSubirResultado.paciente_apellido,
+						eco_nombre: selectedCitaParaSubirResultado.eco_nombre,
+						fecha_cita:
+							typeof selectedCitaParaSubirResultado.fecha_cita === "string"
+								? selectedCitaParaSubirResultado.fecha_cita
+								: selectedCitaParaSubirResultado.fecha_cita instanceof Date
+									? selectedCitaParaSubirResultado.fecha_cita.toISOString().slice(0, 10)
+									: String(selectedCitaParaSubirResultado.fecha_cita),
+					}}
+					onClose={() => setSelectedCitaParaSubirResultado(null)}
+					onUpload={handleSubirResultado}
+					isUploading={isUploading}
 				/>
 			)}
 		</div>

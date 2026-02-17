@@ -2,6 +2,7 @@ import { useState, type FormEvent, useEffect, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
 import { useCreateEcoMutation, useUpdateEcoMutation, useGetEcosQuery } from "../ecosApi";
 import type { Eco } from "../ecosApi";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../inventario/utils/validation";
 
 const DURACION_CREAR = 20;
 
@@ -83,8 +84,9 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			return;
 		}
 
-		if (!form.precio || Number(form.precio) < 0) {
-			setError("El precio debe ser un número positivo.");
+		const errPrecio = validarMonto(form.precio);
+		if (errPrecio) {
+			setError(errPrecio);
 			return;
 		}
 
@@ -188,17 +190,18 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>
 					<label className="mb-1 block text-sm font-medium text-brand-700">
-						Precio <span className="text-red-500">*</span>
+						Precio ($) <span className="text-red-500">*</span> (mín. 0,01)
 					</label>
 					<input
 						type="number"
 						required
-						min="0"
+						min={MONTO_MIN}
+						max={MONTO_MAX}
 						step="0.01"
 						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 						value={form.precio}
-						onChange={(e) => updateField("precio", e.target.value)}
-						placeholder="0.00"
+						onChange={(e) => updateField("precio", sanitizeMonto(e.target.value))}
+						placeholder="0.01"
 					/>
 				</div>
 				<div>

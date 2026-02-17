@@ -1,5 +1,74 @@
 const { pool } = require("../db");
 
+const SECCIONES_INVENTARIO = [
+	"productos",
+	"entes",
+	"nomina",
+	"alquiler",
+	"comisiones",
+	"facturacion",
+];
+
+const ensureTableModeradorPermisos = async () => {
+	await pool.execute(`
+    CREATE TABLE IF NOT EXISTS moderador_permisos_inventario (
+      seccion VARCHAR(50) NOT NULL,
+      permitido TINYINT(1) NOT NULL DEFAULT 1,
+      PRIMARY KEY (seccion)
+    ) ENGINE=InnoDB
+  `);
+	// Insertar filas por defecto si no existen
+	for (const seccion of SECCIONES_INVENTARIO) {
+		const permitido = seccion === "facturacion" ? 0 : 1;
+		await pool.execute(
+			"INSERT IGNORE INTO moderador_permisos_inventario (seccion, permitido) VALUES (?, ?)",
+			[seccion, permitido],
+		);
+	}
+};
+
+/**
+ * Devuelve permisos de inventario para el rol indicado.
+ * - admin: todos true.
+ * - moderador: lee de tabla moderador_permisos_inventario.
+ * - otro: devuelve objeto vacío o todos false (el handler puede devolver 403).
+ */
+const getPermisosInventarioController = async (rol) => {
+	if (rol === "admin") {
+		return SECCIONES_INVENTARIO.reduce((acc, s) => ({ ...acc, [s]: true }), {});
+	}
+	if (rol !== "moderador") {
+		return SECCIONES_INVENTARIO.reduce((acc, s) => ({ ...acc, [s]: false }), {});
+	}
+	await ensureTableModeradorPermisos();
+	const [rows] = await pool.execute(
+		"SELECT seccion, permitido FROM moderador_permisos_inventario",
+	);
+	const out = SECCIONES_INVENTARIO.reduce((acc, s) => ({ ...acc, [s]: false }), {});
+	for (const row of rows) {
+		if (SECCIONES_INVENTARIO.includes(row.seccion)) {
+			out[row.seccion] = Number(row.permitido) === 1;
+		}
+	}
+	return out;
+};
+
+/**
+ * Actualiza permisos de inventario del moderador. Solo admin.
+ * body: { productos: true, entes: true, nomina: true, alquiler: true, comisiones: true, facturacion: false }
+ */
+const updatePermisosInventarioModeradorController = async (payload) => {
+	await ensureTableModeradorPermisos();
+	for (const seccion of SECCIONES_INVENTARIO) {
+		const permitido = payload[seccion] === true ? 1 : 0;
+		await pool.execute(
+			"INSERT INTO moderador_permisos_inventario (seccion, permitido) VALUES (?, ?) ON DUPLICATE KEY UPDATE permitido = VALUES(permitido)",
+			[seccion, permitido],
+		);
+	}
+	return getPermisosInventarioController("moderador");
+};
+
 const listRolesController = async () => {
 	const sql = `
     SELECT id_rol, nombre
@@ -37,4 +106,6 @@ const getRolePermissionsController = () => {
 module.exports = {
 	listRolesController,
 	getRolePermissionsController,
+	getPermisosInventarioController,
+	updatePermisosInventarioModeradorController,
 };
