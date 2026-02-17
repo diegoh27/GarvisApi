@@ -1,5 +1,30 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const { createNotificacionController } = require("./notificacionesControllers");
+const { formatFechaCita, formatHoraCita } = require("../utils/citaEmails");
+
+async function notificarPacienteResultadosDisponibles(id_cita) {
+	const [rows] = await pool.execute(
+		`SELECT c.id_paciente, c.fecha_cita, c.hora_cita, e.nombre AS eco_nombre
+     FROM cita c
+     LEFT JOIN eco e ON e.id_eco = c.id_eco
+     WHERE c.id_cita = ?`,
+		[id_cita],
+	);
+	if (!rows.length || !rows[0].id_paciente) return;
+	const r = rows[0];
+	const fecha = formatFechaCita(r.fecha_cita);
+	const hora = formatHoraCita(r.hora_cita);
+	const ecoNombre = r.eco_nombre ? ` (${r.eco_nombre})` : "";
+	let mensaje = `Ya están disponibles los resultados de tu cita del ${fecha} a las ${hora}${ecoNombre}. Puedes verlos en Mis resultados.`;
+	if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+	await createNotificacionController({
+		id_usuario: r.id_paciente,
+		titulo: "Resultados disponibles",
+		mensaje,
+		tipo: "resultados_disponibles",
+	});
+}
 
 // Crear o actualizar resultado (subir archivo)
 const createOrUpdateResultadoController = async ({
@@ -124,6 +149,11 @@ const createOrUpdateResultadoController = async ({
 				id_cita,
 			]);
 			await conn.commit();
+			if (tieneArchivos) {
+				notificarPacienteResultadosDisponibles(id_cita).catch((e) =>
+					console.error("Error notificando paciente (resultados):", e),
+				);
+			}
 			return {
 				id_resultado: existingRows[0].id_resultado,
 				id_cita,
@@ -149,6 +179,11 @@ const createOrUpdateResultadoController = async ({
 				nuevoEstado,
 			]);
 			await conn.commit();
+			if (tieneArchivos) {
+				notificarPacienteResultadosDisponibles(id_cita).catch((e) =>
+					console.error("Error notificando paciente (resultados):", e),
+				);
+			}
 			return {
 				id_resultado,
 				id_cita,

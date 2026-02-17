@@ -1,6 +1,8 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
 const { generateInformePDF } = require("../utils/generateInformePDF");
+const { createNotificacionController } = require("./notificacionesControllers");
+const { formatFechaCita, formatHoraCita } = require("../utils/citaEmails");
 
 // Listar todos los informes del especialista
 const listInformesByEspecialistaController = async (id_especialista) => {
@@ -253,6 +255,26 @@ const createOrUpdateInformeController = async ({
 		}
 
 		await conn.commit();
+
+		// Notificar al paciente que el especialista envió el informe
+		try {
+			const id_paciente = citaInfo.id_paciente;
+			if (id_paciente) {
+				const fecha = formatFechaCita(citaInfo.fecha_cita);
+				const hora = formatHoraCita(citaInfo.hora_cita);
+				const ecoNombre = citaInfo.eco_nombre ? ` (${citaInfo.eco_nombre})` : "";
+				let mensaje = `El especialista ha enviado el informe de tu cita del ${fecha} a las ${hora}${ecoNombre}. Puedes verlo en el detalle de tu cita.`;
+				if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+				await createNotificacionController({
+					id_usuario: id_paciente,
+					titulo: "Informe del especialista disponible",
+					mensaje,
+					tipo: "informe_disponible",
+				});
+			}
+		} catch (e) {
+			console.error("Error notificando paciente (informe):", e);
+		}
 
 		// Retornar el informe creado/actualizado usando la misma conexión
 		// (aunque ya se hizo commit, podemos usar pool.execute normalmente)
