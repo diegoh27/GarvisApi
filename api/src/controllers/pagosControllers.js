@@ -2,7 +2,7 @@ const { pool } = require("../db");
 const { createNotificacionController } = require("./notificacionesControllers");
 const { formatFechaCita, formatHoraCita } = require("../utils/citaEmails");
 
-// Obtener datos del pago por id_cita
+// Obtener datos del pago por id_cita (para mostrador usa RIF/cédula de cita_mostrador)
 const getPagoByCitaController = async (id_cita) => {
 	const sql = `
     SELECT
@@ -24,8 +24,8 @@ const getPagoByCitaController = async (id_cita) => {
       p.tasa_dia_bcv,
       u.nombre AS validado_por_nombre,
       u.apellido AS validado_por_apellido,
-      pac.rif AS paciente_rif,
-      u_pac.cedula AS paciente_cedula,
+      COALESCE(NULLIF(TRIM(cm.rif), ''), pac.rif) AS paciente_rif,
+      COALESCE(NULLIF(TRIM(cm.cedula), ''), u_pac.cedula) AS paciente_cedula,
       e.precio AS eco_precio,
       e.nombre AS eco_nombre
     FROM pagos p
@@ -33,6 +33,7 @@ const getPagoByCitaController = async (id_cita) => {
     LEFT JOIN paciente pac ON pac.id_paciente = p.id_paciente
     LEFT JOIN usuario u_pac ON u_pac.id_usuario = p.id_paciente
     LEFT JOIN cita c ON c.id_cita = p.id_cita
+    LEFT JOIN cita_mostrador cm ON cm.id_cita = p.id_cita
     LEFT JOIN eco e ON e.id_eco = c.id_eco
     WHERE p.id_cita = ?
     LIMIT 1

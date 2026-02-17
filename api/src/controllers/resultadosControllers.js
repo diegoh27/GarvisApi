@@ -5,13 +5,18 @@ const { formatFechaCita, formatHoraCita } = require("../utils/citaEmails");
 
 async function notificarPacienteResultadosDisponibles(id_cita) {
 	const [rows] = await pool.execute(
-		`SELECT c.id_paciente, c.fecha_cita, c.hora_cita, e.nombre AS eco_nombre
+		`SELECT
+       COALESCE(v.id_paciente, c.id_paciente) AS id_paciente_notificar,
+       c.fecha_cita,
+       c.hora_cita,
+       e.nombre AS eco_nombre
      FROM cita c
+     LEFT JOIN cita_mostrador_vinculacion v ON v.id_cita = c.id_cita
      LEFT JOIN eco e ON e.id_eco = c.id_eco
      WHERE c.id_cita = ?`,
 		[id_cita],
 	);
-	if (!rows.length || !rows[0].id_paciente) return;
+	if (!rows.length || !rows[0].id_paciente_notificar) return;
 	const r = rows[0];
 	const fecha = formatFechaCita(r.fecha_cita);
 	const hora = formatHoraCita(r.hora_cita);
@@ -19,7 +24,7 @@ async function notificarPacienteResultadosDisponibles(id_cita) {
 	let mensaje = `Ya están disponibles los resultados de tu cita del ${fecha} a las ${hora}${ecoNombre}. Puedes verlos en Mis resultados.`;
 	if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
 	await createNotificacionController({
-		id_usuario: r.id_paciente,
+		id_usuario: r.id_paciente_notificar,
 		titulo: "Resultados disponibles",
 		mensaje,
 		tipo: "resultados_disponibles",
@@ -200,7 +205,7 @@ const createOrUpdateResultadoController = async ({
 	}
 };
 
-// Listar citas atendidas sin resultado (para moderador)
+// Listar citas atendidas sin resultado (para moderador y especialista; incluye citas de mostrador y vinculadas)
 const listCitasSinResultadoController = async (id_especialista = null) => {
 	let sql = `
     SELECT
@@ -211,18 +216,20 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
+      c.origen_cita,
+      COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+      COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
-    WHERE c.origen_cita = 'web'
+    WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
       AND (r.archivo IS NULL OR r.archivo = '' OR r.archivo = '[]')
   `;
@@ -239,7 +246,7 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
 	return rows;
 };
 
-// Listar todas las citas atendidas con información de resultados (para moderador)
+// Listar todas las citas atendidas con información de resultados (para moderador; incluye mostrador)
 const listCitasAtendidasConResultadosController = async () => {
 	const sql = `
     SELECT
@@ -251,8 +258,9 @@ const listCitasAtendidasConResultadosController = async () => {
       c.fecha_cita,
       c.hora_cita,
       c.estado_cita,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
+      c.origen_cita,
+      COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+      COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
@@ -260,10 +268,11 @@ const listCitasAtendidasConResultadosController = async () => {
       r.estado_resultado AS resultado_estado
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+    LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
-    WHERE c.origen_cita = 'web'
+    WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;

@@ -8,6 +8,7 @@ const {
 	formatFechaCita,
 	formatHoraCita,
 } = require("../utils/citaEmails");
+const { createNotificacionController } = require("./notificacionesControllers");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
 const MOSTRADOR_CORREO = "mostrador@garvis.local";
@@ -238,7 +239,7 @@ const listCitasByPacienteController = async (id_paciente) => {
 	return rows;
 };
 
-// Obtener todas las citas del paciente con información completa (pago, informe, resultado, orden, representado)
+// Obtener todas las citas del paciente con información completa (propias + citas de mostrador vinculadas)
 const listCitasCompletasByPacienteController = async (id_paciente) => {
 	const sql = `
     SELECT
@@ -253,26 +254,24 @@ const listCitasCompletasByPacienteController = async (id_paciente) => {
       c.estado_pago,
       c.id_disponibilidad,
       c.orden,
+      c.origen_cita,
+      (v.id_cita IS NOT NULL) AS es_vinculada_mostrador,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
-      u_paciente.nombre AS paciente_nombre,
-      u_paciente.apellido AS paciente_apellido,
+      COALESCE(cm.nombre, u_paciente.nombre) AS paciente_nombre,
+      COALESCE(cm.apellido, u_paciente.apellido) AS paciente_apellido,
       e.nombre AS eco_nombre,
-      -- Datos del representado
       rep.nombre AS representado_nombre,
       rep.apellido AS representado_apellido,
       rep.cedula AS representado_cedula,
       rep.fecha_nacimiento AS representado_fecha_nacimiento,
       rep.genero AS representado_genero,
       rep.parentesco AS representado_parentesco,
-      -- Datos del resultado
       r.archivo AS resultado_archivo,
       r.estado_resultado AS resultado_estado,
       r.fecha_publicacion AS resultado_publicado,
-      -- Datos del informe
       inf.id_informe,
       inf.informe_pdf_url AS informe_pdf_url,
-      -- Datos del pago
       pag.id_pago,
       pag.metodo AS pago_metodo,
       pag.imagen AS pago_imagen,
@@ -283,14 +282,16 @@ const listCitasCompletasByPacienteController = async (id_paciente) => {
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN cita_mostrador_vinculacion v ON v.id_cita = c.id_cita AND v.id_paciente = ?
+    LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     LEFT JOIN representado rep ON rep.id_representado = c.id_representado
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
     LEFT JOIN informe inf ON inf.id_cita = c.id_cita
     LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
-    WHERE c.id_paciente = ?
+    WHERE c.id_paciente = ? OR v.id_cita IS NOT NULL
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
-	const [rows] = await pool.execute(sql, [id_paciente]);
+	const [rows] = await pool.execute(sql, [id_paciente, id_paciente]);
 	return rows;
 };
 
@@ -1106,7 +1107,7 @@ const getAllCitasController = async () => {
     LEFT JOIN informe inf ON inf.id_cita = c.id_cita
     LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
     LEFT JOIN usuario u_validador ON u_validador.id_usuario = pag.validado_por
-    WHERE c.origen_cita = 'web'
+    WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);
@@ -1290,6 +1291,138 @@ const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
 		cedula: r.cedula || "",
 		rif: r.rif ?? "",
 	};
+};
+
+/** Lista citas de mostrador con la cédula indicada que aún no están vinculadas a ningún paciente (para que el usuario las reclame). */
+const listCitasMostradorDisponiblesParaVincularController = async (
+	cedulaNormalizada,
+) => {
+	const [rows] = await pool.execute(
+		`SELECT
+			c.id_cita,
+			c.fecha_cita,
+			c.hora_cita,
+			c.estado_cita,
+			c.estado_pago,
+			eco.nombre AS eco_nombre,
+			cm.nombre AS paciente_nombre,
+			cm.apellido AS paciente_apellido,
+			cm.cedula AS paciente_cedula,
+			u_esp.nombre AS especialista_nombre,
+			u_esp.apellido AS especialista_apellido
+		FROM cita_mostrador cm
+		INNER JOIN cita c ON c.id_cita = cm.id_cita
+		INNER JOIN eco eco ON eco.id_eco = c.id_eco
+		INNER JOIN usuario u_esp ON u_esp.id_usuario = c.id_especialista
+		LEFT JOIN cita_mostrador_vinculacion v ON v.id_cita = c.id_cita
+		WHERE cm.cedula = ? AND v.id_cita IS NULL
+		ORDER BY c.fecha_cita DESC, c.hora_cita DESC`,
+		[cedulaNormalizada],
+	);
+	return rows;
+};
+
+/** Vincula citas de mostrador al paciente; solo permite si la cédula de cada cita coincide con la del paciente. */
+const vincularCitasMostradorController = async (id_paciente, id_citas) => {
+	if (!Array.isArray(id_citas) || id_citas.length === 0) {
+		return { vinculadas: 0, rechazadas: 0 };
+	}
+	const [userRows] = await pool.execute(
+		"SELECT cedula FROM usuario WHERE id_usuario = ? AND id_usuario IN (SELECT id_paciente FROM paciente) LIMIT 1",
+		[id_paciente],
+	);
+	if (!userRows.length) {
+		const err = new Error("Paciente no encontrado");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+	const cedulaPaciente = (userRows[0].cedula || "").trim();
+	if (!cedulaPaciente) {
+		const err = new Error("Tu cuenta no tiene cédula registrada; actualízala en tu perfil para poder asociar citas de mostrador.");
+		err.code = "NO_CEDULA";
+		throw err;
+	}
+
+	const placeholders = id_citas.map(() => "?").join(",");
+	const [citasRows] = await pool.execute(
+		`SELECT cm.id_cita
+		 FROM cita_mostrador cm
+		 LEFT JOIN cita_mostrador_vinculacion v ON v.id_cita = cm.id_cita
+		 WHERE cm.id_cita IN (${placeholders})
+		   AND cm.cedula = ?
+		   AND v.id_cita IS NULL`,
+		[...id_citas, cedulaPaciente],
+	);
+	const idCitasValidas = citasRows.map((r) => r.id_cita);
+	if (idCitasValidas.length === 0) {
+		return {
+			vinculadas: 0,
+			rechazadas: id_citas.length,
+			message:
+				id_citas.length === 1
+					? "La cita no existe, ya está asociada a otra cuenta o la cédula no coincide con la de tu perfil."
+					: "Ninguna cita pudo asociarse (no existen, ya están vinculadas o la cédula no coincide).",
+		};
+	}
+	const conn = await pool.getConnection();
+	try {
+		for (const id_cita of idCitasValidas) {
+			await conn.execute(
+				"INSERT INTO cita_mostrador_vinculacion (id_cita, id_paciente) VALUES (?, ?)",
+				[id_cita, id_paciente],
+			);
+		}
+		// Notificar a admin, moderadores y especialistas de esas citas: el paciente se registró y hay que subir resultados/informes
+		if (idCitasValidas.length > 0) {
+			const [pacienteRows] = await pool.execute(
+				"SELECT nombre, apellido FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[id_paciente],
+			);
+			const nombrePaciente = pacienteRows.length
+				? `${pacienteRows[0].nombre || ""} ${pacienteRows[0].apellido || ""}`.trim() || "Un paciente"
+				: "Un paciente";
+			const n = idCitasValidas.length;
+			const citasTexto = n === 1 ? "1 cita de mostrador" : `${n} citas de mostrador`;
+			let mensaje = `${nombrePaciente} asoció ${citasTexto} a su cuenta. Sube los resultados e informes desde Todas las citas o Subir resultados.`;
+			if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+
+			const idsParaNotificar = new Set();
+
+			const [adminModRows] = await pool.execute(
+				`SELECT u.id_usuario
+				 FROM usuario u
+				 INNER JOIN roles r ON r.id_rol = u.id_rol
+				 WHERE r.nombre IN ('admin', 'moderador') AND u.activo = 1`,
+			);
+			adminModRows.forEach((row) => idsParaNotificar.add(row.id_usuario));
+
+			const placeholders = idCitasValidas.map(() => "?").join(",");
+			const [espRows] = await pool.execute(
+				`SELECT DISTINCT id_especialista FROM cita WHERE id_cita IN (${placeholders})`,
+				idCitasValidas,
+			);
+			espRows.forEach((row) => idsParaNotificar.add(row.id_especialista));
+
+			const titulo = "Citas de mostrador asociadas por paciente";
+			for (const id_usuario of idsParaNotificar) {
+				createNotificacionController({
+					id_usuario,
+					titulo,
+					mensaje,
+					tipo: "citas_mostrador_vinculadas",
+				}).catch((e) =>
+					console.error("Error notificando vinculación mostrador:", e),
+				);
+			}
+		}
+
+		return {
+			vinculadas: idCitasValidas.length,
+			rechazadas: id_citas.length - idCitasValidas.length,
+		};
+	} finally {
+		conn.release();
+	}
 };
 
 // Asignar cita completa: crear cita + pago + resultado en una transacción
@@ -1512,4 +1645,6 @@ module.exports = {
 	getAllCitasController,
 	createCitaMostradorController,
 	getUltimoPacienteMostradorPorCedulaController,
+	listCitasMostradorDisponiblesParaVincularController,
+	vincularCitasMostradorController,
 };
