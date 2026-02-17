@@ -1,20 +1,32 @@
-import { X, ExternalLink, FileText, Image as ImageIcon, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, ExternalLink, FileText, Image as ImageIcon, Download, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
+import { useDeleteArchivoFromResultadoMutation } from "../../resultados/resultadosApi";
 
 type VerResultadosModalProps = {
 	archivos: string[];
 	pacienteNombre: string;
 	ecoNombre: string;
+	idCita?: string;
 	onClose: () => void;
+	onArchivoDeleted?: () => void;
 };
 
 const VerResultadosModal = ({
-	archivos,
+	archivos: archivosIniciales,
 	pacienteNombre,
 	ecoNombre,
+	idCita,
 	onClose,
+	onArchivoDeleted,
 }: VerResultadosModalProps) => {
-	// Nota: Los especialistas solo pueden ver, no eliminar
+	const [archivos, setArchivos] = useState<string[]>(archivosIniciales);
+	const [deleteArchivo, { isLoading: isDeleting }] = useDeleteArchivoFromResultadoMutation();
+
+	useEffect(() => {
+		setArchivos(archivosIniciales);
+	}, [archivosIniciales]);
+
 	const getFileType = (url: string): "image" | "pdf" | "unknown" => {
 		const lowerUrl = url.toLowerCase();
 		if (lowerUrl.includes("/raw/") || lowerUrl.includes(".pdf") || lowerUrl.includes("pdf")) {
@@ -165,6 +177,46 @@ const VerResultadosModal = ({
 		}
 	};
 
+	const handleQuitarArchivo = async (url: string) => {
+		if (!idCita) return;
+		const confirmResult = await Swal.fire({
+			title: "¿Quitar este archivo?",
+			text: "Se eliminará del resultado de la cita. Esta acción no se puede deshacer.",
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Sí, quitar",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#dc2626",
+			cancelButtonColor: "#6b7280",
+		});
+		if (!confirmResult.isConfirmed) return;
+		try {
+			await deleteArchivo({ id_cita: idCita, archivo_url: url }).unwrap();
+			const nuevosArchivos = archivos.filter(
+				(u) => u !== url && u.trim() !== url.trim()
+			);
+			setArchivos(nuevosArchivos);
+			await Swal.fire({
+				icon: "success",
+				title: "Archivo quitado",
+				text: "El archivo ha sido eliminado del resultado.",
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			onArchivoDeleted?.();
+			if (nuevosArchivos.length === 0) setTimeout(() => onClose(), 500);
+		} catch (err: unknown) {
+			const msg =
+				err &&
+				typeof err === "object" &&
+				"data" in err &&
+				typeof (err as { data?: { message?: string } }).data?.message === "string"
+					? (err as { data: { message: string } }).data.message
+					: "No se pudo quitar el archivo.";
+			Swal.fire({ icon: "error", title: "Error", text: msg });
+		}
+	};
+
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
 			<div className="relative w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-paper shadow-lg">
@@ -236,6 +288,18 @@ const VerResultadosModal = ({
 											<Download className="h-4 w-4" />
 											Descargar
 										</button>
+										{idCita && (
+											<button
+												type="button"
+												onClick={() => handleQuitarArchivo(url)}
+												disabled={isDeleting}
+												className="rounded-lg border border-red-500 bg-paper px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+												title="Quitar este archivo del resultado"
+											>
+												<Trash2 className="h-4 w-4" />
+												Quitar
+											</button>
+										)}
 									</div>
 								</div>
 							);

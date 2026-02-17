@@ -34,11 +34,11 @@ resultadosRoutes.post(
 	uploadResultado,
 	uploadResultadoHandler,
 );
-// DELETE /resultados/:id_cita/archivo (moderador/admin) - Eliminar un archivo específico
+// DELETE /resultados/:id_cita/archivo (moderador/admin/especialista - especialista solo sus citas)
 resultadosRoutes.delete(
 	"/:id_cita/archivo",
 	authenticateToken,
-	authorizeRoles("moderador", "admin"),
+	authorizeRoles("moderador", "admin", "especialista"),
 	deleteArchivoFromResultadoHandler,
 );
 // GET /resultados/mis-resultados (paciente) - Obtener resultados del paciente autenticado

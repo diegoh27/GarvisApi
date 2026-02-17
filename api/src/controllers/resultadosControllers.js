@@ -268,6 +268,8 @@ const listResultadosByPacienteController = async (id_paciente) => {
 const deleteArchivoFromResultadoController = async ({
 	id_cita,
 	archivoUrl,
+	id_usuario_actual,
+	rol,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -284,6 +286,13 @@ const deleteArchivoFromResultadoController = async ({
 		if (!citaRows.length) {
 			const err = new Error("Cita no encontrada");
 			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const cita = citaRows[0];
+		// Si es especialista, solo puede eliminar archivos de sus propias citas
+		if (rol === "especialista" && id_usuario_actual && cita.id_especialista !== id_usuario_actual) {
+			const err = new Error("Solo puedes eliminar resultados de tus propias citas.");
+			err.code = "FORBIDDEN";
 			throw err;
 		}
 
