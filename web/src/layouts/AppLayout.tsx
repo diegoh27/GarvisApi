@@ -10,6 +10,7 @@ import {
 	Package,
 	Receipt,
 	Settings,
+	ShieldCheck,
 	Stethoscope,
 	UserPlus,
 	Users,
@@ -39,6 +40,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Inventario", to: "/inventario", icon: Package },
 		// Administración de usuarios
 		{ label: "Usuarios", to: "/usuarios", icon: Users },
+		{ label: "Moderadores", to: "/moderadores", icon: ShieldCheck },
 		{ label: "Registrar especialista", to: "/admin/registrar-especialista", icon: UserPlus },
 		{ label: "Registrar moderador", to: "/admin/registrar-moderador", icon: UserPlus },
 		{ label: "Métodos de pago", to: "/admin/metodos-pago", icon: CreditCard },
@@ -73,8 +75,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Home", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario", icon: CalendarDays },
 		{ label: "Pacientes", to: "/pacientes-especialista", icon: Users },
-		// COMENTADO: Por los momentos especialista no sube resultados
-		// { label: "Subir resultados", to: "/resultados", icon: FileCheck },
+		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
 		{ label: "Informes", to: "/informes", icon: FileText },
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		{ label: "Configuración", to: "/configuracion", icon: Settings },

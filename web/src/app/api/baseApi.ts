@@ -112,6 +112,8 @@ const baseApi = createApi({
 		"MetodosPago",
 		// Configuración - Perfil
 		"Perfil",
+		// Permisos inventario moderador
+		"PermisosInventario",
 	],
 	endpoints: () => ({}),
 });

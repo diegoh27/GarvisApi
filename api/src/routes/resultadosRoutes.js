@@ -12,18 +12,11 @@ const { authorizeRoles } = require("../middleware/authorizeRoles");
 
 const resultadosRoutes = Router();
 
-// GET /resultados/citas-sin-resultado (moderador/admin/especialista)
-// COMENTADO: Por los momentos especialista no sube resultados
-// resultadosRoutes.get(
-// 	"/citas-sin-resultado",
-// 	authenticateToken,
-// 	authorizeRoles("moderador", "admin", "especialista"),
-// 	listCitasSinResultadoHandler,
-// );
+// GET /resultados/citas-sin-resultado (moderador/admin/especialista - especialista solo ve las suyas)
 resultadosRoutes.get(
 	"/citas-sin-resultado",
 	authenticateToken,
-	authorizeRoles("moderador", "admin"),
+	authorizeRoles("moderador", "admin", "especialista"),
 	listCitasSinResultadoHandler,
 );
 // GET /resultados/citas-atendidas (moderador/admin) - Todas las citas atendidas con info de resultados
@@ -34,18 +27,10 @@ resultadosRoutes.get(
 	listCitasAtendidasConResultadosHandler,
 );
 // POST /resultados/upload (moderador/admin/especialista)
-// COMENTADO: Por los momentos especialista no sube resultados
-// resultadosRoutes.post(
-// 	"/upload",
-// 	authenticateToken,
-// 	authorizeRoles("moderador", "admin", "especialista"),
-// 	uploadResultado,
-// 	uploadResultadoHandler,
-// );
 resultadosRoutes.post(
 	"/upload",
 	authenticateToken,
-	authorizeRoles("moderador", "admin"),
+	authorizeRoles("moderador", "admin", "especialista"),
 	uploadResultado,
 	uploadResultadoHandler,
 );
