@@ -328,6 +328,7 @@ const listAllInformesController = async () => {
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = i.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
+    WHERE c.origen_cita = 'web'
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);
@@ -353,7 +354,9 @@ const listCitasAtendidasSinInformeController = async () => {
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN informe i ON i.id_cita = c.id_cita
-    WHERE c.estado_cita = 3 AND i.id_informe IS NULL
+    WHERE c.origen_cita = 'web'
+      AND c.estado_cita = 3
+      AND i.id_informe IS NULL
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);

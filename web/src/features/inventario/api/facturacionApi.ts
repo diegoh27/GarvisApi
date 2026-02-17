@@ -44,6 +44,7 @@ export type FacturacionMovimiento = {
 	eco_nombre?: string | null;
 	paciente_nombre?: string | null;
 	paciente_cedula?: string | null;
+	paciente_rif?: string | null;
 	especialista_nombre?: string | null;
 	especialista_apellido?: string | null;
 	id_usuario: string;

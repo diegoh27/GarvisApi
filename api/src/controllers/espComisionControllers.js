@@ -21,6 +21,7 @@ const buildCitaContexto = ({
 	eco_nombre,
 	paciente_nombre,
 	paciente_cedula,
+	paciente_rif,
 	especialista_nombre,
 	especialista_apellido,
 	fecha_cita,
@@ -28,17 +29,19 @@ const buildCitaContexto = ({
 	const eco = eco_nombre || "N/A";
 	const paciente = paciente_nombre || "N/A";
 	const cedula = paciente_cedula || "N/A";
+	const rif = paciente_rif ? ` · RIF: ${paciente_rif}` : "";
 	const especialista =
 		`${especialista_nombre || ""} ${especialista_apellido || ""}`.trim() ||
 		"N/A";
 	const fecha = formatFechaCorta(fecha_cita);
-	return `Eco: ${eco} · Paciente: ${paciente} (${cedula}) · Esp: ${especialista} · Cita: ${fecha}`;
+	return `Eco: ${eco} · Paciente: ${paciente} (${cedula})${rif} · Esp: ${especialista} · Cita: ${fecha}`;
 };
 
 const buildComisionDescripcion = ({
 	eco_nombre,
 	paciente_nombre,
 	paciente_cedula,
+	paciente_rif,
 	especialista_nombre,
 	especialista_apellido,
 	fecha_cita,
@@ -48,6 +51,7 @@ const buildComisionDescripcion = ({
 		eco_nombre,
 		paciente_nombre,
 		paciente_cedula,
+		paciente_rif,
 		especialista_nombre,
 		especialista_apellido,
 		fecha_cita,
@@ -60,6 +64,7 @@ const buildIngresoCitaDescripcion = ({
 	eco_nombre,
 	paciente_nombre,
 	paciente_cedula,
+	paciente_rif,
 	especialista_nombre,
 	especialista_apellido,
 	fecha_cita,
@@ -69,6 +74,7 @@ const buildIngresoCitaDescripcion = ({
 		eco_nombre,
 		paciente_nombre,
 		paciente_cedula,
+		paciente_rif,
 		especialista_nombre,
 		especialista_apellido,
 		fecha_cita,
@@ -131,6 +137,7 @@ exports.listComisionesController = async ({
 				NULLIF(pag.cedula_pagador, ''),
 				'Sin cédula'
 			) AS paciente_cedula,
+			COALESCE(NULLIF(cm.rif, ''), NULLIF(pac.rif, '')) AS paciente_rif,
 			esp.id_especialidad,
 			esp.porcentaje,
 			ec.monto,
@@ -150,6 +157,7 @@ exports.listComisionesController = async ({
 		INNER JOIN cita c ON c.id_cita = ec.id_cita
 		LEFT JOIN representado rep ON rep.id_representado = c.id_representado
 		INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+		LEFT JOIN paciente pac ON pac.id_paciente = c.id_paciente
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
 		LEFT JOIN pagos pag ON pag.id_cita = c.id_cita
 		INNER JOIN eco eco ON eco.id_eco = c.id_eco
@@ -237,6 +245,7 @@ exports.pagarComisionController = async ({
 					NULLIF(p.cedula_pagador, ''),
 					'Sin cédula'
 				) AS paciente_cedula,
+				COALESCE(NULLIF(cm.rif, ''), NULLIF(pac.rif, '')) AS paciente_rif,
 				u.nombre AS especialista_nombre,
 				u.apellido AS especialista_apellido
 			FROM esp_comision ec
@@ -245,6 +254,7 @@ exports.pagarComisionController = async ({
 			LEFT JOIN pagos p ON p.id_cita = ec.id_cita
 			LEFT JOIN representado rep ON rep.id_representado = c.id_representado
 			INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+			LEFT JOIN paciente pac ON pac.id_paciente = c.id_paciente
 			LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
 			INNER JOIN usuario u ON u.id_usuario = ec.id_especialista
 			WHERE ec.id_comision = ?
@@ -269,6 +279,7 @@ exports.pagarComisionController = async ({
 			eco_nombre: comision.eco_nombre,
 			paciente_nombre: comision.paciente_nombre,
 			paciente_cedula: comision.paciente_cedula,
+			paciente_rif: comision.paciente_rif,
 			especialista_nombre: comision.especialista_nombre,
 			especialista_apellido: comision.especialista_apellido,
 			fecha_cita: comision.fecha_cita,
@@ -278,6 +289,7 @@ exports.pagarComisionController = async ({
 			eco_nombre: comision.eco_nombre,
 			paciente_nombre: comision.paciente_nombre,
 			paciente_cedula: comision.paciente_cedula,
+			paciente_rif: comision.paciente_rif,
 			especialista_nombre: comision.especialista_nombre,
 			especialista_apellido: comision.especialista_apellido,
 			fecha_cita: comision.fecha_cita,
@@ -428,6 +440,7 @@ exports.editarPagoComisionController = async ({
 					NULLIF(p.cedula_pagador, ''),
 					'Sin cédula'
 				) AS paciente_cedula,
+				COALESCE(NULLIF(cm.rif, ''), NULLIF(pac.rif, '')) AS paciente_rif,
 				u.nombre AS especialista_nombre,
 				u.apellido AS especialista_apellido
 			FROM esp_comision ec
@@ -436,6 +449,7 @@ exports.editarPagoComisionController = async ({
 			LEFT JOIN pagos p ON p.id_cita = ec.id_cita
 			LEFT JOIN representado rep ON rep.id_representado = c.id_representado
 			INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
+			LEFT JOIN paciente pac ON pac.id_paciente = c.id_paciente
 			LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
 			INNER JOIN usuario u ON u.id_usuario = ec.id_especialista
 			WHERE ec.id_comision = ?
@@ -460,6 +474,7 @@ exports.editarPagoComisionController = async ({
 			eco_nombre: comision.eco_nombre,
 			paciente_nombre: comision.paciente_nombre,
 			paciente_cedula: comision.paciente_cedula,
+			paciente_rif: comision.paciente_rif,
 			especialista_nombre: comision.especialista_nombre,
 			especialista_apellido: comision.especialista_apellido,
 			fecha_cita: comision.fecha_cita,
@@ -469,6 +484,7 @@ exports.editarPagoComisionController = async ({
 			eco_nombre: comision.eco_nombre,
 			paciente_nombre: comision.paciente_nombre,
 			paciente_cedula: comision.paciente_cedula,
+			paciente_rif: comision.paciente_rif,
 			especialista_nombre: comision.especialista_nombre,
 			especialista_apellido: comision.especialista_apellido,
 			fecha_cita: comision.fecha_cita,

@@ -14,6 +14,7 @@ const {
 	posponerCitaController,
 	getAllCitasController,
 	createCitaMostradorController,
+	getUltimoPacienteMostradorPorCedulaController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 
@@ -770,6 +771,35 @@ const createCitaMostradorHandler = async (req, res) => {
 	}
 };
 
+const getUltimoPacienteMostradorHandler = async (req, res) => {
+	try {
+		const cedulaRaw = req.query.cedula;
+		if (!cedulaRaw || String(cedulaRaw).trim() === "") {
+			return res.status(400).json({
+				ok: false,
+				message: "Se requiere el parámetro cedula",
+			});
+		}
+		const cedulaResult = validarCedula(cedulaRaw);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+		const data = await getUltimoPacienteMostradorPorCedulaController(
+			cedulaResult.value,
+		);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error("Error al obtener último paciente mostrador:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno del servidor",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	asignarCitaCompletaHandler,
@@ -787,4 +817,5 @@ module.exports = {
 	posponerCitaHandler,
 	getAllCitasHandler,
 	createCitaMostradorHandler,
+	getUltimoPacienteMostradorHandler,
 };

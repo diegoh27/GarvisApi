@@ -222,7 +222,8 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
-    WHERE c.estado_cita = 3
+    WHERE c.origen_cita = 'web'
+      AND c.estado_cita = 3
       AND (r.archivo IS NULL OR r.archivo = '' OR r.archivo = '[]')
   `;
 
@@ -262,7 +263,8 @@ const listCitasAtendidasConResultadosController = async () => {
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
-    WHERE c.estado_cita = 3
+    WHERE c.origen_cita = 'web'
+      AND c.estado_cita = 3
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql);

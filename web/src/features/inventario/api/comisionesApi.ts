@@ -12,6 +12,7 @@ export type EspecialistaComision = {
 	especialista_apellido: string | null;
 	paciente_nombre?: string | null;
 	paciente_cedula?: string | null;
+	paciente_rif?: string | null;
 	porcentaje: number;
 	monto: number;
 	estado: "Pendiente" | "Pagada";
@@ -162,6 +163,18 @@ export const comisionesApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["EspecialistaComision", "Citas"],
 		}),
+
+		// Último paciente de mostrador por cédula (para rellenar nombre/apellido/rif en otra cita)
+		getUltimoPacienteMostrador: builder.query<
+			{ nombre: string; apellido: string; cedula: string; rif: string } | null,
+			string
+		>({
+			query: (cedula) =>
+				`/citas/mostrador/ultimo-paciente?cedula=${encodeURIComponent(cedula)}`,
+			transformResponse: (
+				response: { ok: boolean; data: { nombre: string; apellido: string; cedula: string; rif: string } | null },
+			) => response.data,
+		}),
 	}),
 });
 
@@ -173,4 +186,5 @@ export const {
 	useEditarPagoComisionMutation,
 	useDeletePagoComisionMutation,
 	useCrearCitaMostradorMutation,
+	useLazyGetUltimoPacienteMostradorQuery,
 } = comisionesApi;

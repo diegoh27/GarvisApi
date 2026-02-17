@@ -67,13 +67,17 @@ const buildDetailedDescription = (row: FacturacionMovimiento) => {
 
   const eco = row.eco_nombre || "N/A";
   const paciente = row.paciente_nombre || "N/A";
-  const cedula = row.paciente_cedula || "N/A";
+  const cedulaPart = row.paciente_cedula
+    ? `CI: ${row.paciente_cedula}`
+    : "";
+  const rifPart = row.paciente_rif ? `RIF: ${row.paciente_rif}` : "";
+  const identPart = [cedulaPart, rifPart].filter(Boolean).join(", ");
   const especialista =
     `${row.especialista_nombre || ""} ${row.especialista_apellido || ""}`.trim() ||
     "N/A";
   const fecha = formatDateShort(row.fecha_cita || row.fecha);
 
-  return `Eco: ${eco} · Paciente: ${paciente} (${cedula}) · Esp: ${especialista} · Cita: ${fecha}`;
+  return `Eco: ${eco} · Paciente: ${paciente}${identPart ? ` (${identPart})` : ""} · Esp: ${especialista} · Cita: ${fecha}`;
 };
 
 const origenLabelMap: Record<FacturacionMovimiento["origen_modulo"], string> = {

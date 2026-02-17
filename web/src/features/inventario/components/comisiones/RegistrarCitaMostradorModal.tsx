@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { useGetEcosByEspecialistaQuery } from "../../../ecos/ecosApi";
 import { useGetDolarOficialQuery } from "../../../dolar/dolarApi";
+import { useLazyGetUltimoPacienteMostradorQuery } from "../../api/comisionesApi";
 import { calculateRIF, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField } from "../../../../shared";
 import type { EspecialistaInventario } from "../../api/especialistasApi";
 import { sanitizeMonto, validarMonto } from "../../utils/validation";
@@ -55,6 +56,10 @@ export default function RegistrarCitaMostradorModal({
   });
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [mensajeCargaAnterior, setMensajeCargaAnterior] = useState<string | null>(null);
+
+  const [getUltimoPaciente, { isFetching: loadingUltimoPaciente }] =
+    useLazyGetUltimoPacienteMostradorQuery();
 
   const { data: dolarOficial, isLoading: loadingDolar } = useGetDolarOficialQuery();
 
@@ -117,7 +122,33 @@ export default function RegistrarCitaMostradorModal({
     const nextValue = name === "monto" ? sanitizeMonto(value) : value;
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     setError("");
+    setMensajeCargaAnterior(null);
     if (name in fieldErrors) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const cedulaCompleta = `${form.tipo_cedula}${form.cedula}`.trim();
+  const puedeCargarAnterior = form.cedula.trim().length >= 6 && validarRangoCedula(form.cedula);
+
+  const handleCargarDatosAnteriores = async () => {
+    if (!puedeCargarAnterior) return;
+    setMensajeCargaAnterior(null);
+    try {
+      const result = await getUltimoPaciente(cedulaCompleta).unwrap();
+      if (result) {
+        setForm((prev) => ({
+          ...prev,
+          nombre: result.nombre || prev.nombre,
+          apellido: result.apellido || prev.apellido,
+          rif: result.rif ?? prev.rif,
+        }));
+        setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "" }));
+        setMensajeCargaAnterior("Datos de una cita anterior cargados. Puedes editarlos y registrar la nueva cita.");
+      } else {
+        setMensajeCargaAnterior("No se encontró ninguna cita de mostrador previa con esta cédula.");
+      }
+    } catch {
+      setMensajeCargaAnterior("No se pudo cargar; intenta de nuevo.");
+    }
   };
 
   const validateForm = (): boolean => {
@@ -361,6 +392,7 @@ export default function RegistrarCitaMostradorModal({
                 value={`${form.tipo_cedula}${form.cedula}`}
                 onChange={(tipo, numero) => {
                   setForm((prev) => ({ ...prev, tipo_cedula: tipo, cedula: numero }));
+                  setMensajeCargaAnterior(null);
                   if (fieldErrors.cedula) setFieldErrors((prev) => ({ ...prev, cedula: "" }));
                 }}
                 error={fieldErrors.cedula}
@@ -368,6 +400,21 @@ export default function RegistrarCitaMostradorModal({
                 inputClassName={`h-10 rounded-md text-sm ${fieldErrors.cedula ? "border-red-500" : "border-gray-300"}`}
                 selectClassName="h-10 rounded-md border-gray-300 text-sm"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Con la cédula puedes cargar nombre, apellido y RIF de una cita de mostrador anterior.
+              </p>
+              {puedeCargarAnterior && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={handleCargarDatosAnteriores}
+                    disabled={loadingUltimoPaciente}
+                    className="text-sm text-teal-600 hover:text-teal-800 hover:underline disabled:opacity-50"
+                  >
+                    {loadingUltimoPaciente ? "Buscando…" : "Cargar datos de cita anterior"}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">RIF</label>
@@ -386,6 +433,11 @@ export default function RegistrarCitaMostradorModal({
               </p>
             </div>
           </div>
+          {mensajeCargaAnterior && (
+            <p className="text-sm text-gray-600 rounded-md bg-gray-50 border border-gray-200 px-3 py-2">
+              {mensajeCargaAnterior}
+            </p>
+          )}
           </div>
 
           {error && (
