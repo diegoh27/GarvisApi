@@ -99,8 +99,8 @@ const ReservarCitaParaMiForm = ({
 		}
 		setInvalidFields([]);
 
-		const precioUSD = eco?.precio ?? 0;
-		const tasaBs = dolarOficial?.promedio ?? 0;
+		const precioUSD = Number(eco?.precio) || 0;
+		const tasaBs = Number(dolarOficial?.promedio) || 0;
 		const montoCalculadoBs =
 			tasaBs > 0 ? Math.round(precioUSD * tasaBs * 100) / 100 : null;
 		const montoIngresado = parseFloat(pagoData.monto) || 0;

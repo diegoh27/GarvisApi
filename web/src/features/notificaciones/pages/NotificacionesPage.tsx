@@ -1,6 +1,10 @@
+import { useDispatch } from "react-redux";
+import { Link } from "react-router-dom";
+import { baseApi } from "../../../app/api/baseApi";
 import { EmailVerificationBanner, PageShell } from "../../../shared";
-import { Bell, CheckCircle, MailOpen } from "lucide-react";
+import { Bell, CheckCircle, FileCheck, FileText, MailOpen } from "lucide-react";
 import {
+  type Notificacion,
   useGetMisNotificacionesQuery,
   useMarkNotificacionLeidaMutation,
 } from "../notificacionesApi";
@@ -18,7 +22,38 @@ const formatFecha = (value: string) => {
   });
 };
 
+const getNotificacionMeta = (
+  n: Notificacion
+): { icon: React.ReactNode; link?: { to: string; label: string } } => {
+  switch (n.tipo) {
+    case "resultados_disponibles":
+      return {
+        icon: <FileText className="h-4 w-4 shrink-0 text-sky-600" />,
+        link: { to: "/citas", label: "Ir a mis citas" },
+      };
+    case "informe_disponible":
+      return {
+        icon: <FileCheck className="h-4 w-4 shrink-0 text-violet-600" />,
+        link: { to: "/citas", label: "Ir a mis citas" },
+      };
+    case "pago_reenviado":
+      return {
+        icon: <FileText className="h-4 w-4 shrink-0 text-amber-600" />,
+        link: { to: "/pagos", label: "Revisar pagos" },
+      };
+    default:
+      return {
+        icon: n.leida ? (
+          <MailOpen className="h-4 w-4 shrink-0 text-brand-700" />
+        ) : (
+          <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+        ),
+      };
+  }
+};
+
 const NotificacionesPage = () => {
+  const dispatch = useDispatch();
   const {
     data: notificaciones = [],
     isLoading,
@@ -54,46 +89,58 @@ const NotificacionesPage = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {notificaciones.map((n) => (
-              <div
-                key={n.id_notificacion}
-                className={`rounded-xl border p-4 ${n.leida
-                  ? "border-mist bg-cloud"
-                  : "border-brand-200 bg-brand-50/60"
-                  }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      {n.leida ? (
-                        <MailOpen className="h-4 w-4 text-brand-700" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 text-emerald-600" />
-                      )}
-                      <p className="text-sm font-semibold text-brand-900">
-                        {n.titulo}
+            {notificaciones.map((n) => {
+              const meta = getNotificacionMeta(n);
+              return (
+                <div
+                  key={n.id_notificacion}
+                  className={`rounded-xl border p-4 ${n.leida
+                    ? "border-mist bg-cloud"
+                    : "border-brand-200 bg-brand-50/60"
+                    }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {meta.icon}
+                        <p className="text-sm font-semibold text-brand-900">
+                          {n.titulo}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-sm text-brand-800">
+                        {n.mensaje}
                       </p>
+                      <p className="mt-2 text-xs text-brand-600">
+                        {formatFecha(n.fecha_creacion)}
+                      </p>
+                      {meta.link && (
+                        <Link
+                          to={meta.link.to}
+                          onClick={() => {
+                            if (meta.link?.to === "/citas") {
+                              dispatch(baseApi.util.invalidateTags(["Citas"]));
+                            }
+                          }}
+                          className="mt-2 inline-block text-xs font-medium text-brand-700 underline hover:text-brand-800"
+                        >
+                          {meta.link.label} →
+                        </Link>
+                      )}
                     </div>
-                    <p className="mt-1 text-sm text-brand-800">
-                      {n.mensaje}
-                    </p>
-                    <p className="mt-2 text-xs text-brand-600">
-                      {formatFecha(n.fecha_creacion)}
-                    </p>
+                    {n.leida ? null : (
+                      <button
+                        type="button"
+                        onClick={() => markLeida({ id: n.id_notificacion })}
+                        disabled={marking}
+                        className="shrink-0 rounded-lg border border-brand-600 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Marcar como leida
+                      </button>
+                    )}
                   </div>
-                  {n.leida ? null : (
-                    <button
-                      type="button"
-                      onClick={() => markLeida({ id: n.id_notificacion })}
-                      disabled={marking}
-                      className="rounded-lg border border-brand-600 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Marcar como leida
-                    </button>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         </div>

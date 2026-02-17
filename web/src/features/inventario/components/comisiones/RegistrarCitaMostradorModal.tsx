@@ -50,10 +50,11 @@ export default function RegistrarCitaMostradorModal({
     apellido: "",
     tipo_cedula: "V",
     cedula: "",
-    rif_tipo: "V",
+    rif: "",
     referencia: "",
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const { data: dolarOficial, isLoading: loadingDolar } = useGetDolarOficialQuery();
 
@@ -102,10 +103,12 @@ export default function RegistrarCitaMostradorModal({
     }));
   }, [form.id_especialista]);
 
-  const rifCalculado = useMemo(
-    () => calculateRIF(form.rif_tipo, form.cedula),
-    [form.rif_tipo, form.cedula],
-  );
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      rif: calculateRIF(prev.tipo_cedula, prev.cedula),
+    }));
+  }, [form.tipo_cedula, form.cedula]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -114,48 +117,48 @@ export default function RegistrarCitaMostradorModal({
     const nextValue = name === "monto" ? sanitizeMonto(value) : value;
     setForm((prev) => ({ ...prev, [name]: nextValue }));
     setError("");
+    if (name in fieldErrors) setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validateForm = (): boolean => {
+    const err: Record<string, string> = {};
+    if (!form.id_especialista?.trim()) err.id_especialista = "Selecciona un especialista.";
+    if (!form.id_eco?.trim()) err.id_eco = "Selecciona un eco.";
+    if (!form.fecha_cita?.trim()) err.fecha_cita = "La fecha es obligatoria.";
+    else {
+      const f = new Date(form.fecha_cita);
+      if (Number.isNaN(f.getTime())) err.fecha_cita = "Fecha inválida.";
+    }
+    if (!form.nombre?.trim()) err.nombre = "El nombre es obligatorio.";
+    else if (form.nombre.trim().length > 36) err.nombre = "Máximo 36 caracteres.";
+    if (!form.apellido?.trim()) err.apellido = "El apellido es obligatorio.";
+    else if (form.apellido.trim().length > 36) err.apellido = "Máximo 36 caracteres.";
+    if (!form.cedula?.trim()) err.cedula = "La cédula es obligatoria.";
+    else if (!/^\d+$/.test(form.cedula.trim())) err.cedula = "Solo números.";
+    else if (!validarRangoCedula(form.cedula)) err.cedula = MENSAJE_RANGO_CEDULA;
+    const errMonto = validarMonto(form.monto);
+    if (errMonto) err.monto = errMonto;
+    if (isMetodoEnBs) {
+      const tasa = Number(form.tasa_dia_bcv);
+      if (!form.tasa_dia_bcv?.trim()) err.tasa_dia_bcv = "La tasa BCV es obligatoria para este método.";
+      else if (!Number.isFinite(tasa) || tasa <= 0) err.tasa_dia_bcv = "La tasa BCV debe ser mayor a 0.";
+    }
+    if (form.referencia.trim().length > 80) err.referencia = "Máximo 80 caracteres.";
+    setFieldErrors(err);
+    if (Object.keys(err).length > 0) {
+      setError(Object.values(err)[0]);
+      return false;
+    }
+    setError("");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
 
-    if (!form.id_especialista || !form.id_eco || !form.fecha_cita || !form.nombre || !form.apellido || !form.cedula) {
-      setError("Completa los campos obligatorios.");
-      return;
-    }
-    if (form.nombre.trim().length > 36) {
-      setError("El nombre no puede superar 36 caracteres.");
-      return;
-    }
-    if (form.apellido.trim().length > 36) {
-      setError("El apellido no puede superar 36 caracteres.");
-      return;
-    }
-    if (!/^\d+$/.test(form.cedula.trim())) {
-      setError("La cédula solo puede contener números.");
-      return;
-    }
-    if (!validarRangoCedula(form.cedula)) {
-      setError(MENSAJE_RANGO_CEDULA);
-      return;
-    }
-    if (form.referencia.trim().length > 80) {
-      setError("La referencia no puede superar 80 caracteres.");
-      return;
-    }
-
-    const errMonto = validarMonto(form.monto);
-    if (errMonto) {
-      setError(errMonto);
-      return;
-    }
     const monto = Number(form.monto);
     const tasa = Number(form.tasa_dia_bcv);
-    if (isMetodoEnBs && (!Number.isFinite(tasa) || tasa <= 0)) {
-      setError("La tasa BCV debe ser mayor a 0.");
-      return;
-    }
-
     const tasaFinal =
       Number.isFinite(tasa) && tasa > 0
         ? tasa
@@ -173,30 +176,33 @@ export default function RegistrarCitaMostradorModal({
       nombre: formatNombreApellido(form.nombre),
       apellido: formatNombreApellido(form.apellido),
       cedula: `${form.tipo_cedula}${form.cedula}`.trim(),
-      rif: rifCalculado || undefined,
+      rif: form.rif.trim() || undefined,
       referencia: form.referencia.trim() || undefined,
     });
   };
 
+  const inputError = "border-red-500 focus:border-red-500 focus:ring-red-500/30";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-lg bg-white shadow-lg">
-        <div className="flex items-center justify-between border-b px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-lg">
+        <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 sm:px-6">
           <h2 className="text-lg font-semibold text-gray-900">Registrar cita de mostrador</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700" type="button">
             <X size={20} />
           </button>
         </div>
 
-        <form className="space-y-4 px-6 py-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
+        <form className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 min-w-0 md:grid-cols-2">
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Especialista *</label>
               <select
                 name="id_especialista"
                 value={form.id_especialista}
                 onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.id_especialista ? inputError : "border-gray-300"}`}
                 required
               >
                 <option value="">Selecciona especialista</option>
@@ -206,15 +212,16 @@ export default function RegistrarCitaMostradorModal({
                   </option>
                 ))}
               </select>
+              {fieldErrors.id_especialista && <p className="mt-1 text-xs text-red-500">{fieldErrors.id_especialista}</p>}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Eco *</label>
               <select
                 name="id_eco"
                 value={form.id_eco}
                 onChange={handleChange}
                 disabled={!form.id_especialista || loadingEcos}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm disabled:opacity-50"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm disabled:opacity-50 ${fieldErrors.id_eco ? inputError : "border-gray-300"}`}
                 required
               >
                 <option value="">{loadingEcos ? "Cargando..." : "Selecciona eco"}</option>
@@ -224,28 +231,30 @@ export default function RegistrarCitaMostradorModal({
                   </option>
                 ))}
               </select>
+              {fieldErrors.id_eco && <p className="mt-1 text-xs text-red-500">{fieldErrors.id_eco}</p>}
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-4 min-w-0 md:grid-cols-3">
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Fecha *</label>
               <input
                 type="date"
                 name="fecha_cita"
                 value={form.fecha_cita}
                 onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.fecha_cita ? inputError : "border-gray-300"}`}
                 required
               />
+              {fieldErrors.fecha_cita && <p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_cita}</p>}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Método de pago *</label>
               <select
                 name="metodo"
                 value={form.metodo}
                 onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className="h-10 w-full min-w-0 rounded-md border border-gray-300 px-3 text-sm"
                 required
               >
                 {METODOS.map((metodo) => (
@@ -255,7 +264,7 @@ export default function RegistrarCitaMostradorModal({
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Monto ({isMetodoEnBs ? "Bs" : "$"}) *
               </label>
@@ -264,19 +273,20 @@ export default function RegistrarCitaMostradorModal({
                 name="monto"
                 value={form.monto}
                 onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.monto ? inputError : "border-gray-300"}`}
                 min="0"
                 step="0.01"
                 required
               />
+              {fieldErrors.monto && <p className="mt-1 text-xs text-red-500">{fieldErrors.monto}</p>}
               <p className="mt-1 text-xs text-gray-500">
                 Calculado automáticamente según eco y método de pago. Puedes editarlo.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
+          <div className="grid grid-cols-1 gap-4 min-w-0 md:grid-cols-2">
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Tasa BCV del día *</label>
               <input
                 type="number"
@@ -284,11 +294,12 @@ export default function RegistrarCitaMostradorModal({
                 value={form.tasa_dia_bcv}
                 onChange={handleChange}
                 disabled={!isMetodoEnBs}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm disabled:opacity-50 ${fieldErrors.tasa_dia_bcv ? inputError : "border-gray-300"}`}
                 min="0"
                 step="0.0001"
                 required={isMetodoEnBs}
               />
+              {fieldErrors.tasa_dia_bcv && <p className="mt-1 text-xs text-red-500">{fieldErrors.tasa_dia_bcv}</p>}
               <p className="mt-1 text-xs text-gray-500">
                 {isMetodoEnBs
                   ? loadingDolar
@@ -299,7 +310,7 @@ export default function RegistrarCitaMostradorModal({
                   : "No aplica para este método (monto en USD)."}
               </p>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Referencia (opcional)</label>
               <input
                 type="text"
@@ -307,14 +318,15 @@ export default function RegistrarCitaMostradorModal({
                 value={form.referencia}
                 onChange={handleChange}
                 maxLength={80}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.referencia ? inputError : "border-gray-300"}`}
                 placeholder="Se genera automática si la dejas vacía"
               />
+              {fieldErrors.referencia && <p className="mt-1 text-xs text-red-500">{fieldErrors.referencia}</p>}
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
+          <div className="grid grid-cols-1 gap-4 min-w-0 md:grid-cols-2">
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Nombre *</label>
               <input
                 type="text"
@@ -322,11 +334,12 @@ export default function RegistrarCitaMostradorModal({
                 value={form.nombre}
                 onChange={handleChange}
                 maxLength={36}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.nombre ? inputError : "border-gray-300"}`}
                 required
               />
+              {fieldErrors.nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium text-gray-700">Apellido *</label>
               <input
                 type="text"
@@ -334,56 +347,52 @@ export default function RegistrarCitaMostradorModal({
                 value={form.apellido}
                 onChange={handleChange}
                 maxLength={36}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.apellido ? inputError : "border-gray-300"}`}
                 required
               />
-            </div>
-            <div>
-              <CedulaField
-                label="Cédula *"
-                value={`${form.tipo_cedula}${form.cedula}`}
-                onChange={(tipo, numero) =>
-                  setForm((prev) => ({ ...prev, tipo_cedula: tipo, cedula: numero }))
-                }
-                required
-                inputClassName="h-10 rounded-md border-gray-300 text-sm"
-                selectClassName="h-10 rounded-md border-gray-300 text-sm"
-              />
+              {fieldErrors.apellido && <p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>}
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Tipo RIF</label>
-              <select
-                name="rif_tipo"
-                value={form.rif_tipo}
-                onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm"
-              >
-                <option value="V">V</option>
-                <option value="E">E</option>
-                <option value="J">J</option>
-                <option value="P">P</option>
-                <option value="G">G</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">RIF calculado</label>
-              <input
-                type="text"
-                value={rifCalculado}
-                readOnly
-                className="h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 text-sm"
+          <div className="grid grid-cols-1 gap-4 min-w-0 md:grid-cols-2">
+            <div className="min-w-0">
+              <CedulaField
+                label="Cédula *"
+                value={`${form.tipo_cedula}${form.cedula}`}
+                onChange={(tipo, numero) => {
+                  setForm((prev) => ({ ...prev, tipo_cedula: tipo, cedula: numero }));
+                  if (fieldErrors.cedula) setFieldErrors((prev) => ({ ...prev, cedula: "" }));
+                }}
+                error={fieldErrors.cedula}
+                required
+                inputClassName={`h-10 rounded-md text-sm ${fieldErrors.cedula ? "border-red-500" : "border-gray-300"}`}
+                selectClassName="h-10 rounded-md border-gray-300 text-sm"
               />
             </div>
+            <div className="min-w-0">
+              <label className="mb-1 block text-sm font-medium text-gray-700">RIF</label>
+              <input
+                type="text"
+                name="rif"
+                value={form.rif}
+                onChange={handleChange}
+                className={`h-10 w-full min-w-0 rounded-md border px-3 text-sm ${fieldErrors.rif ? inputError : "border-gray-300"}`}
+                placeholder="Se calcula desde la cédula; puedes editarlo"
+                aria-describedby="rif-desc"
+              />
+              {fieldErrors.rif && <p className="mt-1 text-xs text-red-500">{fieldErrors.rif}</p>}
+              <p id="rif-desc" className="mt-1 text-xs text-gray-500">
+                Se rellena automáticamente según la cédula. Puedes modificarlo si es necesario.
+              </p>
+            </div>
+          </div>
           </div>
 
           {error && (
             <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
             <button
               type="button"
               onClick={onClose}

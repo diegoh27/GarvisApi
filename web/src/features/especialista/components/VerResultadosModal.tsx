@@ -8,6 +8,8 @@ type VerResultadosModalProps = {
 	pacienteNombre: string;
 	ecoNombre: string;
 	idCita?: string;
+	/** Si false, no se muestra el botón Quitar (solo lectura para paciente). Por defecto true. */
+	permiteEliminar?: boolean;
 	onClose: () => void;
 	onArchivoDeleted?: () => void;
 };
@@ -17,6 +19,7 @@ const VerResultadosModal = ({
 	pacienteNombre,
 	ecoNombre,
 	idCita,
+	permiteEliminar = true,
 	onClose,
 	onArchivoDeleted,
 }: VerResultadosModalProps) => {
@@ -288,7 +291,7 @@ const VerResultadosModal = ({
 											<Download className="h-4 w-4" />
 											Descargar
 										</button>
-										{idCita && (
+										{idCita && permiteEliminar && (
 											<button
 												type="button"
 												onClick={() => handleQuitarArchivo(url)}
