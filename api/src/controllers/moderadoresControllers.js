@@ -222,6 +222,15 @@ const updateModeradorSelfController = async ({ id_usuario, telefono, contrasena 
 		const params = [];
 
 		if (telefono !== undefined) {
+			const [telefonoExists] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE telefono = ? AND id_usuario != ? LIMIT 1",
+				[telefono, id_usuario],
+			);
+			if (telefonoExists.length > 0) {
+				const err = new Error("Ya existe un usuario con este número de teléfono");
+				err.code = "DUPLICATE_TELEFONO";
+				throw err;
+			}
 			updates.push("telefono = ?");
 			params.push(telefono);
 		}

@@ -272,6 +272,14 @@ const updateModeradorSelfHandler = async (req, res) => {
 		const { telefono, contrasena } = req.body;
 		const id_usuario = req.user?.id;
 
+		if (telefono !== undefined && String(telefono).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El teléfono no puede estar vacío." });
+		}
+		if (telefono !== undefined && telefono !== null && String(telefono).trim() !== "") {
+			const v = validarTelefono(telefono);
+			if (!v.valid) return res.status(400).json({ ok: false, message: v.message });
+		}
+
 		const result = await updateModeradorSelfController({
 			id_usuario,
 			telefono,
@@ -301,6 +309,12 @@ const updateModeradorSelfHandler = async (req, res) => {
 			return res.status(400).json({
 				ok: false,
 				message: "No hay campos para actualizar",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message || "Ya existe un usuario con este número de teléfono",
 			});
 		}
 		console.error(err);

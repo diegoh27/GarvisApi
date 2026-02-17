@@ -1,7 +1,20 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { EmailVerificationBanner, PasswordField, useAuth, CedulaField, parseCedulaDisplay, TelefonoField } from "../../../shared";
+import {
+	EmailVerificationBanner,
+	PasswordField,
+	useAuth,
+	CedulaField,
+	parseCedulaDisplay,
+	TelefonoField,
+	validarNumeroTelefono,
+	MENSAJE_TELEFONO_REQUERIDO,
+	MENSAJE_TELEFONO_7_DIGITOS,
+	parseTelefonoDisplay,
+	validarRangoCedula,
+	MENSAJE_RANGO_CEDULA,
+} from "../../../shared";
 import {
 	type PerfilData,
 	type PerfilRol,
@@ -10,6 +23,8 @@ import {
 } from "../configuracionApi";
 
 const PERFIL_ROLES: PerfilRol[] = ["paciente", "especialista", "moderador", "admin"];
+
+const TIPOS_SANGRE = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const;
 
 const ConfiguracionPage = () => {
 	const { user, token } = useAuth();
@@ -41,6 +56,11 @@ const ConfiguracionPage = () => {
 	const [confirmar, setConfirmar] = useState("");
 	const [editTelefono, setEditTelefono] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+	const clearFieldError = (field: string) => {
+		setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
+	};
 
 	const isEspecialista = user?.rol === "especialista";
 	const isPaciente = user?.rol === "paciente";
@@ -81,9 +101,46 @@ const ConfiguracionPage = () => {
 		}
 	}, [queryError, queryErrorData, perfil]);
 
+  const validateForm = (): Record<string, string> => {
+    const err: Record<string, string> = {};
+    const req = "Este campo no puede estar vacío.";
+
+    if (isAdmin) {
+      if (!nombre.trim()) err.nombre = req;
+      if (!apellido.trim()) err.apellido = req;
+      if (!genero.trim()) err.genero = req;
+      if (!cedula.trim()) err.cedula = "La cédula es requerida.";
+      else if (!validarRangoCedula(cedula)) err.cedula = MENSAJE_RANGO_CEDULA;
+      if (!correo.trim()) err.correo = req;
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) err.correo = "Correo electrónico inválido.";
+      if (!fechaNacimiento.trim()) err.fecha_nacimiento = req;
+    }
+
+    const allowPhoneEdit = isAdmin || editTelefono;
+    if (allowPhoneEdit) {
+      const { number: numTel } = parseTelefonoDisplay(telefono);
+      if (!telefono.trim()) err.telefono = MENSAJE_TELEFONO_REQUERIDO;
+      else if (!validarNumeroTelefono(numTel)) err.telefono = MENSAJE_TELEFONO_7_DIGITOS;
+    }
+
+    if (isPaciente) {
+      if (!tipoSangre.trim()) err.tipo_sangre = req;
+      else if (!TIPOS_SANGRE.includes(tipoSangre as (typeof TIPOS_SANGRE)[number])) err.tipo_sangre = "Selecciona un tipo de sangre válido.";
+      if (!descripcion.trim()) err.descripcion = req;
+      if (!direccion.trim()) err.direccion = req;
+      if (!contactoNombre.trim()) err.contacto_emergencia_nombre = req;
+      const { number: numContacto } = parseTelefonoDisplay(contactoTelefono);
+      if (!contactoTelefono.trim()) err.contacto_emergencia_telefono = req;
+      else if (!validarNumeroTelefono(numContacto)) err.contacto_emergencia_telefono = MENSAJE_TELEFONO_7_DIGITOS;
+    }
+
+    return err;
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     if (!isPaciente && !isEspecialista && !isModerador && !isAdmin) {
       setError(
@@ -94,6 +151,13 @@ const ConfiguracionPage = () => {
 
     if (contrasena && contrasena !== confirmar) {
       setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError(Object.values(errors)[0] ?? "Revisa los campos marcados.");
       return;
     }
 
@@ -252,6 +316,7 @@ const ConfiguracionPage = () => {
     setConfirmar("");
     setEditTelefono(false);
     setError(null);
+    setFieldErrors({});
   };
 
   return (
@@ -339,17 +404,25 @@ const ConfiguracionPage = () => {
                     <label className="font-semibold">Nombre</label>
                     <input
                       value={nombre}
-                      onChange={(event) => setNombre(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("nombre");
+                        setNombre(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.nombre ? "border-red-500" : "border-mist"}`}
                     />
+                    {fieldErrors.nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>}
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">
                     <label className="font-semibold">Apellido</label>
                     <input
                       value={apellido}
-                      onChange={(event) => setApellido(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("apellido");
+                        setApellido(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.apellido ? "border-red-500" : "border-mist"}`}
                     />
+                    {fieldErrors.apellido && <p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -358,9 +431,11 @@ const ConfiguracionPage = () => {
                       label={<span className="font-semibold">Cédula</span>}
                       value={`${tipoCedula}${cedula}`}
                       onChange={(tipo, numero) => {
+                        clearFieldError("cedula");
                         setTipoCedula(tipo);
                         setCedula(numero);
                       }}
+                      error={fieldErrors.cedula}
                       inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
                       selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                     />
@@ -369,9 +444,13 @@ const ConfiguracionPage = () => {
                     <label className="font-semibold">Correo</label>
                     <input
                       value={correo}
-                      onChange={(event) => setCorreo(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("correo");
+                        setCorreo(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.correo ? "border-red-500" : "border-mist"}`}
                     />
+                    {fieldErrors.correo && <p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -379,22 +458,30 @@ const ConfiguracionPage = () => {
                     <label className="font-semibold">Género</label>
                     <select
                       value={genero}
-                      onChange={(event) => setGenero(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("genero");
+                        setGenero(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.genero ? "border-red-500" : "border-mist"}`}
                     >
                       <option value="">Selecciona</option>
                       <option value="Masculino">Masculino</option>
                       <option value="Femenino">Femenino</option>
                     </select>
+                    {fieldErrors.genero && <p className="mt-1 text-xs text-red-500">{fieldErrors.genero}</p>}
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">
                     <label className="font-semibold">Fecha nacimiento</label>
                     <input
                       type="date"
                       value={fechaNacimiento}
-                      onChange={(event) => setFechaNacimiento(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("fecha_nacimiento");
+                        setFechaNacimiento(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-mist"}`}
                     />
+                    {fieldErrors.fecha_nacimiento && <p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>}
                   </div>
                 </div>
               </div>
@@ -415,8 +502,12 @@ const ConfiguracionPage = () => {
               {isAdmin || editTelefono ? (
                 <TelefonoField
                   value={telefono}
-                  onChange={(prefijo, numero) => setTelefono(prefijo + numero)}
+                  onChange={(prefijo, numero) => {
+                    clearFieldError("telefono");
+                    setTelefono(prefijo + numero);
+                  }}
                   label={null}
+                  error={fieldErrors.telefono}
                   inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
                   selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                 />
@@ -450,48 +541,74 @@ const ConfiguracionPage = () => {
               <div className="space-y-3">
                 <div className="space-y-1 text-xs text-brand-800">
                   <label className="font-semibold">Tipo de sangre</label>
-                  <input
+                  <select
                     value={tipoSangre}
-                    onChange={(event) => setTipoSangre(event.target.value)}
-                    className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-                    placeholder="Ej: O+"
-                  />
+                    onChange={(event) => {
+                      clearFieldError("tipo_sangre");
+                      setTipoSangre(event.target.value);
+                    }}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-mist"}`}
+                  >
+                    <option value="">Selecciona tipo de sangre</option>
+                    {TIPOS_SANGRE.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                  {fieldErrors.tipo_sangre && <p className="mt-1 text-xs text-red-500">{fieldErrors.tipo_sangre}</p>}
                 </div>
                 <div className="space-y-1 text-xs text-brand-800">
-                  <label className="font-semibold">Descripcion</label>
+                  <label className="font-semibold">Descripción</label>
                   <textarea
                     value={descripcion}
-                    onChange={(event) => setDescripcion(event.target.value)}
-                    className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                    onChange={(event) => {
+                      clearFieldError("descripcion");
+                      setDescripcion(event.target.value);
+                    }}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.descripcion ? "border-red-500" : "border-mist"}`}
                     rows={3}
                     placeholder="Notas o condiciones relevantes"
                   />
+                  {fieldErrors.descripcion && <p className="mt-1 text-xs text-red-500">{fieldErrors.descripcion}</p>}
                 </div>
                 <div className="space-y-1 text-xs text-brand-800">
-                  <label className="font-semibold">Direccion</label>
+                  <label className="font-semibold">Dirección</label>
                   <input
                     value={direccion}
-                    onChange={(event) => setDireccion(event.target.value)}
-                    className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-                    placeholder="Direccion"
+                    onChange={(event) => {
+                      clearFieldError("direccion");
+                      setDireccion(event.target.value);
+                    }}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.direccion ? "border-red-500" : "border-mist"}`}
+                    placeholder="Dirección"
                   />
+                  {fieldErrors.direccion && <p className="mt-1 text-xs text-red-500">{fieldErrors.direccion}</p>}
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1 text-xs text-brand-800">
-                    <label className="font-semibold">Contacto emergencia</label>
+                    <label className="font-semibold">Contacto emergencia (nombre)</label>
                     <input
                       value={contactoNombre}
-                      onChange={(event) => setContactoNombre(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                      onChange={(event) => {
+                        clearFieldError("contacto_emergencia_nombre");
+                        setContactoNombre(event.target.value);
+                      }}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contacto_emergencia_nombre ? "border-red-500" : "border-mist"}`}
                       placeholder="Nombre"
                     />
+                    {fieldErrors.contacto_emergencia_nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.contacto_emergencia_nombre}</p>}
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">
                     <TelefonoField
                       label={<span className="font-semibold">Teléfono emergencia</span>}
                       value={contactoTelefono}
-                      onChange={(prefijo, numero) => setContactoTelefono(prefijo + numero)}
-                      required={false}
+                      onChange={(prefijo, numero) => {
+                        clearFieldError("contacto_emergencia_telefono");
+                        setContactoTelefono(prefijo + numero);
+                      }}
+                      error={fieldErrors.contacto_emergencia_telefono}
+                      required
                       inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
                       selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                     />

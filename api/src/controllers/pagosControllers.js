@@ -1,4 +1,6 @@
 const { pool } = require("../db");
+const { createNotificacionController } = require("./notificacionesControllers");
+const { formatFechaCita, formatHoraCita } = require("../utils/citaEmails");
 
 // Obtener datos del pago por id_cita
 const getPagoByCitaController = async (id_cita) => {
@@ -135,6 +137,48 @@ const updatePagoController = async (id_cita, pagoData) => {
 		]);
 
 		await conn.commit();
+
+		// Notificar a admin y moderador: el paciente volvió a enviar el pago rechazado
+		try {
+			const [citaRows] = await pool.execute(
+				`SELECT c.fecha_cita, c.hora_cita, u.nombre AS paciente_nombre, u.apellido AS paciente_apellido, e.nombre AS eco_nombre
+         FROM cita c
+         INNER JOIN usuario u ON u.id_usuario = c.id_paciente
+         LEFT JOIN eco e ON e.id_eco = c.id_eco
+         WHERE c.id_cita = ?`,
+				[id_cita],
+			);
+			if (citaRows.length > 0) {
+				const c = citaRows[0];
+				const pacienteNombre = [c.paciente_nombre, c.paciente_apellido].filter(Boolean).join(" ") || "Paciente";
+				const fecha = formatFechaCita(c.fecha_cita);
+				const hora = formatHoraCita(c.hora_cita);
+				const ecoNombre = c.eco_nombre ? ` (${c.eco_nombre})` : "";
+				let mensaje = `El paciente ${pacienteNombre} volvió a enviar el pago que había sido rechazado para la cita del ${fecha} a las ${hora}${ecoNombre}. Revisa pagos pendientes.`;
+				if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+
+				const [adminModRows] = await pool.execute(
+					`SELECT u.id_usuario FROM usuario u
+           INNER JOIN roles r ON r.id_rol = u.id_rol
+           WHERE r.nombre IN ('admin', 'moderador') AND u.activo = 1`,
+				);
+				for (const row of adminModRows) {
+					try {
+						await createNotificacionController({
+							id_usuario: row.id_usuario,
+							titulo: "Pago reenviado por paciente",
+							mensaje,
+							tipo: "pago_reenviado",
+						});
+					} catch (e) {
+						console.error("Error creando notificación pago reenviado:", e);
+					}
+				}
+			}
+		} catch (err) {
+			console.error("Error notificando admin/moderador de pago reenviado:", err);
+		}
+
 		return { id_cita, estado_pago: 0 };
 	} catch (err) {
 		await conn.rollback();

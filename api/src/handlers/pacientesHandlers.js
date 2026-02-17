@@ -303,6 +303,8 @@ const getPacienteSelfHandler = async (req, res) => {
 	}
 };
 
+const TIPOS_SANGRE_VALIDOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
 const updatePacienteSelfHandler = async (req, res) => {
 	try {
 		const {
@@ -315,6 +317,37 @@ const updatePacienteSelfHandler = async (req, res) => {
 			contacto_emergencia_telefono,
 		} = req.body;
 		const id_usuario = req.user?.id;
+
+		// No permitir campos vacíos cuando se envían
+		if (telefono !== undefined && String(telefono).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El teléfono no puede estar vacío." });
+		}
+		if (telefono !== undefined && telefono !== null && String(telefono).trim() !== "") {
+			const v = validarTelefono(telefono);
+			if (!v.valid) return res.status(400).json({ ok: false, message: v.message });
+		}
+		if (tipo_sangre !== undefined && String(tipo_sangre).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El tipo de sangre no puede estar vacío." });
+		}
+		if (tipo_sangre !== undefined && tipo_sangre !== null && !TIPOS_SANGRE_VALIDOS.includes(String(tipo_sangre).trim())) {
+			return res.status(400).json({ ok: false, message: "Tipo de sangre inválido." });
+		}
+		if (descripcion !== undefined && String(descripcion).trim() === "") {
+			return res.status(400).json({ ok: false, message: "La descripción no puede estar vacía." });
+		}
+		if (direccion !== undefined && String(direccion).trim() === "") {
+			return res.status(400).json({ ok: false, message: "La dirección no puede estar vacía." });
+		}
+		if (contacto_emergencia_nombre !== undefined && String(contacto_emergencia_nombre).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El nombre del contacto de emergencia no puede estar vacío." });
+		}
+		if (contacto_emergencia_telefono !== undefined && String(contacto_emergencia_telefono).trim() === "") {
+			return res.status(400).json({ ok: false, message: "El teléfono de emergencia no puede estar vacío." });
+		}
+		if (contacto_emergencia_telefono !== undefined && contacto_emergencia_telefono !== null && String(contacto_emergencia_telefono).trim() !== "") {
+			const v = validarTelefono(contacto_emergencia_telefono);
+			if (!v.valid) return res.status(400).json({ ok: false, message: "Teléfono de emergencia: " + v.message });
+		}
 
 		const result = await updatePacienteSelfController({
 			id_usuario,
