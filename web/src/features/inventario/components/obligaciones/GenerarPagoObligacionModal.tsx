@@ -2,12 +2,39 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { Obligacion } from "../../api";
 import { useRegistrarPagoObligacionMutation } from "../../api";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 
 interface GenerarPagoObligacionModalProps {
   isOpen: boolean;
   onClose: () => void;
   obligacion: Obligacion | null;
 }
+
+const addPeriodo = (fecha: string, periodo?: Obligacion["periodo"]): string => {
+  if (!fecha) return fecha;
+  const base = new Date(`${fecha}T00:00:00`);
+  if (Number.isNaN(base.getTime())) return fecha;
+  const next = new Date(base);
+  switch (periodo) {
+    case "Mensual":
+      next.setMonth(next.getMonth() + 1);
+      break;
+    case "Trimestral":
+      next.setMonth(next.getMonth() + 3);
+      break;
+    case "Semestral":
+      next.setMonth(next.getMonth() + 6);
+      break;
+    case "Anual":
+      next.setFullYear(next.getFullYear() + 1);
+      break;
+    case "Unico":
+      return base.toISOString().split("T")[0];
+    default:
+      next.setMonth(next.getMonth() + 1);
+  }
+  return next.toISOString().split("T")[0];
+};
 
 export default function GenerarPagoObligacionModal({
   isOpen,
@@ -20,15 +47,32 @@ export default function GenerarPagoObligacionModal({
     monto: "",
     fecha_proxima_vencimiento: "",
   });
+  const [isFechaProximoDirty, setIsFechaProximoDirty] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && obligacion) {
+      const hoy = new Date().toISOString().split("T")[0];
+      setFormData((prev) => ({
+        ...prev,
+        fecha_pago: hoy,
+        fecha_proxima_vencimiento: addPeriodo(hoy, obligacion.periodo),
+      }));
+      setIsFechaProximoDirty(false);
       setError("");
       setSuccess("");
     }
-  }, [isOpen]);
+  }, [isOpen, obligacion?.id_obligacion]);
+
+  useEffect(() => {
+    if (isOpen && obligacion && !isFechaProximoDirty && formData.fecha_pago) {
+      setFormData((prev) => ({
+        ...prev,
+        fecha_proxima_vencimiento: addPeriodo(prev.fecha_pago, obligacion.periodo),
+      }));
+    }
+  }, [formData.fecha_pago, obligacion?.periodo, isFechaProximoDirty, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +86,9 @@ export default function GenerarPagoObligacionModal({
       return;
     }
 
-    if (!formData.monto || Number(formData.monto) <= 0) {
-      setError("El monto debe ser mayor a 0");
+    const errMonto = validarMonto(formData.monto);
+    if (errMonto) {
+      setError(errMonto);
       return;
     }
 
@@ -76,6 +121,14 @@ export default function GenerarPagoObligacionModal({
     }
   };
 
+  const hoy = new Date().toISOString().split("T")[0];
+  const fechaVenc = obligacion?.fecha_vencimiento
+    ? obligacion.fecha_vencimiento.includes("T")
+      ? obligacion.fecha_vencimiento.split("T")[0]
+      : obligacion.fecha_vencimiento.slice(0, 10)
+    : null;
+  const estaVencido = !!fechaVenc && fechaVenc <= hoy;
+
   if (!isOpen || !obligacion) return null;
 
   return (
@@ -87,6 +140,11 @@ export default function GenerarPagoObligacionModal({
             <p className="text-sm text-gray-600 mt-1">
               {obligacion.nombre_ente} - {obligacion.concepto}
             </p>
+            {estaVencido && (
+              <p className="text-sm font-medium text-amber-700 mt-1">
+                Esta obligación está vencida{fechaVenc ? ` (vencimiento: ${fechaVenc})` : ""}.
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -110,22 +168,26 @@ export default function GenerarPagoObligacionModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Próximo vencimiento se calcula según período ({obligacion.periodo}). Puedes editarlo abajo.
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Monto *
+              Monto ($) *
             </label>
             <input
               type="number"
               step="0.01"
-              min="0"
+              min={MONTO_MIN}
+              max={MONTO_MAX}
               value={formData.monto}
               onChange={(e) =>
-                setFormData({ ...formData, monto: e.target.value })
+                setFormData({ ...formData, monto: sanitizeMonto(e.target.value) })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="0.00"
+              placeholder="0.01"
               required
             />
           </div>
@@ -137,12 +199,13 @@ export default function GenerarPagoObligacionModal({
             <input
               type="date"
               value={formData.fecha_proxima_vencimiento}
-              onChange={(e) =>
+              onChange={(e) => {
+                setIsFechaProximoDirty(true);
                 setFormData({
                   ...formData,
                   fecha_proxima_vencimiento: e.target.value,
-                })
-              }
+                });
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />

@@ -5,6 +5,7 @@ const {
 	updateRepresentadoController,
 	deleteRepresentadoController,
 } = require("../controllers/representadosControllers");
+const { validarCedula } = require("../utils/validacionCedula");
 
 const listRepresentadosHandler = async (req, res) => {
 	try {
@@ -55,10 +56,22 @@ const createRepresentadoHandler = async (req, res) => {
 		const { nombre, apellido, cedula, fecha_nacimiento, genero, parentesco } =
 			req.body;
 
+		let cedulaValue = cedula;
+		if (cedula != null && String(cedula).trim()) {
+			const cedulaResult = validarCedula(cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			cedulaValue = cedulaResult.value;
+		}
+
 		const created = await createRepresentadoController(id_paciente, {
 			nombre,
 			apellido,
-			cedula,
+			cedula: cedulaValue,
 			fecha_nacimiento,
 			genero,
 			parentesco,
@@ -128,10 +141,22 @@ const updateRepresentadoHandler = async (req, res) => {
 		const { nombre, apellido, cedula, fecha_nacimiento, genero, parentesco } =
 			req.body;
 
+		let cedulaPayload = cedula;
+		if (cedula !== undefined && cedula !== null && String(cedula).trim()) {
+			const cedulaResult = validarCedula(cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			cedulaPayload = cedulaResult.value;
+		}
+
 		const updated = await updateRepresentadoController(id_paciente, id, {
 			nombre,
 			apellido,
-			cedula,
+			cedula: cedulaPayload,
 			fecha_nacimiento,
 			genero,
 			parentesco,

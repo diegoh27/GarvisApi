@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Plus, Settings } from "lucide-react";
+import Swal from "sweetalert2";
 import ObligacionesTable from "../components/entes-legales/ObligacionesTable";
 import CrearObligacionModal from "../components/entes-legales/CrearObligacionModal";
 import EditarObligacionModal from "../components/entes-legales/EditarObligacionModal";
@@ -19,6 +20,7 @@ import {
   useGetEntesLegalesQuery,
   useDeleteEnteLegalMutation,
   useGetHistorialPagosEntesQuery,
+  useDeletePagoEnteLegalMutation,
 } from "../api";
 
 export default function EntesLegalesPage() {
@@ -33,6 +35,7 @@ export default function EntesLegalesPage() {
   // Historial de pagos
   const { data: historialData = [], isLoading: historialLoading } =
     useGetHistorialPagosEntesQuery();
+  const [deletePago] = useDeletePagoEnteLegalMutation();
 
   // State
   const [selectedObligacion, setSelectedObligacion] = useState<Obligacion | null>(
@@ -91,6 +94,37 @@ export default function EntesLegalesPage() {
   const handleEditarPago = (row: CompraProducto | HistorialEnteLegal) => {
     setSelectedPago(row as HistorialEnteLegal);
     setShowEditarPagoModal(true);
+  };
+
+  const handleEliminarPago = async (idPago: string) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar pago?",
+      text: "¿Está seguro que desea eliminar este pago?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (result.isConfirmed) {
+      try {
+        await deletePago(idPago).unwrap();
+        await Swal.fire({
+          icon: "success",
+          title: "Pago eliminado",
+          text: "El pago fue eliminado correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err?.data?.message || "No se pudo eliminar el pago",
+        });
+      }
+    }
   };
 
   const handleVerHistorialObligacion = (id: string) => {
@@ -282,6 +316,7 @@ export default function EntesLegalesPage() {
         title="Historial de Pagos"
         emptyMessage="No hay pagos registrados"
         onEditar={(row) => handleEditarPago(row as CompraProducto | HistorialEnteLegal)}
+        onEliminar={handleEliminarPago}
       />
       {!historialLoading && historialData.length > 0 && (
         <Pagination

@@ -82,10 +82,10 @@ export default function HistorialModal({
                         Cantidad
                       </th>
                       <th className="px-4 py-2 text-right font-medium text-gray-700">
-                        Precio Unitario
+                        Precio Unitario ($)
                       </th>
                       <th className="px-4 py-2 text-right font-medium text-gray-700">
-                        Precio Total
+                        Precio Total ($)
                       </th>
                       <th className="px-4 py-2 text-left font-medium text-gray-700">
                         Proveedor

@@ -222,3 +222,84 @@ exports.getResumenFacturacionController = async () => {
 		}),
 	};
 };
+
+/**
+ * Elimina un movimiento de facturación y, según origen_modulo, el registro origen en su tabla.
+ * LEG_PAGO -> leg_pago; NOM_PAGO -> nom_pago; ALQ_PAGO -> alq_pago;
+ * INV_COMPRA -> inv_producto_compra + ajuste stock; resto -> solo fac_movimiento.
+ */
+exports.deleteMovimientoFacturacionController = async (id_movimiento) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [movRows] = await conn.execute(
+			"SELECT id_movimiento, origen_modulo, origen_id FROM fac_movimiento WHERE id_movimiento = ? LIMIT 1",
+			[id_movimiento],
+		);
+		if (!movRows.length) {
+			const err = new Error("Movimiento no encontrado");
+			err.code = "MOVIMIENTO_NOT_FOUND";
+			throw err;
+		}
+		const { origen_modulo, origen_id } = movRows[0];
+
+		if (origen_id) {
+			switch (origen_modulo) {
+				case "LEG_PAGO":
+					await conn.execute("DELETE FROM leg_pago WHERE id_pago = ?", [origen_id]);
+					break;
+				case "NOM_PAGO":
+					await conn.execute("DELETE FROM nom_pago WHERE id_pago = ?", [origen_id]);
+					break;
+				case "ALQ_PAGO":
+					await conn.execute("DELETE FROM alq_pago WHERE id_pago = ?", [origen_id]);
+					break;
+				case "INV_COMPRA": {
+					const [compraRows] = await conn.execute(
+						"SELECT id_compra, id_producto, cantidad FROM inv_producto_compra WHERE id_compra = ? LIMIT 1",
+						[origen_id],
+					);
+					if (compraRows.length) {
+						const { id_producto, cantidad } = compraRows[0];
+						const cantidadNum = Number(cantidad);
+						await conn.execute(
+							"UPDATE inv_producto SET stock_actual = stock_actual - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+							[cantidadNum, id_producto],
+						);
+						await conn.execute("DELETE FROM inv_producto_compra WHERE id_compra = ?", [origen_id]);
+					}
+					break;
+				}
+				case "CITA_PAGO": {
+					// Revertir estado de pago de la cita para que no quede como "pagada" sin ingreso
+					const [pagoRows] = await conn.execute(
+						"SELECT id_cita FROM pagos WHERE id_pago = ? LIMIT 1",
+						[origen_id],
+					);
+					if (pagoRows.length) {
+						const id_cita = pagoRows[0].id_cita;
+						await conn.execute("UPDATE cita SET estado_pago = 0 WHERE id_cita = ?", [id_cita]);
+						await conn.execute("UPDATE pagos SET estado_pago = 0 WHERE id_pago = ?", [origen_id]);
+					}
+					break;
+				}
+				case "ESP_COMISION":
+				case "INV_AJUSTE":
+				case "AJUSTE":
+				default:
+					// Solo se elimina el movimiento de facturación más abajo
+					break;
+			}
+		}
+
+		await conn.execute("DELETE FROM fac_movimiento WHERE id_movimiento = ?", [id_movimiento]);
+		await conn.commit();
+		return { message: "Movimiento eliminado correctamente" };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};

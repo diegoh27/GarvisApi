@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import { useUpdateObligacionMutation } from "../../api";
+import { useUpdateObligacionMutation, useGetEntesLegalesQuery } from "../../api";
 import type { Obligacion, UpdateObligacionPayload } from "../../api";
+
+const ESTADOS_OBLIGACION: Array<{ value: Obligacion["estado"]; label: string }> = [
+  { value: "Pendiente", label: "Pendiente" },
+  { value: "Pagado", label: "Pagado" },
+  { value: "Vencido", label: "Vencido" },
+];
 
 interface EditarObligacionModalProps {
   isOpen: boolean;
@@ -15,11 +21,14 @@ export default function EditarObligacionModal({
   onClose,
 }: EditarObligacionModalProps) {
   const [updateObligacion, { isLoading }] = useUpdateObligacionMutation();
+  const { data: entes = [] } = useGetEntesLegalesQuery(undefined, { skip: !isOpen });
 
   const [formData, setFormData] = useState({
+    id_ente: "",
     concepto: "",
     periodo: "Mensual",
     fecha_vencimiento: "",
+    estado: "Pendiente" as Obligacion["estado"],
   });
 
   const [error, setError] = useState("");
@@ -28,12 +37,14 @@ export default function EditarObligacionModal({
   useEffect(() => {
     if (obligacion && isOpen) {
       const fecha = obligacion.fecha_vencimiento
-        ? new Date(obligacion.fecha_vencimiento).toISOString().split('T')[0]
+        ? new Date(obligacion.fecha_vencimiento).toISOString().split("T")[0]
         : "";
       setFormData({
+        id_ente: obligacion.id_ente || "",
         concepto: obligacion.concepto || "",
         periodo: obligacion.periodo || "Mensual",
         fecha_vencimiento: fecha,
+        estado: obligacion.estado || "Pendiente",
       });
       setError("");
       setSuccess("");
@@ -52,11 +63,17 @@ export default function EditarObligacionModal({
       setError("El concepto es obligatorio");
       return;
     }
+    if (formData.concepto.trim().length > 200) {
+      setError("El concepto no puede superar 200 caracteres");
+      return;
+    }
 
     try {
       const payload: UpdateObligacionPayload = {
+        ...(formData.id_ente && { id_ente: formData.id_ente }),
         concepto: formData.concepto.trim(),
         periodo: formData.periodo,
+        estado: formData.estado,
         ...(formData.fecha_vencimiento && { fecha_vencimiento: formData.fecha_vencimiento }),
       };
 
@@ -94,14 +111,25 @@ export default function EditarObligacionModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
-          {/* Ente (read-only) */}
+          {/* Ente Legal (select) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ente Legal
             </label>
-            <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-              {obligacion.nombre_ente}
-            </div>
+            <select
+              value={formData.id_ente}
+              onChange={(e) =>
+                setFormData({ ...formData, id_ente: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="">Seleccione un ente</option>
+              {entes.map((ente) => (
+                <option key={ente.id_ente} value={ente.id_ente}>
+                  {ente.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Concepto */}
@@ -115,6 +143,7 @@ export default function EditarObligacionModal({
               onChange={(e) =>
                 setFormData({ ...formData, concepto: e.target.value })
               }
+              maxLength={200}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Ej: IVA, ISLR, Retención..."
               required
@@ -154,6 +183,32 @@ export default function EditarObligacionModal({
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
+          </div>
+
+          {/* Estado (manual: Pendiente / Pagado / Vencido) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Estado
+            </label>
+            <select
+              value={formData.estado}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  estado: e.target.value as Obligacion["estado"],
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+            >
+              {ESTADOS_OBLIGACION.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Puede marcar manualmente como Pagado si ya registró el pago fuera del sistema.
+            </p>
           </div>
 
           {/* Info: Monto y Fecha (solo lectura) */}

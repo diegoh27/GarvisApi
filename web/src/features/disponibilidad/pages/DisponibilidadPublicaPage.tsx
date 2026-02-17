@@ -8,7 +8,7 @@ import {
 	type DisponibilidadPublicaPorEcoItem,
 } from "../disponibilidadApi";
 import { ReservarCitaElegirModal } from "../components";
-import { formatFecha, formatHora } from "../utils/dateUtils";
+import { formatFecha, formatHora, isSlotAtLeast2HoursFromNow } from "../utils/dateUtils";
 import { useGetPacienteSelfQuery } from "../../usuarios/usuariosApi";
 
 function groupByFecha(
@@ -265,39 +265,44 @@ const DisponibilidadPublicaPage = () => {
 										</span>
 									</div>
 									<ul className="divide-y divide-brand-100">
-										{pagedSlots.map((b) => (
-											<li
-												key={b.id_disponibilidad}
-												className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:flex-nowrap"
-											>
-												<div className="flex items-center gap-2">
-													<span className="font-medium text-brand-900">
-														{b.especialista_nombre} {b.especialista_apellido}
-													</span>
-													<span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
-														{b.especialidad_nombre}
-													</span>
-												</div>
-												<div className="flex items-center gap-2">
-													<span className="text-sm text-brand-600">
-														{formatHora(b.hora_inicio)} – {formatHora(b.hora_fin)}
-													</span>
-													<button
-														type="button"
-														onClick={() => setBlockToReservar(b)}
-														disabled={isPaciente && !isEmailVerified}
-														className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-															isPaciente && !isEmailVerified
-																	? "bg-brand-800 text-paper/90 cursor-not-allowed"
+										{pagedSlots.map((b) => {
+											const puedeReservar = isSlotAtLeast2HoursFromNow(b.fecha, b.hora_inicio);
+											const deshabilitar = (isPaciente && !isEmailVerified) || !puedeReservar;
+											return (
+												<li
+													key={b.id_disponibilidad}
+													className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:flex-nowrap"
+												>
+													<div className="flex items-center gap-2">
+														<span className="font-medium text-brand-900">
+															{b.especialista_nombre} {b.especialista_apellido}
+														</span>
+														<span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
+															{b.especialidad_nombre}
+														</span>
+													</div>
+													<div className="flex items-center gap-2">
+														<span className="text-sm text-brand-600">
+															{formatHora(b.hora_inicio)} – {formatHora(b.hora_fin)}
+														</span>
+														<button
+															type="button"
+															onClick={() => puedeReservar && setBlockToReservar(b)}
+															disabled={deshabilitar}
+															title={!puedeReservar ? "Solo se puede reservar con al menos 2 horas de anticipación" : undefined}
+															className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+																deshabilitar
+																	? "bg-brand-800/60 text-paper/80 cursor-not-allowed"
 																	: "bg-brand-700 text-paper hover:bg-brand-800"
-														}`}
-													>
-														<CalendarPlus className="h-4 w-4" />
-														Reservar cita
-													</button>
-												</div>
-											</li>
-										))}
+															}`}
+														>
+															<CalendarPlus className="h-4 w-4" />
+															Reservar cita
+														</button>
+													</div>
+												</li>
+											);
+										})}
 									</ul>
 									<div className="flex items-center justify-between border-t border-mist bg-cloud/30 px-4 py-3">
 										<p className="text-xs text-brand-700">

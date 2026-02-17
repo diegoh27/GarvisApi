@@ -45,8 +45,8 @@ export default function EditarEspecialistaModal({
     }
 
     const porcentajeNum = Number(porcentaje);
-    if (Number.isNaN(porcentajeNum) || porcentajeNum < 0 || porcentajeNum > 100) {
-      setError("El porcentaje debe estar entre 0 y 100.");
+    if (Number.isNaN(porcentajeNum) || porcentajeNum < 1 || porcentajeNum > 100) {
+      setError("El porcentaje debe estar entre 1 y 100.");
       return;
     }
 
@@ -96,8 +96,8 @@ export default function EditarEspecialistaModal({
             <label className="mb-1 block text-sm font-medium text-gray-700">Porcentaje de comisión</label>
             <input
               type="number"
-              min="0"
-              max="100"
+              min={1}
+              max={100}
               step="0.01"
               value={porcentaje}
               onChange={(e) => {

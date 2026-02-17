@@ -1,14 +1,17 @@
 import GenericTable from "../GenericTable";
+import { Trash2 } from "lucide-react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 
 interface HistorialComisionesTableProps {
   comisiones: EspecialistaComision[];
   isLoading: boolean;
+  onEliminar?: (idComision: string) => void;
 }
 
 export default function HistorialComisionesTable({
   comisiones,
   isLoading,
+  onEliminar,
 }: HistorialComisionesTableProps) {
   const columns = [
     {
@@ -88,6 +91,27 @@ export default function HistorialComisionesTable({
       render: (row: EspecialistaComision) =>
         `${Number(row.porcentaje).toFixed(1)}%`,
     },
+    ...(onEliminar
+      ? [
+          {
+            key: "actions",
+            header: "Acciones",
+            headerClassName:
+              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-center",
+            render: (row: EspecialistaComision) => (
+              <button
+                type="button"
+                onClick={() => onEliminar(row.id_comision)}
+                className="text-red-600 hover:text-red-800 transition-colors p-1 inline-flex items-center justify-center"
+                title="Eliminar pago"
+              >
+                <Trash2 size={18} />
+              </button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

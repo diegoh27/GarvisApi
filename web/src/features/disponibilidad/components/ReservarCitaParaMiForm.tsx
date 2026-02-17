@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useAuth } from "../../../shared";
-import { FormularioPago, type PagoFormData } from "../../../shared";
+import { FormularioPago, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
 import { useAsignarCitaCompletaMutation } from "../../moderadores/moderadoresApi";
 import { useResendVerificationMutation } from "../../auth";
+import { useGetDolarOficialQuery } from "../../dolar/dolarApi";
 import { getToken } from "../../../shared/utils/token";
 import Swal from "sweetalert2";
 import type { Eco } from "../../ecos/ecosApi";
 import type { DisponibilidadPublicaPorEcoItem } from "../disponibilidadApi";
 import type { Representado } from "../../representados/representadosApi";
-import { formatFecha, formatHora } from "../utils/dateUtils";
+import { formatFecha, formatHora, isSlotAtLeast2HoursFromNow } from "../utils/dateUtils";
 
 const normalizeFecha = (fecha: string): string => {
 	if (!fecha) return "";
@@ -49,10 +51,12 @@ const ReservarCitaParaMiForm = ({
 	const [imagenComprimida, setImagenComprimida] = useState<File | null>(null);
 	const [ordenMedicaComprimida, setOrdenMedicaComprimida] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [invalidFields, setInvalidFields] = useState<FormularioPagoInvalidField[]>([]);
 
 	const [asignarCita, { isLoading: isAsignando }] = useAsignarCitaCompletaMutation();
 	const [resendVerification, { isLoading: isResending }] =
 		useResendVerificationMutation();
+	const { data: dolarOficial } = useGetDolarOficialQuery();
 
 	const handleReservar = async () => {
 		const idPaciente = user?.id_usuario;
@@ -65,39 +69,57 @@ const ReservarCitaParaMiForm = ({
 			return;
 		}
 
-		if (
-			!pagoData.banco_origen ||
-			!pagoData.banco_destino ||
-			!pagoData.monto ||
-			!pagoData.cedula_pagador ||
-			!pagoData.telefono_pagador ||
-			!pagoData.referencia
-		) {
+		if (!isSlotAtLeast2HoursFromNow(block.fecha, block.hora_inicio)) {
 			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Complete todos los campos del pago",
+				icon: "warning",
+				title: "Horario no disponible",
+				text: "Solo se puede reservar con al menos 2 horas de anticipación. Elige otro horario.",
 			});
 			return;
 		}
 
-		if (!pagoData.imagen && !imagenComprimida) {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Suba el comprobante de pago",
-			});
-			return;
-		}
+		const missing: FormularioPagoInvalidField[] = [];
+		if (!pagoData.banco_origen) missing.push("banco_origen");
+		if (!pagoData.banco_destino) missing.push("banco_destino");
+		if (!pagoData.monto?.trim()) missing.push("monto");
+		if (!pagoData.cedula_pagador?.replace(/\D/g, "").trim()) missing.push("cedula_pagador");
+		if (!pagoData.telefono_pagador?.replace(/\D/g, "").trim()) missing.push("telefono_pagador");
+		if (!pagoData.referencia?.trim()) missing.push("referencia");
+		if (!pagoData.imagen && !imagenComprimida) missing.push("imagen");
+		if (!pagoData.orden_medica && !ordenMedicaComprimida) missing.push("orden_medica");
 
-		if (!pagoData.orden_medica && !ordenMedicaComprimida) {
+		if (missing.length > 0) {
+			flushSync(() => setInvalidFields(missing));
 			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Suba la orden médica",
+				icon: "warning",
+				title: "Campos incompletos",
+				text: "Complete los campos marcados en rojo para continuar.",
 			});
 			return;
 		}
+		setInvalidFields([]);
+
+		const precioUSD = eco?.precio ?? 0;
+		const tasaBs = dolarOficial?.promedio ?? 0;
+		const montoCalculadoBs =
+			tasaBs > 0 ? Math.round(precioUSD * tasaBs * 100) / 100 : null;
+		const montoIngresado = parseFloat(pagoData.monto) || 0;
+		const confirmacion = await Swal.fire({
+			icon: "question",
+			title: "Confirmar monto a pagar",
+			html: `
+				<div class="text-left space-y-2 text-sm">
+					<p><strong>Precio del eco:</strong> $${precioUSD.toFixed(2)} USD</p>
+					${montoCalculadoBs !== null ? `<p><strong>Total en Bs (tasa BCV):</strong> ${montoCalculadoBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>` : ""}
+					<p><strong>Monto que ingresó:</strong> ${montoIngresado.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>
+				</div>
+			`,
+			showCancelButton: true,
+			confirmButtonText: "Sí, reservar cita",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#1C837F",
+		});
+		if (!confirmacion.isConfirmed) return;
 
 		setIsSubmitting(true);
 
@@ -263,7 +285,11 @@ const ReservarCitaParaMiForm = ({
 
 				<FormularioPago
 					precioEcoUSD={eco.precio ?? null}
-					onChange={setPagoData}
+					onChange={(data) => {
+						setPagoData(data);
+						setInvalidFields([]);
+					}}
+					invalidFields={invalidFields}
 					onImageReady={setImagenComprimida}
 					onOrdenMedicaReady={setOrdenMedicaComprimida}
 					autoUpload={false}

@@ -145,7 +145,7 @@ export const usuariosApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: any }) => {
 				return response.data;
 			},
-			invalidatesTags: ["Usuarios", "Ecos"],
+			invalidatesTags: ["Usuarios", "Ecos", "EspecialistaComision"],
 		}),
 		updatePaciente: builder.mutation<
 			{ id_paciente: string },

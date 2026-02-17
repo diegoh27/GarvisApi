@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUpdateCompraMutation, type CompraProducto } from "../../api";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import { X } from "lucide-react";
 
 interface EditarCompraModalProps {
@@ -75,13 +76,22 @@ export default function EditarCompraModal({
       return;
     }
 
-    if (precio < 0) {
-      setError("El precio no puede ser negativo");
+    const errPrecio = validarMonto(precio);
+    if (errPrecio) {
+      setError(errPrecio);
+      return;
+    }
+    if ((formData.proveedor || "").trim().length > 120) {
+      setError("El proveedor no puede superar 120 caracteres");
+      return;
+    }
+    if ((formData.referencia || "").trim().length > 80) {
+      setError("La referencia no puede superar 80 caracteres");
       return;
     }
 
     try {
-      const precioTotal = parseFloat(formData.precio_total);
+      const precioTotal = cantidad * precio;
 
       await updateCompra({
         idCompra: compra.id_compra,
@@ -89,7 +99,7 @@ export default function EditarCompraModal({
           fecha_ingreso: formData.fecha_ingreso,
           cantidad,
           precio_unitario: precio,
-          precio_total: !isNaN(precioTotal) ? precioTotal : undefined,
+          precio_total: precioTotal,
           proveedor: formData.proveedor || undefined,
           referencia: formData.referencia || undefined,
         },
@@ -183,43 +193,42 @@ export default function EditarCompraModal({
 
             <div>
               <label htmlFor="precio_unitario" className="block text-sm font-medium text-gray-700 mb-1">
-                Precio Unitario ($) *
+                Precio Unitario ($) * (mín. 0,01)
               </label>
               <input
                 type="number"
                 id="precio_unitario"
                 value={formData.precio_unitario}
                 onChange={(e) =>
-                  setFormData({ ...formData, precio_unitario: e.target.value })
+                  setFormData({ ...formData, precio_unitario: sanitizeMonto(e.target.value) })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                placeholder="0.00"
+                placeholder="0.01"
                 required
-                min="0"
+                min={MONTO_MIN}
+                max={MONTO_MAX}
                 step="0.01"
               />
             </div>
           </div>
 
-          {/* Precio Total (Auto-calculado) */}
+          {/* Precio Total (solo calculado) */}
           <div>
             <label htmlFor="precio_total" className="block text-sm font-medium text-gray-700 mb-1">
               Precio Total ($)
             </label>
             <input
-              type="number"
+              type="text"
               id="precio_total"
-              value={formData.precio_total}
-              onChange={(e) =>
-                setFormData({ ...formData, precio_total: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-gray-50"
+              readOnly
+              value={formData.precio_total || "—"}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
               placeholder="0.00"
-              step="0.01"
-              min="0"
+              tabIndex={-1}
+              aria-label="Precio total (calculado)"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Se calcula automáticamente (Cantidad × Precio Unitario)
+              Calculado automáticamente (cantidad × precio unitario)
             </p>
           </div>
 

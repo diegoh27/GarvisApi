@@ -1,10 +1,12 @@
 import GenericTable from "../GenericTable";
+import { Trash2 } from "lucide-react";
 import type { FacturacionMovimiento } from "../../api/facturacionApi";
 
 type MovimientosTableProps = {
   movimientos: FacturacionMovimiento[];
   startIndex: number;
   isLoading?: boolean;
+  onEliminar?: (idMovimiento: string) => void;
 };
 
 const formatDate = (value: string | null | undefined) => {
@@ -89,6 +91,7 @@ export default function MovimientosTable({
   movimientos,
   startIndex,
   isLoading = false,
+  onEliminar,
 }: MovimientosTableProps) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -213,6 +216,27 @@ export default function MovimientosTable({
                 "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
               render: (row) => row.referencia || "-",
             },
+            ...(onEliminar
+              ? [
+                  {
+                    key: "actions",
+                    header: "Acciones",
+                    headerClassName:
+                      "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+                    cellClassName: "px-3 md:px-6 py-4 text-center",
+                    render: (row: FacturacionMovimiento) => (
+                      <button
+                        type="button"
+                        onClick={() => onEliminar(row.id_movimiento)}
+                        className="text-red-600 hover:text-red-800 transition-colors p-1 inline-flex items-center justify-center"
+                        title="Eliminar movimiento"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    ),
+                  },
+                ]
+              : []),
           ]}
           emptyState="No hay movimientos de facturación"
           loadingState="Cargando movimientos de facturación..."

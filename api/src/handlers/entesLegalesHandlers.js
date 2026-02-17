@@ -7,6 +7,7 @@ const {
 	deleteEnteLegalController,
 	listHistorialPagosEntesController,
 	registrarPagoEnteLegalController,
+	deletePagoEnteLegalController,
 } = require("../controllers/entesLegalesControllers");
 
 // ==========================================
@@ -260,6 +261,32 @@ const registrarPagoEnteLegalHandler = async (req, res) => {
 	}
 };
 
+/**
+ * DELETE /entes-legales/pagos/:idPago - Eliminar un pago de ente legal
+ */
+const deletePagoEnteLegalHandler = async (req, res) => {
+	try {
+		const { idPago } = req.params;
+		await deletePagoEnteLegalController(idPago);
+		return res.status(200).json({
+			ok: true,
+			message: "Pago eliminado correctamente",
+		});
+	} catch (err) {
+		if (err?.code === "PAGO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al eliminar el pago",
+		});
+	}
+};
+
 module.exports = {
 	listEntesSimpleHandler,
 	listEntesLegalesHandler,
@@ -269,4 +296,5 @@ module.exports = {
 	deleteEnteLegalHandler,
 	listHistorialPagosEntesHandler,
 	registrarPagoEnteLegalHandler,
+	deletePagoEnteLegalHandler,
 };

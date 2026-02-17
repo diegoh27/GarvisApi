@@ -6,6 +6,8 @@ const {
 	deactivatePacienteController,
 	updatePacienteSelfController,
 } = require("../controllers/pacientesControllers");
+const { validarCedula } = require("../utils/validacionCedula");
+const { validarTelefono } = require("../utils/validacionTelefono");
 
 const createPacienteHandler = async (req, res) => {
 	try {
@@ -55,13 +57,40 @@ const createPacienteHandler = async (req, res) => {
 			});
 		}
 
+		const cedulaResult = validarCedula(cedula);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+
+		const telefonoResult = validarTelefono(telefono);
+		if (!telefonoResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: telefonoResult.message,
+			});
+		}
+		let contactoTelefonoVal = contacto_emergencia_telefono;
+		if (contacto_emergencia_telefono && String(contacto_emergencia_telefono).trim()) {
+			const ctResult = validarTelefono(contacto_emergencia_telefono, { required: false });
+			if (!ctResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: "Teléfono de emergencia: " + ctResult.message,
+				});
+			}
+			contactoTelefonoVal = ctResult.value;
+		}
+
 		const created = await createPacienteController({
 			nombre,
 			apellido,
 			genero,
-			cedula,
+			cedula: cedulaResult.value,
 			correo,
-			telefono,
+			telefono: telefonoResult.value,
 			contrasena,
 			fecha_nacimiento,
 			tipo_sangre,
@@ -69,7 +98,7 @@ const createPacienteHandler = async (req, res) => {
 			direccion,
 			rif,
 			contacto_emergencia_nombre,
-			contacto_emergencia_telefono,
+			contacto_emergencia_telefono: contactoTelefonoVal,
 		});
 
 		return res.status(201).json({
@@ -83,6 +112,12 @@ const createPacienteHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Ya existe un usuario con esa cédula o correo",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 
@@ -137,7 +172,7 @@ const getPacienteByIdHandler = async (req, res) => {
 const updatePacienteHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const payload = req.body;
+		const payload = { ...req.body };
 
 		if (
 			payload.genero &&
@@ -147,6 +182,38 @@ const updatePacienteHandler = async (req, res) => {
 				ok: false,
 				message: "genero inválido (Masculino | Femenino | Otro)",
 			});
+		}
+
+		if (payload.cedula !== undefined && payload.cedula !== null && String(payload.cedula).trim()) {
+			const cedulaResult = validarCedula(payload.cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			payload.cedula = cedulaResult.value;
+		}
+
+		if (payload.telefono !== undefined && payload.telefono !== null && String(payload.telefono).trim()) {
+			const telefonoResult = validarTelefono(payload.telefono, { required: false });
+			if (!telefonoResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: telefonoResult.message,
+				});
+			}
+			payload.telefono = telefonoResult.value;
+		}
+		if (payload.contacto_emergencia_telefono !== undefined && payload.contacto_emergencia_telefono !== null && String(payload.contacto_emergencia_telefono).trim()) {
+			const ctResult = validarTelefono(payload.contacto_emergencia_telefono, { required: false });
+			if (!ctResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: "Teléfono de emergencia: " + ctResult.message,
+				});
+			}
+			payload.contacto_emergencia_telefono = ctResult.value;
 		}
 
 		await updatePacienteController(id, payload);
@@ -173,6 +240,12 @@ const updatePacienteHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Cédula o correo ya existe",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 		console.error(err);

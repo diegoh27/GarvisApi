@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUpdatePagoObligacionMutation, type HistorialEnteLegal } from "../../api";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import { X } from "lucide-react";
 
 interface EditarPagoEnteModalProps {
@@ -53,8 +54,13 @@ export default function EditarPagoEnteModal({
     }
 
     const monto = parseFloat(formData.monto);
-    if (monto <= 0) {
-      setError("El monto debe ser mayor a 0");
+    const errMonto = validarMonto(formData.monto);
+    if (errMonto) {
+      setError(errMonto);
+      return;
+    }
+    if (formData.referencia.length > 80) {
+      setError("La referencia no puede superar 80 caracteres");
       return;
     }
 
@@ -144,12 +150,13 @@ export default function EditarPagoEnteModal({
               id="monto"
               value={formData.monto}
               onChange={(e) =>
-                setFormData({ ...formData, monto: e.target.value })
+                setFormData({ ...formData, monto: sanitizeMonto(e.target.value) })
               }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              placeholder="0.00"
+              placeholder="0.01"
               required
-              min="0"
+              min={MONTO_MIN}
+              max={MONTO_MAX}
               step="0.01"
             />
           </div>

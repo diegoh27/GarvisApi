@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { X } from "lucide-react";
+import { formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField } from "../../../shared";
 import { useCreateRepresentadoMutation } from "../representadosApi";
 import Swal from "sweetalert2";
 
@@ -17,6 +18,7 @@ const CrearRepresentadoModal = ({
 	const [form, setForm] = useState({
 		nombre: "",
 		apellido: "",
+		tipo_cedula: "V" as const,
 		cedula: "",
 		fecha_nacimiento: "",
 		genero: "" as "" | (typeof GENEROS)[number],
@@ -36,7 +38,11 @@ const CrearRepresentadoModal = ({
 		else if (form.nombre.length > 60) next.nombre = "Máximo 60 caracteres";
 		if (!form.apellido.trim()) next.apellido = "El apellido es requerido";
 		else if (form.apellido.length > 60) next.apellido = "Máximo 60 caracteres";
-		if (form.cedula.trim() && form.cedula.length > 20) next.cedula = "Máximo 20 caracteres";
+		if (form.cedula.trim()) {
+			if (!/^\d+$/.test(form.cedula.trim())) next.cedula = "La cédula solo puede contener números";
+			else if (!validarRangoCedula(form.cedula)) next.cedula = MENSAJE_RANGO_CEDULA;
+			else if (form.cedula.length > 20) next.cedula = "Máximo 20 caracteres";
+		}
 		if (!form.fecha_nacimiento) next.fecha_nacimiento = "La fecha de nacimiento es requerida";
 		if (!form.genero) next.genero = "El género es requerido";
 		else if (!GENEROS.includes(form.genero)) next.genero = "Género no válido";
@@ -50,9 +56,9 @@ const CrearRepresentadoModal = ({
 		if (!validate() || isLoading) return;
 		try {
 			await createRepresentado({
-				nombre: form.nombre.trim(),
-				apellido: form.apellido.trim(),
-				cedula: form.cedula.trim() || null,
+				nombre: formatNombreApellido(form.nombre),
+				apellido: formatNombreApellido(form.apellido),
+				cedula: form.cedula.trim() ? `${form.tipo_cedula}${form.cedula.trim()}` : null,
 				fecha_nacimiento: form.fecha_nacimiento,
 				genero: form.genero as (typeof GENEROS)[number],
 				parentesco: form.parentesco.trim() || null,
@@ -140,22 +146,20 @@ const CrearRepresentadoModal = ({
 					</div>
 
 					<div>
-						<label htmlFor="cedula" className="mb-1 block text-sm font-medium text-brand-800">
-							Cédula (opcional)
-						</label>
-						<input
-							id="cedula"
-							type="text"
-							value={form.cedula}
-							onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))}
-							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-brand-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-							placeholder="Ej. V-12345678"
-							maxLength={20}
+						<CedulaField
+							label="Cédula (opcional)"
+							value={`${form.tipo_cedula}${form.cedula}`}
+							onChange={(tipo, numero) => {
+								setForm((f) => ({ ...f, tipo_cedula: tipo, cedula: numero }));
+								setErrors((prev) => (prev.cedula ? { ...prev, cedula: "" } : prev));
+							}}
+							error={errors.cedula}
 							disabled={isLoading}
+							placeholder="Número de cédula"
+							maxLength={9}
+							inputClassName="rounded-lg border-brand-300 bg-paper py-2 shadow-sm focus:ring-brand-500"
+							selectClassName="rounded-lg border-brand-300 bg-paper py-2"
 						/>
-						{errors.cedula && (
-							<p className="mt-1 text-sm text-red-600">{errors.cedula}</p>
-						)}
 					</div>
 
 					<div>

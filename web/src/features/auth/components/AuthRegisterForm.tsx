@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { PasswordField, useAuth, calculateRIF } from "../../../shared";
+import { PasswordField, useAuth, calculateRIF, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, TelefonoField } from "../../../shared";
 
 const AuthRegisterForm = () => {
 	const navigate = useNavigate();
@@ -38,17 +38,6 @@ const AuthRegisterForm = () => {
 		"AB-",
 		"O+",
 		"O-",
-	];
-
-	// Prefijos telefónicos venezolanos (móviles)
-	const prefijosTelefonicos = [
-		"0412",
-		"0414",
-		"0416",
-		"0421",
-		"0422",
-		"0424",
-		"0426",
 	];
 
 	// Calcular RIF automáticamente cuando cambia la cédula o el tipo de RIF
@@ -104,8 +93,7 @@ const AuthRegisterForm = () => {
 			case "cedula":
 				if (!value.trim()) return "Debe colocar una cédula válida";
 				if (!/^\d+$/.test(value)) return "Debe colocar una cédula válida";
-				const cedulaNum = parseInt(value, 10);
-				if (cedulaNum < 1000000 || cedulaNum > 40000000) return "Debe colocar una cédula válida";
+				if (!validarRangoCedula(value)) return MENSAJE_RANGO_CEDULA;
 				return "";
 			case "telefono_numero":
 				if (!value.trim()) return "El número de teléfono es requerido";
@@ -221,12 +209,12 @@ const AuthRegisterForm = () => {
 
 			// Registrar paciente (el registro público solo crea pacientes)
 			await register({
-				nombre: form.nombre.trim(),
-				apellido: form.apellido.trim(),
+				nombre: formatNombreApellido(form.nombre),
+				apellido: formatNombreApellido(form.apellido),
 				correo: form.correo.trim(),
 				genero: form.genero as "Masculino" | "Femenino",
 				fecha_nacimiento: form.fecha_nacimiento,
-				cedula: form.cedula,
+				cedula: `${form.tipo_rif}${form.cedula}`,
 				telefono: `${form.telefono_prefijo}${form.telefono_numero}`,
 				tipo_sangre: form.tipo_sangre,
 				descripcion: form.descripcion.trim(),
@@ -419,38 +407,21 @@ const AuthRegisterForm = () => {
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
-						Teléfono
-					</label>
-					<div className="flex gap-2">
-						<select
-							className="h-11 w-24 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
-							value={form.telefono_prefijo}
-							onChange={(event) => updateField("telefono_prefijo", event.target.value)}
-						>
-							{prefijosTelefonicos.map((prefijo) => (
-								<option key={prefijo} value={prefijo}>
-									{prefijo}
-								</option>
-							))}
-						</select>
-						<div className="flex-1">
-							<input
-								type="tel"
-								placeholder="Número (7 dígitos)"
-								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.telefono_numero ? "border-red-500" : "border-emerald-200"
-									}`}
-								value={form.telefono_numero}
-								onChange={(event) =>
-									updateField("telefono_numero", event.target.value.replace(/\D/g, ""))
-								}
-								maxLength={7}
-							/>
-							{fieldErrors.telefono_numero && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono_numero}</p>
-							)}
-						</div>
-					</div>
+					<TelefonoField
+						label={<span className="text-xs font-medium text-slate-500">Teléfono</span>}
+						value={`${form.telefono_prefijo}${form.telefono_numero}`}
+						onChange={(prefijo, numero) => {
+							setForm((prev) => ({ ...prev, telefono_prefijo: prefijo, telefono_numero: numero }));
+							if (fieldErrors.telefono_numero) {
+								setFieldErrors((prev) => ({ ...prev, telefono_numero: "" }));
+							}
+						}}
+						error={fieldErrors.telefono_numero}
+						required
+						placeholder="1234567"
+						inputClassName="h-11 rounded-full border-emerald-200 px-4 text-sm"
+						selectClassName="h-11 w-24 rounded-full border-emerald-200 px-3 text-sm"
+					/>
 				</div>
 				<div>
 					<label className="mb-1.5 block text-xs font-medium text-slate-500">

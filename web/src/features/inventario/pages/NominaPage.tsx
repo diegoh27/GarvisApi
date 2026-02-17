@@ -155,6 +155,13 @@ export default function NominaPage() {
         </span>
       );
     }
+    if (estatusPago?.toLowerCase() === "vencido") {
+      return (
+        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Vencido
+        </span>
+      );
+    }
     return (
       <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
         Pendiente

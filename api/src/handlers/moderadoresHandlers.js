@@ -7,6 +7,8 @@ const {
 	getModeradorSelfController,
 	updateModeradorSelfController,
 } = require("../controllers/moderadoresControllers");
+const { validarCedula } = require("../utils/validacionCedula");
+const { validarTelefono } = require("../utils/validacionTelefono");
 
 const createModeradorHandler = async (req, res) => {
 	try {
@@ -46,13 +48,29 @@ const createModeradorHandler = async (req, res) => {
 			});
 		}
 
+		const cedulaResult = validarCedula(cedula);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+
+		const telefonoResult = validarTelefono(telefono);
+		if (!telefonoResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: telefonoResult.message,
+			});
+		}
+
 		const created = await createModeradorController({
 			nombre,
 			apellido,
 			genero,
-			cedula,
+			cedula: cedulaResult.value,
 			correo,
-			telefono,
+			telefono: telefonoResult.value,
 			contrasena,
 			fecha_nacimiento,
 		});
@@ -67,6 +85,12 @@ const createModeradorHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Ya existe un usuario con esa cédula o correo",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 		if (err?.code === "ROL_NOT_FOUND") {
@@ -126,13 +150,34 @@ const getModeradorByIdHandler = async (req, res) => {
 const updateModeradorHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const payload = req.body;
+		const payload = { ...req.body };
 
 		if (payload.genero && !["Masculino", "Femenino", "Otro"].includes(payload.genero)) {
 			return res.status(400).json({
 				ok: false,
 				message: "genero inválido (Masculino | Femenino | Otro)",
 			});
+		}
+
+		if (payload.cedula !== undefined && payload.cedula !== null && String(payload.cedula).trim()) {
+			const cedulaResult = validarCedula(payload.cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			payload.cedula = cedulaResult.value;
+		}
+		if (payload.telefono !== undefined && payload.telefono !== null && String(payload.telefono).trim()) {
+			const telefonoResult = validarTelefono(payload.telefono, { required: false });
+			if (!telefonoResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: telefonoResult.message,
+				});
+			}
+			payload.telefono = telefonoResult.value;
 		}
 
 		const result = await updateModeradorController(id, payload);
@@ -159,6 +204,12 @@ const updateModeradorHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Cédula o correo ya existe",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 		console.error(err);

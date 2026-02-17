@@ -62,6 +62,7 @@ export type CreateObligacionPayload = {
 };
 
 export type UpdateObligacionPayload = {
+	id_ente?: string;
 	concepto?: string;
 	periodo?: string;
 	fecha_vencimiento?: string;
@@ -301,6 +302,15 @@ const entesLegalesApi = baseApi.injectEndpoints({
 				{ type: "EntesLegales", id: arg.id },
 			],
 		}),
+
+		// DELETE /entes-legales/pagos/:idPago - eliminar pago de ente legal
+		deletePagoEnteLegal: builder.mutation<{ message: string }, string>({
+			query: (idPago) => ({
+				url: `/entes-legales/pagos/${idPago}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["HistorialEnteLegal", "EntesLegales"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -321,6 +331,7 @@ export const {
 	useGetHistorialEnteLegalQuery,
 	useGetHistorialPagosEntesQuery,
 	useRegistrarPagoEnteLegalMutation,
+	useDeletePagoEnteLegalMutation,
 } = entesLegalesApi;
 
 export { entesLegalesApi };

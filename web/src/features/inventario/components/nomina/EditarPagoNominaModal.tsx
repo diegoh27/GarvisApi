@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useUpdatePagoNominaMutation } from "../../api/nominaApi";
+import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import type { NominaPago, UpdatePagoNominaPayload } from "../../api/nominaApi";
 
 interface EditarPagoNominaModalProps {
@@ -63,7 +64,12 @@ export default function EditarPagoNominaModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    const newValue = name === "monto" ? parseFloat(value) || 0 : value;
+    let newValue: string | number = value;
+    if (name === "monto") {
+      const sanitized = sanitizeMonto(value);
+      const num = parseFloat(sanitized);
+      newValue = Number.isFinite(num) ? num : 0;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: newValue,
@@ -82,12 +88,17 @@ export default function EditarPagoNominaModal({
       setError("La fecha prxima es requerida");
       return;
     }
-    if (formData.monto === undefined || formData.monto <= 0) {
-      setError("El monto debe ser mayor a 0");
+    const errMonto = validarMonto(formData.monto ?? 0);
+    if (errMonto) {
+      setError(errMonto);
       return;
     }
     if (!formData.metodo) {
       setError("El método de pago es requerido");
+      return;
+    }
+    if ((formData.referencia || "").length > 80) {
+      setError("La referencia no puede superar 80 caracteres");
       return;
     }
 
@@ -169,7 +180,7 @@ export default function EditarPagoNominaModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Monto *
+              Monto ($) *
             </label>
             <input
               type="number"
@@ -177,9 +188,10 @@ export default function EditarPagoNominaModal({
               value={formData.monto || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="0.00"
+              placeholder="0.01"
               step="0.01"
-              min="0"
+              min={MONTO_MIN}
+              max={MONTO_MAX}
             />
           </div>
 
@@ -210,6 +222,7 @@ export default function EditarPagoNominaModal({
               name="referencia"
               value={formData.referencia}
               onChange={handleChange}
+              maxLength={80}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Ref. de transferencia, número de cheque, etc."
             />

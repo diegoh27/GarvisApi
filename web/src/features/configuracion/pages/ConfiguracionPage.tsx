@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { EmailVerificationBanner, PasswordField, useAuth } from "../../../shared";
+import { EmailVerificationBanner, PasswordField, useAuth, CedulaField, parseCedulaDisplay, TelefonoField } from "../../../shared";
 import {
 	type PerfilData,
 	type PerfilRol,
@@ -28,6 +28,7 @@ const ConfiguracionPage = () => {
 	const [apellido, setApellido] = useState("");
 	const [genero, setGenero] = useState("");
 	const [correo, setCorreo] = useState("");
+	const [tipoCedula, setTipoCedula] = useState<"V" | "E" | "J" | "P" | "G">("V");
 	const [cedula, setCedula] = useState("");
 	const [fechaNacimiento, setFechaNacimiento] = useState("");
 	const [telefono, setTelefono] = useState("");
@@ -53,7 +54,9 @@ const ConfiguracionPage = () => {
 		setApellido(perfil.apellido ?? "");
 		setGenero(perfil.genero ?? "");
 		setCorreo(perfil.correo ?? "");
-		setCedula(perfil.cedula ?? "");
+		const parsed = parseCedulaDisplay(perfil.cedula);
+		setTipoCedula(parsed.tipo);
+		setCedula(parsed.numero);
 		setFechaNacimiento(perfil.fecha_nacimiento?.slice(0, 10) ?? "");
 		setTelefono(perfil.telefono ?? "");
 		setTipoSangre(perfil.tipo_sangre ?? "");
@@ -123,8 +126,10 @@ const ConfiguracionPage = () => {
       if (genero !== (perfil?.genero ?? "")) {
         payload.genero = genero;
       }
-      if (cedula !== (perfil?.cedula ?? "")) {
-        payload.cedula = cedula;
+      const cedulaActual = parseCedulaDisplay(perfil?.cedula);
+      const cedulaCompleta = `${tipoCedula}${cedula}`;
+      if (cedulaCompleta !== (cedulaActual.tipo + cedulaActual.numero)) {
+        payload.cedula = cedulaCompleta;
       }
       if (correo !== (perfil?.correo ?? "")) {
         payload.correo = correo;
@@ -185,7 +190,7 @@ const ConfiguracionPage = () => {
       (nombre !== (perfil?.nombre ?? "") ||
         apellido !== (perfil?.apellido ?? "") ||
         genero !== (perfil?.genero ?? "") ||
-        cedula !== (perfil?.cedula ?? "") ||
+        `${tipoCedula}${cedula}` !== (parseCedulaDisplay(perfil?.cedula).tipo + parseCedulaDisplay(perfil?.cedula).numero) ||
         correo !== (perfil?.correo ?? "") ||
         fechaNacimiento !== (perfil?.fecha_nacimiento?.slice(0, 10) ?? ""));
     const pacienteChanged =
@@ -233,7 +238,9 @@ const ConfiguracionPage = () => {
     setApellido(perfil?.apellido ?? "");
     setGenero(perfil?.genero ?? "");
     setCorreo(perfil?.correo ?? "");
-    setCedula(perfil?.cedula ?? "");
+    const parsed = parseCedulaDisplay(perfil?.cedula);
+    setTipoCedula(parsed.tipo);
+    setCedula(parsed.numero);
     setFechaNacimiento(perfil?.fecha_nacimiento?.slice(0, 10) ?? "");
     setTelefono(perfil?.telefono ?? "");
     setTipoSangre(perfil?.tipo_sangre ?? "");
@@ -347,11 +354,15 @@ const ConfiguracionPage = () => {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1 text-xs text-brand-800">
-                    <label className="font-semibold">Cédula</label>
-                    <input
-                      value={cedula}
-                      onChange={(event) => setCedula(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                    <CedulaField
+                      label={<span className="font-semibold">Cédula</span>}
+                      value={`${tipoCedula}${cedula}`}
+                      onChange={(tipo, numero) => {
+                        setTipoCedula(tipo);
+                        setCedula(numero);
+                      }}
+                      inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
+                      selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                     />
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">
@@ -402,10 +413,12 @@ const ConfiguracionPage = () => {
                 )}
               </div>
               {isAdmin || editTelefono ? (
-                <input
+                <TelefonoField
                   value={telefono}
-                  onChange={(event) => setTelefono(event.target.value)}
-                  className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+                  onChange={(prefijo, numero) => setTelefono(prefijo + numero)}
+                  label={null}
+                  inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
+                  selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                 />
               ) : (
                 <input
@@ -474,12 +487,13 @@ const ConfiguracionPage = () => {
                     />
                   </div>
                   <div className="space-y-1 text-xs text-brand-800">
-                    <label className="font-semibold">Telefono emergencia</label>
-                    <input
+                    <TelefonoField
+                      label={<span className="font-semibold">Teléfono emergencia</span>}
                       value={contactoTelefono}
-                      onChange={(event) => setContactoTelefono(event.target.value)}
-                      className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-                      placeholder="Ej: 0412XXXXXXX"
+                      onChange={(prefijo, numero) => setContactoTelefono(prefijo + numero)}
+                      required={false}
+                      inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
+                      selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
                     />
                   </div>
                 </div>

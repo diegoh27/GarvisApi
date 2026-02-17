@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { X, Clock, Calendar } from "lucide-react";
 import type { PacienteData, EspecialistaData } from "../moderadoresApi";
 import {
@@ -9,7 +10,9 @@ import {
 } from "../moderadoresApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 import { useAprobarDisponibilidadMutation } from "../../disponibilidad/disponibilidadApi";
-import { FormularioPago, type PagoFormData } from "../../../shared";
+import { isSlotAtLeast2HoursFromNow } from "../../disponibilidad/utils/dateUtils";
+import { useGetDolarOficialQuery } from "../../dolar/dolarApi";
+import { FormularioPago, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
 import { getToken } from "../../../shared/utils/token";
 import Swal from "sweetalert2";
 import type { Eco } from "../../ecos/ecosApi";
@@ -120,7 +123,9 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 	});
 	const [aprobarDisponibilidad, { isLoading: isAprobando }] = useAprobarDisponibilidadMutation();
 	const [asignarCita, { isLoading: isAsignando }] = useAsignarCitaCompletaMutation();
+	const { data: dolarOficial } = useGetDolarOficialQuery();
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [invalidFields, setInvalidFields] = useState<FormularioPagoInvalidField[]>([]);
 
 	// Estado para almacenar los ecos de cada especialista
 	const [especialistasConEcos, setEspecialistasConEcos] = useState<Map<string, Eco[]>>(new Map());
@@ -290,6 +295,14 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 				return;
 			}
 		}
+		if (!isSlotAtLeast2HoursFromNow(disponibilidad.fecha, disponibilidad.hora_inicio)) {
+			Swal.fire({
+				icon: "warning",
+				title: "Horario no disponible",
+				text: "Solo se puede asignar una cita con al menos 2 horas de anticipación. Elige otro horario.",
+			});
+			return;
+		}
 		setSelectedDisponibilidad(disponibilidad);
 		setStep("pago");
 	};
@@ -306,42 +319,57 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 			return;
 		}
 
-		// Validar datos del pago
-		if (
-			!pagoData.banco_origen ||
-			!pagoData.banco_destino ||
-			!pagoData.monto ||
-			!pagoData.cedula_pagador ||
-			!pagoData.telefono_pagador ||
-			!pagoData.referencia
-		) {
+		if (!isSlotAtLeast2HoursFromNow(selectedDisponibilidad.fecha, selectedDisponibilidad.hora_inicio)) {
 			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Por favor complete todos los campos del pago",
+				icon: "warning",
+				title: "Horario no disponible",
+				text: "Solo se puede asignar una cita con al menos 2 horas de anticipación. Vuelve atrás y elige otro horario.",
 			});
 			return;
 		}
 
-		// Validar que se haya subido el comprobante de pago
-		if (!pagoData.imagen && !imagenComprimida) {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Por favor suba la imagen del comprobante de pago",
-			});
-			return;
-		}
+		const missing: FormularioPagoInvalidField[] = [];
+		if (!pagoData.banco_origen) missing.push("banco_origen");
+		if (!pagoData.banco_destino) missing.push("banco_destino");
+		if (!pagoData.monto?.trim()) missing.push("monto");
+		if (!pagoData.cedula_pagador?.replace(/\D/g, "").trim()) missing.push("cedula_pagador");
+		if (!pagoData.telefono_pagador?.replace(/\D/g, "").trim()) missing.push("telefono_pagador");
+		if (!pagoData.referencia?.trim()) missing.push("referencia");
+		if (!pagoData.imagen && !imagenComprimida) missing.push("imagen");
+		if (!pagoData.orden_medica && !ordenMedicaComprimida) missing.push("orden_medica");
 
-		// Validar que se haya subido la orden médica
-		if (!pagoData.orden_medica && !ordenMedicaComprimida) {
+		if (missing.length > 0) {
+			flushSync(() => setInvalidFields(missing));
 			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: "Por favor suba la orden médica",
+				icon: "warning",
+				title: "Campos incompletos",
+				text: "Complete los campos marcados en rojo para continuar.",
 			});
 			return;
 		}
+		setInvalidFields([]);
+
+		const precioUSD = selectedEco?.precio ?? 0;
+		const tasaBs = dolarOficial?.promedio ?? 0;
+		const montoCalculadoBs =
+			tasaBs > 0 ? Math.round(precioUSD * tasaBs * 100) / 100 : null;
+		const montoIngresado = parseFloat(pagoData.monto) || 0;
+		const confirmacion = await Swal.fire({
+			icon: "question",
+			title: "Confirmar monto a pagar",
+			html: `
+				<div class="text-left space-y-2 text-sm">
+					<p><strong>Precio del eco:</strong> $${precioUSD.toFixed(2)} USD</p>
+					${montoCalculadoBs !== null ? `<p><strong>Total en Bs (tasa BCV):</strong> ${montoCalculadoBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>` : ""}
+					<p><strong>Monto que ingresó:</strong> ${montoIngresado.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>
+				</div>
+			`,
+			showCancelButton: true,
+			confirmButtonText: "Sí, asignar cita",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#1C837F",
+		});
+		if (!confirmacion.isConfirmed) return;
 
 		setIsSubmitting(true);
 
@@ -640,15 +668,18 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 								</div>
 							) : (
 								<div className="space-y-2 max-h-96 overflow-y-auto">
-									{disponibilidadesFiltradas.map((disp: DisponibilidadItem) => (
+									{disponibilidadesFiltradas.map((disp: DisponibilidadItem) => {
+										const slotValido = isSlotAtLeast2HoursFromNow(disp.fecha, disp.hora_inicio);
+										return (
 										<button
 											key={disp.id_disponibilidad}
-											onClick={() => handleSelectDisponibilidad(disp)}
-											disabled={isLoading}
+											onClick={() => slotValido && handleSelectDisponibilidad(disp)}
+											disabled={isLoading || !slotValido}
+											title={!slotValido ? "Solo se puede asignar con al menos 2 horas de anticipación" : undefined}
 											className={`w-full rounded-lg border p-4 text-left transition-colors ${selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad
 												? "border-brand-700 bg-brand-100"
 												: "border-brand-200 bg-paper hover:bg-cloud"
-												} ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+												} ${isLoading || !slotValido ? "opacity-60 cursor-not-allowed" : ""}`}
 										>
 											<div className="flex items-center justify-between">
 												<div className="flex items-center gap-3">
@@ -673,7 +704,8 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 												)}
 											</div>
 										</button>
-									))}
+									);
+									})}
 								</div>
 							)}
 						</div>
@@ -708,7 +740,11 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 							{/* Formulario de pago reutilizable */}
 							<FormularioPago
 								precioEcoUSD={selectedEco?.precio || null}
-								onChange={(data) => setPagoData(data)}
+								onChange={(data) => {
+									setPagoData(data);
+									setInvalidFields([]);
+								}}
+								invalidFields={invalidFields}
 								onImageReady={(file) => setImagenComprimida(file)}
 								onOrdenMedicaReady={(file) => setOrdenMedicaComprimida(file)}
 								autoUpload={false}

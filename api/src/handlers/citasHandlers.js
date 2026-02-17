@@ -15,6 +15,7 @@ const {
 	getAllCitasController,
 	createCitaMostradorController,
 } = require("../controllers/citasControllers");
+const { validarCedula } = require("../utils/validacionCedula");
 
 const createCitaHandler = async (req, res) => {
 	try {
@@ -708,6 +709,14 @@ const createCitaMostradorHandler = async (req, res) => {
 			});
 		}
 
+		const cedulaResult = validarCedula(cedula);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+
 		const data = await createCitaMostradorController({
 			id_especialista,
 			id_eco,
@@ -718,7 +727,7 @@ const createCitaMostradorHandler = async (req, res) => {
 			tasa_dia_bcv,
 			nombre,
 			apellido,
-			cedula,
+			cedula: cedulaResult.value,
 			rif,
 			id_usuario: req.user?.id,
 			referencia,

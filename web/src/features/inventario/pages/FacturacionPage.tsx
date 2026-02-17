@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import Swal from "sweetalert2";
 import {
   useGetResumenFacturacionQuery,
   useListMovimientosFacturacionQuery,
+  useDeleteMovimientoMutation,
 } from "../api/facturacionApi";
 import type { FacturacionMovimiento } from "../api/facturacionApi";
 import ResumenCards from "../components/facturacion/ResumenCards";
@@ -69,6 +71,7 @@ export default function FacturacionPage() {
   const { data: resumenData, isLoading: resumenLoading, error: resumenError } =
     useGetResumenFacturacionQuery();
 
+  const [deleteMovimiento] = useDeleteMovimientoMutation();
   const {
     data: movimientosData,
     isLoading: movimientosLoading,
@@ -86,6 +89,37 @@ export default function FacturacionPage() {
   const movimientos = movimientosData?.rows ?? [];
   const totalItems = movimientosData?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  const handleEliminarMovimiento = async (idMovimiento: string) => {
+    const result = await Swal.fire({
+      title: "¿Eliminar movimiento?",
+      text: "Se eliminará este movimiento de facturación y, si aplica, el registro asociado (pago, compra, etc.) en su módulo.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (result.isConfirmed) {
+      try {
+        await deleteMovimiento(idMovimiento).unwrap();
+        await Swal.fire({
+          icon: "success",
+          title: "Movimiento eliminado",
+          text: "El movimiento fue eliminado correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } catch (err: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err?.data?.message || "No se pudo eliminar el movimiento",
+        });
+      }
+    }
+  };
 
   const applyQuickPeriod = (period: Exclude<QuickPeriod, "custom">) => {
     const range = getQuickPeriodRange(period);
@@ -211,6 +245,7 @@ export default function FacturacionPage() {
         movimientos={movimientos}
         isLoading={movimientosLoading}
         startIndex={offset}
+        onEliminar={handleEliminarMovimiento}
       />
 
       {!movimientosLoading && totalItems > 0 && (

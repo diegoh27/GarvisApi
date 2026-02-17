@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
-import { PageShell } from "../../../shared";
+import { PageShell, CedulaField, parseCedulaDisplay, TelefonoField, calculateRIF } from "../../../shared";
 import {
 	useListUsersQuery,
 	useUpdateUserMutation,
@@ -485,12 +485,28 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">("bottom");
 	const ecosDropdownRef = useRef<HTMLDivElement>(null);
 	const ecosButtonRef = useRef<HTMLButtonElement>(null);
+	const [fieldErrors, setFieldErrors] = useState<{ fecha_nacimiento?: string; porcentaje?: string }>({});
 
+	const validateFechaNacimiento = (value: string): string => {
+		if (!value || !value.trim()) return "La fecha de nacimiento es requerida";
+		const fechaNac = new Date(value);
+		const hoy = new Date();
+		const edad = hoy.getFullYear() - fechaNac.getFullYear();
+		const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+		const diaDiff = hoy.getDate() - fechaNac.getDate();
+		const yaCumplioEsteAnio = mesDiff > 0 || (mesDiff === 0 && diaDiff >= 0);
+		const edadReal = yaCumplioEsteAnio ? edad : edad - 1;
+		if (edadReal < 18) return "El usuario debe ser mayor de edad (18 años o más)";
+		return "";
+	};
+
+	const parsedCedula = parseCedulaDisplay(usuario.cedula);
 	const [form, setForm] = useState({
 		nombre: usuario.nombre,
 		apellido: usuario.apellido,
 		genero: usuario.genero as "Masculino" | "Femenino",
-		cedula: usuario.cedula,
+		tipo_cedula: parsedCedula.tipo,
+		cedula: parsedCedula.numero,
 		correo: usuario.correo,
 		telefono: usuario.telefono,
 		fecha_nacimiento: usuario.fecha_nacimiento
@@ -503,6 +519,11 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 		id_ecos: [] as string[],
 		rif: "",
 	});
+
+	// Limpiar errores de campo al cambiar de usuario
+	useEffect(() => {
+		setFieldErrors({});
+	}, [usuario.id_usuario]);
 
 	// Cargar datos del especialista cuando estén disponibles
 	useEffect(() => {
@@ -591,28 +612,38 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		const errFecha = validateFechaNacimiento(form.fecha_nacimiento);
+		if (errFecha) {
+			setFieldErrors((prev) => ({ ...prev, fecha_nacimiento: errFecha }));
+			return;
+		}
 		if (isEspecialista) {
 			const porcentajeValue = Number(form.porcentaje);
-			if (Number.isNaN(porcentajeValue) || porcentajeValue < 0 || porcentajeValue > 100) {
-				Swal.fire({
-					icon: "warning",
-					title: "Porcentaje inválido",
-					text: "El porcentaje debe estar entre 0 y 100.",
-				});
+			if (
+				form.porcentaje === "" ||
+				Number.isNaN(porcentajeValue) ||
+				porcentajeValue < 0 ||
+				porcentajeValue > 100
+			) {
+				setFieldErrors((prev) => ({
+					...prev,
+					porcentaje: "El porcentaje es requerido y debe estar entre 0 y 100.",
+				}));
 				return;
 			}
-			const { rif, porcentaje, ...rest } = form;
-			const payload = { ...rest, porcentaje: porcentajeValue };
+			setFieldErrors((prev) => ({ ...prev, porcentaje: undefined }));
+			const { tipo_cedula, rif, porcentaje, ...rest } = form;
+			const payload = { ...rest, cedula: `${form.tipo_cedula}${form.cedula}`, porcentaje: porcentajeValue };
 			onSave(payload);
 			return;
 		}
 		if (isPaciente) {
-			const { porcentaje, id_especialidad, id_ecos, ...rest } = form;
-			onSave(rest);
+			const { tipo_cedula, porcentaje, id_especialidad, id_ecos, ...rest } = form;
+			onSave({ ...rest, cedula: `${form.tipo_cedula}${form.cedula}`, rif: form.rif });
 			return;
 		}
-		const { porcentaje, id_especialidad, id_ecos, rif, ...rest } = form;
-		onSave(rest);
+		const { tipo_cedula, porcentaje, id_especialidad, id_ecos, rif, ...rest } = form;
+		onSave({ ...rest, cedula: `${form.tipo_cedula}${form.cedula}` });
 	};
 	const ecos = todosEcos;
 	const loadingEcos = loadingTodosEcos || loadingEcosAsignados;
@@ -654,15 +685,25 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 					</div>
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
-								Cédula <span className="text-red-500">*</span>
-							</label>
-							<input
-								type="text"
+							<CedulaField
+								label={
+									<>
+										Cédula <span className="text-red-500">*</span>
+									</>
+								}
+								value={`${form.tipo_cedula}${form.cedula}`}
+								onChange={(tipo, numero) => {
+									const rifCalculado = isPaciente ? calculateRIF(tipo, numero) : undefined;
+									setForm((f) => ({
+										...f,
+										tipo_cedula: tipo,
+										cedula: numero,
+										...(rifCalculado !== undefined ? { rif: rifCalculado } : {}),
+									}));
+								}}
 								required
-								value={form.cedula}
-								onChange={(e) => setForm({ ...form, cedula: e.target.value })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+								selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
 							/>
 						</div>
 						<div>
@@ -696,15 +737,19 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 							/>
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
-								Teléfono <span className="text-red-500">*</span>
-							</label>
-							<input
-								type="tel"
-								required
+							<TelefonoField
+								label={
+									<>
+										Teléfono <span className="text-red-500">*</span>
+									</>
+								}
 								value={form.telefono}
-								onChange={(e) => setForm({ ...form, telefono: e.target.value })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								onChange={(prefijo, numero) =>
+									setForm((f) => ({ ...f, telefono: prefijo + numero }))
+								}
+								required
+								inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+								selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
 							/>
 						</div>
 					</div>
@@ -724,14 +769,21 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 					)}
 					<div>
 						<label className="mb-1 block text-sm font-medium text-brand-700">
-							Fecha de nacimiento
+							Fecha de nacimiento <span className="text-red-500">*</span>
 						</label>
 						<input
 							type="date"
+							required
 							value={form.fecha_nacimiento}
-							onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })}
-							className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							onChange={(e) => {
+								setForm({ ...form, fecha_nacimiento: e.target.value });
+								if (fieldErrors.fecha_nacimiento) setFieldErrors((p) => ({ ...p, fecha_nacimiento: undefined }));
+							}}
+							className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
 						/>
+						{fieldErrors.fecha_nacimiento && (
+							<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+						)}
 					</div>
 
 
@@ -773,10 +825,16 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 									max={100}
 									step="0.01"
 									value={form.porcentaje}
-									onChange={(e) => setForm({ ...form, porcentaje: e.target.value })}
-									className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+									onChange={(e) => {
+										setForm({ ...form, porcentaje: e.target.value });
+										if (fieldErrors.porcentaje) setFieldErrors((p) => ({ ...p, porcentaje: undefined }));
+									}}
+									className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-300"}`}
 									placeholder="Ej: 35"
 								/>
+								{fieldErrors.porcentaje && (
+									<p className="mt-1 text-xs text-red-500">{fieldErrors.porcentaje}</p>
+								)}
 							</div>
 							<div>
 								<label className="mb-1 block text-sm font-medium text-brand-700">

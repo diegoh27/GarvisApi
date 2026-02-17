@@ -29,8 +29,14 @@ exports.listEmpleadosController = async (limit = 20) => {
 					FROM nom_pago p2
 					WHERE p2.id_empleado = nom_empleado.id_empleado
 				)
-				THEN 'Pagada'
-				ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				THEN CASE
+					WHEN (SELECT MAX(p.fecha_proximo_pago) FROM nom_pago p WHERE p.id_empleado = nom_empleado.id_empleado) < CURDATE() THEN 'Vencido'
+					ELSE 'Pagada'
+				END
+				ELSE CASE
+					WHEN proximo_pago_manual IS NOT NULL AND proximo_pago_manual < CURDATE() THEN 'Vencido'
+					ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				END
 			END AS estatus_pago,
 			CASE
 				WHEN EXISTS (
@@ -76,8 +82,14 @@ exports.getEmpleadoController = async (idEmpleado) => {
 					FROM nom_pago p2
 					WHERE p2.id_empleado = nom_empleado.id_empleado
 				)
-				THEN 'Pagada'
-				ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				THEN CASE
+					WHEN (SELECT MAX(p.fecha_proximo_pago) FROM nom_pago p WHERE p.id_empleado = nom_empleado.id_empleado) < CURDATE() THEN 'Vencido'
+					ELSE 'Pagada'
+				END
+				ELSE CASE
+					WHEN proximo_pago_manual IS NOT NULL AND proximo_pago_manual < CURDATE() THEN 'Vencido'
+					ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				END
 			END AS estatus_pago,
 			CASE
 				WHEN EXISTS (
@@ -142,8 +154,14 @@ exports.createEmpleadoController = async (payload) => {
 					FROM nom_pago p2
 					WHERE p2.id_empleado = nom_empleado.id_empleado
 				)
-				THEN 'Pagada'
-				ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				THEN CASE
+					WHEN (SELECT MAX(p.fecha_proximo_pago) FROM nom_pago p WHERE p.id_empleado = nom_empleado.id_empleado) < CURDATE() THEN 'Vencido'
+					ELSE 'Pagada'
+				END
+				ELSE CASE
+					WHEN proximo_pago_manual IS NOT NULL AND proximo_pago_manual < CURDATE() THEN 'Vencido'
+					ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				END
 			END AS estatus_pago,
 			CASE
 				WHEN EXISTS (
@@ -264,8 +282,14 @@ exports.updateEmpleadoController = async (idEmpleado, payload) => {
 					FROM nom_pago p2
 					WHERE p2.id_empleado = nom_empleado.id_empleado
 				)
-				THEN 'Pagada'
-				ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				THEN CASE
+					WHEN (SELECT MAX(p.fecha_proximo_pago) FROM nom_pago p WHERE p.id_empleado = nom_empleado.id_empleado) < CURDATE() THEN 'Vencido'
+					ELSE 'Pagada'
+				END
+				ELSE CASE
+					WHEN proximo_pago_manual IS NOT NULL AND proximo_pago_manual < CURDATE() THEN 'Vencido'
+					ELSE COALESCE(estatus_pago_manual, 'Pendiente')
+				END
 			END AS estatus_pago,
 			CASE
 				WHEN EXISTS (

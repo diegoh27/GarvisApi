@@ -68,7 +68,7 @@ export default function ContratosTable({
     },
     {
       key: "monto",
-      header: "Monto",
+      header: "Monto ($)",
       headerClassName:
         "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium",
       cellClassName:

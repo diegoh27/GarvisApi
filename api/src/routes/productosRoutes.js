@@ -6,6 +6,7 @@ const {
 	updateProductoHandler,
 	registrarCompraProductoHandler,
 	updateCompraProductoHandler,
+	deleteCompraProductoHandler,
 	listComprasProductoHandler,
 	listHistorialComprasHandler,
 	registrarAjusteStockHandler,
@@ -71,6 +72,14 @@ productosRoutes.put(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	updateCompraProductoHandler,
+);
+
+// DELETE /productos/compras/:idCompra - eliminar una compra
+productosRoutes.delete(
+	"/compras/:idCompra",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	deleteCompraProductoHandler,
 );
 
 // GET /productos/:id/compras - listar compras de un producto

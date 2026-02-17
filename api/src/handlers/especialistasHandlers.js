@@ -7,6 +7,8 @@ const {
 	updateEspecialistaController,
 	updateEspecialistaSelfController,
 } = require("../controllers/especialistasControllers");
+const { validarCedula } = require("../utils/validacionCedula");
+const { validarTelefono } = require("../utils/validacionTelefono");
 
 const createEspecialistaHandler = async (req, res) => {
 	try {
@@ -54,6 +56,54 @@ const createEspecialistaHandler = async (req, res) => {
 			});
 		}
 
+		if (nombre.length > 36) {
+			return res.status(400).json({
+				ok: false,
+				message: "El nombre no puede superar 36 caracteres",
+			});
+		}
+		if (apellido.length > 36) {
+			return res.status(400).json({
+				ok: false,
+				message: "El apellido no puede superar 36 caracteres",
+			});
+		}
+
+		const cedulaResult = validarCedula(cedula);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+		const cedulaNormalizada = cedulaResult.value;
+
+		const telefonoResult = validarTelefono(telefono);
+		if (!telefonoResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: telefonoResult.message,
+			});
+		}
+
+		const birthDate = new Date(fecha_nacimiento);
+		if (Number.isNaN(birthDate.getTime())) {
+			return res.status(400).json({
+				ok: false,
+				message: "Fecha de nacimiento inválida",
+			});
+		}
+		const today = new Date();
+		let age = today.getFullYear() - birthDate.getFullYear();
+		const m = today.getMonth() - birthDate.getMonth();
+		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+		if (age < 18) {
+			return res.status(400).json({
+				ok: false,
+				message: "El especialista debe ser mayor de edad (18 años o más)",
+			});
+		}
+
 		const porcentajeValue = Number(porcentaje);
 		if (Number.isNaN(porcentajeValue)) {
 			return res.status(400).json({
@@ -61,10 +111,10 @@ const createEspecialistaHandler = async (req, res) => {
 				message: "porcentaje inválido",
 			});
 		}
-		if (porcentajeValue < 0 || porcentajeValue > 100) {
+		if (porcentajeValue < 1 || porcentajeValue > 100) {
 			return res.status(400).json({
 				ok: false,
-				message: "porcentaje debe estar entre 0 y 100",
+				message: "porcentaje debe estar entre 1 y 100",
 			});
 		}
 
@@ -80,9 +130,9 @@ const createEspecialistaHandler = async (req, res) => {
 			nombre,
 			apellido,
 			genero,
-			cedula,
+			cedula: cedulaNormalizada,
 			correo,
-			telefono,
+			telefono: telefonoResult.value,
 			contrasena,
 			fecha_nacimiento,
 			id_especialidad,
@@ -101,6 +151,12 @@ const createEspecialistaHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Ya existe un usuario con esa cédula o correo",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 		if (err?.code === "ROL_NOT_FOUND" || err?.code === "ECO_NOT_FOUND") {
@@ -245,13 +301,37 @@ const updateEspecialistaHandler = async (req, res) => {
 			}
 		}
 
+		let cedulaPayload = cedula;
+		if (cedula !== undefined && cedula !== null && String(cedula).trim()) {
+			const cedulaResult = validarCedula(cedula, { required: false });
+			if (!cedulaResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: cedulaResult.message,
+				});
+			}
+			cedulaPayload = cedulaResult.value;
+		}
+
+		let telefonoPayload = telefono;
+		if (telefono !== undefined && telefono !== null && String(telefono).trim()) {
+			const telefonoResult = validarTelefono(telefono, { required: false });
+			if (!telefonoResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: telefonoResult.message,
+				});
+			}
+			telefonoPayload = telefonoResult.value;
+		}
+
 		const payload = {
 			nombre,
 			apellido,
 			genero,
-			cedula,
+			cedula: cedulaPayload,
 			correo,
-			telefono,
+			telefono: telefonoPayload,
 			fecha_nacimiento,
 			id_especialidad,
 			codigo_colegiatura,
@@ -282,6 +362,12 @@ const updateEspecialistaHandler = async (req, res) => {
 			return res.status(409).json({
 				ok: false,
 				message: "Correo o cédula ya existe",
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
 			});
 		}
 		console.error(err);

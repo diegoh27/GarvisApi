@@ -51,6 +51,10 @@ export default function CambiarCantidadModal({
       setError("La cantidad debe ser un número entero mayor o igual a 0");
       return;
     }
+    if (formData.motivo.trim().length > 500) {
+      setError("El motivo no puede superar 500 caracteres");
+      return;
+    }
 
     try {
       await registrarAjuste({
@@ -142,6 +146,7 @@ export default function CambiarCantidadModal({
               onChange={(e) =>
                 setFormData({ ...formData, motivo: e.target.value })
               }
+              maxLength={500}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="(Opcional) Ej: Faltante encontrado, Error de conteo, etc."
               rows={3}

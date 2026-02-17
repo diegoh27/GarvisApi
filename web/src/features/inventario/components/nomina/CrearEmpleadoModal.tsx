@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField } from "../../../../shared";
 import { useCreateEmpleadoMutation } from "../../api/nominaApi";
 
 interface CrearEmpleadoModalProps {
@@ -17,6 +18,7 @@ const PERIODOS: Array<"Semanal" | "Quincenal" | "Mensual"> = [
 type EmpleadoFormState = {
   nombre: string;
   apellido: string;
+  tipo_cedula: "V" | "E" | "J" | "P" | "G";
   cedula: string;
   cargo: string;
   periodo: "Semanal" | "Quincenal" | "Mensual";
@@ -26,6 +28,7 @@ type EmpleadoFormState = {
 const INITIAL_FORM_STATE: EmpleadoFormState = {
   nombre: "",
   apellido: "",
+  tipo_cedula: "V",
   cedula: "",
   cargo: "",
   periodo: "Mensual",
@@ -91,8 +94,28 @@ export default function CrearEmpleadoModal({
       setError("El nombre es requerido");
       return;
     }
-    if (!formData.cargo) {
+    if (formData.nombre.trim().length > 36) {
+      setError("El nombre no puede superar 36 caracteres");
+      return;
+    }
+    if (formData.apellido.trim().length > 36) {
+      setError("El apellido no puede superar 36 caracteres");
+      return;
+    }
+    if (formData.cedula.trim() && !/^\d+$/.test(formData.cedula.trim())) {
+      setError("La cédula solo puede contener números");
+      return;
+    }
+    if (formData.cedula.trim() && !validarRangoCedula(formData.cedula)) {
+      setError(MENSAJE_RANGO_CEDULA);
+      return;
+    }
+    if (!formData.cargo.trim()) {
       setError("El cargo es requerido");
+      return;
+    }
+    if (formData.cargo.trim().length > 80) {
+      setError("El cargo no puede superar 80 caracteres");
       return;
     }
     if (formData.sueldo <= 0) {
@@ -101,7 +124,13 @@ export default function CrearEmpleadoModal({
     }
 
     try {
-      await createEmpleado(formData).unwrap();
+      await createEmpleado({
+        ...formData,
+        nombre: formatNombreApellido(formData.nombre),
+        apellido: formatNombreApellido(formData.apellido),
+        cedula: formData.cedula.trim() ? `${formData.tipo_cedula}${formData.cedula.trim()}` : undefined,
+        cargo: formData.cargo.trim(),
+      }).unwrap();
       setFormData(INITIAL_FORM_STATE);
       onSuccess?.();
       onClose();
@@ -141,6 +170,7 @@ export default function CrearEmpleadoModal({
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
+              maxLength={36}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Juan"
             />
@@ -155,22 +185,23 @@ export default function CrearEmpleadoModal({
               name="apellido"
               value={formData.apellido}
               onChange={handleChange}
+              maxLength={36}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Pérez"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cédula
-            </label>
-            <input
-              type="text"
-              name="cedula"
-              value={formData.cedula}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            <CedulaField
+              label="Cédula"
+              value={`${formData.tipo_cedula}${formData.cedula}`}
+              onChange={(tipo, numero) =>
+                setFormData((prev) => ({ ...prev, tipo_cedula: tipo, cedula: numero }))
+              }
               placeholder="12345678"
+              maxLength={9}
+              inputClassName="px-3 py-2 border-gray-300 focus:ring-2 focus:ring-teal-500"
+              selectClassName="px-3 py-2 border-gray-300"
             />
           </div>
 
@@ -183,6 +214,7 @@ export default function CrearEmpleadoModal({
               name="cargo"
               value={formData.cargo}
               onChange={handleChange}
+              maxLength={80}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="Cargo"
             />

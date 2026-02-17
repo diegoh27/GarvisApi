@@ -7,6 +7,8 @@ const {
 	resetPassword,
 	getWebBaseUrl,
 } = require("../controllers/authControllers");
+const { validarCedula } = require("../utils/validacionCedula");
+const { validarTelefono } = require("../utils/validacionTelefono");
 
 const wantsHtml = (req) =>
 	req.headers.accept && req.headers.accept.includes("text/html");
@@ -57,20 +59,50 @@ const registerPacienteHandler = async (req, res) => {
 			});
 		}
 
+		const cedulaResult = validarCedula(cedula);
+		if (!cedulaResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: cedulaResult.message,
+			});
+		}
+		const cedulaNormalizada = cedulaResult.value;
+
+		const telefonoResult = validarTelefono(telefono);
+		if (!telefonoResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: telefonoResult.message,
+			});
+		}
+		const telefonoNormalizado = telefonoResult.value;
+
+		let contactoTelefonoNormalizado = contacto_emergencia_telefono;
+		if (contacto_emergencia_telefono && String(contacto_emergencia_telefono).trim()) {
+			const ctResult = validarTelefono(contacto_emergencia_telefono, { required: false });
+			if (!ctResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: "Teléfono de emergencia: " + ctResult.message,
+				});
+			}
+			contactoTelefonoNormalizado = ctResult.value;
+		}
+
 		const created = await registerPaciente({
 			nombre,
 			apellido,
 			genero,
-			cedula,
+			cedula: cedulaNormalizada,
 			correo,
-			telefono,
+			telefono: telefonoNormalizado,
 			contrasena,
 			fecha_nacimiento,
 			tipo_sangre,
 			descripcion,
 			direccion,
 			contacto_emergencia_nombre,
-			contacto_emergencia_telefono,
+			contacto_emergencia_telefono: contactoTelefonoNormalizado,
 			rif,
 		});
 
@@ -88,6 +120,12 @@ const registerPacienteHandler = async (req, res) => {
 			});
 		}
 		if (err?.code === "DUPLICATE_CEDULA") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_TELEFONO") {
 			return res.status(409).json({
 				ok: false,
 				message: err.message,

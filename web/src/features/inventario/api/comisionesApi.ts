@@ -138,6 +138,15 @@ export const comisionesApi = baseApi.injectEndpoints({
 			invalidatesTags: ["EspecialistaComision"],
 		}),
 
+		// Eliminar pago de comisión (revertir a Pendiente y quitar de facturación)
+		deletePagoComision: builder.mutation<{ message: string }, string>({
+			query: (idComision) => ({
+				url: `/comisiones-especialistas/${idComision}/pago`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["EspecialistaComision", "Facturacion"],
+		}),
+
 		crearCitaMostrador: builder.mutation<
 			{
 				ok: boolean;
@@ -162,5 +171,6 @@ export const {
 	useGenerarComisionesMutation,
 	usePagarComisionMutation,
 	useEditarPagoComisionMutation,
+	useDeletePagoComisionMutation,
 	useCrearCitaMostradorMutation,
 } = comisionesApi;
