@@ -16,6 +16,8 @@ const {
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,
 	listDisponibilidadesByEspecialistaHandler,
+	deleteDisponibilidadPasadaHandler,
+	deleteDisponibilidadPorCriteriosHandler,
 } = require("../handlers/disponibilidadHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -81,6 +83,18 @@ disponibilidadRoutes.post(
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
 	cancelDisponibilidadBatchHandler,
+);
+disponibilidadRoutes.post(
+	"/eliminar-pasada",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	deleteDisponibilidadPasadaHandler,
+);
+disponibilidadRoutes.post(
+	"/eliminar-por-criterios",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	deleteDisponibilidadPorCriteriosHandler,
 );
 disponibilidadRoutes.patch(
 	"/:id/aprobar",

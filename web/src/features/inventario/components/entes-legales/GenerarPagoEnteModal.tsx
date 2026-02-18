@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { EnteLegal } from "../../api";
 import { useRegistrarPagoEnteLegalMutation } from "../../api";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 
 interface GenerarPagoEnteModalProps {
@@ -17,7 +18,7 @@ export default function GenerarPagoEnteModal({
 }: GenerarPagoEnteModalProps) {
   const [registrarPago, { isLoading }] = useRegistrarPagoEnteLegalMutation();
   const [formData, setFormData] = useState({
-    fecha_pago: new Date().toISOString().split("T")[0],
+    fecha_pago: toDateKey(new Date()),
     monto: "",
     fecha_proxima_vencimiento: "",
   });
@@ -67,7 +68,7 @@ export default function GenerarPagoEnteModal({
       setSuccess("Pago registrado exitosamente");
       setTimeout(() => {
         setFormData({
-          fecha_pago: new Date().toISOString().split("T")[0],
+          fecha_pago: toDateKey(new Date()),
           monto: "",
           fecha_proxima_vencimiento: "",
         });

@@ -15,6 +15,7 @@ import VerCitaModal from "./VerCitaModal";
 import RechazarPagoModal from "./RechazarPagoModal";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { formatFechaLocal } from "../../../shared";
 
 type DiaItemsListProps = {
 	fecha: string;
@@ -30,16 +31,7 @@ type FilterOption = {
 
 const toNumber = (value: unknown) => Number(value);
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const date = new Date(`${value}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string) => (value ? formatFechaLocal(value) : "");
 
 const formatHora = (value: string) => {
 	if (!value) return "";

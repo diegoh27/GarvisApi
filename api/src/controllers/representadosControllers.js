@@ -1,13 +1,13 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
+const { ensureMostradorPacienteBase, MOSTRADOR_PACIENTE_ID } = require("./citasControllers");
 
 const GENEROS = ["Masculino", "Femenino"];
 
 /**
- * Crea un titular (paciente) mínimo desde mostrador: solo usuario + paciente con datos básicos.
- * Usado cuando se quiere crear representado y el titular aún no está registrado.
- * El titular podrá completar registro después (correo, verificación, etc.).
+ * @deprecated Ya no se crea usuario real para mostrador. Se usa representado con cedula_titular_mostrador.
+ * Mantenido por si se necesita en otro flujo.
  */
 const createTitularMinimalMostrador = async (cedula, nombre, apellido, genero, fecha_nacimiento) => {
 	const cedulaTrim = cedula && String(cedula).trim();
@@ -27,9 +27,14 @@ const createTitularMinimalMostrador = async (cedula, nombre, apellido, genero, f
 		throw err;
 	}
 
-	// El titular debe ser mayor de edad (18 años)
 	const hoy = new Date();
 	const fechaNacDate = new Date(String(fecha_nacimiento).trim());
+	if (fechaNacDate.getTime() > hoy.getTime()) {
+		const err = new Error("La fecha de nacimiento no puede ser futura.");
+		err.code = "VALIDATION";
+		throw err;
+	}
+	// El titular debe ser mayor de edad (18 años)
 	let edad = hoy.getFullYear() - fechaNacDate.getFullYear();
 	const mesDiff = hoy.getMonth() - fechaNacDate.getMonth();
 	if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fechaNacDate.getDate())) {
@@ -188,10 +193,14 @@ const listByPacienteController = async (id_paciente, opts = {}) => {
 
 /**
  * Crear representado para el paciente.
+ * @param {string} id_paciente
+ * @param {object} payload - nombre, apellido, cedula, fecha_nacimiento, genero, parentesco
+ * @param {object} [opts] - opts.cedula_titular_mostrador para representados de mostrador (sin usuario titular)
  */
-const createRepresentadoController = async (id_paciente, payload) => {
+const createRepresentadoController = async (id_paciente, payload, opts = {}) => {
 	const { nombre, apellido, cedula, fecha_nacimiento, genero, parentesco } =
 		payload;
+	const cedulaTitularMostrador = opts.cedula_titular_mostrador && String(opts.cedula_titular_mostrador).trim() ? String(opts.cedula_titular_mostrador).trim() : null;
 
 	if (!nombre || !apellido || !fecha_nacimiento || !genero) {
 		const err = new Error(
@@ -203,6 +212,14 @@ const createRepresentadoController = async (id_paciente, payload) => {
 
 	if (!GENEROS.includes(genero)) {
 		const err = new Error("Género no válido");
+		err.code = "VALIDATION";
+		throw err;
+	}
+
+	const hoyRep = new Date();
+	const fechaNacRep = new Date(String(fecha_nacimiento).trim());
+	if (fechaNacRep.getTime() > hoyRep.getTime()) {
+		const err = new Error("La fecha de nacimiento no puede ser futura.");
 		err.code = "VALIDATION";
 		throw err;
 	}
@@ -226,15 +243,18 @@ const createRepresentadoController = async (id_paciente, payload) => {
 	// Evitar duplicado: mismo titular no puede tener dos representados con mismo nombre, apellido y fecha de nacimiento
 	const nombreNorm = nombre.trim();
 	const apellidoNorm = apellido.trim();
-	const [duplicado] = await pool.execute(
-		`SELECT id_representado FROM representado
+	let duplicadoSql = `SELECT id_representado FROM representado
 		 WHERE id_paciente = ?
 		   AND LOWER(TRIM(nombre)) = LOWER(?)
 		   AND LOWER(TRIM(apellido)) = LOWER(?)
-		   AND fecha_nacimiento = ?
-		 LIMIT 1`,
-		[id_paciente, nombreNorm, apellidoNorm, fecha_nacimiento],
-	);
+		   AND fecha_nacimiento = ?`;
+	const duplicadoParams = [id_paciente, nombreNorm, apellidoNorm, fecha_nacimiento];
+	if (cedulaTitularMostrador != null) {
+		duplicadoSql += ` AND (cedula_titular_mostrador = ? OR (cedula_titular_mostrador IS NULL AND ? IS NULL))`;
+		duplicadoParams.push(cedulaTitularMostrador, cedulaTitularMostrador);
+	}
+	duplicadoSql += " LIMIT 1";
+	const [duplicado] = await pool.execute(duplicadoSql, duplicadoParams);
 	if (duplicado.length > 0) {
 		const err = new Error(
 			"Ya existe un representado con el mismo nombre, apellido y fecha de nacimiento para este titular. No se puede registrar de nuevo.",
@@ -245,22 +265,21 @@ const createRepresentadoController = async (id_paciente, payload) => {
 
 	const id_representado = crypto.randomUUID();
 	const cedulaValue = cedula && cedula.trim() ? cedula.trim() : null;
+	const columns = ["id_representado", "id_paciente", "nombre", "apellido", "fecha_nacimiento", "cedula", "genero", "parentesco"];
+	const placeholders = ["?", "?", "?", "?", "?", "?", "?", "?"];
+	const values = [id_representado, id_paciente, nombre.trim(), apellido.trim(), fecha_nacimiento, cedulaValue, genero, parentesco && parentesco.trim() ? parentesco.trim() : null];
+	if (cedulaTitularMostrador != null) {
+		columns.push("cedula_titular_mostrador");
+		placeholders.push("?");
+		values.push(cedulaTitularMostrador);
+	}
 	const sql = `
     INSERT INTO representado
-      (id_representado, id_paciente, nombre, apellido, fecha_nacimiento, cedula, genero, parentesco)
+      (${columns.join(", ")})
     VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?)
+      (${placeholders.join(", ")})
   `;
-	await pool.execute(sql, [
-		id_representado,
-		id_paciente,
-		nombre.trim(),
-		apellido.trim(),
-		fecha_nacimiento,
-		cedulaValue,
-		genero,
-		parentesco && parentesco.trim() ? parentesco.trim() : null,
-	]);
+	await pool.execute(sql, values);
 
 	return {
 		id_representado,
@@ -276,7 +295,11 @@ const createRepresentadoController = async (id_paciente, payload) => {
 
 /**
  * Crear representado asignado a un titular por su cédula (mostrador; admin/moderador).
- * Si el titular no existe y se envían nombre_titular y apellido_titular, se da de alta al titular y luego se crea el representado.
+ * Si el titular ya está registrado (tiene usuario), se crea el representado bajo ese paciente.
+ * Si el titular NO está registrado, se crea el representado como "fantasma" bajo el paciente
+ * de mostrador (MOSTRADOR_PACIENTE_ID) con cedula_titular_mostrador = cedula, para que cuando
+ * el usuario real se registre con esa cédula pueda reclamar citas y representados.
+ * En ningún caso se crea un usuario (correo/contraseña) para el titular.
  */
 const createRepresentadoPorCedulaTitularController = async (cedula_titular, payload, opts = {}) => {
 	const cedulaTrim = cedula_titular && String(cedula_titular).trim();
@@ -305,46 +328,38 @@ const createRepresentadoPorCedulaTitularController = async (cedula_titular, payl
 		titular_cedula = pacienteRows[0].titular_cedula || cedulaTrim;
 		titular_nombre = pacienteRows[0].titular_nombre || null;
 		titular_apellido = pacienteRows[0].titular_apellido || null;
-	} else {
-		// Titular no registrado: dar de alta si se envían todos los datos del titular
-		const nombreTitular = opts.nombre_titular && String(opts.nombre_titular).trim();
-		const apellidoTitular = opts.apellido_titular && String(opts.apellido_titular).trim();
-		const generoTitular = opts.genero_titular && String(opts.genero_titular).trim();
-		const fechaNacTitular = opts.fecha_nacimiento_titular && String(opts.fecha_nacimiento_titular).trim();
-		if (nombreTitular && apellidoTitular && generoTitular && fechaNacTitular) {
-			const titularCreado = await createTitularMinimalMostrador(
-				cedulaTrim,
-				nombreTitular,
-				apellidoTitular,
-				generoTitular,
-				fechaNacTitular,
-			);
-			id_paciente = titularCreado.id_paciente;
-			titular_cedula = titularCreado.titular_cedula;
-			// Marcar que el titular fue creado para que el front muestre confirmación
-			opts.titular_creado = true;
-			opts.titular_nombre = nombreTitular;
-			opts.titular_apellido = apellidoTitular;
-		} else {
-			const err = new Error(
-				"No hay ningún paciente registrado con esta cédula. Para darlo de alta completa: nombre, apellido, género y fecha de nacimiento del titular.",
-			);
-			err.code = "NOT_FOUND";
-			throw err;
-		}
+		const created = await createRepresentadoController(id_paciente, payload);
+		return { ...created, titular_cedula, titular_nombre, titular_apellido };
 	}
 
-	const created = await createRepresentadoController(id_paciente, payload);
-	const result = { ...created, titular_cedula };
-	if (opts.titular_creado && opts.titular_nombre && opts.titular_apellido) {
-		result.titular_creado = true;
-		result.titular_nombre = opts.titular_nombre;
-		result.titular_apellido = opts.titular_apellido;
-	} else if (titular_nombre != null && titular_apellido != null) {
-		result.titular_nombre = titular_nombre;
-		result.titular_apellido = titular_apellido;
+	// Titular no registrado: no crear usuario. Crear representado "fantasma" bajo paciente mostrador.
+	const nombreTitular = opts.nombre_titular && String(opts.nombre_titular).trim();
+	const apellidoTitular = opts.apellido_titular && String(opts.apellido_titular).trim();
+	if (!nombreTitular || !apellidoTitular) {
+		const err = new Error(
+			"Si el titular no está registrado, indica nombre y apellido del titular para esta cita. No se crea usuario; cuando se registre con su cédula podrá reclamar sus citas y representados.",
+		);
+		err.code = "VALIDATION";
+		throw err;
 	}
-	return result;
+
+	const conn = await pool.getConnection();
+	try {
+		await ensureMostradorPacienteBase(conn);
+	} finally {
+		conn.release();
+	}
+
+	const created = await createRepresentadoController(MOSTRADOR_PACIENTE_ID, payload, {
+		cedula_titular_mostrador: cedulaTrim,
+	});
+	return {
+		...created,
+		titular_cedula: cedulaTrim,
+		titular_creado: false,
+		titular_nombre: nombreTitular,
+		titular_apellido: apellidoTitular,
+	};
 };
 
 /**
@@ -379,6 +394,14 @@ const updateRepresentadoController = async (
 
 	if (!GENEROS.includes(genero)) {
 		const err = new Error("Género no válido");
+		err.code = "VALIDATION";
+		throw err;
+	}
+
+	const hoyUpd = new Date();
+	const fechaNacUpd = new Date(String(fecha_nacimiento).trim());
+	if (fechaNacUpd.getTime() > hoyUpd.getTime()) {
+		const err = new Error("La fecha de nacimiento no puede ser futura.");
 		err.code = "VALIDATION";
 		throw err;
 	}

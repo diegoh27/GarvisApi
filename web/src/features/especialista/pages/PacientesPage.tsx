@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { PageShell, useAuth } from "../../../shared";
+import { PageShell, useAuth, formatFechaLocal } from "../../../shared";
 import type { CitaEspecialista } from "../types";
 import { useGetMisCitasQuery, useMarcarAtendidaMutation } from "../especialistaApi";
 import { useGetMisInformesQuery } from "../informesApi";
@@ -41,16 +41,7 @@ const formatHora = (value: string) => {
 	return `${normalized}:${minuteValue} ${period}`;
 };
 
-const formatFecha = (value: string | Date) => {
-	const dateKey = getDateKey(value);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return String(value);
-	return date.toLocaleDateString("es-VE", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	});
-};
+const formatFecha = (value: string | Date) => formatFechaLocal(getDateKey(value) || String(value));
 
 const getEstadoCitaLabel = (cita: CitaEspecialista) =>
 	estadoCitaLabel[cita.estado_cita] ?? `Estado ${cita.estado_cita}`;

@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { useGetEcosByEspecialistaQuery } from "../../../ecos/ecosApi";
 import { useGetDolarOficialQuery } from "../../../dolar/dolarApi";
 import { useLazyGetDatosPorCedulaQuery, useLazyBuscarRepresentadoPorNombreQuery, useGetOcupacionEspecialistaQuery, useCrearRepresentadoPorCedulaTitularMutation } from "../../api/comisionesApi";
-import { calculateRIF, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField } from "../../../../shared";
+import { calculateRIF, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, toDateKey } from "../../../../shared";
 import type { EspecialistaInventario } from "../../api/especialistasApi";
 import { sanitizeMonto, validarMonto } from "../../utils/validation";
 
@@ -75,7 +75,7 @@ export default function RegistrarCitaMostradorModal({
   const [form, setForm] = useState({
     id_especialista: "",
     id_eco: "",
-    fecha_cita: new Date().toISOString().slice(0, 10),
+    fecha_cita: toDateKey(new Date()),
     hora_cita: "08:00:00",
     metodo: "Transferencia" as "Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro",
     monto: "",
@@ -288,23 +288,27 @@ export default function RegistrarCitaMostradorModal({
     const err: Record<string, string> = {};
     if (!repForm.cedula_titular.trim()) err.cedula_titular = "La cédula del titular es obligatoria.";
     if (quiereAltaTitular) {
-      if (!repForm.nombre_titular.trim()) err.nombre_titular = "Nombre del titular obligatorio si lo das de alta.";
-      if (!repForm.apellido_titular.trim()) err.apellido_titular = "Apellido del titular obligatorio si lo das de alta.";
-      if (!repForm.genero_titular) err.genero_titular = "Género del titular obligatorio si lo das de alta.";
+      if (!repForm.nombre_titular.trim()) err.nombre_titular = "Nombre del titular obligatorio (titular no registrado).";
+      if (!repForm.apellido_titular.trim()) err.apellido_titular = "Apellido del titular obligatorio (titular no registrado).";
+      if (!repForm.genero_titular) err.genero_titular = "Género del titular obligatorio (titular no registrado).";
       else if (!["Masculino", "Femenino"].includes(repForm.genero_titular)) err.genero_titular = "Género no válido.";
-      if (!repForm.fecha_nacimiento_titular) err.fecha_nacimiento_titular = "Fecha de nacimiento del titular obligatoria si lo das de alta.";
+      if (!repForm.fecha_nacimiento_titular) err.fecha_nacimiento_titular = "Fecha de nacimiento del titular obligatoria (titular no registrado).";
       else {
         const hoy = new Date();
         const f = new Date(repForm.fecha_nacimiento_titular);
-        let edad = hoy.getFullYear() - f.getFullYear();
-        const mesDiff = hoy.getMonth() - f.getMonth();
-        if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < f.getDate())) edad -= 1;
-        if (edad < 18) err.fecha_nacimiento_titular = "El titular debe ser mayor de edad (18 años).";
+        if (f.getTime() > hoy.getTime()) err.fecha_nacimiento_titular = "La fecha de nacimiento no puede ser futura.";
+        else {
+          let edad = hoy.getFullYear() - f.getFullYear();
+          const mesDiff = hoy.getMonth() - f.getMonth();
+          if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < f.getDate())) edad -= 1;
+          if (edad < 18) err.fecha_nacimiento_titular = "El titular debe ser mayor de edad (18 años).";
+        }
       }
     }
     if (!repForm.nombre.trim()) err.nombre = "El nombre es obligatorio.";
     if (!repForm.apellido.trim()) err.apellido = "El apellido es obligatorio.";
     if (!repForm.fecha_nacimiento) err.fecha_nacimiento = "La fecha de nacimiento es obligatoria.";
+    else if (new Date(repForm.fecha_nacimiento).getTime() > new Date().getTime()) err.fecha_nacimiento = "La fecha de nacimiento no puede ser futura.";
     if (!repForm.genero) err.genero = "El género es obligatorio.";
     else if (!["Masculino", "Femenino"].includes(repForm.genero)) err.genero = "Género no válido.";
     if (repForm.cedula_rep.trim() && !/^\d+$/.test(repForm.cedula_rep.trim())) err.cedula_rep = "Solo números.";
@@ -359,8 +363,8 @@ export default function RegistrarCitaMostradorModal({
         ? `${data.titular_nombre} ${data.titular_apellido}`
         : null;
       const msgTitularCreado =
-        data.titular_creado && titularNombre
-          ? `Titular ${titularNombre} (cédula ${data.titular_cedula}) dado de alta. `
+        titularNombre
+          ? `Cuando ${titularNombre} (cédula ${data.titular_cedula}) se registre podrá reclamar sus citas y representados. `
           : "";
       const pacienteTexto = titularNombre
         ? `representado del paciente ${titularNombre} (cédula ${data.titular_cedula})`
@@ -661,7 +665,7 @@ export default function RegistrarCitaMostradorModal({
           <div className="rounded-lg border border-teal-200 bg-teal-50/50 p-4 space-y-3">
             <p className="text-sm font-medium text-teal-900">¿La cita es para un representado que aún no está registrado?</p>
             <p className="text-xs text-teal-800">
-              Crea el representado y asígnalo al titular por cédula. Si el titular ya está registrado, solo llena la cédula. Si no está en el sistema, completa nombre y apellido del titular para darlo de alta y crear el representado en un solo paso.
+              Crea el representado y asígnalo al titular por cédula. Si el titular ya está registrado, solo llena la cédula. Si no está en el sistema, indica nombre y apellido del titular para esta cita (no se crea usuario; cuando el titular se registre con su cédula podrá reclamar sus citas y representados).
             </p>
             {!showCrearRepresentadoForm ? (
               <button
@@ -711,7 +715,7 @@ export default function RegistrarCitaMostradorModal({
                   </div>
                   <div className="min-w-0 sm:col-span-2 space-y-2">
                     <p className="text-sm font-semibold text-teal-900 border-b border-teal-200 pb-1">Datos del titular</p>
-                    <p className="text-xs font-medium text-teal-800">Si el titular no está registrado, completa para darlo de alta ahora:</p>
+                    <p className="text-xs font-medium text-teal-800">Si el titular no está registrado, indica nombre y apellido para esta cita (no se crea cuenta; al registrarse con su cédula podrá reclamar citas y representados):</p>
                     <div className="grid grid-cols-1 gap-3 min-w-0 sm:grid-cols-2">
                       <div className="min-w-0">
                         <label className="mb-0.5 block text-xs text-teal-900">Nombre del titular *</label>

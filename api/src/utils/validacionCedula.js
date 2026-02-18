@@ -1,6 +1,6 @@
 /**
  * Valida cédula venezolana: acepta con prefijo (V, E, J, P, G) + números o solo números.
- * El número debe estar entre 100.000 y 50.000.000.
+ * El número debe estar entre 100.000 y 99.000.000.
  * Devuelve el valor normalizado siempre con prefijo (si solo vienen dígitos se usa "V").
  *
  * @param {string} cedula - Valor a validar (ej: "V12345678", "12345678")
@@ -26,10 +26,10 @@ function validarCedula(cedula, opts = {}) {
 		};
 	}
 	const num = parseInt(match[2], 10);
-	if (!Number.isFinite(num) || num < 100000 || num > 50000000) {
+	if (!Number.isFinite(num) || num < 100000 || num > 99000000) {
 		return {
 			valid: false,
-			message: "El número de cédula debe estar entre 100.000 y 50.000.000",
+			message: "El número de cédula debe estar entre 100.000 y 99.000.000",
 		};
 	}
 	// Guardar siempre con prefijo (por defecto V si no vino)

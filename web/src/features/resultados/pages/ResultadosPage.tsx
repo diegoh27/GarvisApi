@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import Swal from "sweetalert2";
 import { FileText, Receipt, Calendar, FileCheck, Download, Eye } from "lucide-react";
-import { PageShell, useAuth } from "../../../shared";
+import { PageShell, useAuth, formatFechaLocal } from "../../../shared";
 import {
 	useGetCitasSinResultadoQuery,
 	useUploadResultadoMutation,
@@ -15,17 +15,7 @@ import VerPagoModal from "../../moderadores/components/VerPagoModal";
 import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import PDFViewerModal from "../../especialista/components/PDFViewerModal";
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const dateKey = value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string) => (value ? formatFechaLocal(value) : "");
 
 const formatHora = (value: string) => {
 	if (!value) return "";

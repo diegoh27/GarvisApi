@@ -1,4 +1,5 @@
 import GenericTable from "../GenericTable";
+import { formatFechaLocal } from "../../../../shared";
 import { Trash2 } from "lucide-react";
 import type { FacturacionMovimiento } from "../../api/facturacionApi";
 
@@ -9,17 +10,8 @@ type MovimientosTableProps = {
   onEliminar?: (idMovimiento: string) => void;
 };
 
-const formatDate = (value: string | null | undefined) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-};
+const formatDate = (value: string | null | undefined) =>
+  value ? formatFechaLocal(value) : "-";
 
 const formatUsd = (value: number) =>
   new Intl.NumberFormat("es-VE", {
@@ -37,16 +29,8 @@ const formatBs = (value: number) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
-const formatDateShort = (value: string | null | undefined) => {
-  if (!value) return "N/A";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
+const formatDateShort = (value: string | null | undefined) =>
+  value ? formatFechaLocal(value) : "N/A";
 
 const buildItemCode = (row: FacturacionMovimiento) => {
   const rawId = (row.id_cita || row.origen_id || row.id_movimiento || "")

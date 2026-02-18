@@ -1,21 +1,10 @@
 import { useState } from "react";
 import { useGetDolarOficialQuery } from "../dolarApi";
-import { convertUSDToVES, formatVES } from "../../../shared";
+import { convertUSDToVES, formatVES, formatFechaHoraLocal } from "../../../shared";
 import { DollarSign, RefreshCw, Calendar, Calculator } from "lucide-react";
 
-const formatFecha = (fechaString: string): string => {
-	try {
-		const fecha = new Date(fechaString);
-		const dia = fecha.getDate().toString().padStart(2, "0");
-		const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
-		const año = fecha.getFullYear();
-		const horas = fecha.getHours().toString().padStart(2, "0");
-		const minutos = fecha.getMinutes().toString().padStart(2, "0");
-		return `${dia}/${mes}/${año} a las ${horas}:${minutos}`;
-	} catch {
-		return "Fecha no disponible";
-	}
-};
+const formatFecha = (fechaString: string): string =>
+	fechaString ? formatFechaHoraLocal(fechaString) : "Fecha no disponible";
 
 const DolarInfoBanner = () => {
 	const { data, isLoading, error, refetch } = useGetDolarOficialQuery();

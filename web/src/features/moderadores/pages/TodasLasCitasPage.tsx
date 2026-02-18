@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
-import { PageShell } from "../../../shared";
+import { PageShell, formatFechaLocal } from "../../../shared";
 import {
 	useGetAllCitasQuery,
 	useUpdateEstadoPagoMutation,
@@ -19,17 +19,7 @@ import RechazarPagoModal from "../components/RechazarPagoModal";
 import { FileText, Download, Eye, Check, X, ChevronDown } from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const dateKey = value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string) => formatFechaLocal(value);
 
 const formatHora = (value: string) => {
 	if (!value) return "";

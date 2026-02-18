@@ -7,6 +7,7 @@ import VerResultadosModal from "../../especialista/components/VerResultadosModal
 import { useGetPagoByCitaQuery } from "../../moderadores/moderadoresApi";
 import { useUpdatePagoMutation } from "../../pagos/pagosApi";
 import FormularioPago, { type PagoFormData } from "../../../shared/components/FormularioPago";
+import { formatFechaLocal } from "../../../shared";
 import Swal from "sweetalert2";
 
 const parseResultadoArchivos = (value: string | null): string[] => {
@@ -28,17 +29,6 @@ const isLikelyUrl = (value: string) => /^https?:\/\//i.test(value) || value.star
 type VerCitaPacienteModalProps = {
 	cita: CitaPacienteCompleta | null;
 	onClose: () => void;
-};
-
-const formatFecha = (value: string | null) => {
-	if (!value) return "N/A";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
 };
 
 const formatHora = (value: string) => {
@@ -168,7 +158,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div>
 									<p className="text-xs font-semibold text-brand-700">Fecha</p>
-									<p className="mt-1 text-sm text-brand-900">{formatFecha(cita.fecha_cita)}</p>
+									<p className="mt-1 text-sm text-brand-900">{formatFechaLocal(cita.fecha_cita)}</p>
 								</div>
 								<div>
 									<p className="text-xs font-semibold text-brand-700">Hora</p>
@@ -231,7 +221,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 											{cita.representado_fecha_nacimiento && (
 												<p>
 													<strong>Fecha de nacimiento:</strong>{" "}
-													{formatFecha(cita.representado_fecha_nacimiento)}
+													{formatFechaLocal(cita.representado_fecha_nacimiento)}
 												</p>
 											)}
 											{cita.representado_genero && (

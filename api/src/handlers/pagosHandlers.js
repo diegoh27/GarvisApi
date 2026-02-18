@@ -2,6 +2,7 @@ const {
 	getPagoByCitaController,
 	updatePagoController,
 } = require("../controllers/pagosControllers");
+const { pool } = require("../db");
 
 const getPagoByCitaHandler = async (req, res) => {
 	try {
@@ -21,18 +22,24 @@ const getPagoByCitaHandler = async (req, res) => {
 			});
 		}
 
-		// Validar permisos: los pacientes solo pueden ver pagos de sus propias citas
+		// Validar permisos: los pacientes solo pueden ver pagos de sus propias citas (o citas de mostrador vinculadas a su cuenta)
 		const userRole = req.user.rol;
 		const userId = req.user.id;
 
 		if (userRole === "paciente") {
-			// Verificar que el pago pertenezca a una cita del paciente
-			if (pago.id_paciente !== userId) {
-				return res.status(403).json({
-					ok: false,
-					message:
-						"No tienes permiso para ver este pago. Este pago pertenece a otra cita.",
-				});
+			const esCitaDelPaciente = pago.id_paciente === userId;
+			if (!esCitaDelPaciente) {
+				const [vinculacion] = await pool.execute(
+					"SELECT 1 FROM cita_mostrador_vinculacion WHERE id_cita = ? AND id_paciente = ? LIMIT 1",
+					[id_cita, userId],
+				);
+				if (vinculacion.length === 0) {
+					return res.status(403).json({
+						ok: false,
+						message:
+							"No tienes permiso para ver este pago. Este pago pertenece a otra cita.",
+					});
+				}
 			}
 		}
 
@@ -70,7 +77,7 @@ const updatePagoHandler = async (req, res) => {
 			});
 		}
 
-		// Verificar que la cita pertenezca al paciente
+		// Verificar que la cita pertenezca al paciente (o esté vinculada como cita de mostrador reclamada)
 		const pagoActual = await getPagoByCitaController(id_cita);
 		if (!pagoActual) {
 			return res.status(404).json({
@@ -79,11 +86,18 @@ const updatePagoHandler = async (req, res) => {
 			});
 		}
 
-		if (pagoActual.id_paciente !== userId) {
-			return res.status(403).json({
-				ok: false,
-				message: "No tienes permiso para editar este pago",
-			});
+		const esCitaDelPaciente = pagoActual.id_paciente === userId;
+		if (!esCitaDelPaciente) {
+			const [vinculacion] = await pool.execute(
+				"SELECT 1 FROM cita_mostrador_vinculacion WHERE id_cita = ? AND id_paciente = ? LIMIT 1",
+				[id_cita, userId],
+			);
+			if (vinculacion.length === 0) {
+				return res.status(403).json({
+					ok: false,
+					message: "No tienes permiso para editar este pago",
+				});
+			}
 		}
 
 		// Validar datos del body

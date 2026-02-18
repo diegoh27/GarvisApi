@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRegistrarPagoNominaMutation } from "../../api/nominaApi";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import type { RegistrarPagoNominaPayload } from "../../api/nominaApi";
 
@@ -28,8 +29,8 @@ export default function RegistrarPagoNominaModal({
   onSuccess,
 }: RegistrarPagoNominaModalProps) {
   const [formData, setFormData] = useState<RegistrarPagoNominaPayload>({
-    fecha_pago: new Date().toISOString().split("T")[0],
-    fecha_proximo_pago: new Date().toISOString().split("T")[0],
+    fecha_pago: toDateKey(new Date()),
+    fecha_proximo_pago: toDateKey(new Date()),
     monto: 0,
     metodo: "Transferencia",
     referencia: "",
@@ -143,8 +144,8 @@ export default function RegistrarPagoNominaModal({
         payload: formData,
       }).unwrap();
       setFormData({
-        fecha_pago: new Date().toISOString().split("T")[0],
-        fecha_proximo_pago: new Date().toISOString().split("T")[0],
+        fecha_pago: toDateKey(new Date()),
+        fecha_proximo_pago: toDateKey(new Date()),
         monto: 0,
         metodo: "Transferencia",
         referencia: "",

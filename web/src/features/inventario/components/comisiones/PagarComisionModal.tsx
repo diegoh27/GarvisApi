@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 import { useGetDolarOficialQuery } from "../../../dolar/dolarApi";
+import { formatFechaLocal, toDateKey } from "../../../../shared";
 import { validarMonto, sanitizeMonto, MONTO_MIN, MONTO_MAX } from "../../utils/validation";
 
 interface PagarComisionModalProps {
@@ -37,7 +38,7 @@ export default function PagarComisionModal({
   };
 
   const [formData, setFormData] = useState({
-    fecha_pago: comision.fecha_pago || new Date().toISOString().split("T")[0],
+    fecha_pago: comision.fecha_pago || toDateKey(new Date()),
     metodo: (metodoFromDescripcion(comision.descripcion_pago) || "Transferencia") as
       | "Efectivo"
       | "Transferencia"
@@ -211,7 +212,7 @@ export default function PagarComisionModal({
             <div className="flex justify-between text-sm border-t pt-2">
               <span className="text-gray-600">Fecha de Cita:</span>
               <span className="font-medium text-gray-900">
-                {comision.fecha_cita ? new Date(comision.fecha_cita).toLocaleDateString("es-ES") : "-"}
+                {comision.fecha_cita ? formatFechaLocal(comision.fecha_cita) : "-"}
               </span>
             </div>
           </div>

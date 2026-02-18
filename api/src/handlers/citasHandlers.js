@@ -119,13 +119,44 @@ const listCitasByPacienteHandler = async (req, res) => {
 	}
 };
 
+/** Normaliza fecha a YYYY-MM-DD para evitar años erróneos (ej. 20260) en el cliente. */
+function toDateOnly(val) {
+	if (val == null) return val;
+	if (typeof val === "string") {
+		const s = val.trim();
+		// No truncar antes de reemplazar: "20260-02-18" son 11 caracteres
+		const part = s.includes("T") ? s.split("T")[0] : s;
+		const fixed = part.replace(/^20260-(\d{2})-(\d{2})/, "2026-$1-$2").replace(/20260/g, "2026");
+		const key = fixed.slice(0, 10);
+		return /^\d{4}-\d{2}-\d{2}$/.test(key) ? key : val;
+	}
+	if (val instanceof Date && !Number.isNaN(val.getTime())) {
+		let y = val.getFullYear();
+		if (y === 20260 || (y > 9999 && y < 30000 && y % 10 === 0)) y = Math.floor(y / 10);
+		if (y < 1000 || y > 9999) return null;
+		const m = String(val.getMonth() + 1).padStart(2, "0");
+		const d = String(val.getDate()).padStart(2, "0");
+		return `${y}-${m}-${d}`;
+	}
+	return val;
+}
+
 const listMisCitasCompletasHandler = async (req, res) => {
 	try {
 		const id_paciente = req.user.id;
 		const data = await listCitasCompletasByPacienteController(id_paciente);
+		const normalized = Array.isArray(data)
+			? data.map((row) => ({
+					...row,
+					fecha_cita: toDateOnly(row.fecha_cita),
+					...(row.representado_fecha_nacimiento != null && {
+						representado_fecha_nacimiento: toDateOnly(row.representado_fecha_nacimiento),
+					}),
+				}))
+			: data;
 		return res.status(200).json({
 			ok: true,
-			data,
+			data: normalized,
 		});
 	} catch (err) {
 		console.error(err);

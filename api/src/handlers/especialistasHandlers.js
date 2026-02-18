@@ -94,6 +94,12 @@ const createEspecialistaHandler = async (req, res) => {
 			});
 		}
 		const today = new Date();
+		if (birthDate.getTime() > today.getTime()) {
+			return res.status(400).json({
+				ok: false,
+				message: "La fecha de nacimiento no puede ser futura",
+			});
+		}
 		let age = today.getFullYear() - birthDate.getFullYear();
 		const m = today.getMonth() - birthDate.getMonth();
 		if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
@@ -323,6 +329,16 @@ const updateEspecialistaHandler = async (req, res) => {
 				});
 			}
 			telefonoPayload = telefonoResult.value;
+		}
+
+		if (fecha_nacimiento !== undefined && fecha_nacimiento !== null && String(fecha_nacimiento).trim()) {
+			const fnUpd = new Date(fecha_nacimiento);
+			if (!Number.isNaN(fnUpd.getTime()) && fnUpd.getTime() > Date.now()) {
+				return res.status(400).json({
+					ok: false,
+					message: "La fecha de nacimiento no puede ser futura",
+				});
+			}
 		}
 
 		const payload = {

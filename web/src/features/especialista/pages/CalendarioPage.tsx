@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { useAuth } from "../../../shared";
+import { useAuth, formatFechaLocal } from "../../../shared";
 import {
 	type FilterOption,
 	type Disponibilidad,
@@ -77,17 +77,7 @@ const startOfWeek = (base: Date) => {
 	return date;
 };
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const dateKey = getDateKey(value);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string) => formatFechaLocal(value);
 
 const formatHora = (value: string) => {
 	if (!value) return "";

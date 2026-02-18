@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
-import { PageShell, CedulaField, parseCedulaDisplay, TelefonoField, calculateRIF } from "../../../shared";
+import { PageShell, CedulaField, parseCedulaDisplay, TelefonoField, calculateRIF, formatFechaLocal } from "../../../shared";
 import {
 	useListUsersQuery,
 	useUpdateUserMutation,
@@ -15,17 +15,7 @@ import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosA
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { Edit, X, Check, ChevronDown } from "lucide-react";
 
-const formatFecha = (value: string | null) => {
-	if (!value) return "N/A";
-	const dateKey = value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string | null) => (value ? formatFechaLocal(value) : "N/A");
 
 const UsuariosPage = () => {
 	const [filtroRol, setFiltroRol] = useState<string>("todos");
@@ -491,6 +481,8 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 		if (!value || !value.trim()) return "La fecha de nacimiento es requerida";
 		const fechaNac = new Date(value);
 		const hoy = new Date();
+		hoy.setHours(23, 59, 59, 999);
+		if (fechaNac.getTime() > hoy.getTime()) return "La fecha de nacimiento no puede ser futura";
 		const edad = hoy.getFullYear() - fechaNac.getFullYear();
 		const mesDiff = hoy.getMonth() - fechaNac.getMonth();
 		const diaDiff = hoy.getDate() - fechaNac.getDate();

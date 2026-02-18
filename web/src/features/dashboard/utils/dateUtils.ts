@@ -10,12 +10,17 @@ export const getTodayKey = (): string => {
 export const toDateKey = (value: string | Date): string => {
 	if (value instanceof Date) {
 		const d = value;
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+		let y = d.getFullYear();
+		if (y === 20260 || (y > 9999 && y < 30000 && y % 10 === 0)) y = 2026;
+		return `${y}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 	}
 	if (typeof value === "string" && value.length >= 10) {
-		return value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
+		const part = value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
+		const fixed = part.replace(/^20260-(\d{2})-(\d{2})/, "2026-$1-$2");
+		return fixed.slice(0, 10);
 	}
-	return String(value).slice(0, 10);
+	const raw = String(value).slice(0, 10);
+	return raw.replace(/^20260-(\d{2})-(\d{2})/, "2026-$1-$2").slice(0, 10);
 };
 
 export const formatHora = (value: string): string => {

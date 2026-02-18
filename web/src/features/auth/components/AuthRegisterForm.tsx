@@ -79,6 +79,7 @@ const AuthRegisterForm = () => {
 				if (!value) return "La fecha de nacimiento es requerida";
 				const fechaNac = new Date(value);
 				const hoy = new Date();
+				if (fechaNac.getTime() > hoy.getTime()) return "La fecha de nacimiento no puede ser futura";
 				const edad = hoy.getFullYear() - fechaNac.getFullYear();
 				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
 				const diaDiff = hoy.getDate() - fechaNac.getDate();

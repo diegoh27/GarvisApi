@@ -2,16 +2,10 @@ import {
   useGetComprasProductoQuery,
   useGetAjustesProductoQuery,
 } from "../../api";
+import { formatFechaCortaLocal } from "../../../../shared";
 import { X } from "lucide-react";
 
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+const formatDate = (dateString: string): string => formatFechaCortaLocal(dateString);
 
 interface HistorialModalProps {
   isOpen: boolean;

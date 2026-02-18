@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { X } from "lucide-react";
 import type { Obligacion, HistorialEnteLegal } from "../../api";
 import GenericTable from "../GenericTable";
+import { formatFechaCortaLocal, formatFechaHoraLocal } from "../../../../shared";
 
 interface HistorialObligacionModalProps {
   isOpen: boolean;
@@ -50,11 +51,7 @@ export default function HistorialObligacionModal({
       headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: HistorialRow) =>
-        new Date(row.fecha_ingreso).toLocaleDateString("es-ES", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
+        formatFechaCortaLocal(row.fecha_ingreso),
     },
     {
       key: "monto",
@@ -69,11 +66,7 @@ export default function HistorialObligacionModal({
       headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: HistorialRow) =>
-        new Date(row.creado_en).toLocaleDateString("es-ES", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
+        formatFechaHoraLocal(row.creado_en),
     },
   ];
 

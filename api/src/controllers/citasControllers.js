@@ -9,6 +9,7 @@ const {
 	formatHoraCita,
 } = require("../utils/citaEmails");
 const { createNotificacionController } = require("./notificacionesControllers");
+const { normalizeFechaForDb } = require("../utils/dateUtils");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
 const MOSTRADOR_CORREO = "mostrador@garbis.local";
@@ -1201,18 +1202,26 @@ const createCitaMostradorController = async ({
 			throw err;
 		}
 
+		// Mostrador: no crear usuario real. Si hay representado "fantasma" (id_paciente = mostrador) o de un titular ya registrado, usarlo.
 		let id_paciente;
 		let id_representado_final = null;
 		if (id_paciente_titular && id_representado) {
 			const [repRows] = await conn.execute(
-				`SELECT id_representado, id_paciente FROM representado
-				 WHERE id_representado = ? AND id_paciente = ?
-				 LIMIT 1`,
-				[id_representado, id_paciente_titular],
+				`SELECT id_representado, id_paciente FROM representado WHERE id_representado = ? LIMIT 1`,
+				[id_representado],
 			);
 			if (repRows.length) {
-				id_paciente = id_paciente_titular;
-				id_representado_final = id_representado;
+				const repPaciente = repRows[0].id_paciente;
+				// Representado del paciente mostrador (fantasma): cita queda bajo mostrador
+				if (repPaciente === MOSTRADOR_PACIENTE_ID) {
+					await ensureMostradorPacienteBase(conn);
+					id_paciente = MOSTRADOR_PACIENTE_ID;
+					id_representado_final = id_representado;
+				} else if (repPaciente === id_paciente_titular) {
+					// Representado de un titular ya registrado: cita bajo ese paciente
+					id_paciente = id_paciente_titular;
+					id_representado_final = id_representado;
+				}
 			}
 		}
 		if (id_paciente == null) {
@@ -1220,7 +1229,7 @@ const createCitaMostradorController = async ({
 		}
 		let cedulaParaPago = cedula ? String(cedula).trim() : "";
 		let rifParaMostrador = rif != null ? String(rif).trim() || null : null;
-		if (id_representado_final && id_paciente && (!cedulaParaPago || !cedulaParaPago.replace(/\D/g, ""))) {
+		if (id_representado_final && id_paciente && id_paciente !== MOSTRADOR_PACIENTE_ID && (!cedulaParaPago || !cedulaParaPago.replace(/\D/g, ""))) {
 			const [titularRows] = await conn.execute(
 				"SELECT cedula FROM usuario WHERE id_usuario = ? LIMIT 1",
 				[id_paciente],
@@ -1537,6 +1546,12 @@ const vincularCitasMostradorController = async (id_paciente, id_citas) => {
 				[id_cita, id_paciente],
 			);
 		}
+		// Adoptar representados "fantasma" de mostrador: los que tienen cedula_titular_mostrador = cédula del usuario pasan a ser suyos
+		await conn.execute(
+			`UPDATE representado SET id_paciente = ?, cedula_titular_mostrador = NULL
+			 WHERE cedula_titular_mostrador = ? AND id_paciente = ?`,
+			[id_paciente, cedulaPaciente, MOSTRADOR_PACIENTE_ID],
+		);
 		// Notificar a admin, moderadores y especialistas de esas citas: el paciente se registró y hay que subir resultados/informes
 		if (idCitasValidas.length > 0) {
 			const [pacienteRows] = await pool.execute(
@@ -1632,6 +1647,7 @@ const asignarCitaCompletaController = async ({
 			throw err;
 		}
 		const disponibilidad = dispRows[0];
+		const fechaCita = normalizeFechaForDb(disponibilidad.fecha);
 
 		// Si la disponibilidad está pendiente (estado 0), aprobarla
 		if (disponibilidad.estado === 0) {
@@ -1682,7 +1698,7 @@ const asignarCitaCompletaController = async ({
 			id_representado ?? null,
 			id_especialista,
 			id_eco,
-			disponibilidad.fecha,
+			fechaCita,
 			disponibilidad.hora_inicio,
 			orden || "", // orden no puede ser null, usar string vacío si no se proporciona
 			id_disponibilidad,
@@ -1706,7 +1722,7 @@ const asignarCitaCompletaController = async ({
          AND id_disponibilidad <> ?`,
 			[
 				disponibilidad.id_especialista,
-				disponibilidad.fecha,
+				fechaCita,
 				disponibilidad.hora_inicio,
 				disponibilidad.hora_fin,
 				id_disponibilidad,
@@ -1780,7 +1796,7 @@ const asignarCitaCompletaController = async ({
 			id_paciente,
 			id_especialista,
 			id_eco,
-			fecha_cita: disponibilidad.fecha,
+			fecha_cita: fechaCita,
 			hora_cita: disponibilidad.hora_inicio,
 			monto,
 			eco_precio: ecoPrecio,
@@ -1815,4 +1831,6 @@ module.exports = {
 	getUltimoPacienteMostradorPorCedulaController,
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
+	ensureMostradorPacienteBase,
+	MOSTRADOR_PACIENTE_ID,
 };

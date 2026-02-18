@@ -134,6 +134,27 @@ const disponibilidadApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Disponibilidad"],
 		}),
+		eliminarDisponibilidadPasada: builder.mutation<
+			{ eliminados: number; ids: string[] },
+			void
+		>({
+			query: () => ({
+				url: "/disponibilidad/eliminar-pasada",
+				method: "POST",
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
+		eliminarDisponibilidadPorCriterios: builder.mutation<
+			{ eliminados: number; ids: string[] },
+			{ id_especialista?: string; fecha_desde?: string; fecha_hasta?: string; hora_desde?: string; hora_hasta?: string }
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/eliminar-por-criterios",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Disponibilidad"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -149,6 +170,8 @@ const {
 	useRechazarDisponibilidadMutation,
 	useCancelarDisponibilidadAdminMutation,
 	useCancelarDisponibilidadLoteMutation,
+	useEliminarDisponibilidadPasadaMutation,
+	useEliminarDisponibilidadPorCriteriosMutation,
 } = disponibilidadApi;
 
 export {
@@ -163,4 +186,6 @@ export {
 	useRechazarDisponibilidadMutation,
 	useCancelarDisponibilidadAdminMutation,
 	useCancelarDisponibilidadLoteMutation,
+	useEliminarDisponibilidadPasadaMutation,
+	useEliminarDisponibilidadPorCriteriosMutation,
 };

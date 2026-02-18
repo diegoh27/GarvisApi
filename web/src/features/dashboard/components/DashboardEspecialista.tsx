@@ -26,21 +26,11 @@ import {
 	Stethoscope,
 	ChevronLeft,
 } from "lucide-react";
+import { formatFechaHoraLocal } from "../../../shared";
 
 const CITAS_DEL_DIA_POR_PAGINA = 3;
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const formatFecha = (value: string) => formatFechaHoraLocal(value);
 
 const formatDateLabelLong = (value: string) =>
 	new Date(value.slice(0, 10)).toLocaleDateString("es-ES", {

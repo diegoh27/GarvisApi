@@ -98,8 +98,10 @@ const DisponibilidadPublicaPage = () => {
 		return Array.from({ length: 5 }, (_, idx) => {
 			const d = new Date(base);
 			d.setDate(base.getDate() + idx);
-			return d.toISOString().slice(0, 10);
-		});
+			const y = d.getFullYear();
+			if (y < 1000 || y > 9999) return "";
+			return `${y}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+		}).filter(Boolean);
 	}, [dayOffset]);
 
 	const selectedItems = useMemo(
