@@ -50,7 +50,9 @@ const generateSlotsRange = (
 
 	const slots: SlotPreview[] = [];
 	for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-		const dateKey = d.toISOString().slice(0, 10);
+		const y = d.getFullYear();
+		if (y < 1000 || y > 9999) continue; // evitar años erróneos (ej. 20260)
+		const dateKey = `${y}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 		slots.push(...generateSlots(dateKey, horaInicio, horaFin));
 	}
 	return slots;

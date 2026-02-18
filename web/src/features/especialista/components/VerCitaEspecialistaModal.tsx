@@ -4,6 +4,7 @@ import type { CitaEspecialista } from "../types";
 import { useGetCitaByIdQuery } from "../especialistaApi";
 import PDFViewerModal from "./PDFViewerModal";
 import VerResultadosModal from "./VerResultadosModal";
+import { formatFechaLocal } from "../../../shared";
 
 const parseResultadoArchivos = (value: string | null | undefined): string[] => {
 	if (!value || value.trim() === "") return [];
@@ -27,16 +28,7 @@ type VerCitaEspecialistaModalProps = {
 	onVerPdf?: (url: string, fileName: string) => void;
 };
 
-const formatFecha = (value: string | null) => {
-	if (!value) return "N/A";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string | null) => (value ? formatFechaLocal(value) : "N/A");
 
 const formatHora = (value: string) => {
 	if (!value) return "";

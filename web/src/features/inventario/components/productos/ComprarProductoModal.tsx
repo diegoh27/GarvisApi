@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRegistrarCompraMutation, useGetProductoQuery } from "../../api";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import { X } from "lucide-react";
 
@@ -21,7 +22,7 @@ export default function ComprarProductoModal({
   });
   const [registrarCompra, { isLoading }] = useRegistrarCompraMutation();
   const [formData, setFormData] = useState({
-    fecha_ingreso: new Date().toISOString().split("T")[0],
+    fecha_ingreso: toDateKey(new Date()),
     cantidad: "",
     precio_unitario: "",
     precio_total: "",
@@ -102,7 +103,7 @@ export default function ComprarProductoModal({
       setSuccess("Compra registrada exitosamente");
       setTimeout(() => {
         setFormData({
-          fecha_ingreso: new Date().toISOString().split("T")[0],
+          fecha_ingreso: toDateKey(new Date()),
           cantidad: "",
           precio_unitario: "",
           precio_total: "",

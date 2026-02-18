@@ -1,5 +1,6 @@
 import { DollarSign, Pencil } from "lucide-react";
 import GenericTable from "../GenericTable";
+import { formatFechaLocal } from "../../../../shared";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 
 interface ComisionesTableProps {
@@ -109,9 +110,7 @@ export default function ComisionesTable({
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: EspecialistaComision) =>
-        row.fecha_cita
-          ? new Date(row.fecha_cita).toLocaleDateString("es-ES")
-          : "-",
+        row.fecha_cita ? formatFechaLocal(row.fecha_cita) : "-",
     },
     {
       key: "estado",

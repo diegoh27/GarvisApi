@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import type { CitaData } from "../moderadoresApi";
+import { formatFechaLocal, formatFechaHoraLocal } from "../../../shared";
 
 type VerCitaModalProps = {
 	cita: CitaData | null;
@@ -8,29 +9,8 @@ type VerCitaModalProps = {
 	hideSensitiveData?: boolean; // Si es true, oculta RIF, precios, y datos de pago
 };
 
-const formatFecha = (value: string | null) => {
-	if (!value) return "N/A";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
-
-const formatFechaHora = (value: string | null) => {
-	if (!value) return "N/A";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const formatFecha = (value: string | null) => formatFechaLocal(value);
+const formatFechaHora = (value: string | null) => formatFechaHoraLocal(value);
 
 const formatHora = (value: string) => {
 	if (!value) return "";

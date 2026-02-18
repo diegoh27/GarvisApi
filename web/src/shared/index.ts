@@ -12,6 +12,7 @@ export { calculateRIF } from "./utils/calculateRIF";
 export { convertUSDToVES, formatVES, formatUSD } from "./utils/currency";
 export { normalizeSpaces, toTitleCase, formatNombreApellido } from "./utils/stringFormat";
 export { validarRangoCedula, MENSAJE_RANGO_CEDULA } from "./utils/validation";
+export { toDateKey, formatFechaLocal, formatFechaCitaTabla, formatFechaCortaLocal, formatFechaConDia, formatFechaConDiaSinAnio, formatFechaHoraLocal } from "./utils/dateFormat";
 export { CedulaField } from "./components/CedulaField";
 export { CEDULA_TIPOS, parseCedulaDisplay } from "./utils/cedulaDisplay";
 export type { TipoCedula } from "./utils/cedulaDisplay";

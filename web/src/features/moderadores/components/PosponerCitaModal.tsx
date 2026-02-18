@@ -7,6 +7,7 @@ import {
 	useGetDisponibilidadesByEspecialistaQuery,
 } from "../moderadoresApi";
 import { useAprobarDisponibilidadMutation } from "../../disponibilidad/disponibilidadApi";
+import { formatFechaLocal, formatFechaConDia as formatFechaConDiaShared } from "../../../shared";
 import Swal from "sweetalert2";
 
 type PosponerCitaModalProps = {
@@ -25,48 +26,8 @@ type DisponibilidadItem = {
 	eco_nombre?: string | null;
 };
 
-const formatFecha = (fecha: string) => {
-	if (!fecha) return "";
-
-	// Si la fecha ya incluye información de tiempo (ISO format), extraer solo la parte de fecha
-	let fechaStr = fecha;
-	if (fecha.includes("T") || fecha.includes("Z")) {
-		// Extraer solo la parte YYYY-MM-DD antes de T o Z
-		fechaStr = fecha.split("T")[0].split("Z")[0];
-	}
-
-	// Intentar parsear la fecha directamente primero
-	let date = new Date(fecha);
-	if (Number.isNaN(date.getTime())) {
-		// Si falla, intentar con formato YYYY-MM-DD
-		date = new Date(`${fechaStr}T00:00:00`);
-	}
-
-	if (Number.isNaN(date.getTime())) {
-		// Si aún falla, devolver la fecha original
-		return fecha;
-	}
-
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
-
-const formatFechaConDia = (fecha: string) => {
-	if (!fecha) return "";
-	const date = new Date(`${fecha}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return formatFecha(fecha);
-	return date
-		.toLocaleDateString("es-VE", {
-			weekday: "long",
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-		})
-		.replace(",", "");
-};
+const formatFecha = (fecha: string) => formatFechaLocal(fecha);
+const formatFechaConDia = (fecha: string) => formatFechaConDiaShared(fecha);
 
 const formatHora = (hora: string) => {
 	if (!hora) return "";
@@ -82,6 +43,20 @@ const getDateKey = (value: string) => {
 	if (!value) return "";
 	if (value.includes("T")) return value.split("T")[0];
 	return value;
+};
+
+/** Formatea una clave YYYY-MM-DD como fecha local (evita desfase por UTC al mostrar). */
+const formatDateKeyLocal = (dateKey: string) => {
+	if (!dateKey) return "";
+	const [y, m, d] = dateKey.split("-");
+	if (!y || !m || !d) return dateKey;
+	const date = new Date(Number(y), Number(m) - 1, Number(d));
+	if (Number.isNaN(date.getTime())) return dateKey;
+	return date.toLocaleDateString("es-VE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+	});
 };
 
 // Normalizar fecha a formato YYYY-MM-DD para el API
@@ -507,7 +482,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 																<Calendar className="h-4 w-4 text-brand-600" />
 																<div>
 																	<p className="text-sm font-medium text-brand-900">
-																		{formatFecha(disp.fecha)}
+																		{formatDateKeyLocal(selectedDayKey)}
 																	</p>
 																	<div className="flex items-center gap-1 mt-0.5">
 																		<Clock className="h-3 w-3 text-brand-600" />

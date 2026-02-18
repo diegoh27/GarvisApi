@@ -8,6 +8,8 @@ import {
 	useRechazarDisponibilidadMutation,
 	useCancelarDisponibilidadAdminMutation,
 	useCancelarDisponibilidadLoteMutation,
+	useEliminarDisponibilidadPasadaMutation,
+	useEliminarDisponibilidadPorCriteriosMutation,
 } from "../disponibilidadApi";
 import type { DisponibilidadPendiente } from "../disponibilidadApi";
 import { toDateKey } from "../utils/dateUtils";
@@ -44,6 +46,10 @@ const DisponibilidadPendientesPage = () => {
 		useCancelarDisponibilidadAdminMutation();
 	const [cancelarDisponibilidadLote, { isLoading: isCancelandoLote }] =
 		useCancelarDisponibilidadLoteMutation();
+	const [eliminarDisponibilidadPasada, { isLoading: isEliminandoPasada }] =
+		useEliminarDisponibilidadPasadaMutation();
+	const [eliminarDisponibilidadPorCriterios, { isLoading: isEliminandoPorCriterios }] =
+		useEliminarDisponibilidadPorCriteriosMutation();
 	const [filtros, setFiltros] = useState<FiltrosDisponibilidadPendientesValues>(DEFAULT_FILTROS);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -391,6 +397,95 @@ const DisponibilidadPendientesPage = () => {
 		}
 	};
 
+	const handleEliminarPasada = async () => {
+		const result = await Swal.fire({
+			icon: "warning",
+			title: "Eliminar disponibilidad pasada",
+			text: "Se eliminarán todos los bloques con fecha anterior a hoy que no tengan cita asignada (pendientes, aprobados, cancelados, rechazados). No se eliminarán los que ya tienen cita. ¿Continuar?",
+			showCancelButton: true,
+			confirmButtonText: "Sí, eliminar",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#dc2626",
+		});
+		if (!result.isConfirmed) return;
+		setSelectedId("eliminar-pasada");
+		try {
+			const res = await eliminarDisponibilidadPasada().unwrap();
+			const eliminados = (res as { data?: { eliminados?: number } })?.data?.eliminados ?? res?.eliminados ?? 0;
+			await Swal.fire({
+				icon: "success",
+				title: "Limpieza completada",
+				text: eliminados === 0
+					? "No había bloques pasados sin citas para eliminar."
+					: `Se eliminaron ${eliminados} bloque${eliminados !== 1 ? "s" : ""} de disponibilidad pasada.`,
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			refetch();
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo eliminar la disponibilidad pasada",
+			});
+		} finally {
+			setSelectedId(null);
+		}
+	};
+
+	const handleEliminarPorCriterios = async () => {
+		const fechaDesde = filtros.fechaDesde?.trim() || undefined;
+		const fechaHasta = filtros.fechaHasta?.trim() || undefined;
+		const horaDesde = filtros.horaDesde?.trim() || undefined;
+		const horaHasta = filtros.horaHasta?.trim() || undefined;
+		if (!fechaDesde && !fechaHasta && !horaDesde && !horaHasta) {
+			await Swal.fire({
+				icon: "warning",
+				title: "Indica al menos un criterio",
+				text: "Usa fecha desde/hasta o hora desde/hasta en los filtros para eliminar solo esos bloques (sin citas asignadas).",
+			});
+			return;
+		}
+		const result = await Swal.fire({
+			icon: "warning",
+			title: "Eliminar por filtro",
+			text: "Se eliminarán los bloques que coincidan con los filtros actuales y que no tengan cita asignada. ¿Continuar?",
+			showCancelButton: true,
+			confirmButtonText: "Sí, eliminar",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#dc2626",
+		});
+		if (!result.isConfirmed) return;
+		setSelectedId("eliminar-criterios");
+		try {
+			const res = await eliminarDisponibilidadPorCriterios({
+				fecha_desde: fechaDesde,
+				fecha_hasta: fechaHasta,
+				hora_desde: horaDesde,
+				hora_hasta: horaHasta,
+			}).unwrap();
+			const eliminados = (res as { data?: { eliminados?: number } })?.data?.eliminados ?? res?.eliminados ?? 0;
+			await Swal.fire({
+				icon: "success",
+				title: "Eliminación completada",
+				text: eliminados === 0
+					? "No hay bloques que coincidan con los criterios (o todos tienen citas asignadas)."
+					: `Se eliminaron ${eliminados} bloque${eliminados !== 1 ? "s" : ""}.`,
+				timer: 2000,
+				showConfirmButton: false,
+			});
+			refetch();
+		} catch (error: any) {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: error?.data?.message || "No se pudo eliminar por criterios",
+			});
+		} finally {
+			setSelectedId(null);
+		}
+	};
+
 	return (
 		<PageShell
 			title="Gestionar disponibilidades"
@@ -408,6 +503,37 @@ const DisponibilidadPendientesPage = () => {
 					fechaDesde={filtros.fechaDesde}
 					fechaHasta={filtros.fechaHasta}
 				/>
+
+				<div className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3">
+					<p className="mb-2 text-sm font-medium text-amber-900">
+						Eliminar en lote (sin citas asignadas)
+					</p>
+					<div className="flex flex-wrap gap-2">
+						<button
+							type="button"
+							onClick={handleEliminarPasada}
+							disabled={isEliminandoPasada || selectedId === "eliminar-pasada"}
+							className="rounded-full border border-amber-600 bg-paper px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+						>
+							{isEliminandoPasada && selectedId === "eliminar-pasada"
+								? "Procesando..."
+								: "Eliminar disponibilidad pasada"}
+						</button>
+						<button
+							type="button"
+							onClick={handleEliminarPorCriterios}
+							disabled={isEliminandoPorCriterios || selectedId === "eliminar-criterios"}
+							className="rounded-full border border-amber-600 bg-paper px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+						>
+							{isEliminandoPorCriterios && selectedId === "eliminar-criterios"
+								? "Procesando..."
+								: "Eliminar por filtro actual"}
+						</button>
+					</div>
+					<p className="mt-1.5 text-xs text-amber-800">
+						Pasada: borra todo lo anterior a hoy. Por filtro: usa fecha/hora desde-hasta; no se eliminan bloques con cita.
+					</p>
+				</div>
 
 				{isLoading ? (
 					<div className="py-8 text-center text-brand-600">

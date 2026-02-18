@@ -3,8 +3,8 @@ import type { HistorialEnteLegal } from "../api/entesLegalesApi";
 import type { AlquilerPago } from "../api/alquilerApi";
 import type { NominaPago } from "../api/nominaApi";
 import GenericTable from "./GenericTable";
-import { Edit } from "lucide-react";
-import { Trash2 } from "lucide-react";
+import { formatFechaLocal, formatFechaCortaLocal, formatFechaHoraLocal } from "../../../shared";
+import { Edit, Trash2 } from "lucide-react";
 
 type HistorialRow =
   | CompraProducto
@@ -60,10 +60,7 @@ export default function HistorialPagosTable({
         headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
         cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
         render: (row: HistorialRow) =>
-          new Date((row as CompraProducto).fecha_ingreso).toLocaleDateString("es-ES", {
-            month: "short",
-            day: "numeric",
-          }),
+          formatFechaCortaLocal((row as CompraProducto).fecha_ingreso),
       },
       {
         key: "cant",
@@ -168,7 +165,7 @@ export default function HistorialPagosTable({
           headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
           cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
           render: (row: HistorialRow) =>
-            new Date((row as NominaPago).fecha_pago).toLocaleDateString("es-ES"),
+            formatFechaLocal((row as NominaPago).fecha_pago),
         },
         {
           key: "monto",
@@ -262,7 +259,7 @@ export default function HistorialPagosTable({
               "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
             render: (row: HistorialRow) =>
-              new Date((row as AlquilerPago).fecha_pago).toLocaleDateString("es-ES"),
+              formatFechaLocal((row as AlquilerPago).fecha_pago),
           },
           {
             key: "monto",
@@ -360,11 +357,7 @@ export default function HistorialPagosTable({
             headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
             render: (row: HistorialRow) =>
-              new Date((row as HistorialEnteLegal).fecha_ingreso).toLocaleDateString("es-ES", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              }),
+              formatFechaCortaLocal((row as HistorialEnteLegal).fecha_ingreso),
           },
           {
             key: "valor",
@@ -382,11 +375,7 @@ export default function HistorialPagosTable({
             headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
             render: (row: HistorialRow) =>
-              new Date((row as HistorialEnteLegal).creado_en).toLocaleDateString("es-ES", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              }),
+              formatFechaHoraLocal((row as HistorialEnteLegal).creado_en),
           },
           ...(onEditar || onEliminar
             ? [

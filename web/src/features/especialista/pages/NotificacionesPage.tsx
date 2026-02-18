@@ -1,22 +1,11 @@
-import { PageShell } from "../../../shared";
+import { PageShell, formatFechaHoraLocal } from "../../../shared";
 import { Bell, CheckCircle, MailOpen } from "lucide-react";
 import {
 	useGetMisNotificacionesQuery,
 	useMarkNotificacionLeidaMutation,
 } from "../../notificaciones/notificacionesApi";
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const formatFecha = (value: string) => formatFechaHoraLocal(value);
 
 const NotificacionesPage = () => {
 	const { data: notificaciones = [], isLoading } = useGetMisNotificacionesQuery({

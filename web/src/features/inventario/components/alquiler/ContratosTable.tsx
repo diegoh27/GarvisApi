@@ -1,5 +1,6 @@
 import { DollarSign, Pencil, Trash2 } from "lucide-react";
 import GenericTable from "../GenericTable";
+import { formatFechaLocal } from "../../../../shared";
 import type { AlquilerContrato } from "../../api/alquilerApi";
 
 interface ContratosTableProps {
@@ -82,9 +83,7 @@ export default function ContratosTable({
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: AlquilerContrato) =>
-        row.fecha_vencimiento
-          ? new Date(row.fecha_vencimiento).toLocaleDateString("es-ES")
-          : "-",
+        row.fecha_vencimiento ? formatFechaLocal(row.fecha_vencimiento) : "-",
     },
     {
       key: "estado",

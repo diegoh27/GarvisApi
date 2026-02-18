@@ -114,6 +114,7 @@ const ConfiguracionPage = () => {
       if (!correo.trim()) err.correo = req;
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) err.correo = "Correo electrónico inválido.";
       if (!fechaNacimiento.trim()) err.fecha_nacimiento = req;
+      else if (new Date(fechaNacimiento).getTime() > new Date().getTime()) err.fecha_nacimiento = "La fecha de nacimiento no puede ser futura.";
     }
 
     const allowPhoneEdit = isAdmin || editTelefono;

@@ -213,6 +213,7 @@ IF NOT EXISTS representado
 ('Masculino','Femenino','Otro') NOT NULL,
   parentesco VARCHAR
 (40) NULL,
+  cedula_titular_mostrador VARCHAR(20) NULL,
 
   PRIMARY KEY
 (id_representado),

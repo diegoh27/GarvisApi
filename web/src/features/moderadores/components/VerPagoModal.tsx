@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import type { PagoData } from "../moderadoresApi";
+import { formatFechaHoraLocal } from "../../../shared";
 
 type VerPagoModalProps = {
 	pago: PagoData | null;
@@ -14,18 +15,7 @@ type VerPagoModalProps = {
 	isUpdating?: boolean;
 };
 
-const formatFecha = (value: string | null) => {
-	if (!value) return "N/A";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const formatFecha = (value: string | null) => (value ? formatFechaHoraLocal(value) : "N/A");
 
 const formatMonto = (monto: number | string) => {
 	const num = typeof monto === "string" ? parseFloat(monto) : monto;

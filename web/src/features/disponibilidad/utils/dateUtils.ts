@@ -1,6 +1,9 @@
 /**
  * Utilidades de fecha para disponibilidad (formato, orden, rango).
+ * Usa utilidad centralizada para evitar desfases UTC y años incorrectos.
  */
+
+import { formatFechaLocal, formatFechaConDia } from "../../../shared";
 
 export const toDateKey = (value: string | Date): string => {
 	if (value instanceof Date) {
@@ -13,18 +16,11 @@ export const toDateKey = (value: string | Date): string => {
 	return String(value).slice(0, 10);
 };
 
-export const formatFecha = (value: string): string => {
-	if (!value) return "";
-	const dateKey = toDateKey(value);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		weekday: "long",
-	});
-};
+/** Formato DD/MM/YYYY (fechas seguras, sin desfase) */
+export const formatFecha = (value: string): string => formatFechaLocal(value);
+
+/** Formato con día de la semana (ej. "lunes, 17/02/2026") */
+export const formatFechaConDiaDisponibilidad = formatFechaConDia;
 
 export const formatHora = (value: string): string => {
 	if (!value) return "";
@@ -38,9 +34,13 @@ export const formatHora = (value: string): string => {
 
 /** Formato corto para mostrar en cards de filtro (ej: "28 ene 2026") */
 export const formatFechaCorta = (dateKey: string): string => {
-	if (!dateKey || dateKey.length < 10) return "";
-	const date = new Date(`${dateKey.slice(0, 10)}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return dateKey.slice(0, 10);
+	const key = dateKey?.trim().slice(0, 10);
+	if (!key || key.length < 10) return "";
+	const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (!match) return key;
+	const [, y, m, d] = match;
+	const date = new Date(parseInt(y!, 10), parseInt(m!, 10) - 1, parseInt(d!, 10));
+	if (Number.isNaN(date.getTime())) return key;
 	return date.toLocaleDateString("es-VE", {
 		day: "2-digit",
 		month: "short",

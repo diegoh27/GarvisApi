@@ -159,6 +159,12 @@ const updateUserSelfHandler = async (req, res) => {
 		if (payload.fecha_nacimiento !== undefined && String(payload.fecha_nacimiento).trim() === "") {
 			return res.status(400).json({ ok: false, message: "La fecha de nacimiento no puede estar vacía." });
 		}
+		if (payload.fecha_nacimiento !== undefined && String(payload.fecha_nacimiento).trim() !== "") {
+			const fn = new Date(payload.fecha_nacimiento);
+			if (!Number.isNaN(fn.getTime()) && fn.getTime() > Date.now()) {
+				return res.status(400).json({ ok: false, message: "La fecha de nacimiento no puede ser futura." });
+			}
+		}
 		if (payload.telefono !== undefined && String(payload.telefono).trim() === "") {
 			return res.status(400).json({ ok: false, message: "El teléfono no puede estar vacío." });
 		}

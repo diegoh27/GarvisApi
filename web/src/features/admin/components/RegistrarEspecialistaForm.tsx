@@ -103,6 +103,7 @@ const RegistrarEspecialistaForm = () => {
 				if (!value.trim()) return "La fecha de nacimiento es requerida";
 				const birth = new Date(value);
 				const today = new Date();
+				if (birth.getTime() > today.getTime()) return "La fecha de nacimiento no puede ser futura";
 				let age = today.getFullYear() - birth.getFullYear();
 				const m = today.getMonth() - birth.getMonth();
 				if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;

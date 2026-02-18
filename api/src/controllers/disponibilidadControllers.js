@@ -1,6 +1,7 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
 const { createNotificacionController } = require("./notificacionesControllers");
+const { normalizeFechaForDb } = require("../utils/dateUtils");
 
 const hasOverlap = async (
 	conn,
@@ -29,6 +30,7 @@ const createDisponibilidadController = async ({
 	creado_por,
 	id_eco,
 }) => {
+	const fechaNorm = normalizeFechaForDb(fecha);
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -57,7 +59,7 @@ const createDisponibilidadController = async ({
          AND NOT (hora_fin <= ? OR hora_inicio >= ?)
          AND estado IN (0, 1, 4)
        LIMIT 1`,
-			[id_especialista, fecha, hora_inicio, hora_fin],
+			[id_especialista, fechaNorm, hora_inicio, hora_fin],
 		);
 		if (overlapRows.length) {
 			const existing = overlapRows[0];
@@ -79,7 +81,7 @@ const createDisponibilidadController = async ({
 		await conn.execute(sql, [
 			id_disponibilidad,
 			id_especialista,
-			fecha,
+			fechaNorm,
 			hora_inicio,
 			hora_fin,
 			id_eco || null,
@@ -96,7 +98,7 @@ const createDisponibilidadController = async ({
 		return {
 			id_disponibilidad,
 			id_especialista,
-			fecha,
+			fecha: fechaNorm,
 			hora_inicio,
 			hora_fin,
 			id_eco: id_eco || null,
@@ -184,6 +186,7 @@ const createDisponibilidadBatchController = async ({
 				err.code = "INVALID_INPUT";
 				throw err;
 			}
+			const fechaNorm = normalizeFechaForDb(fecha);
 			if (id_eco) {
 				const [ecoRows] = await conn.execute(
 					"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
@@ -203,14 +206,14 @@ const createDisponibilidadBatchController = async ({
            AND NOT (hora_fin <= ? OR hora_inicio >= ?)
            AND estado IN (0, 1, 4)
          LIMIT 1`,
-				[id_especialista, fecha, hora_inicio, hora_fin],
+				[id_especialista, fechaNorm, hora_inicio, hora_fin],
 			);
 			if (overlapRows.length) {
 				const existing = overlapRows[0];
 				const sameEco = (existing.id_eco ?? null) === (id_eco ?? null);
 				if (existing.estado === 4 || sameEco) {
 					const err = new Error(
-						`Bloque se solapa con otro existente: ${fecha} ${hora_inicio}`,
+						`Bloque se solapa con otro existente: ${fechaNorm} ${hora_inicio}`,
 					);
 					err.code = "OVERLAP";
 					throw err;
@@ -224,7 +227,7 @@ const createDisponibilidadBatchController = async ({
 				[
 					id_disponibilidad,
 					id_especialista,
-					fecha,
+					fechaNorm,
 					hora_inicio,
 					hora_fin,
 					id_eco || null,
@@ -852,6 +855,110 @@ const approveDisponibilidadPorCriteriosController = async ({
 	return approveDisponibilidadBatchController({ ids, aprobado_por });
 };
 
+/**
+ * Elimina disponibilidades con fecha anterior a hoy que no tengan cita asignada.
+ * Sirve para limpiar bloques pasados (pendientes, aprobados, cancelados, rechazados).
+ * @returns {{ eliminados: number, ids: string[] }}
+ */
+const deleteDisponibilidadPasadaController = async () => {
+	const conn = await pool.getConnection();
+	try {
+		const [idsRows] = await conn.execute(
+			`SELECT d.id_disponibilidad
+       FROM disponibilidad d
+       LEFT JOIN cita c ON c.id_disponibilidad = d.id_disponibilidad
+       WHERE c.id_cita IS NULL AND d.fecha < CURDATE()`,
+		);
+		const ids = idsRows.map((r) => r.id_disponibilidad);
+		if (ids.length === 0) {
+			return { eliminados: 0, ids: [] };
+		}
+		const placeholders = ids.map(() => "?").join(", ");
+		await conn.execute(
+			`DELETE FROM disponibilidad WHERE id_disponibilidad IN (${placeholders})`,
+			ids,
+		);
+		return { eliminados: ids.length, ids };
+	} finally {
+		conn.release();
+	}
+};
+
+/**
+ * Elimina por criterios (id_especialista, fecha_desde, fecha_hasta, hora_desde, hora_hasta)
+ * solo las que NO tienen cita asignada. Reutiliza la lógica de filtros de aprobación.
+ * @returns {{ eliminados: number, ids: string[], con_cita_omitidos: number }}
+ */
+const deleteDisponibilidadPorCriteriosController = async ({
+	id_especialista,
+	fecha_desde,
+	fecha_hasta,
+	hora_desde,
+	hora_hasta,
+}) => {
+	if (
+		!id_especialista &&
+		!fecha_desde &&
+		!fecha_hasta &&
+		!normalizeHora(hora_desde) &&
+		!normalizeHora(hora_hasta)
+	) {
+		const err = new Error(
+			"Debe indicar al menos un criterio: id_especialista, fecha_desde, fecha_hasta, hora_desde o hora_hasta",
+		);
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const conditions = ["c.id_cita IS NULL"];
+	const params = [];
+	if (id_especialista) {
+		conditions.push("d.id_especialista = ?");
+		params.push(id_especialista);
+	}
+	if (fecha_desde) {
+		conditions.push("d.fecha >= ?");
+		params.push(fecha_desde);
+	}
+	if (fecha_hasta) {
+		conditions.push("d.fecha <= ?");
+		params.push(fecha_hasta);
+	}
+	const horaDesdeNorm = normalizeHora(hora_desde);
+	if (horaDesdeNorm) {
+		conditions.push("d.hora_inicio >= ?");
+		params.push(horaDesdeNorm);
+	}
+	const horaHastaNorm = normalizeHora(hora_hasta);
+	if (horaHastaNorm) {
+		conditions.push("d.hora_fin <= ?");
+		params.push(horaHastaNorm);
+	}
+	const whereClause = conditions.join(" AND ");
+	const sql = `
+    SELECT d.id_disponibilidad
+    FROM disponibilidad d
+    LEFT JOIN cita c ON c.id_disponibilidad = d.id_disponibilidad
+    WHERE ${whereClause}
+    ORDER BY d.fecha ASC, d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, params);
+	const ids = rows.map((r) => r.id_disponibilidad);
+	if (ids.length === 0) {
+		return { eliminados: 0, ids: [], con_cita_omitidos: 0 };
+	}
+	const conn = await pool.getConnection();
+	try {
+		const placeholders = ids.map(() => "?").join(", ");
+		await conn.execute(
+			`DELETE FROM disponibilidad WHERE id_disponibilidad IN (${placeholders})`,
+			ids,
+		);
+		return { eliminados: ids.length, ids, con_cita_omitidos: 0 };
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	createDisponibilidadController,
 	createDisponibilidadBatchController,
@@ -870,4 +977,6 @@ module.exports = {
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
+	deleteDisponibilidadPasadaController,
+	deleteDisponibilidadPorCriteriosController,
 };

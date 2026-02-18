@@ -2,12 +2,12 @@ import { useState } from "react";
 import type { CitaPacienteCompleta } from "../citasApi";
 import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import PDFViewerModal from "../../especialista/components/PDFViewerModal";
+import { formatFechaLocal } from "../../../shared";
 
 type HistorialPacienteModalProps = {
 	citas: CitaPacienteCompleta[];
 	/** Cita desde la que se abrió "Ver historial"; se marcará como atendida al abrir si aplica */
 	citaParaMarcarAtendida: CitaPacienteCompleta | null;
-	formatFecha: (value: string | null) => string;
 	formatHora: (value: string) => string;
 	onClose: () => void;
 };
@@ -39,7 +39,6 @@ const parseResultadoArchivos = (value: string | null): string[] => {
 const HistorialPacienteModal = ({
 	citas,
 	citaParaMarcarAtendida: _citaParaMarcarAtendida,
-	formatFecha,
 	formatHora,
 	onClose,
 }: HistorialPacienteModalProps) => {
@@ -88,7 +87,7 @@ const HistorialPacienteModal = ({
 										const fullName = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim();
 										return (
 											<tr key={cita.id_cita} className="border-b border-mist/70">
-												<td className="px-3 py-3">{formatFecha(cita.fecha_cita)}</td>
+												<td className="px-3 py-3">{formatFechaLocal(cita.fecha_cita)}</td>
 												<td className="px-3 py-3">{formatHora(cita.hora_cita)}</td>
 												<td className="px-3 py-3">{cita.eco_nombre}</td>
 												<td className="px-3 py-3">

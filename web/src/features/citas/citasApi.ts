@@ -209,8 +209,7 @@ const citasApi = baseApi.injectEndpoints({
 		}),
 		getMisCitasCompletas: builder.query<CitaPacienteCompleta[], void>({
 			query: () => "/citas/mis-citas",
-			transformResponse: (response: { ok: boolean; data: CitaPacienteCompleta[] }) =>
-				response.data ?? [],
+			transformResponse: (response: { ok: boolean; data: CitaPacienteCompleta[] }) => response.data ?? [],
 			providesTags: ["Citas"],
 		}),
 		marcarAtendida: builder.mutation<{ id_cita: string; estado_cita: number }, string>({

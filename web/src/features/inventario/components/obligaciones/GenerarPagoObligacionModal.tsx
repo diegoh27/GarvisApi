@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { Obligacion } from "../../api";
 import { useRegistrarPagoObligacionMutation } from "../../api";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 
 interface GenerarPagoObligacionModalProps {
@@ -43,7 +44,7 @@ export default function GenerarPagoObligacionModal({
 }: GenerarPagoObligacionModalProps) {
   const [registrarPago, { isLoading }] = useRegistrarPagoObligacionMutation();
   const [formData, setFormData] = useState({
-    fecha_pago: new Date().toISOString().split("T")[0],
+    fecha_pago: toDateKey(new Date()),
     monto: "",
     fecha_proxima_vencimiento: "",
   });
@@ -53,7 +54,7 @@ export default function GenerarPagoObligacionModal({
 
   useEffect(() => {
     if (isOpen && obligacion) {
-      const hoy = new Date().toISOString().split("T")[0];
+      const hoy = toDateKey(new Date());
       setFormData((prev) => ({
         ...prev,
         fecha_pago: hoy,
@@ -110,7 +111,7 @@ export default function GenerarPagoObligacionModal({
       setSuccess("Pago registrado exitosamente");
       setTimeout(() => {
         setFormData({
-          fecha_pago: new Date().toISOString().split("T")[0],
+          fecha_pago: toDateKey(new Date()),
           monto: "",
           fecha_proxima_vencimiento: "",
         });
@@ -121,7 +122,7 @@ export default function GenerarPagoObligacionModal({
     }
   };
 
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = toDateKey(new Date());
   const fechaVenc = obligacion?.fecha_vencimiento
     ? obligacion.fecha_vencimiento.includes("T")
       ? obligacion.fecha_vencimiento.split("T")[0]

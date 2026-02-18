@@ -15,6 +15,7 @@ import EditarPagoNominaModal from "../components/nomina/EditarPagoNominaModal";
 import HistorialPagosTable from "../components/HistorialPagosTable";
 import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
+import { formatFechaLocal } from "../../../shared";
 import type { Empleado, NominaPago } from "../api/nominaApi";
 
 export default function NominaPage() {
@@ -278,9 +279,7 @@ export default function NominaPage() {
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: Empleado) =>
-        row.proximo_pago
-          ? new Date(row.proximo_pago).toLocaleDateString("es-ES")
-          : "-",
+        row.proximo_pago ? formatFechaLocal(row.proximo_pago) : "-",
     },
     {
       key: "estatus_pago",

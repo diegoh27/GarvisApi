@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCreateContratoMutation } from "../../api/alquilerApi";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 
 interface CrearContratoModalProps {
@@ -35,7 +36,7 @@ const INITIAL_FORM_STATE: ContratoFormState = {
   descripcion: "",
   periodo: "Mensual",
   monto: 0,
-  fecha_vencimiento: new Date().toISOString().split("T")[0],
+  fecha_vencimiento: toDateKey(new Date()),
   estado: "Pendiente",
 };
 

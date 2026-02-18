@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { UserPlus, ChevronLeft, ChevronRight, Search, Pencil, Trash2 } from "lucide-react";
 import PageShell from "../../../shared/components/PageShell";
-import { EmailVerificationBanner, useAuth } from "../../../shared";
+import { EmailVerificationBanner, useAuth, formatFechaLocal } from "../../../shared";
 import {
 	useGetRepresentadosQuery,
 	useGetParentescosQuery,
@@ -17,18 +17,7 @@ const GENEROS: Array<"Masculino" | "Femenino"> = [
 	"Masculino",
 	"Femenino",
 ];
-
-const formatFecha = (value: string) => {
-	if (!value) return "—";
-	const dateKey = value.includes("T") ? value.split("T")[0] : value.slice(0, 10);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (value: string) => (value ? formatFechaLocal(value) : "—");
 
 const RepresentadosPage = () => {
 	const [page, setPage] = useState(1);

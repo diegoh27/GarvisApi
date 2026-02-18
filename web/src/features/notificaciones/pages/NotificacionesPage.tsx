@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { baseApi } from "../../../app/api/baseApi";
-import { EmailVerificationBanner, PageShell } from "../../../shared";
+import { EmailVerificationBanner, PageShell, formatFechaHoraLocal } from "../../../shared";
 import { Bell, CheckCircle, FileCheck, FileText, MailOpen } from "lucide-react";
 import {
   type Notificacion,
@@ -9,18 +9,7 @@ import {
   useMarkNotificacionLeidaMutation,
 } from "../notificacionesApi";
 
-const formatFecha = (value: string) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("es-VE", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
+const formatFecha = (value: string) => formatFechaHoraLocal(value);
 
 const getNotificacionMeta = (
   n: Notificacion

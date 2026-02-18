@@ -72,6 +72,15 @@ const createPacienteHandler = async (req, res) => {
 				message: telefonoResult.message,
 			});
 		}
+
+		const fechaNacPac = new Date(fecha_nacimiento);
+		if (!Number.isNaN(fechaNacPac.getTime()) && fechaNacPac.getTime() > Date.now()) {
+			return res.status(400).json({
+				ok: false,
+				message: "La fecha de nacimiento no puede ser futura",
+			});
+		}
+
 		let contactoTelefonoVal = contacto_emergencia_telefono;
 		if (contacto_emergencia_telefono && String(contacto_emergencia_telefono).trim()) {
 			const ctResult = validarTelefono(contacto_emergencia_telefono, { required: false });

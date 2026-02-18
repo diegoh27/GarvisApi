@@ -64,6 +64,14 @@ const createModeradorHandler = async (req, res) => {
 			});
 		}
 
+		const fechaNacMod = new Date(fecha_nacimiento);
+		if (!Number.isNaN(fechaNacMod.getTime()) && fechaNacMod.getTime() > Date.now()) {
+			return res.status(400).json({
+				ok: false,
+				message: "La fecha de nacimiento no puede ser futura",
+			});
+		}
+
 		const created = await createModeradorController({
 			nombre,
 			apellido,

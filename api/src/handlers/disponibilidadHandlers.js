@@ -16,6 +16,8 @@ const {
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
+	deleteDisponibilidadPasadaController,
+	deleteDisponibilidadPorCriteriosController,
 } = require("../controllers/disponibilidadControllers");
 
 const parseTimeToMinutes = (timeStr) => {
@@ -608,6 +610,69 @@ const listDisponibilidadesByEspecialistaHandler = async (req, res) => {
 	}
 };
 
+const deleteDisponibilidadPasadaHandler = async (req, res) => {
+	try {
+		const result = await deleteDisponibilidadPasadaController();
+		return res.status(200).json({
+			ok: true,
+			message:
+				result.eliminados === 0
+					? "No hay disponibilidades pasadas sin citas para eliminar"
+					: `Se eliminaron ${result.eliminados} bloque${
+							result.eliminados !== 1 ? "s" : ""
+						} de disponibilidad pasada (sin citas asignadas)`,
+			data: result,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const deleteDisponibilidadPorCriteriosHandler = async (req, res) => {
+	try {
+		const {
+			id_especialista,
+			fecha_desde,
+			fecha_hasta,
+			hora_desde,
+			hora_hasta,
+		} = req.body;
+		const result = await deleteDisponibilidadPorCriteriosController({
+			id_especialista: id_especialista || undefined,
+			fecha_desde: fecha_desde || undefined,
+			fecha_hasta: fecha_hasta || undefined,
+			hora_desde: hora_desde || undefined,
+			hora_hasta: hora_hasta || undefined,
+		});
+		return res.status(200).json({
+			ok: true,
+			message:
+				result.eliminados === 0
+					? "No hay bloques que coincidan con los criterios (o todos tienen citas asignadas)"
+					: `Se eliminaron ${result.eliminados} bloque${
+							result.eliminados !== 1 ? "s" : ""
+						} de disponibilidad`,
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "INVALID_INPUT") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	createDisponibilidadHandler,
 	createDisponibilidadBatchHandler,
@@ -625,4 +690,6 @@ module.exports = {
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,
 	listDisponibilidadesByEspecialistaHandler,
+	deleteDisponibilidadPasadaHandler,
+	deleteDisponibilidadPorCriteriosHandler,
 };

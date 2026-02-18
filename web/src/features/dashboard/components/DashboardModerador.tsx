@@ -6,6 +6,7 @@ import { useGetCitasSinResultadoQuery } from "../../resultados/resultadosApi";
 import { useGetDisponibilidadPendientesQuery } from "../../disponibilidad/disponibilidadApi";
 import { useGetCitasByFechaQuery } from "../../moderadores/moderadoresApi";
 import { getTodayKey, formatHora, buildDateTime } from "../utils/dateUtils";
+import { formatFechaHoraLocal } from "../../../shared";
 import DaySummaryCard from "./DaySummaryCard";
 import QuickAlertsCard from "./QuickAlertsCard";
 import RecentNotificationsCard from "./RecentNotificationsCard";
@@ -22,18 +23,7 @@ import {
 	ClipboardCheck,
 } from "lucide-react";
 
-const formatFecha = (value: string) => {
-	if (!value) return "";
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return value;
-	return date.toLocaleDateString("es-VE", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const formatFecha = (value: string) => formatFechaHoraLocal(value);
 
 const getSaludo = () => {
 	const h = new Date().getHours();

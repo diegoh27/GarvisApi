@@ -44,6 +44,7 @@ const CrearRepresentadoModal = ({
 			else if (form.cedula.length > 20) next.cedula = "Máximo 20 caracteres";
 		}
 		if (!form.fecha_nacimiento) next.fecha_nacimiento = "La fecha de nacimiento es requerida";
+		else if (new Date(form.fecha_nacimiento).getTime() > new Date().getTime()) next.fecha_nacimiento = "La fecha de nacimiento no puede ser futura";
 		if (!form.genero) next.genero = "El género es requerido";
 		else if (!GENEROS.includes(form.genero)) next.genero = "Género no válido";
 		if (form.parentesco.length > 40) next.parentesco = "Máximo 40 caracteres";

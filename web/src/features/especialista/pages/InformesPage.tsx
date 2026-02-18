@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
-import { useAuth } from "../../../shared";
+import { useAuth, formatFechaLocal } from "../../../shared";
 import { useLocation } from "react-router-dom";
 import { useGetMisCitasQuery } from "../especialistaApi";
 import { useGetMisInformesQuery } from "../informesApi";
@@ -21,16 +21,7 @@ const getDateKey = (value: string | Date): string => {
 	return value.includes("T") ? value.split("T")[0] : value;
 };
 
-const formatFecha = (value: string | Date) => {
-	const dateKey = getDateKey(value);
-	const date = new Date(`${dateKey}T00:00:00`);
-	if (Number.isNaN(date.getTime())) return String(value);
-	return date.toLocaleDateString("es-VE", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	});
-};
+const formatFecha = (value: string | Date) => formatFechaLocal(getDateKey(value) || String(value));
 
 const formatHora = (value: string) => {
 	const [hourValue, minuteValue] = value.split(":");

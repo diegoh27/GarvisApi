@@ -12,13 +12,7 @@ import {
 } from "lucide-react";
 import RecentNotificationsCard from "./RecentNotificationsCard";
 import { getTodayKey, toDateKey, formatHora, buildDateTime } from "../utils/dateUtils";
-
-const formatDateLabel = (value: string) =>
-	new Date(value.slice(0, 10)).toLocaleDateString("es-ES", {
-		weekday: "long",
-		day: "numeric",
-		month: "long",
-	});
+import { formatFechaConDiaSinAnio } from "../../../shared";
 
 const getSaludo = () => {
 	const h = new Date().getHours();
@@ -127,7 +121,7 @@ const DashboardPaciente = () => {
 									{proximaCita.especialista_nombre} {proximaCita.especialista_apellido}
 								</p>
 								<p className="mt-2 text-sm text-brand-800">
-									{formatDateLabel(proximaCita.fecha_cita)} · {formatHora(proximaCita.hora_cita)}
+									{formatFechaConDiaSinAnio(proximaCita.fecha_cita)} · {formatHora(proximaCita.hora_cita)}
 								</p>
 								<div className="mt-2 flex flex-wrap items-center gap-2">
 									{(() => {

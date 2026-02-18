@@ -12,7 +12,7 @@ import { useGetEcosQuery } from "../../ecos/ecosApi";
 import { useAprobarDisponibilidadMutation } from "../../disponibilidad/disponibilidadApi";
 import { isSlotAtLeast2HoursFromNow } from "../../disponibilidad/utils/dateUtils";
 import { useGetDolarOficialQuery } from "../../dolar/dolarApi";
-import { FormularioPago, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
+import { FormularioPago, formatFechaLocal, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
 import { getToken } from "../../../shared/utils/token";
 import Swal from "sweetalert2";
 import type { Eco } from "../../ecos/ecosApi";
@@ -33,25 +33,7 @@ type DisponibilidadItem = {
 	eco_nombre?: string | null;
 };
 
-const formatFecha = (fecha: string) => {
-	if (!fecha) return "";
-	let fechaStr = fecha;
-	if (fecha.includes("T") || fecha.includes("Z")) {
-		fechaStr = fecha.split("T")[0].split("Z")[0];
-	}
-	let date = new Date(fecha);
-	if (Number.isNaN(date.getTime())) {
-		date = new Date(`${fechaStr}T00:00:00`);
-	}
-	if (Number.isNaN(date.getTime())) {
-		return fecha;
-	}
-	return date.toLocaleDateString("es-VE", {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	});
-};
+const formatFecha = (fecha: string) => formatFechaLocal(fecha);
 
 const formatHora = (hora: string) => {
 	if (!hora) return "";

@@ -4,6 +4,7 @@ import {
   useRegistrarPagoAlquilerMutation,
   useUpdateContratoMutation,
 } from "../../api/alquilerApi";
+import { toDateKey } from "../../../../shared";
 import { MONTO_MIN, MONTO_MAX, sanitizeMonto, validarMonto } from "../../utils/validation";
 import type {
   AlquilerContrato,
@@ -28,8 +29,8 @@ export default function RegistrarPagoAlquilerModal({
   onSuccess,
 }: RegistrarPagoAlquilerModalProps) {
   const [formData, setFormData] = useState<RegistrarPagoAlquilerPayload>({
-    fecha_pago: new Date().toISOString().split("T")[0],
-    fecha_proximo_pago: new Date().toISOString().split("T")[0],
+    fecha_pago: toDateKey(new Date()),
+    fecha_proximo_pago: toDateKey(new Date()),
     monto: 0,
     metodo: "Transferencia",
     referencia: "",
@@ -149,8 +150,8 @@ export default function RegistrarPagoAlquilerModal({
         },
       }).unwrap();
       setFormData({
-        fecha_pago: new Date().toISOString().split("T")[0],
-        fecha_proximo_pago: new Date().toISOString().split("T")[0],
+        fecha_pago: toDateKey(new Date()),
+        fecha_proximo_pago: toDateKey(new Date()),
         monto: 0,
         metodo: "Transferencia",
         referencia: "",

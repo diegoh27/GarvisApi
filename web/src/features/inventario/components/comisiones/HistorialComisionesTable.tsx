@@ -1,4 +1,5 @@
 import GenericTable from "../GenericTable";
+import { formatFechaCortaLocal } from "../../../../shared";
 import { Trash2 } from "lucide-react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 
@@ -56,13 +57,7 @@ export default function HistorialComisionesTable({
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: EspecialistaComision) =>
-        row.fecha_cita
-          ? new Date(row.fecha_cita).toLocaleDateString("es-ES", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-          : "-",
+        row.fecha_cita ? formatFechaCortaLocal(row.fecha_cita) : "-",
     },
     {
       key: "fecha_pago",
@@ -71,13 +66,7 @@ export default function HistorialComisionesTable({
         "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
       render: (row: EspecialistaComision) =>
-        row.fecha_pago
-          ? new Date(row.fecha_pago).toLocaleDateString("es-ES", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })
-          : "-",
+        row.fecha_pago ? formatFechaCortaLocal(row.fecha_pago) : "-",
     },
     {
       key: "monto",
