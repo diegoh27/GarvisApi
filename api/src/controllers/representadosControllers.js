@@ -51,7 +51,7 @@ const createTitularMinimalMostrador = async (cedula, nombre, apellido, genero, f
 	}
 
 	const cedulaSoloNum = cedulaTrim.replace(/\D/g, "");
-	const correo = `mostrador-titular-${cedulaSoloNum}@garvis.local`;
+	const correo = `mostrador-titular-${cedulaSoloNum}@garbis.local`;
 	const telefono = `MOSTRADOR-${cedulaSoloNum}`;
 	const rif = `J${cedulaSoloNum}`;
 
