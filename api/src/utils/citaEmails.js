@@ -11,9 +11,14 @@ const {
 	getCitaReservadaEspecialistaEmailHtml,
 	getCitaReservadaEspecialistaEmailText,
 } = require("./htmlEmail");
-const { createNotificacionController } = require("../controllers/notificacionesControllers");
+const {
+	createNotificacionController,
+} = require("../controllers/notificacionesControllers");
 
-const MOSTRADOR_CORREO = "mostrador@garvis.local";
+const MOSTRADOR_CORREO = "mostrador@garbis.local";
+/** Considera mostrador tanto el correo nuevo (garbis) como el antiguo (garvis) para no enviar emails a ese usuario. */
+const esCorreoMostrador = (correo) =>
+	correo === MOSTRADOR_CORREO || correo === "mostrador@garvis.local";
 
 const formatHora = (hora) => {
 	if (!hora) return "—";
@@ -28,11 +33,27 @@ const formatHora = (hora) => {
 };
 
 const DIAS_ES = [
-	"domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado",
+	"domingo",
+	"lunes",
+	"martes",
+	"miércoles",
+	"jueves",
+	"viernes",
+	"sábado",
 ];
 const MESES_ES = [
-	"enero", "febrero", "marzo", "abril", "mayo", "junio",
-	"julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+	"enero",
+	"febrero",
+	"marzo",
+	"abril",
+	"mayo",
+	"junio",
+	"julio",
+	"agosto",
+	"septiembre",
+	"octubre",
+	"noviembre",
+	"diciembre",
 ];
 
 const formatFecha = (fecha) => {
@@ -55,7 +76,8 @@ const formatFecha = (fecha) => {
 	const dateObj = new Date(y, m, d);
 	const diaSemana = DIAS_ES[dateObj.getDay()];
 	const mes = MESES_ES[m];
-	const diaCapitalizado = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+	const diaCapitalizado =
+		diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
 	return `${diaCapitalizado}, ${d} de ${mes} de ${y}`;
 };
 
@@ -114,7 +136,11 @@ const sendCitaReservadaEmailsAndNotifications = async ({
 				: "Paciente";
 
 		// Email y notificación al paciente (si no es mostrador)
-		if (enviarAPaciente && r.paciente_correo && r.paciente_correo !== MOSTRADOR_CORREO) {
+		if (
+			enviarAPaciente &&
+			r.paciente_correo &&
+			!esCorreoMostrador(r.paciente_correo)
+		) {
 			const pacienteData = {
 				nombrePaciente: pacienteNombre,
 				fechaCita,
@@ -149,7 +175,9 @@ const sendCitaReservadaEmailsAndNotifications = async ({
 				await createNotificacionController({
 					id_usuario: id_paciente,
 					titulo: "Cita reservada",
-					mensaje: truncarMensaje(`Tu cita con ${especialistaNombre} para ${ecoNombre} el ${fechaCita} a las ${horaCita} ha sido reservada.`),
+					mensaje: truncarMensaje(
+						`Tu cita con ${especialistaNombre} para ${ecoNombre} el ${fechaCita} a las ${horaCita} ha sido reservada.`,
+					),
 					tipo: "cita",
 				});
 			} catch (notifErr) {
@@ -179,18 +207,26 @@ const sendCitaReservadaEmailsAndNotifications = async ({
 					text,
 				});
 			} catch (emailErr) {
-				console.error("Error enviando correo de cita al especialista:", emailErr);
+				console.error(
+					"Error enviando correo de cita al especialista:",
+					emailErr,
+				);
 			}
 
 			try {
 				await createNotificacionController({
 					id_usuario: id_especialista,
 					titulo: "Nueva cita asignada",
-					mensaje: truncarMensaje(`Paciente: ${pacienteNombre} · Eco: ${ecoNombre} · ${fechaCita} ${horaCita}`),
+					mensaje: truncarMensaje(
+						`Paciente: ${pacienteNombre} · Eco: ${ecoNombre} · ${fechaCita} ${horaCita}`,
+					),
 					tipo: "cita",
 				});
 			} catch (notifErr) {
-				console.error("Error creando notificación para especialista:", notifErr);
+				console.error(
+					"Error creando notificación para especialista:",
+					notifErr,
+				);
 			}
 		}
 
@@ -201,7 +237,9 @@ const sendCitaReservadaEmailsAndNotifications = async ({
          INNER JOIN roles r ON r.id_rol = u.id_rol
          WHERE r.nombre IN ('admin', 'moderador') AND u.activo = 1`,
 			);
-			const mensaje = truncarMensaje(`Paciente: ${pacienteNombre} · Especialista: ${especialistaNombre} · ${ecoNombre} · ${fechaCita} ${horaCita}. Revisa pagos pendientes.`);
+			const mensaje = truncarMensaje(
+				`Paciente: ${pacienteNombre} · Especialista: ${especialistaNombre} · ${ecoNombre} · ${fechaCita} ${horaCita}. Revisa pagos pendientes.`,
+			);
 			for (const row of adminModRows) {
 				try {
 					await createNotificacionController({

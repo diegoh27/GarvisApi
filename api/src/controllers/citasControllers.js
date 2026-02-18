@@ -11,7 +11,7 @@ const {
 const { createNotificacionController } = require("./notificacionesControllers");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
-const MOSTRADOR_CORREO = "mostrador@garvis.local";
+const MOSTRADOR_CORREO = "mostrador@garbis.local";
 const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
 const MOSTRADOR_RIF = "J0000000000";
 

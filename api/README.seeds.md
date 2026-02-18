@@ -54,22 +54,22 @@ Se crean (si no existen):
 Contraseña por defecto para todos: `test123`
 
 ### Administradores
-- `admin1@garvis.com`
-- `admin2@garvis.com`
+- `admin1@garbis.com`
+- `admin2@garbis.com`
 
 Nota: en seed actual, estos dos se crean con `genero = "Otro"`.
 
 ### Moderadores
-- `moderador1@garvis.com`
-- `moderador2@garvis.com`
+- `moderador1@garbis.com`
+- `moderador2@garbis.com`
 
 ### Pacientes
-- `paciente1@garvis.com`
-- `paciente2@garvis.com`
+- `paciente1@garbis.com`
+- `paciente2@garbis.com`
 
 ### Especialistas
-- `especialista1@garvis.com`
-- `especialista2@garvis.com`
+- `especialista1@garbis.com`
+- `especialista2@garbis.com`
 
 ## 3) Especialidades y ecos
 - Especialidades:
