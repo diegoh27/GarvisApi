@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getHomeByRole, PasswordField, useAuth } from "../../../shared";
@@ -13,7 +13,40 @@ const AuthLoginForm = () => {
 	const [correo, setCorreo] = useState("");
 	const [contrasena, setContrasena] = useState("");
 	const [localError, setLocalError] = useState("");
+	const [lockoutSecs, setLockoutSecs] = useState(0);
+	const lockoutInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+	const wasLockedRef = useRef(false);
 	const isLoading = status === "loading";
+	const isLocked = lockoutSecs > 0;
+
+	useEffect(() => {
+		return () => {
+			if (lockoutInterval.current) clearInterval(lockoutInterval.current);
+		};
+	}, []);
+
+	// Limpia el error del store cuando el timeout termina
+	useEffect(() => {
+		if (wasLockedRef.current && !isLocked) {
+			resetError();
+		}
+		wasLockedRef.current = isLocked;
+	}, [isLocked, resetError]);
+
+	const startLockoutCountdown = (secs: number) => {
+		if (lockoutInterval.current) clearInterval(lockoutInterval.current);
+		setLockoutSecs(secs);
+		lockoutInterval.current = setInterval(() => {
+			setLockoutSecs((prev) => {
+				if (prev <= 1) {
+					clearInterval(lockoutInterval.current!);
+					lockoutInterval.current = null;
+					return 0;
+				}
+				return prev - 1;
+			});
+		}, 1000);
+	};
 
 	useEffect(() => {
 		const verified = searchParams.get("verified");
@@ -58,6 +91,8 @@ const AuthLoginForm = () => {
 		setLocalError("");
 		resetError();
 
+		if (isLocked) return;
+
 		if (!correo || !contrasena) {
 			setLocalError("Completa correo y contraseña.");
 			return;
@@ -66,8 +101,12 @@ const AuthLoginForm = () => {
 		try {
 			const result = await login({ correo, contrasena });
 			navigate(getHomeByRole(result.user?.rol), { replace: true });
-		} catch {
-			// el error ya se guarda en el store
+		} catch (err: unknown) {
+			const apiErr = err as { status?: number; data?: { retryAfterSecs?: number } };
+			const retrySecs = apiErr?.data?.retryAfterSecs;
+			if (retrySecs && retrySecs > 0) {
+				startLockoutCountdown(retrySecs);
+			}
 		}
 	};
 
@@ -118,12 +157,18 @@ const AuthLoginForm = () => {
 				{localError ? (
 					<p className="text-sm text-rose-500">{localError}</p>
 				) : null}
-				{error ? <p className="text-sm text-rose-500">{error}</p> : null}
+				{error && !isLocked ? <p className="text-sm text-rose-500">{error}</p> : null}
+				{isLocked && (
+					<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+						Demasiados intentos fallidos. Podrás intentarlo de nuevo en{" "}
+						<span className="font-bold">{lockoutSecs}s</span>.
+					</div>
+				)}
 				<button
-					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-70"
-					disabled={isLoading}
+					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+					disabled={isLoading || isLocked}
 				>
-					{isLoading ? "Ingresando..." : "Iniciar sesión"}
+					{isLoading ? "Ingresando..." : isLocked ? `Bloqueado (${lockoutSecs}s)` : "Iniciar sesión"}
 				</button>
 				<Link to="/auth/forgot" className="text-sm font-semibold text-emerald-700">
 					Olvidé mi contraseña

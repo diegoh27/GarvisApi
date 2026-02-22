@@ -13,6 +13,50 @@ const { validarTelefono } = require("../utils/validacionTelefono");
 const wantsHtml = (req) =>
 	req.headers.accept && req.headers.accept.includes("text/html");
 
+const LOGIN_MAX_ATTEMPTS = 3;
+const LOGIN_LOCKOUT_MS = 60 * 1000; // 1 minuto
+
+// Mapa en memoria: clave = correo, valor = { attempts, lockedUntil }
+const loginAttempts = new Map();
+
+const getLoginKey = (correo) => correo.toLowerCase().trim();
+
+const checkLoginLock = (correo) => {
+	const key = getLoginKey(correo);
+	const entry = loginAttempts.get(key);
+	if (!entry) return null;
+
+	if (entry.lockedUntil && Date.now() < entry.lockedUntil) {
+		const remainingMs = entry.lockedUntil - Date.now();
+		const remainingSecs = Math.ceil(remainingMs / 1000);
+		return { locked: true, remainingSecs };
+	}
+
+	// Si el bloqueo expiró, limpiar
+	if (entry.lockedUntil && Date.now() >= entry.lockedUntil) {
+		loginAttempts.delete(key);
+	}
+
+	return null;
+};
+
+const registerFailedAttempt = (correo) => {
+	const key = getLoginKey(correo);
+	const entry = loginAttempts.get(key) || { attempts: 0, lockedUntil: null };
+	entry.attempts += 1;
+
+	if (entry.attempts >= LOGIN_MAX_ATTEMPTS) {
+		entry.lockedUntil = Date.now() + LOGIN_LOCKOUT_MS;
+	}
+
+	loginAttempts.set(key, entry);
+	return entry;
+};
+
+const clearLoginAttempts = (correo) => {
+	loginAttempts.delete(getLoginKey(correo));
+};
+
 const registerPacienteHandler = async (req, res) => {
 	try {
 		const {
@@ -174,7 +218,21 @@ const loginHandler = async (req, res) => {
 			});
 		}
 
+		// Verificar si la cuenta está bloqueada por intentos fallidos
+		const lockStatus = checkLoginLock(correo);
+		if (lockStatus?.locked) {
+			return res.status(429).json({
+				ok: false,
+				message: `Demasiados intentos fallidos. Intenta de nuevo en ${lockStatus.remainingSecs} segundo(s).`,
+				retryAfterSecs: lockStatus.remainingSecs,
+			});
+		}
+
 		const result = await loginUser({ correo, contrasena });
+
+		// Login exitoso: limpiar intentos fallidos
+		clearLoginAttempts(correo);
+
 		return res.status(200).json({
 			ok: true,
 			message: "Login exitoso",
@@ -182,9 +240,22 @@ const loginHandler = async (req, res) => {
 		});
 	} catch (err) {
 		if (err?.code === "INVALID_CREDENTIALS") {
+			const entry = registerFailedAttempt(req.body?.correo || "");
+			const remaining = LOGIN_MAX_ATTEMPTS - entry.attempts;
+
+			if (entry.lockedUntil) {
+				const remainingSecs = Math.ceil((entry.lockedUntil - Date.now()) / 1000);
+				return res.status(429).json({
+					ok: false,
+					message: `Demasiados intentos fallidos. Intenta de nuevo en ${remainingSecs} segundo(s).`,
+					retryAfterSecs: remainingSecs,
+				});
+			}
+
 			return res.status(401).json({
 				ok: false,
-				message: "Credenciales inválidas",
+				message: `Credenciales inválidas. Te quedan ${remaining} intento(s) antes del bloqueo temporal.`,
+				attemptsLeft: remaining,
 			});
 		}
 		if (err?.code === "EMAIL_NOT_VERIFIED") {
