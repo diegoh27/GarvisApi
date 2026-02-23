@@ -1,0 +1,401 @@
+const {
+	listProductosController,
+	createProductoController,
+	getProductoController,
+	updateProductoController,
+	registrarCompraProductoController,
+	updateCompraProductoController,
+	deleteCompraProductoController,
+	listComprasProductoController,
+	listHistorialComprasController,
+	registrarAjusteStockController,
+	listAjustesProductoController,
+	listHistorialAjustesController,
+} = require("../controllers/productosControllers");
+
+// ==========================================
+// PRODUCTOS
+// ==========================================
+
+const listProductosHandler = async (req, res) => {
+	try {
+		const data = await listProductosController();
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar productos",
+		});
+	}
+};
+
+const createProductoHandler = async (req, res) => {
+	try {
+		const { nombre, stock_actual, activo } = req.body;
+		if (!nombre || typeof nombre !== "string" || !nombre.trim()) {
+			return res.status(400).json({
+				ok: false,
+				message: "El nombre es requerido",
+			});
+		}
+		const data = await createProductoController({
+			nombre: nombre.trim(),
+			stock_actual: Number(stock_actual) || 0,
+			activo: activo !== false && activo !== 0 ? 1 : 0,
+		});
+		return res.status(201).json({
+			ok: true,
+			message: "Producto creado",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "DUPLICATE_NAME") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al crear el producto",
+		});
+	}
+};
+
+const getProductoHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const data = await getProductoController(id);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "PRODUCTO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al obtener el producto",
+		});
+	}
+};
+
+const updateProductoHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const { nombre, activo } = req.body;
+
+		const data = await updateProductoController({
+			id_producto: id,
+			nombre: nombre?.trim(),
+			activo: activo !== undefined ? (activo ? 1 : 0) : undefined,
+		});
+		return res.status(200).json({
+			ok: true,
+			message: "Producto actualizado",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "PRODUCTO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "DUPLICATE_NAME") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al actualizar el producto",
+		});
+	}
+};
+
+// ==========================================
+// COMPRAS
+// ==========================================
+
+const registrarCompraProductoHandler = async (req, res) => {
+	try {
+		const { id: id_producto } = req.params;
+		const {
+			fecha_ingreso,
+			cantidad,
+			precio_unitario,
+			precio_total,
+			proveedor,
+			referencia,
+		} = req.body;
+		const id_usuario = req.user?.id;
+
+		if (!cantidad || Number(cantidad) <= 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "La cantidad debe ser mayor a 0",
+			});
+		}
+
+		if (!precio_unitario || Number(precio_unitario) < 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "El precio unitario es requerido",
+			});
+		}
+
+		if (!fecha_ingreso) {
+			return res.status(400).json({
+				ok: false,
+				message: "La fecha de ingreso es requerida",
+			});
+		}
+
+		const data = await registrarCompraProductoController({
+			id_producto,
+			fecha_ingreso,
+			cantidad: Number(cantidad),
+			precio_unitario: Number(precio_unitario),
+			precio_total:
+				precio_total !== undefined ? Number(precio_total) : undefined,
+			proveedor: proveedor || null,
+			referencia: referencia || null,
+			id_usuario,
+		});
+
+		return res.status(201).json({
+			ok: true,
+			message: "Compra registrada",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "PRODUCTO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al registrar la compra",
+		});
+	}
+};
+
+const updateCompraProductoHandler = async (req, res) => {
+	try {
+		const { idCompra } = req.params;
+		const {
+			fecha_ingreso,
+			cantidad,
+			precio_unitario,
+			precio_total,
+			proveedor,
+			referencia,
+		} = req.body;
+
+		const data = await updateCompraProductoController({
+			id_compra: idCompra,
+			fecha_ingreso,
+			cantidad: cantidad !== undefined ? Number(cantidad) : undefined,
+			precio_unitario:
+				precio_unitario !== undefined ? Number(precio_unitario) : undefined,
+			precio_total:
+				precio_total !== undefined ? Number(precio_total) : undefined,
+			proveedor,
+			referencia,
+		});
+
+		return res.status(200).json({
+			ok: true,
+			message: "Compra actualizada",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "COMPRA_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al actualizar la compra",
+		});
+	}
+};
+
+const listComprasProductoHandler = async (req, res) => {
+	try {
+		const { id: id_producto } = req.params;
+		const data = await listComprasProductoController(id_producto);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar las compras",
+		});
+	}
+};
+
+const listHistorialComprasHandler = async (req, res) => {
+	try {
+		const limit = req.query.limit ? Number(req.query.limit) : 200;
+		const data = await listHistorialComprasController({ limit });
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar el historial de compras",
+		});
+	}
+};
+
+const deleteCompraProductoHandler = async (req, res) => {
+	try {
+		const { idCompra } = req.params;
+		await deleteCompraProductoController(idCompra);
+		return res.status(200).json({
+			ok: true,
+			message: "Compra eliminada correctamente",
+		});
+	} catch (err) {
+		if (err?.code === "COMPRA_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al eliminar la compra",
+		});
+	}
+};
+
+// ==========================================
+// AJUSTES DE STOCK
+// ==========================================
+
+const registrarAjusteStockHandler = async (req, res) => {
+	try {
+		const { id: id_producto } = req.params;
+		const { stock_nuevo, motivo } = req.body;
+		const id_usuario = req.user?.id;
+
+		if (stock_nuevo === undefined || stock_nuevo === null) {
+			return res.status(400).json({
+				ok: false,
+				message: "El nuevo stock es requerido",
+			});
+		}
+
+		if (Number(stock_nuevo) < 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "El stock no puede ser negativo",
+			});
+		}
+
+		const data = await registrarAjusteStockController({
+			id_producto,
+			stock_nuevo: Number(stock_nuevo),
+			motivo: motivo || null,
+			id_usuario,
+		});
+
+		return res.status(201).json({
+			ok: true,
+			message: "Ajuste de stock registrado",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "PRODUCTO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al registrar el ajuste de stock",
+		});
+	}
+};
+
+const listAjustesProductoHandler = async (req, res) => {
+	try {
+		const { id: id_producto } = req.params;
+		const data = await listAjustesProductoController(id_producto);
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar los ajustes",
+		});
+	}
+};
+
+const listHistorialAjustesHandler = async (req, res) => {
+	try {
+		const limit = req.query.limit ? Number(req.query.limit) : 200;
+		const data = await listHistorialAjustesController({ limit });
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar el historial de ajustes",
+		});
+	}
+};
+
+module.exports = {
+	// Productos
+	listProductosHandler,
+	createProductoHandler,
+	getProductoHandler,
+	updateProductoHandler,
+	// Compras
+	registrarCompraProductoHandler,
+	updateCompraProductoHandler,
+	deleteCompraProductoHandler,
+	listComprasProductoHandler,
+	listHistorialComprasHandler,
+	// Ajustes
+	registrarAjusteStockHandler,
+	listAjustesProductoHandler,
+	listHistorialAjustesHandler,
+};
