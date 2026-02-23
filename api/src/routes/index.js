@@ -71,4 +71,7 @@ router.use("/auth", loginRoutes);
 const orthancRoutes = require("./orthancRoutes");
 router.use("/orthanc", orthancRoutes);
 
+const auditoriaRoutes = require("./auditoriaRoutes");
+router.use("/auditoria", auditoriaRoutes);
+
 module.exports = router;
