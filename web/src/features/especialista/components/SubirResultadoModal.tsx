@@ -8,6 +8,7 @@ import {
 	Stethoscope,
 	Video,
 	FolderArchive,
+	FolderOpen,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { useDispatch } from "react-redux";
@@ -97,6 +98,7 @@ const SubirResultadoModal = ({
 		new Map(),
 	);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const folderInputRef = useRef<HTMLInputElement>(null);
 
 	const dispatch = useDispatch();
 
@@ -109,20 +111,26 @@ const SubirResultadoModal = ({
 
 	const isUploading = externalUploading || uploadProgress !== null;
 
-	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const files = Array.from(e.target.files || []);
+	const addValidFiles = (files: File[]) => {
 		const validFiles = files.filter((file) => {
-			if (!isAllowedFile(file)) {
-				Swal.fire({
-					icon: "warning",
-					title: "Tipo de archivo no válido",
-					text: "Se permiten imágenes, PDF, DICOM (.dcm), videos (MP4, AVI, MOV) y comprimidos (ZIP, RAR).",
-					timer: 2500,
-				});
+			// Ignorar archivos de sistema
+			const baseName = file.name;
+			if (baseName.startsWith(".") || baseName === "Thumbs.db" || baseName === "desktop.ini") {
 				return false;
 			}
+			if (!isAllowedFile(file)) return false;
 			return true;
 		});
+
+		if (validFiles.length < files.length) {
+			const skipped = files.length - validFiles.length;
+			Swal.fire({
+				icon: "info",
+				title: "Algunos archivos omitidos",
+				text: `Se omitieron ${skipped} archivo(s) no soportados. Se permiten: imágenes, PDF, DICOM (.dcm), videos y comprimidos (ZIP, RAR).`,
+				timer: 3000,
+			});
+		}
 
 		const newPreviewUrls = new Map(previewUrls);
 		validFiles.forEach((file, idx) => {
@@ -134,7 +142,18 @@ const SubirResultadoModal = ({
 
 		setSelectedFiles((prev) => [...prev, ...validFiles]);
 		setPreviewUrls(newPreviewUrls);
+	};
+
+	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = Array.from(e.target.files || []);
+		addValidFiles(files);
 		if (fileInputRef.current) fileInputRef.current.value = "";
+	};
+
+	const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = Array.from(e.target.files || []);
+		addValidFiles(files);
+		if (folderInputRef.current) folderInputRef.current.value = "";
 	};
 
 	const removeFile = (index: number) => {
@@ -333,20 +352,50 @@ const SubirResultadoModal = ({
 
 					<div>
 						<label className="block text-sm font-semibold text-brand-900 mb-2">
-							Seleccionar archivo(s)
+							Seleccionar archivo(s) o carpeta
 						</label>
-						<input
-							ref={fileInputRef}
-							type="file"
-							multiple
-							accept=".jpg,.jpeg,.png,.webp,.tiff,.tif,.bmp,.pdf,.dcm,.dicom,.mp4,.avi,.mov,.mkv,.zip,.rar"
-							onChange={handleFileSelect}
-							disabled={isUploading}
-							className="w-full rounded-lg border border-mist bg-cloud px-3 py-2 text-sm text-brand-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
-						/>
+						<div className="flex flex-wrap gap-2">
+							<input
+								ref={fileInputRef}
+								id="file-input"
+								type="file"
+								multiple
+								accept=".jpg,.jpeg,.png,.webp,.tiff,.tif,.bmp,.pdf,.dcm,.dicom,.mp4,.avi,.mov,.mkv,.zip,.rar"
+								onChange={handleFileSelect}
+								disabled={isUploading}
+								className="hidden"
+							/>
+							<input
+								ref={(el) => {
+									folderInputRef.current = el;
+									if (el) el.setAttribute("webkitdirectory", "");
+								}}
+								id="folder-input"
+								type="file"
+								multiple
+								onChange={handleFolderSelect}
+								disabled={isUploading}
+								className="hidden"
+							/>
+							<label
+								htmlFor="file-input"
+								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
+							>
+								<Upload className="h-4 w-4" />
+								Elegir archivos
+							</label>
+							<label
+								htmlFor="folder-input"
+								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
+							>
+								<FolderOpen className="h-4 w-4" />
+								Elegir carpeta
+							</label>
+						</div>
 						<p className="text-xs text-brand-800 mt-1">
-							Imágenes (JPEG, PNG, WEBP, TIFF), PDF, DICOM (.dcm), Videos
-							(MP4, AVI, MOV, MKV), ZIP/RAR.
+							Imágenes (JPEG, PNG, WEBP, TIFF), PDF, DICOM (.dcm), Videos (MP4, AVI,
+							MOV, MKV), ZIP/RAR. La carpeta sube todos los archivos soportados sin
+							comprimir — suele ser más rápido para muchos DICOMs.
 						</p>
 					</div>
 
