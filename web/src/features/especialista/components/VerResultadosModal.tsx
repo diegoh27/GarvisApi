@@ -221,6 +221,82 @@ const VerResultadosModal = ({
 		}
 	};
 
+	const handleEliminarTodos = async () => {
+		if (!idCita) return;
+		const tieneStudy = !!studyUid;
+		const totalArchivos = archivos.length;
+		const total = (tieneStudy ? 1 : 0) + totalArchivos;
+		if (total === 0) return;
+
+		const confirmed = await Swal.fire({
+			title: "¿Eliminar todos los resultados?",
+			html:
+				total === 1
+					? "Se eliminará el resultado seleccionado. Esta acción no se puede deshacer."
+					: `Se eliminarán los <strong>${total}</strong> resultados (estudio DICOM y archivos). Esta acción no se puede deshacer.`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Sí, eliminar todos",
+			cancelButtonText: "Cancelar",
+			confirmButtonColor: "#dc2626",
+			cancelButtonColor: "#6b7280",
+		});
+		if (!confirmed.isConfirmed) return;
+
+		Swal.fire({
+			title: "Eliminando...",
+			html: total > 1 ? `0 / ${total}` : "",
+			allowOutsideClick: false,
+			didOpen: () => Swal.showLoading(),
+		});
+
+		let done = 0;
+		const updateProgress = () => {
+			done += 1;
+			if (total > 1) {
+				Swal.update({ html: `${done} / ${total}` });
+			}
+		};
+
+		try {
+			if (tieneStudy && studyUid) {
+				await deleteDicomStudy({ uid: studyUid, id_cita: idCita }).unwrap();
+				setStudyUid(null);
+				setShowOhifViewer(false);
+				updateProgress();
+			}
+
+			const BATCH = 10;
+			for (let i = 0; i < archivos.length; i += BATCH) {
+				const batch = archivos.slice(i, i + BATCH);
+				await Promise.all(
+					batch.map((url) =>
+						deleteArchivo({ id_cita: idCita, archivo_url: url }).unwrap(),
+					),
+				);
+				done += batch.length;
+				if (total > 1) Swal.update({ html: `${done} / ${total}` });
+			}
+			setArchivos([]);
+
+			onArchivoDeleted?.();
+			await Swal.fire({
+				icon: "success",
+				title: "Todos eliminados",
+				text: `Se eliminaron ${total} resultado${total !== 1 ? "s" : ""}.`,
+				timer: 1500,
+				showConfirmButton: false,
+			});
+			setTimeout(onClose, 300);
+		} catch {
+			Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: "No se pudieron eliminar todos los resultados.",
+			});
+		}
+	};
+
 	const handleDownloadDicom = async () => {
 		if (!studyUid) return;
 		try {
@@ -411,7 +487,20 @@ const VerResultadosModal = ({
 					</div>
 
 					{/* Footer */}
-					<div className="shrink-0 border-t border-mist px-5 py-3 flex justify-end">
+					<div className="shrink-0 border-t border-mist px-5 py-3 flex justify-between items-center gap-2">
+						<div>
+							{idCita && permiteEliminar && totalItems > 0 && (
+								<button
+									type="button"
+									onClick={handleEliminarTodos}
+									disabled={isDeleting}
+									className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+								>
+									<Trash2 className="h-4 w-4" />
+									Eliminar todos
+								</button>
+							)}
+						</div>
 						<button
 							onClick={onClose}
 							className="rounded-lg border border-mist bg-paper px-4 py-2 text-sm font-medium text-brand-700 hover:bg-cloud transition-colors"
