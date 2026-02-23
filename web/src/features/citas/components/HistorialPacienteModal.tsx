@@ -44,6 +44,7 @@ const HistorialPacienteModal = ({
 }: HistorialPacienteModalProps) => {
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
 		archivos: string[];
+		studyUid: string | null;
 		pacienteNombre: string;
 		ecoNombre: string;
 		idCita: string;
@@ -107,13 +108,17 @@ const HistorialPacienteModal = ({
 														Ver
 													</button>
 												</td>
-												<td className="px-3 py-3 text-center">
-													{archivos.length > 0 ? (
+									<td className="px-3 py-3 text-center">
+												{(() => {
+													const tieneDicom = !!cita.resultado_study_uid;
+													const total = archivos.length + (tieneDicom ? 1 : 0);
+													return total > 0 ? (
 														<button
 															type="button"
 															onClick={() =>
 																setSelectedCitaForResultados({
 																	archivos,
+																	studyUid: cita.resultado_study_uid ?? null,
 																	pacienteNombre: fullName || "Paciente",
 																	ecoNombre: cita.eco_nombre,
 																	idCita: cita.id_cita,
@@ -121,14 +126,15 @@ const HistorialPacienteModal = ({
 															}
 															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
 														>
-															{archivos.length === 1 ? "Ver resultado" : `Ver ${archivos.length} resultados`}
+															{total === 1 ? "Ver resultado" : `Ver ${total} resultados`}
 														</button>
 													) : (
 														<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
 															Sin resultados
 														</span>
-													)}
-												</td>
+													);
+												})()}
+											</td>
 												<td className="px-3 py-3 text-center">
 													{cita.informe_pdf_url ? (
 														<button
@@ -156,15 +162,16 @@ const HistorialPacienteModal = ({
 				</div>
 			</div>
 
-			{selectedCitaForResultados && (
-				<VerResultadosModal
-					archivos={selectedCitaForResultados.archivos}
-					pacienteNombre={selectedCitaForResultados.pacienteNombre}
-					ecoNombre={selectedCitaForResultados.ecoNombre}
-					permiteEliminar={false}
-					onClose={() => setSelectedCitaForResultados(null)}
-				/>
-			)}
+		{selectedCitaForResultados && (
+			<VerResultadosModal
+				archivos={selectedCitaForResultados.archivos}
+				studyUid={selectedCitaForResultados.studyUid}
+				pacienteNombre={selectedCitaForResultados.pacienteNombre}
+				ecoNombre={selectedCitaForResultados.ecoNombre}
+				permiteEliminar={false}
+				onClose={() => setSelectedCitaForResultados(null)}
+			/>
+		)}
 
 			{pdfViewer && (
 				<PDFViewerModal

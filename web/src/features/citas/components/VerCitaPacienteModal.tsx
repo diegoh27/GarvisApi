@@ -353,24 +353,26 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 										Informe no disponible
 									</span>
 								)}
-								{(() => {
-									const archivos = parseResultadoArchivos(cita.resultado_archivo);
-									return archivos.length > 0 ? (
-										<button
-											type="button"
-											onClick={() => setShowResultados(true)}
-											className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
-										>
-											<Images className="h-4 w-4" />
-											{archivos.length === 1 ? "Ver resultado" : `Ver ${archivos.length} resultados`}
-										</button>
-									) : (
-										<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
-											<Images className="h-4 w-4" />
-											Resultados no disponibles
-										</span>
-									);
-								})()}
+							{(() => {
+								const archivos = parseResultadoArchivos(cita.resultado_archivo);
+								const tieneDicom = !!cita.resultado_study_uid;
+								const total = archivos.length + (tieneDicom ? 1 : 0);
+								return total > 0 ? (
+									<button
+										type="button"
+										onClick={() => setShowResultados(true)}
+										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+									>
+										<Images className="h-4 w-4" />
+										{total === 1 ? "Ver resultado" : `Ver ${total} resultados`}
+									</button>
+								) : (
+									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+										<Images className="h-4 w-4" />
+										Resultados no disponibles
+									</span>
+								);
+							})()}
 							</div>
 						</div>
 					</div>
@@ -402,20 +404,22 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 				/>
 			)}
 
-			{showResultados && cita && (() => {
-				const archivos = parseResultadoArchivos(cita.resultado_archivo);
-				if (archivos.length === 0) return null;
-				const pacienteNombre = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim() || "Paciente";
-				return (
-					<VerResultadosModal
-						archivos={archivos}
-						pacienteNombre={pacienteNombre}
-						ecoNombre={cita.eco_nombre ?? ""}
-						permiteEliminar={false}
-						onClose={() => setShowResultados(false)}
-					/>
-				);
-			})()}
+		{showResultados && cita && (() => {
+			const archivos = parseResultadoArchivos(cita.resultado_archivo);
+			const tieneDicom = !!cita.resultado_study_uid;
+			if (archivos.length === 0 && !tieneDicom) return null;
+			const pacienteNombre = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim() || "Paciente";
+			return (
+				<VerResultadosModal
+					archivos={archivos}
+					studyUid={cita.resultado_study_uid}
+					pacienteNombre={pacienteNombre}
+					ecoNombre={cita.eco_nombre ?? ""}
+					permiteEliminar={false}
+					onClose={() => setShowResultados(false)}
+				/>
+			);
+		})()}
 		</>
 	);
 };

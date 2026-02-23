@@ -1,0 +1,53 @@
+# ============================================================
+# GARVIS — Infraestructura DICOM local
+#
+# Servicios:
+#   orthanc  → PACS server + DICOMweb  (puerto 8042 REST, 4242 DICOM)
+#   ohif     → OHIF Viewer v3          (puerto 3000)
+#
+# Iniciar:   docker compose up -d
+# Detener:   docker compose down
+# Logs:      docker compose logs -f
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # ORTHANC — Servidor DICOM con plugin DICOMweb
+  # La imagen orthancteam/orthanc ya incluye todos los plugins
+  # ----------------------------------------------------------
+  orthanc:
+    image: orthancteam/orthanc:latest
+    container_name: garvis_orthanc
+    ports:
+      - "8042:8042"   # REST API / Web UI
+      - "4242:4242"   # DICOM protocol
+    volumes:
+      - orthanc_data:/var/lib/orthanc/db
+      - ./orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+    environment:
+      ORTHANC__NAME: "Garvis PACS"
+    restart: unless-stopped
+
+  # ----------------------------------------------------------
+  # OHIF VIEWER — Visor DICOM web (v3)
+  # Su nginx interno proxea /dicom-web/* → orthanc:8042
+  # así OHIF no tiene problema de CORS
+  # ----------------------------------------------------------
+  ohif:
+    image: ohif/app:latest
+    container_name: garvis_ohif
+    ports:
+      - "3000:80"
+    volumes:
+      # Configuración de la app (data sources apuntando a Orthanc)
+      - ./ohif/app-config.js:/usr/share/nginx/html/app-config.js:ro
+      # Nginx: proxea /dicom-web y /wado hacia orthanc
+      - ./ohif/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - orthanc
+    restart: unless-stopped
+
+volumes:
+  orthanc_data:
+    driver: local

@@ -29,6 +29,7 @@ type CitaEspecialista = {
 	eco_nombre: string;
 	orden?: string | null;
 	resultado_archivo?: string | null;
+	resultado_study_uid?: string | null;
 	resultado_estado?: number | null;
 	resultado_publicado?: string | Date | null;
 };

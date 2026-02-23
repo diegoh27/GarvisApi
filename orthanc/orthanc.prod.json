@@ -1,0 +1,38 @@
+{
+  "Name": "Garvis PACS Production",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+
+  "HttpServerEnabled": true,
+  "HttpPort": 8042,
+  "HttpCompressionEnabled": true,
+
+  "DicomServerEnabled": true,
+  "DicomPort": 4242,
+  "DicomAet": "GARVIS_PROD",
+
+  "RemoteAccessAllowed": true,
+
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {},
+
+  "MaximumStorageSize": 0,
+  "MaximumPatientCount": 0,
+
+  "StorageCompression": true,
+
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web",
+    "EnableWado": true,
+    "WadoRoot": "/wado",
+    "Ssl": false,
+    "MetadataWorkerThreadsCount": 4,
+    "StudiesMetadata": "Full",
+    "SeriesMetadata": "Full"
+  },
+
+  "Plugins": [
+    "/usr/share/orthanc/plugins"
+  ]
+}

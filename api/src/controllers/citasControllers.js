@@ -227,6 +227,7 @@ const listCitasByPacienteController = async (id_paciente) => {
       u.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid,
       r.estado_resultado AS resultado_estado,
       r.fecha_publicacion AS resultado_publicado
     FROM cita c
@@ -269,6 +270,7 @@ const listCitasCompletasByPacienteController = async (id_paciente) => {
       rep.genero AS representado_genero,
       rep.parentesco AS representado_parentesco,
       r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid,
       r.estado_resultado AS resultado_estado,
       r.fecha_publicacion AS resultado_publicado,
       inf.id_informe,
@@ -321,6 +323,7 @@ const listCitasByEspecialistaController = async (id_especialista) => {
       p.contacto_emergencia_telefono AS paciente_contacto_telefono,
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid,
       r.estado_resultado AS resultado_estado,
       r.fecha_publicacion AS resultado_publicado
     FROM cita c
@@ -1072,6 +1075,7 @@ const getAllCitasController = async () => {
       r_rep.parentesco AS representado_parentesco,
       -- Datos del resultado (si existe)
       res.archivo AS resultado_archivo,
+      res.study_uid AS resultado_study_uid,
       res.estado_resultado AS resultado_estado,
       res.fecha_publicacion AS resultado_fecha_publicacion,
       -- Datos del informe (si existe)

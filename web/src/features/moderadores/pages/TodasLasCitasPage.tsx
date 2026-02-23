@@ -82,6 +82,7 @@ const TodasLasCitasPage = () => {
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
 		archivos: string[];
+		studyUid?: string | null;
 		pacienteNombre: string;
 		ecoNombre: string;
 		idCita: string;
@@ -214,12 +215,12 @@ const TodasLasCitasPage = () => {
 			if (filterResultado === "con-resultado") {
 				citasFiltradas = citasFiltradas.filter((cita) => {
 					const archivos = parseResultadoArchivo(cita.resultado_archivo);
-					return archivos.length > 0;
+					return archivos.length > 0 || !!cita.resultado_study_uid;
 				});
 			} else if (filterResultado === "sin-resultado") {
 				citasFiltradas = citasFiltradas.filter((cita) => {
 					const archivos = parseResultadoArchivo(cita.resultado_archivo);
-					return archivos.length === 0;
+					return archivos.length === 0 && !cita.resultado_study_uid;
 				});
 			}
 		}
@@ -697,7 +698,9 @@ const TodasLasCitasPage = () => {
 						<div className="space-y-3">
 							{paginatedCitas.map((cita) => {
 								const archivos = parseResultadoArchivo(cita.resultado_archivo);
-								const tieneResultado = archivos.length > 0;
+								const tieneDicom = !!cita.resultado_study_uid;
+								const tieneResultado = archivos.length > 0 || tieneDicom;
+								const totalResultados = archivos.length + (tieneDicom ? 1 : 0);
 								const tieneInforme = cita.id_informe !== null;
 								const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
 								const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
@@ -741,11 +744,16 @@ const TodasLasCitasPage = () => {
 															<X className="h-3 w-3" /> No atendida
 														</span>
 													)}
-													{tieneResultado && (
-														<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
-															{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
-														</span>
-													)}
+												{archivos.length > 0 && (
+													<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
+														{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
+													</span>
+												)}
+												{tieneDicom && (
+													<span className="rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-paper">
+														DICOM
+													</span>
+												)}
 													{tieneInforme && (
 														<span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-paper">
 															Con informe
@@ -858,17 +866,18 @@ const TodasLasCitasPage = () => {
 																<button
 																	type="button"
 																	onClick={() => {
-																		setSelectedCitaForResultados({
-																			archivos,
-																			pacienteNombre: fullName,
-																			ecoNombre: cita.eco_nombre,
+																	setSelectedCitaForResultados({
+																		archivos,
+																		studyUid: cita.resultado_study_uid,
+																		pacienteNombre: fullName,
+																		ecoNombre: cita.eco_nombre,
 																			idCita: cita.id_cita,
 																		});
 																		setOpenAccionesCitaId(null);
 																	}}
 																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
 																>
-																	Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
+																	Ver {totalResultados} resultado{totalResultados !== 1 ? "s" : ""}
 																</button>
 																<button
 																	type="button"
@@ -1029,12 +1038,13 @@ const TodasLasCitasPage = () => {
 
 			{/* Modal para ver resultados */}
 			{selectedCitaForResultados && (
-				<VerResultadosModal
-					archivos={selectedCitaForResultados.archivos}
-					pacienteNombre={selectedCitaForResultados.pacienteNombre}
-					ecoNombre={selectedCitaForResultados.ecoNombre}
-					idCita={selectedCitaForResultados.idCita}
-					onClose={() => setSelectedCitaForResultados(null)}
+			<VerResultadosModal
+				archivos={selectedCitaForResultados.archivos}
+				studyUid={selectedCitaForResultados.studyUid}
+				pacienteNombre={selectedCitaForResultados.pacienteNombre}
+				ecoNombre={selectedCitaForResultados.ecoNombre}
+				idCita={selectedCitaForResultados.idCita}
+				onClose={() => setSelectedCitaForResultados(null)}
 					onArchivoDeleted={async () => {
 						await refetch();
 					}}

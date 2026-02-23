@@ -31,6 +31,82 @@ async function notificarPacienteResultadosDisponibles(id_cita) {
 	});
 }
 
+/**
+ * Crear o actualizar resultado guardando un StudyInstanceUID de Orthanc.
+ * Mantiene los archivos locales existentes si los hay.
+ */
+const createOrUpdateResultadoWithStudyController = async ({
+	id_cita,
+	study_uid,
+	nombre,
+	id_usuario_actual,
+	rol,
+}) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		const [citaRows] = await conn.execute(
+			`SELECT id_especialista, estado_cita FROM cita WHERE id_cita = ? FOR UPDATE`,
+			[id_cita],
+		);
+		if (!citaRows.length) {
+			const err = new Error("Cita no encontrada");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const cita = citaRows[0];
+		if (cita.estado_cita !== 3) {
+			const err = new Error("Solo se pueden subir resultados para citas atendidas");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+		if (rol === "especialista" && id_usuario_actual && cita.id_especialista !== id_usuario_actual) {
+			const err = new Error("Solo puedes subir resultados para tus propias citas.");
+			err.code = "FORBIDDEN";
+			throw err;
+		}
+
+		const [existingRows] = await conn.execute(
+			"SELECT id_resultado FROM resultado WHERE id_cita = ?",
+			[id_cita],
+		);
+
+		if (existingRows.length > 0) {
+			await conn.execute(
+				`UPDATE resultado
+				 SET study_uid = ?, nombre = COALESCE(?, nombre),
+				     fecha_emision = CURRENT_TIMESTAMP, estado_resultado = 2
+				 WHERE id_cita = ?`,
+				[study_uid, nombre || null, id_cita],
+			);
+			await conn.commit();
+			notificarPacienteResultadosDisponibles(id_cita).catch((e) =>
+				console.error("Error notificando paciente (orthanc):", e),
+			);
+			return { id_resultado: existingRows[0].id_resultado, id_cita, study_uid, updated: true };
+		} else {
+			const id_resultado = crypto.randomUUID();
+			await conn.execute(
+				`INSERT INTO resultado
+				   (id_resultado, id_cita, id_especialista, nombre, study_uid, estado_resultado)
+				 VALUES (?, ?, ?, ?, ?, 2)`,
+				[id_resultado, id_cita, cita.id_especialista, nombre || null, study_uid],
+			);
+			await conn.commit();
+			notificarPacienteResultadosDisponibles(id_cita).catch((e) =>
+				console.error("Error notificando paciente (orthanc):", e),
+			);
+			return { id_resultado, id_cita, study_uid, updated: false };
+		}
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 // Crear o actualizar resultado (subir archivo)
 const createOrUpdateResultadoController = async ({
 	id_cita,
@@ -222,7 +298,8 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
-      r.archivo AS resultado_archivo
+      r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
@@ -232,6 +309,7 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
     WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
       AND (r.archivo IS NULL OR r.archivo = '' OR r.archivo = '[]')
+      AND (r.study_uid IS NULL OR r.study_uid = '')
   `;
 
 	// Si se proporciona id_especialista, filtrar solo sus citas
@@ -265,6 +343,7 @@ const listCitasAtendidasConResultadosController = async () => {
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid,
       r.estado_resultado AS resultado_estado
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
@@ -297,13 +376,15 @@ const listResultadosByPacienteController = async (id_paciente) => {
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
+      r.study_uid AS resultado_study_uid,
       r.estado_resultado AS resultado_estado
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
-    WHERE c.id_paciente = ? AND c.estado_cita = 3 AND r.archivo IS NOT NULL
+    WHERE c.id_paciente = ? AND c.estado_cita = 3
+      AND (r.archivo IS NOT NULL OR r.study_uid IS NOT NULL)
     ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
 	const [rows] = await pool.execute(sql, [id_paciente]);
@@ -412,6 +493,7 @@ const deleteArchivoFromResultadoController = async ({
 
 module.exports = {
 	createOrUpdateResultadoController,
+	createOrUpdateResultadoWithStudyController,
 	listCitasSinResultadoController,
 	listCitasAtendidasConResultadosController,
 	listResultadosByPacienteController,

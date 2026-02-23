@@ -276,11 +276,11 @@ function typesMatch(expectedType, actualType) {
 
 	// Comparación flexible para tipos similares
 	// NOTA: VARCHAR y TEXT NO son compatibles - deben detectarse como diferentes
+	// NOTA: TEXT, MEDIUMTEXT y LONGTEXT son tipos distintos y deben migrarse si cambian
 	const typeMap = {
 		TINYINT: ["TINYINT", "TINYINT(1)", "BOOLEAN"],
 		INT: ["INT", "INTEGER", "INT(11)"],
 		VARCHAR: (t) => t.startsWith("VARCHAR"),
-		TEXT: ["TEXT", "MEDIUMTEXT", "LONGTEXT"],
 		TIMESTAMP: ["TIMESTAMP", "DATETIME"],
 	};
 

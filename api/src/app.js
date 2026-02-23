@@ -69,7 +69,18 @@ server.use((err, req, res, next) => {
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
-server.use("/uploads", express.static(getUploadsDir()));
+server.use(
+	"/uploads",
+	express.static(getUploadsDir(), {
+		setHeaders(res, filePath) {
+			const ext = path.extname(filePath).toLowerCase();
+			if (ext === ".dcm" || ext === ".dicom") {
+				res.set("Content-Type", "application/dicom");
+				res.set("Accept-Ranges", "bytes");
+			}
+		},
+	}),
+);
 
 // Main Rutes
 // server.use(auth(config));

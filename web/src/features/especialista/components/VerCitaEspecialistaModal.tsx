@@ -74,6 +74,8 @@ const VerCitaEspecialistaModal = ({
 	});
 
 	const archivos = parseResultadoArchivos(citaFromList.resultado_archivo);
+	const studyUid = citaFromList.resultado_study_uid ?? null;
+	const totalResultados = archivos.length + (studyUid ? 1 : 0);
 	const estadoPago = cita?.estado_pago ?? citaFromList.estado_pago ?? 0;
 
 	const openPdf = (url: string, title: string) => {
@@ -247,21 +249,21 @@ const VerCitaEspecialistaModal = ({
 												Informe no disponible
 											</span>
 										)}
-										{archivos.length > 0 ? (
-											<button
-												type="button"
-												onClick={() => setShowResultados(true)}
-												className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
-											>
-												<Images className="h-4 w-4" />
-												{archivos.length === 1 ? "Ver resultado" : `Ver ${archivos.length} resultados`}
-											</button>
-										) : (
-											<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
-												<Images className="h-4 w-4" />
-												Resultados no disponibles
-											</span>
-										)}
+									{totalResultados > 0 ? (
+										<button
+											type="button"
+											onClick={() => setShowResultados(true)}
+											className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										>
+											<Images className="h-4 w-4" />
+											{totalResultados === 1 ? "Ver resultado" : `Ver ${totalResultados} resultados`}
+										</button>
+									) : (
+										<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+											<Images className="h-4 w-4" />
+											Resultados no disponibles
+										</span>
+									)}
 									</div>
 								</div>
 							</>
@@ -287,15 +289,16 @@ const VerCitaEspecialistaModal = ({
 				/>
 			)}
 
-			{showResultados && archivos.length > 0 && (
-				<VerResultadosModal
-					archivos={archivos}
-					pacienteNombre={pacienteName}
-					ecoNombre={citaFromList.eco_nombre ?? ""}
-					idCita={citaFromList.id_cita}
-					onClose={() => setShowResultados(false)}
-				/>
-			)}
+		{showResultados && totalResultados > 0 && (
+			<VerResultadosModal
+				archivos={archivos}
+				studyUid={studyUid}
+				pacienteNombre={pacienteName}
+				ecoNombre={citaFromList.eco_nombre ?? ""}
+				idCita={citaFromList.id_cita}
+				onClose={() => setShowResultados(false)}
+			/>
+		)}
 		</>
 	);
 };
