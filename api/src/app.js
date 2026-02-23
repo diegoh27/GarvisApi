@@ -7,6 +7,7 @@ const path = require("path");
 const { auth } = require("express-openid-connect");
 const routes = require("./routes/index");
 const { getUploadsDir } = require("./utils/uploadToLocal");
+const { auditoriaMid } = require("./middleware/auditoriaMid");
 
 const server = express();
 
@@ -81,6 +82,9 @@ server.use(
 		},
 	}),
 );
+
+// Middleware de auditoría (antes de las rutas para capturar todos los eventos)
+server.use(auditoriaMid);
 
 // Main Rutes
 // server.use(auth(config));

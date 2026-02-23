@@ -1393,3 +1393,22 @@ UPDATE CASCADE
     ON
 DELETE RESTRICT
 ) ENGINE=InnoDB;
+
+-- =========================
+-- Auditoría de eventos del sistema
+-- =========================
+CREATE TABLE IF NOT EXISTS auditoria_eventos (
+  id          INT UNSIGNED        NOT NULL AUTO_INCREMENT,
+  usuario_id  CHAR(36)            NULL,
+  usuario_rol VARCHAR(50)         NULL,
+  metodo      VARCHAR(10)         NOT NULL,
+  ruta        VARCHAR(500)        NOT NULL,
+  accion      VARCHAR(255)        NOT NULL,
+  estado_http SMALLINT UNSIGNED   NOT NULL,
+  estado      ENUM('exito','fallo') NOT NULL DEFAULT 'exito',
+  ip          VARCHAR(45)         NULL,
+  fecha       TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_auditoria_fecha       (fecha),
+  KEY idx_auditoria_usuario_id  (usuario_id)
+) ENGINE=InnoDB;
