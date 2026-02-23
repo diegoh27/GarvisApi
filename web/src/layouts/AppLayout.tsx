@@ -11,6 +11,7 @@ import {
 	Receipt,
 	Settings,
 	ShieldCheck,
+	ShieldAlert,
 	Stethoscope,
 	UserPlus,
 	Users,
@@ -47,6 +48,8 @@ const navByRole: Record<string, NavItem[]> = {
 		// Configuración del sistema
 		{ label: "Especialidades", to: "/especialidades", icon: Stethoscope },
 		{ label: "Ecos", to: "/ecos", icon: FileCheck },
+		// Auditoría
+		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 		// Notificaciones (penúltimo)
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		// Configuración (último)
@@ -66,6 +69,8 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Informes", to: "/informes", icon: FileText },
 		// Gestión de inventario
 		{ label: "Inventario", to: "/inventario", icon: Package },
+		// Auditoría
+		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 		// Notificaciones (penúltimo)
 		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
 		// Configuración (último)

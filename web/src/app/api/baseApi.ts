@@ -114,6 +114,8 @@ const baseApi = createApi({
 		"Perfil",
 		// Permisos inventario moderador
 		"PermisosInventario",
+		// Auditoría de eventos
+		"Auditoria",
 	],
 	endpoints: () => ({}),
 });

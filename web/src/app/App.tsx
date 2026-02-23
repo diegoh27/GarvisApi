@@ -37,6 +37,7 @@ import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
 import { UsuariosPage } from "../features/usuarios";
 import { ConfiguracionPage } from "../features/configuracion";
+import AuditoriaPage from "../features/auditoria/AuditoriaPage";
 import GuestRoute from "../routes/GuestRoute";
 import ProtectedRoute from "../routes/ProtectedRoute";
 import RoleRoute from "../routes/RoleRoute";
@@ -297,15 +298,23 @@ const App = () => {
 							</RoleRoute>
 						}
 					/>
-					<Route
-						path="configuracion"
-						element={
-							<ProtectedRoute>
-								<ConfiguracionPage />
-							</ProtectedRoute>
-						}
-					/>
-					<Route path="*" element={<NotFoundPage />} />
+				<Route
+					path="configuracion"
+					element={
+						<ProtectedRoute>
+							<ConfiguracionPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="auditoria"
+					element={
+						<RoleRoute allowed={["admin", "moderador"]}>
+							<AuditoriaPage />
+						</RoleRoute>
+					}
+				/>
+				<Route path="*" element={<NotFoundPage />} />
 				</Route>
 			</Routes>
 		</BrowserRouter>
