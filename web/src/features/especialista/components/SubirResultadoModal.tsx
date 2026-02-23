@@ -10,10 +10,10 @@ import {
 	FolderArchive,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import {
-	useUploadResultadoMutation,
-	useUploadDicomToOrthancMutation,
-} from "../../resultados/resultadosApi";
+import { useDispatch } from "react-redux";
+import { baseApi } from "../../../app/api/baseApi";
+import { getToken } from "../../../shared/utils/token";
+import { uploadWithProgress } from "../../../shared/utils/uploadWithProgress";
 
 type SubirResultadoModalProps = {
 	cita: {
@@ -98,13 +98,16 @@ const SubirResultadoModal = ({
 	);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const [uploadResultado, { isLoading: isUploadingLocal }] =
-		useUploadResultadoMutation();
-	const [uploadDicomToOrthanc, { isLoading: isUploadingDicom }] =
-		useUploadDicomToOrthancMutation();
+	const dispatch = useDispatch();
 
-	const isUploading =
-		externalUploading || isUploadingLocal || isUploadingDicom;
+	const [uploadProgress, setUploadProgress] = useState<{
+		percent: number;
+		loaded: number;
+		total: number;
+		phase: "orthanc" | "resultados";
+	} | null>(null);
+
+	const isUploading = externalUploading || uploadProgress !== null;
 
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = Array.from(e.target.files || []);
@@ -171,24 +174,55 @@ const SubirResultadoModal = ({
 		const regularFiles = selectedFiles.filter((f) => !goesToOrthanc(f));
 
 		try {
-			// ── DICOM a Orthanc ──────────────────────────────────────────────
+			// ── DICOM a Orthanc (con barra de progreso) ───────────────────────
 			if (dicomFiles.length > 0) {
-				await uploadDicomToOrthanc({
-					id_cita: cita.id_cita,
-					archivos: dicomFiles,
-				}).unwrap();
+				setUploadProgress({ percent: 0, loaded: 0, total: 0, phase: "orthanc" });
+				const formData = new FormData();
+				dicomFiles.forEach((f) => formData.append("archivos", f));
+				formData.append("id_cita", cita.id_cita);
+
+				await uploadWithProgress({
+					url: "/orthanc/upload",
+					body: formData,
+					token: getToken(),
+					onProgress: (p) =>
+						setUploadProgress({
+							percent: Math.min(p.percent, 99),
+							loaded: p.loaded,
+							total: p.total,
+							phase: "orthanc",
+						}),
+				});
+
+				dispatch(baseApi.util.invalidateTags(["Citas"]));
+				setUploadProgress(null);
 			}
 
-			// ── Archivos regulares ───────────────────────────────────────────
+			// ── Archivos regulares (con barra de progreso si no hay callback) ──
 			if (regularFiles.length > 0) {
 				if (onUpload) {
-					// Callback heredado del padre
 					await onUpload(cita.id_cita, regularFiles);
 				} else {
-					await uploadResultado({
-						id_cita: cita.id_cita,
-						archivos: regularFiles,
-					}).unwrap();
+					setUploadProgress({ percent: 0, loaded: 0, total: 0, phase: "resultados" });
+					const formData = new FormData();
+					regularFiles.forEach((f) => formData.append("archivos", f));
+					formData.append("id_cita", cita.id_cita);
+
+					await uploadWithProgress({
+						url: "/resultados/upload",
+						body: formData,
+						token: getToken(),
+						onProgress: (p) =>
+							setUploadProgress({
+								percent: Math.min(p.percent, 99),
+								loaded: p.loaded,
+								total: p.total,
+								phase: "resultados",
+							}),
+					});
+
+					dispatch(baseApi.util.invalidateTags(["Citas"]));
+					setUploadProgress(null);
 				}
 			}
 
@@ -211,14 +245,17 @@ const SubirResultadoModal = ({
 			onSuccess?.();
 			onClose();
 		} catch (err: unknown) {
+			setUploadProgress(null);
 			const msg =
-				err &&
-				typeof err === "object" &&
-				"data" in err &&
-				typeof (err as { data?: { message?: string } }).data?.message ===
-					"string"
-					? (err as { data: { message: string } }).data.message
-					: "Error al subir los archivos.";
+				err instanceof Error
+					? err.message
+					: err &&
+							typeof err === "object" &&
+							"data" in err &&
+							typeof (err as { data?: { message?: string } }).data?.message ===
+								"string"
+						? (err as { data: { message: string } }).data.message
+						: "Error al subir los archivos.";
 			Swal.fire({ icon: "error", title: "Error", text: msg });
 		}
 	};
@@ -400,6 +437,38 @@ const SubirResultadoModal = ({
 					)}
 				</div>
 
+				{/* Barra de progreso (subida DICOM/ZIP) */}
+				{uploadProgress !== null && (
+					<div className="border-t border-mist bg-paper px-6 py-3">
+						<div className="flex items-center justify-between gap-3 mb-2">
+							<span className="text-sm font-medium text-brand-800">
+								{uploadProgress.loaded >= uploadProgress.total && uploadProgress.total > 0
+									? uploadProgress.phase === "orthanc"
+										? "Procesando en Orthanc…"
+										: "Procesando en servidor…"
+									: uploadProgress.phase === "orthanc"
+										? "Subiendo a Orthanc…"
+										: "Subiendo archivos…"}
+							</span>
+							<span className="text-sm text-brand-600 tabular-nums">
+								{uploadProgress.percent}%
+							</span>
+						</div>
+						<div className="h-2 w-full rounded-full bg-cloud overflow-hidden">
+							<div
+								className="h-full bg-brand-600 transition-all duration-300 ease-out"
+								style={{ width: `${uploadProgress.percent}%` }}
+							/>
+						</div>
+						{uploadProgress.total > 0 && (
+							<p className="text-xs text-brand-600 mt-1">
+								{(uploadProgress.loaded / (1024 * 1024)).toFixed(1)} MB /{" "}
+								{(uploadProgress.total / (1024 * 1024)).toFixed(1)} MB
+							</p>
+						)}
+					</div>
+				)}
+
 				{/* Footer */}
 				<div className="sticky bottom-0 border-t border-mist bg-paper p-4 flex justify-end gap-2">
 					<button
@@ -417,7 +486,13 @@ const SubirResultadoModal = ({
 						{isUploading ? (
 							<>
 								<span className="animate-spin">⏳</span>
-								Subiendo...
+								{uploadProgress !== null ? (
+									uploadProgress.loaded >= uploadProgress.total && uploadProgress.total > 0
+										? "Procesando…"
+										: `Subiendo… ${uploadProgress.percent}%`
+								) : (
+									"Subiendo..."
+								)}
 							</>
 						) : (
 							<>

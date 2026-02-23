@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
 import Swal from "sweetalert2";
-import { FileText, Receipt, Calendar, FileCheck, Download, Eye } from "lucide-react";
+import { FileText, Receipt, Calendar, FileCheck, Download, Eye, Upload } from "lucide-react";
 import { PageShell, useAuth, formatFechaLocal } from "../../../shared";
-import {
-	useGetCitasSinResultadoQuery,
-	useUploadResultadoMutation,
-} from "../resultadosApi";
+import { useGetCitasSinResultadoQuery, useUploadResultadoMutation } from "../resultadosApi";
 import type { CitaSinResultado } from "../resultadosApi";
+import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import { useGetMisCitasCompletasQuery } from "../../citas/citasApi";
 import type { CitaPacienteCompleta } from "../../citas/citasApi";
 import { useGetCitaByIdQuery, useGetPagoByCitaQuery } from "../../moderadores/moderadoresApi";
@@ -72,10 +70,8 @@ const ResultadosPage = () => {
 
 	const [uploadResultado, { isLoading: isUploading }] =
 		useUploadResultadoMutation();
-	const [selectedCita, setSelectedCita] = useState<string | null>(null);
-	const [uploadingFiles, setUploadingFiles] = useState<
-		Record<string, File[]>
-	>({});
+	const [selectedCitaForUpload, setSelectedCitaForUpload] =
+		useState<CitaSinResultado | null>(null);
 
 	// Estados para modales
 	const [selectedCitaIdForView, setSelectedCitaIdForView] = useState<string | null>(null);
@@ -113,107 +109,36 @@ const ResultadosPage = () => {
 	const isLoading = isPaciente ? isLoadingCitas : isLoadingCitasAdmin;
 	const refetch = isPaciente ? refetchCitas : refetchCitasAdmin;
 
-	const ALLOWED_EXTENSIONS_PAGE = new Set([
-		".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp",
-		".pdf", ".dcm", ".dicom", ".mp4", ".avi", ".mov", ".mkv", ".zip", ".rar",
-	]);
-
-	const getFileExtPage = (name: string) => {
-		const m = name.match(/\.[^.]+$/);
-		return m ? m[0].toLowerCase() : "";
-	};
-
-	const isDicomFile = (file: File) =>
-		file.type === "application/dicom" || /\.(dcm|dicom)$/i.test(file.name);
-
-	const isAllowedFilePage = (file: File) =>
-		file.type.startsWith("image/") ||
-		file.type === "application/pdf" ||
-		file.type.startsWith("video/") ||
-		file.type === "application/zip" ||
-		file.type === "application/x-zip-compressed" ||
-		file.type === "application/x-rar-compressed" ||
-		file.type === "application/rar" ||
-		file.type === "application/vnd.rar" ||
-		isDicomFile(file) ||
-		ALLOWED_EXTENSIONS_PAGE.has(getFileExtPage(file.name));
-
-	const handleFileChange = (id_cita: string, files: FileList | null) => {
-		if (!files) return;
-		const fileArray = Array.from(files);
-		const validFiles = fileArray.filter((file) => {
-			if (!isAllowedFilePage(file)) {
-				Swal.fire({
-					icon: "warning",
-					title: "Tipo de archivo no válido",
-					text: "Se permiten imágenes, PDF, DICOM (.dcm), videos y comprimidos (ZIP, RAR).",
-					timer: 2500,
-				});
-				return false;
-			}
-			return true;
-		});
-
-		if (validFiles.length > 0) {
-			setUploadingFiles((prev) => ({ ...prev, [id_cita]: validFiles }));
-		}
-	};
-
-	const removeFile = (id_cita: string, index: number) => {
-		setUploadingFiles((prev) => {
-			const files = prev[id_cita] || [];
-			const newFiles = files.filter((_, i) => i !== index);
-			if (newFiles.length === 0) {
-				const updated = { ...prev };
-				delete updated[id_cita];
-				return updated;
-			}
-			return { ...prev, [id_cita]: newFiles };
-		});
-	};
-
-	const handleUpload = async (cita: CitaSinResultado) => {
-		const files = uploadingFiles[cita.id_cita];
-		if (!files || files.length === 0) {
-			Swal.fire({
-				icon: "warning",
-				title: "Archivos requeridos",
-				text: "Por favor selecciona al menos un archivo para subir.",
-			});
-			return;
-		}
-
+	const handleSubirResultado = async (id_cita: string, archivos: File[]) => {
 		try {
-			setSelectedCita(cita.id_cita);
+			const cita = citas.find((c) => c.id_cita === id_cita);
 			await uploadResultado({
-				id_cita: cita.id_cita,
-				archivos: files,
-				nombre: `${cita.paciente_nombre}_${cita.eco_nombre}_${cita.fecha_cita}`,
+				id_cita,
+				archivos,
+				nombre: cita
+					? `${cita.paciente_nombre}_${cita.eco_nombre}_${cita.fecha_cita}`
+					: undefined,
 			}).unwrap();
 			await Swal.fire({
 				icon: "success",
 				title: "Resultados subidos",
-				text: `Se subieron ${files.length} archivo${files.length > 1 ? "s" : ""} exitosamente.`,
+				text: `Se subieron ${archivos.length} archivo${archivos.length > 1 ? "s" : ""} exitosamente.`,
 				timer: 2000,
 				showConfirmButton: false,
 			});
-			setUploadingFiles((prev) => {
-				const newFiles = { ...prev };
-				delete newFiles[cita.id_cita];
-				return newFiles;
-			});
+			setSelectedCitaForUpload(null);
 			refetch();
-		} catch (error: any) {
-			Swal.fire({
-				icon: "error",
-				title: "Error",
-				text: error?.data?.message || "No se pudieron subir los resultados",
-			});
-		} finally {
-			setSelectedCita(null);
+		} catch (error: unknown) {
+			const msg =
+				error &&
+				typeof error === "object" &&
+				"data" in error &&
+				typeof (error as { data?: { message?: string } }).data?.message === "string"
+					? (error as { data: { message: string } }).data.message
+					: "No se pudieron subir los resultados";
+			Swal.fire({ icon: "error", title: "Error", text: msg });
 		}
 	};
-
 
 	const handleViewOrdenMedica = (orden: string | null) => {
 		if (!orden) {
@@ -549,84 +474,38 @@ const ResultadosPage = () => {
 											{formatHora(cita.hora_cita)}
 										</div>
 									</div>
-									<div className="space-y-3">
-										<div>
-									<label className="mb-1 block text-sm font-medium text-brand-700">
-											Archivos (imágenes, PDF, DICOM, video, ZIP, RAR)
-										</label>
-										<input
-											type="file"
-											multiple
-											accept=".jpg,.jpeg,.png,.webp,.tiff,.tif,.bmp,.pdf,.dcm,.dicom,.mp4,.avi,.mov,.mkv,.zip,.rar"
-											onChange={(e) => {
-												handleFileChange(cita.id_cita, e.target.files);
-											}}
-											disabled={
-												isUploading && selectedCita === cita.id_cita
-											}
-												className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
-											/>
-											<p className="text-xs text-brand-800 mt-1">
-												Formatos permitidos: imágenes (JPEG, PNG, WEBP, TIFF), PDF, DICOM (.dcm), videos (MP4, AVI, MOV) y comprimidos (ZIP, RAR).
-											</p>
-										</div>
-										{uploadingFiles[cita.id_cita] && uploadingFiles[cita.id_cita].length > 0 && (
-											<div className="space-y-2">
-												<p className="text-sm font-semibold text-brand-900">
-													Archivos seleccionados ({uploadingFiles[cita.id_cita].length})
-												</p>
-												<div className="space-y-2 max-h-40 overflow-y-auto">
-													{uploadingFiles[cita.id_cita].map((file, index) => (
-														<div
-															key={index}
-															className="flex items-center justify-between rounded-lg border border-mist bg-cloud p-2"
-														>
-															<div className="flex-1 min-w-0">
-																<p className="text-sm font-medium text-brand-900 truncate">
-																	{file.name}
-																</p>
-																<p className="text-xs text-brand-800">
-																	{file.size < 1024
-																		? `${file.size} B`
-																		: file.size < 1024 * 1024
-																			? `${(file.size / 1024).toFixed(1)} KB`
-																			: `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
-																</p>
-															</div>
-															<button
-																type="button"
-																onClick={() => removeFile(cita.id_cita, index)}
-																disabled={isUploading && selectedCita === cita.id_cita}
-																className="ml-2 rounded-lg p-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
-															>
-																✕
-															</button>
-														</div>
-													))}
-												</div>
-											</div>
-										)}
-										<button
-											onClick={() => handleUpload(cita)}
-											disabled={
-												isUploading ||
-												selectedCita === cita.id_cita ||
-												!uploadingFiles[cita.id_cita] ||
-												uploadingFiles[cita.id_cita].length === 0
-											}
-											className="w-full rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
-										>
-											{isUploading && selectedCita === cita.id_cita
-												? "Subiendo..."
-												: `Subir ${uploadingFiles[cita.id_cita]?.length || 0} resultado${(uploadingFiles[cita.id_cita]?.length || 0) > 1 ? "s" : ""}`}
-										</button>
-									</div>
+									<button
+										type="button"
+										onClick={() => setSelectedCitaForUpload(cita)}
+										disabled={isUploading}
+										className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+									>
+										<Upload className="h-4 w-4" />
+										Subir resultado
+									</button>
 								</div>
 							</div>
 						))}
 					</div>
 				)}
 			</div>
+
+			{/* Modal para subir resultado (misma lógica que en Todas las citas: DICOM/ZIP/RAR van a Orthanc en un solo envío) */}
+			{selectedCitaForUpload && (
+				<SubirResultadoModal
+					cita={{
+						id_cita: selectedCitaForUpload.id_cita,
+						paciente_nombre: selectedCitaForUpload.paciente_nombre,
+						paciente_apellido: selectedCitaForUpload.paciente_apellido,
+						eco_nombre: selectedCitaForUpload.eco_nombre,
+						fecha_cita: selectedCitaForUpload.fecha_cita,
+					}}
+					onClose={() => setSelectedCitaForUpload(null)}
+					onUpload={handleSubirResultado}
+					onSuccess={refetch}
+					isUploading={isUploading}
+				/>
+			)}
 		</PageShell>
 	);
 };
