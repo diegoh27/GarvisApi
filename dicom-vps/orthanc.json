@@ -1,0 +1,22 @@
+{
+  "Name": "Garvis PACS",
+  "StorageDirectory": "/var/lib/orthanc/db",
+
+  "HttpPort": 8042,
+  "DicomPort": 4242,
+
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {
+    "admin": "zulfa12345"
+  },
+  "RemoteAccessAllowed": true,
+
+  "HttpServerEnableCors": true,
+  "HttpDescribeErrors": true,
+
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/",
+    "PublicRoot": "/dicom-web/"
+  }
+}
