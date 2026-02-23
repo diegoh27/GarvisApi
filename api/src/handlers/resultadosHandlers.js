@@ -5,8 +5,17 @@ const {
 	listResultadosByPacienteController,
 	deleteArchivoFromResultadoController,
 } = require("../controllers/resultadosControllers");
-const { uploadMulterFileToLocal } = require("../utils/uploadToLocal");
+const {
+	uploadMulterFileToLocal,
+	buildPublicUrl,
+	deleteFileByPublicUrl,
+	cleanupEmptyCitaFolder,
+	getUploadsDir,
+} = require("../utils/uploadToLocal");
+const unzipper = require("unzipper");
+const { createExtractorFromFile } = require("node-unrar-js");
 const fs = require("fs");
+const fsp = require("fs/promises");
 const multer = require("multer");
 const path = require("path");
 
@@ -31,23 +40,195 @@ const storage = multer.diskStorage({
 		cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
 	},
 });
+const DICOM_EXTENSIONS = [".dcm", ".dicom", ".DCM", ".DICOM"];
+
+// Extensiones válidas para extraer de un ZIP
+const VALID_ZIP_EXTENSIONS = new Set([
+	".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp",
+	".pdf", ".dcm", ".dicom", ".mp4", ".avi", ".mov", ".mkv",
+]);
+
+/**
+ * Extrae un ZIP al directorio de la cita:
+ *   uploads/garbis/resultados/cita_{id_cita}/
+ * Retorna array de URLs públicas de los archivos extraídos.
+ */
+const extractZipToCitaFolder = async (zipPath, id_cita) => {
+	const citaFolderRel = path.join("garbis", "resultados", `cita_${id_cita}`);
+	const targetDir = path.join(getUploadsDir(), citaFolderRel);
+	await fsp.mkdir(targetDir, { recursive: true });
+
+	const urls = [];
+	const directory = await unzipper.Open.file(zipPath);
+
+	for (const entry of directory.files) {
+		if (entry.type === "Directory") continue;
+
+		const baseName = path.basename(entry.path);
+		// Ignorar archivos de metadatos de macOS y archivos ocultos
+		if (baseName.startsWith(".") || entry.path.includes("__MACOSX")) continue;
+
+		const ext = path.extname(baseName).toLowerCase();
+		if (!VALID_ZIP_EXTENSIONS.has(ext)) continue;
+
+		const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		const filePath = path.join(targetDir, uniqueName);
+
+		const buffer = await entry.buffer();
+		await fsp.writeFile(filePath, buffer);
+
+		const relativePath = path.posix.join(
+			"uploads", "garbis", "resultados", `cita_${id_cita}`, uniqueName,
+		);
+		urls.push(buildPublicUrl(relativePath));
+	}
+
+	return urls;
+};
+
+/**
+ * Extrae un RAR al directorio de la cita:
+ *   uploads/garbis/resultados/cita_{id_cita}/
+ * Retorna array de URLs públicas de los archivos extraídos.
+ */
+const extractRarToCitaFolder = async (rarPath, id_cita) => {
+	const citaFolderRel = path.join("garbis", "resultados", `cita_${id_cita}`);
+	const targetDir = path.join(getUploadsDir(), citaFolderRel);
+	await fsp.mkdir(targetDir, { recursive: true });
+
+	const urls = [];
+
+	// node-unrar-js necesita leer el archivo como Buffer
+	const wasmBinary = await fsp.readFile(
+		require.resolve("node-unrar-js/esm/js/unrar.wasm"),
+	).catch(() => null); // si no está disponible, será undefined
+
+	const extractorOptions = wasmBinary
+		? { wasmBinary, filepath: rarPath, targetPath: targetDir }
+		: { filepath: rarPath, targetPath: targetDir };
+
+	const extractor = await createExtractorFromFile(extractorOptions);
+	const list = extractor.extract();
+
+	for (const file of list.files) {
+		if (file.fileHeader.flags.directory) continue;
+
+		const baseName = path.basename(file.fileHeader.name);
+		if (baseName.startsWith(".")) continue;
+
+		const ext = path.extname(baseName).toLowerCase();
+		if (!VALID_ZIP_EXTENSIONS.has(ext)) continue;
+
+		// node-unrar-js extrae directamente a targetDir; renombramos para evitar colisiones
+		const extractedPath = path.join(targetDir, file.fileHeader.name.replace(/\\/g, "/").split("/").pop() ?? baseName);
+		const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		const finalPath = path.join(targetDir, uniqueName);
+
+		try {
+			await fsp.rename(extractedPath, finalPath);
+		} catch {
+			// Si rename falla (ej. path anidado), buscar en targetDir
+			const entries = await fsp.readdir(targetDir);
+			const match = entries.find((e) => e.endsWith(ext) && e !== path.basename(finalPath));
+			if (match) await fsp.rename(path.join(targetDir, match), finalPath);
+			else continue;
+		}
+
+		const relativePath = path.posix.join(
+			"uploads", "garbis", "resultados", `cita_${id_cita}`, uniqueName,
+		);
+		urls.push(buildPublicUrl(relativePath));
+	}
+
+	return urls;
+};
+
+const isDicomFile = (file) => {
+	if (file.mimetype === "application/dicom") return true;
+	const ext = path.extname(file.originalname || "").toLowerCase();
+	return DICOM_EXTENSIONS.map((e) => e.toLowerCase()).includes(ext);
+};
+
+const ALLOWED_MIME_TYPES = new Set([
+	// Imágenes
+	"image/jpeg",
+	"image/jpg",
+	"image/png",
+	"image/webp",
+	"image/tiff",
+	"image/bmp",
+	// Documentos
+	"application/pdf",
+	// DICOM
+	"application/dicom",
+	// Videos (ecografías grabadas)
+	"video/mp4",
+	"video/avi",
+	"video/x-msvideo",
+	"video/quicktime",
+	"video/x-matroska",
+	// ZIP y RAR (para múltiples archivos agrupados)
+	"application/zip",
+	"application/x-zip-compressed",
+	"application/x-zip",
+	"application/x-rar-compressed",
+	"application/rar",
+	"application/vnd.rar",
+	// Fallback: algunos navegadores reportan DICOM/RAR/otros como octet-stream
+	"application/octet-stream",
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+	".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp",
+	".pdf",
+	".dcm", ".dicom",
+	".mp4", ".avi", ".mov", ".mkv",
+	".zip",
+	".rar",
+]);
+
+const isRarFile = (file) => {
+	const mime = file.mimetype;
+	const ext = path.extname(file.originalname || "").toLowerCase();
+	return (
+		mime === "application/x-rar-compressed" ||
+		mime === "application/rar" ||
+		mime === "application/vnd.rar" ||
+		ext === ".rar" ||
+		ext === ".r00"
+	);
+};
+
+const isZipFile = (file) => {
+	const mime = file.mimetype;
+	const ext = path.extname(file.originalname || "").toLowerCase();
+	return (
+		mime === "application/zip" ||
+		mime === "application/x-zip-compressed" ||
+		mime === "application/x-zip" ||
+		ext === ".zip"
+	);
+};
+
+const isAllowedFile = (file) => {
+	if (isDicomFile(file)) return true;
+	if (ALLOWED_MIME_TYPES.has(file.mimetype)) return true;
+	const ext = path.extname(file.originalname || "").toLowerCase();
+	return ALLOWED_EXTENSIONS.has(ext);
+};
+
 const upload = multer({
 	storage,
+	limits: {
+		fileSize: 2 * 1024 * 1024 * 1024, // 2 GB por archivo
+	},
 	fileFilter: (req, file, cb) => {
-		// Permitir imágenes y PDFs
-		const allowedMimes = [
-			"image/jpeg",
-			"image/jpg",
-			"image/png",
-			"image/webp",
-			"application/pdf",
-		];
-		if (allowedMimes.includes(file.mimetype)) {
+		if (isAllowedFile(file)) {
 			cb(null, true);
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs.",
+					"Tipo de archivo no permitido. Se permiten imágenes, PDF, DICOM, videos, ZIP y RAR.",
 				),
 				false,
 			);
@@ -55,8 +236,8 @@ const upload = multer({
 	},
 });
 
-// Permitir múltiples archivos (hasta 10)
-const uploadResultado = upload.array("archivos", 10);
+// Sin límite fijo de cantidad de archivos
+const uploadResultado = upload.array("archivos");
 
 const uploadResultadoHandler = async (req, res) => {
 	try {
@@ -76,12 +257,36 @@ const uploadResultadoHandler = async (req, res) => {
 			});
 		}
 
-		// Guardar todos los archivos en VPS
-		const uploadPromises = req.files.map((file) =>
-			uploadMulterFileToLocal(file, "garbis/resultados"),
-		);
-		const results = await Promise.all(uploadPromises);
-		const archivoUrls = results.map((result) => result.url);
+		// Todos los archivos van a uploads/garbis/resultados/cita_{id_cita}/
+		const citaFolder = `garbis/resultados/cita_${id_cita}`;
+		const archivoUrls = [];
+
+		for (const file of req.files) {
+			if (isZipFile(file)) {
+				// Extraer ZIP a la carpeta de la cita
+				const extracted = await extractZipToCitaFolder(file.path, id_cita);
+				archivoUrls.push(...extracted);
+				// Eliminar el archivo comprimido temporal
+				await fsp.unlink(file.path).catch(() => {});
+			} else if (isRarFile(file)) {
+				// Extraer RAR a la carpeta de la cita
+				const extracted = await extractRarToCitaFolder(file.path, id_cita);
+				archivoUrls.push(...extracted);
+				// Eliminar el archivo comprimido temporal
+				await fsp.unlink(file.path).catch(() => {});
+			} else {
+				// Archivo normal: mover a la carpeta de la cita
+				const result = await uploadMulterFileToLocal(file, citaFolder);
+				archivoUrls.push(result.url);
+			}
+		}
+
+		if (archivoUrls.length === 0) {
+			return res.status(400).json({
+				ok: false,
+				message: "No se pudo procesar ningún archivo (el comprimido puede estar vacío o contener tipos no permitidos).",
+			});
+		}
 
 		// Guardar las URLs como JSON array
 		const archivoUrlsJson = JSON.stringify(archivoUrls);
@@ -96,18 +301,24 @@ const uploadResultadoHandler = async (req, res) => {
 			rol: req.user?.rol,
 		});
 
+		const count = archivoUrls.length;
 		return res.status(200).json({
 			ok: true,
 			message: data.updated
-				? `Resultado actualizado exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? "s" : ""})`
-				: `Resultado subido exitosamente (${archivoUrls.length} archivo${archivoUrls.length > 1 ? "s" : ""})`,
+				? `Resultado actualizado exitosamente (${count} archivo${count > 1 ? "s" : ""})`
+				: `Resultado subido exitosamente (${count} archivo${count > 1 ? "s" : ""})`,
 			data: {
 				...data,
-				archivo_urls: archivoUrls, // Devolver como array para el frontend
+				archivo_urls: archivoUrls,
 			},
 		});
 	} catch (error) {
-		await cleanupTempFiles(req.files);
+		// Limpiar archivos temporales que no fueron procesados
+		await cleanupTempFiles(
+			(req.files || []).filter(
+				(f) => !isZipFile(f) && !isRarFile(f), // ZIP y RAR se eliminan dentro del loop
+			),
+		);
 		if (error?.code === "NOT_FOUND") {
 			return res.status(404).json({
 				ok: false,
@@ -194,6 +405,15 @@ const deleteArchivoFromResultadoHandler = async (req, res) => {
 			id_usuario_actual: req.user?.id,
 			rol: req.user?.rol,
 		});
+
+		// Eliminar el archivo físico del disco y limpiar carpeta si queda vacía
+		try {
+			await deleteFileByPublicUrl(archivo_url);
+			await cleanupEmptyCitaFolder(archivo_url);
+		} catch (cleanupErr) {
+			// No fallar el request si el archivo físico ya no existe
+			console.warn("No se pudo eliminar archivo físico:", cleanupErr.message);
+		}
 
 		return res.status(200).json({
 			ok: true,

@@ -9,7 +9,20 @@ const MIME_EXTENSION_MAP = {
 	"image/jpg": ".jpg",
 	"image/png": ".png",
 	"image/webp": ".webp",
+	"image/tiff": ".tiff",
+	"image/bmp": ".bmp",
 	"application/pdf": ".pdf",
+	"application/dicom": ".dcm",
+	"video/mp4": ".mp4",
+	"video/avi": ".avi",
+	"video/x-msvideo": ".avi",
+	"video/quicktime": ".mov",
+	"video/x-matroska": ".mkv",
+	"application/zip": ".zip",
+	"application/x-zip-compressed": ".zip",
+	"application/x-zip": ".zip",
+	// Fallback cuando el browser reporta el tipo genérico
+	"application/octet-stream": "",
 };
 
 const sanitizeFolder = (folder = "") => {
@@ -139,8 +152,58 @@ const uploadMulterFileToLocal = async (file, folder = "garbis") => {
 	return uploadBufferToLocal(file.buffer, folder, options);
 };
 
+/**
+ * Elimina un archivo del disco a partir de su URL pública.
+ * Retorna la ruta eliminada, o null si el archivo no existía.
+ */
+const deleteFileByPublicUrl = async (publicUrl) => {
+	try {
+		const normalized = /^https?:\/\//i.test(publicUrl)
+			? publicUrl
+			: `https://${publicUrl}`;
+		const pathname = new URL(normalized).pathname; // /uploads/garbis/...
+		const uploadsPrefix = "/uploads/";
+		if (!pathname.startsWith(uploadsPrefix)) return null;
+		const relPath = pathname.slice(uploadsPrefix.length);
+		const filePath = path.join(getUploadsDir(), relPath);
+		await fs.unlink(filePath);
+		return filePath;
+	} catch (e) {
+		if (e.code === "ENOENT") return null; // ya no existía
+		throw e;
+	}
+};
+
+/**
+ * Si la carpeta padre del archivo (cuyo nombre empieza con "cita_") queda vacía,
+ * la elimina. Operación best-effort: nunca lanza excepción.
+ */
+const cleanupEmptyCitaFolder = async (publicUrl) => {
+	try {
+		const normalized = /^https?:\/\//i.test(publicUrl)
+			? publicUrl
+			: `https://${publicUrl}`;
+		const pathname = new URL(normalized).pathname;
+		const uploadsPrefix = "/uploads/";
+		if (!pathname.startsWith(uploadsPrefix)) return;
+		const relPath = pathname.slice(uploadsPrefix.length);
+		const filePath = path.join(getUploadsDir(), relPath);
+		const folderPath = path.dirname(filePath);
+		if (!path.basename(folderPath).startsWith("cita_")) return;
+		const entries = await fs.readdir(folderPath);
+		if (entries.length === 0) {
+			await fs.rmdir(folderPath);
+		}
+	} catch {
+		// best-effort: no interrumpir el flujo principal
+	}
+};
+
 module.exports = {
 	uploadBufferToLocal,
 	uploadMulterFileToLocal,
+	buildPublicUrl,
+	deleteFileByPublicUrl,
+	cleanupEmptyCitaFolder,
 	getUploadsDir,
 };

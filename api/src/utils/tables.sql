@@ -514,7 +514,8 @@ IF NOT EXISTS resultado
 (36) NOT NULL,
   nombre VARCHAR
 (255) NULL,
-  archivo TEXT NULL,
+  archivo MEDIUMTEXT NULL,
+  study_uid VARCHAR(255) NULL,
   estado_resultado TINYINT NOT NULL DEFAULT 0,
   fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_publicacion TIMESTAMP NULL DEFAULT NULL,

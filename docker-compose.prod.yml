@@ -1,0 +1,72 @@
+# ============================================================
+# GARVIS — Infraestructura DICOM PRODUCCIÓN
+#
+# Ubicación en el VPS: /root/dicom/docker-compose.prod.yml
+# El .env se carga automáticamente desde /root/dicom/.env
+#
+# Uso (desde /root/dicom/):
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Archivos necesarios en /root/dicom/:
+#   .env                  → credenciales (ORTHANC_ADMIN_USER, ORTHANC_ADMIN_PASS)
+#   orthanc.prod.json     → config de Orthanc con auth y metadata Full
+#   ohif-app-config.js    → config del viewer OHIF
+#   gateway.conf          → config del nginx gateway
+# ============================================================
+
+services:
+
+  orthanc:
+    image: orthancteam/orthanc:latest
+    container_name: orthanc
+    restart: unless-stopped
+    ports:
+      # REST API — solo localhost para que Express (en el host) pueda acceder
+      - "127.0.0.1:8042:8042"
+      # Protocolo DICOM (para envío de estudios desde equipos externos)
+      - "4242:4242"
+    volumes:
+      - orthanc-db:/var/lib/orthanc/db
+      - ./orthanc.prod.json:/etc/orthanc/orthanc.json:ro
+    environment:
+      ORTHANC__NAME: "Garvis PACS"
+      ORTHANC__AUTHENTICATION_ENABLED: "true"
+      # Docker Compose carga ORTHANC_ADMIN_USER y ORTHANC_ADMIN_PASS desde .env
+      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_ADMIN_USER}":"${ORTHANC_ADMIN_PASS}"}'
+    networks:
+      - dicom-net
+
+  ohif:
+    image: ohif/app:v3.12.0
+    container_name: ohif
+    restart: unless-stopped
+    environment:
+      APP_CONFIG: /usr/share/nginx/html/app-config.js
+    volumes:
+      - ./ohif-app-config.js:/usr/share/nginx/html/app-config.js:ro
+    depends_on:
+      - orthanc
+    networks:
+      - dicom-net
+
+  gateway:
+    image: nginx:alpine
+    container_name: dicom-gateway
+    restart: unless-stopped
+    ports:
+      # Solo localhost; el VPS Nginx (ohif.garbis.online) proxea aquí
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - orthanc
+      - ohif
+    networks:
+      - dicom-net
+
+networks:
+  dicom-net:
+    name: dicom-net
+
+volumes:
+  orthanc-db:

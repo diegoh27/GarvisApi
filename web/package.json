@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
@@ -19,15 +20,20 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@cornerstonejs/core": "^4.17.3",
+    "@cornerstonejs/dicom-image-loader": "^4.17.3",
+    "@cornerstonejs/tools": "^4.17.3",
     "@reduxjs/toolkit": "^2.11.2",
     "browser-image-compression": "^2.0.2",
     "daisyui": "^5.5.14",
+    "dicom-parser": "^1.8.21",
     "lucide-react": "^0.563.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.13.0",
     "socket.io-client": "^4.8.3",
-    "sweetalert2": "^11.26.17"
+    "sweetalert2": "^11.26.17",
+    "unzipper": "^0.12.3"
   }
 }

@@ -67,4 +67,8 @@ router.use("/dolar", dolarRoutes);
 
 const loginRoutes = require("./loginRoutes");
 router.use("/auth", loginRoutes);
+
+const orthancRoutes = require("./orthancRoutes");
+router.use("/orthanc", orthancRoutes);
+
 module.exports = router;

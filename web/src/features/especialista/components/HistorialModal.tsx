@@ -74,6 +74,7 @@ const HistorialModal = ({
 }: HistorialModalProps) => {
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
 		archivos: string[];
+		studyUid: string | null;
 		pacienteNombre: string;
 		ecoNombre: string;
 		idCita: string;
@@ -259,32 +260,35 @@ const HistorialModal = ({
 											</div>
 										</td>
 										<td className="px-3 py-3 text-center">
-											{(() => {
-												const archivos = parseResultadoArchivo(cita.resultado_archivo);
-												if (archivos.length > 0) {
-													return (
-														<button
-															type="button"
-															onClick={() => {
-																setSelectedCitaForResultados({
-																	archivos,
-																	pacienteNombre: paciente.name,
-																	ecoNombre: cita.eco_nombre,
-																	idCita: cita.id_cita,
-																});
-															}}
-															className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
-														>
-															{archivos.length === 1 ? "Ver resultado" : `Ver ${archivos.length} resultados`}
-														</button>
-													);
-												}
+										{(() => {
+											const archivos = parseResultadoArchivo(cita.resultado_archivo);
+											const tieneDicom = !!cita.resultado_study_uid;
+											const total = archivos.length + (tieneDicom ? 1 : 0);
+											if (total > 0) {
 												return (
-													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
-														{getResultadoLabel(cita)}
-													</span>
+													<button
+														type="button"
+														onClick={() => {
+															setSelectedCitaForResultados({
+																archivos,
+																studyUid: cita.resultado_study_uid ?? null,
+																pacienteNombre: paciente.name,
+																ecoNombre: cita.eco_nombre,
+																idCita: cita.id_cita,
+															});
+														}}
+														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+													>
+														{total === 1 ? "Ver resultado" : `Ver ${total} resultados`}
+													</button>
 												);
-											})()}
+											}
+											return (
+												<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+													{getResultadoLabel(cita)}
+												</span>
+											);
+										})()}
 										</td>
 										<td className="px-3 py-3 text-center">
 											<button
@@ -378,15 +382,16 @@ const HistorialModal = ({
 					)}
 				</div>
 			</div>
-			{selectedCitaForResultados && (
-				<VerResultadosModal
-					archivos={selectedCitaForResultados.archivos}
-					pacienteNombre={selectedCitaForResultados.pacienteNombre}
-					ecoNombre={selectedCitaForResultados.ecoNombre}
-					idCita={selectedCitaForResultados.idCita}
-					onClose={() => setSelectedCitaForResultados(null)}
-				/>
-			)}
+		{selectedCitaForResultados && (
+			<VerResultadosModal
+				archivos={selectedCitaForResultados.archivos}
+				studyUid={selectedCitaForResultados.studyUid}
+				pacienteNombre={selectedCitaForResultados.pacienteNombre}
+				ecoNombre={selectedCitaForResultados.ecoNombre}
+				idCita={selectedCitaForResultados.idCita}
+				onClose={() => setSelectedCitaForResultados(null)}
+			/>
+		)}
 
 			{selectedCitaParaInforme && (
 				<InformeFormModal

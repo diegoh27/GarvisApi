@@ -82,6 +82,7 @@ const ResultadosPage = () => {
 	const [selectedCitaForPago, setSelectedCitaForPago] = useState<string | null>(null);
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{
 		archivos: string[];
+		studyUid?: string | null;
 		pacienteNombre: string;
 		ecoNombre: string;
 		idCita: string;
@@ -112,19 +113,41 @@ const ResultadosPage = () => {
 	const isLoading = isPaciente ? isLoadingCitas : isLoadingCitasAdmin;
 	const refetch = isPaciente ? refetchCitas : refetchCitasAdmin;
 
+	const ALLOWED_EXTENSIONS_PAGE = new Set([
+		".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".bmp",
+		".pdf", ".dcm", ".dicom", ".mp4", ".avi", ".mov", ".mkv", ".zip", ".rar",
+	]);
+
+	const getFileExtPage = (name: string) => {
+		const m = name.match(/\.[^.]+$/);
+		return m ? m[0].toLowerCase() : "";
+	};
+
+	const isDicomFile = (file: File) =>
+		file.type === "application/dicom" || /\.(dcm|dicom)$/i.test(file.name);
+
+	const isAllowedFilePage = (file: File) =>
+		file.type.startsWith("image/") ||
+		file.type === "application/pdf" ||
+		file.type.startsWith("video/") ||
+		file.type === "application/zip" ||
+		file.type === "application/x-zip-compressed" ||
+		file.type === "application/x-rar-compressed" ||
+		file.type === "application/rar" ||
+		file.type === "application/vnd.rar" ||
+		isDicomFile(file) ||
+		ALLOWED_EXTENSIONS_PAGE.has(getFileExtPage(file.name));
+
 	const handleFileChange = (id_cita: string, files: FileList | null) => {
 		if (!files) return;
 		const fileArray = Array.from(files);
-		// Validar archivos
 		const validFiles = fileArray.filter((file) => {
-			const isValidType =
-				file.type.startsWith("image/") || file.type === "application/pdf";
-			if (!isValidType) {
+			if (!isAllowedFilePage(file)) {
 				Swal.fire({
 					icon: "warning",
 					title: "Tipo de archivo no válido",
-					text: "Solo se permiten imágenes (JPEG, PNG, WEBP) y PDFs.",
-					timer: 2000,
+					text: "Se permiten imágenes, PDF, DICOM (.dcm), videos y comprimidos (ZIP, RAR).",
+					timer: 2500,
 				});
 				return false;
 			}
@@ -281,13 +304,15 @@ const ResultadosPage = () => {
 					) : (
 						<div className="space-y-3">
 							{misCitas.map((cita: CitaPacienteCompleta) => {
-								const archivos = parseResultadoArchivo(cita.resultado_archivo);
-								const tieneResultado = archivos.length > 0;
-								const tieneInforme = cita.id_informe !== null && cita.informe_pdf_url !== null;
-								const tienePago = cita.id_pago !== null;
-								const tieneOrden = cita.orden !== null && cita.orden !== "";
-								const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
-								const pacienteFullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
+							const archivos = parseResultadoArchivo(cita.resultado_archivo);
+							const tieneDicom = !!cita.resultado_study_uid;
+							const tieneResultado = archivos.length > 0 || tieneDicom;
+							const totalResultados = archivos.length + (tieneDicom ? 1 : 0);
+							const tieneInforme = cita.id_informe !== null && cita.informe_pdf_url !== null;
+							const tienePago = cita.id_pago !== null;
+							const tieneOrden = cita.orden !== null && cita.orden !== "";
+							const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
+							const pacienteFullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`;
 
 								return (
 									<div
@@ -305,11 +330,16 @@ const ResultadosPage = () => {
 												<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(cita.estado_pago)}`}>
 													{getEstadoPagoLabel(cita.estado_pago)}
 												</span>
-												{tieneResultado && (
-													<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
-														{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
-													</span>
-												)}
+										{archivos.length > 0 && (
+												<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
+													{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
+												</span>
+											)}
+											{tieneDicom && (
+												<span className="rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-paper">
+													DICOM
+												</span>
+											)}
 												{tieneInforme && (
 													<span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-paper">
 														Con informe
@@ -364,6 +394,7 @@ const ResultadosPage = () => {
 														onClick={() => {
 															setSelectedCitaForResultados({
 																archivos,
+																studyUid: cita.resultado_study_uid,
 																pacienteNombre: pacienteFullName,
 																ecoNombre: cita.eco_nombre,
 																idCita: cita.id_cita,
@@ -372,7 +403,7 @@ const ResultadosPage = () => {
 														className="rounded-lg border border-emerald-500 bg-paper px-4 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 flex items-center gap-2"
 													>
 														<FileCheck className="h-4 w-4" />
-														Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
+														Ver {totalResultados} resultado{totalResultados !== 1 ? "s" : ""}
 													</button>
 												) : (
 													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
@@ -422,13 +453,14 @@ const ResultadosPage = () => {
 
 				{/* Modal para ver resultados */}
 				{selectedCitaForResultados && (
-					<VerResultadosModal
-						archivos={selectedCitaForResultados.archivos}
-						pacienteNombre={selectedCitaForResultados.pacienteNombre}
-						ecoNombre={selectedCitaForResultados.ecoNombre}
-						idCita={selectedCitaForResultados.idCita}
-						onClose={() => setSelectedCitaForResultados(null)}
-					/>
+			<VerResultadosModal
+					archivos={selectedCitaForResultados.archivos}
+					studyUid={selectedCitaForResultados.studyUid}
+					pacienteNombre={selectedCitaForResultados.pacienteNombre}
+					ecoNombre={selectedCitaForResultados.ecoNombre}
+					idCita={selectedCitaForResultados.idCita}
+					onClose={() => setSelectedCitaForResultados(null)}
+				/>
 				)}
 
 				{/* Modal para visualizar PDF del informe */}
@@ -519,24 +551,23 @@ const ResultadosPage = () => {
 									</div>
 									<div className="space-y-3">
 										<div>
-											<label className="mb-1 block text-sm font-medium text-brand-700">
-												Archivos (PDF o imágenes) - Máximo 10
-											</label>
-											<input
-												type="file"
-												multiple
-												accept="image/*,application/pdf"
-												onChange={(e) => {
-													handleFileChange(cita.id_cita, e.target.files);
-												}}
-												disabled={
-													(isUploading && selectedCita === cita.id_cita) ||
-													(uploadingFiles[cita.id_cita]?.length || 0) >= 10
-												}
+									<label className="mb-1 block text-sm font-medium text-brand-700">
+											Archivos (imágenes, PDF, DICOM, video, ZIP, RAR)
+										</label>
+										<input
+											type="file"
+											multiple
+											accept=".jpg,.jpeg,.png,.webp,.tiff,.tif,.bmp,.pdf,.dcm,.dicom,.mp4,.avi,.mov,.mkv,.zip,.rar"
+											onChange={(e) => {
+												handleFileChange(cita.id_cita, e.target.files);
+											}}
+											disabled={
+												isUploading && selectedCita === cita.id_cita
+											}
 												className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
 											/>
 											<p className="text-xs text-brand-800 mt-1">
-												Formatos permitidos: JPEG, PNG, WEBP, PDF.
+												Formatos permitidos: imágenes (JPEG, PNG, WEBP, TIFF), PDF, DICOM (.dcm), videos (MP4, AVI, MOV) y comprimidos (ZIP, RAR).
 											</p>
 										</div>
 										{uploadingFiles[cita.id_cita] && uploadingFiles[cita.id_cita].length > 0 && (
