@@ -375,7 +375,9 @@ const downloadDicomStudyHandler = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // Handler: DELETE /orthanc/study/:uid
-// Elimina el study de Orthanc y limpia study_uid del resultado
+// Elimina el study de Orthanc y limpia study_uid del resultado.
+// Solo borra de Orthanc si ninguna otra cita usa ese study (Orthanc almacena
+// una sola copia por StudyInstanceUID; varias citas pueden apuntar al mismo).
 // ─────────────────────────────────────────────
 const deleteDicomStudyHandler = async (req, res) => {
 	try {
@@ -388,33 +390,48 @@ const deleteDicomStudyHandler = async (req, res) => {
 				.json({ ok: false, message: "uid e id_cita son requeridos" });
 		}
 
-		// Buscar el study en Orthanc por StudyInstanceUID
+		// Comprobar si otras citas usan este study_uid (Orthanc almacena una sola copia)
+		const conn = await pool.getConnection();
+		let otrasCitasUsan = false;
 		try {
-			const lookupRes = await orthancClient.post("/tools/find", {
-				Level: "Study",
-				Query: { StudyInstanceUID: uid },
-			});
-
-			const orthancStudyIds = lookupRes.data || [];
-			for (const orthancId of orthancStudyIds) {
-				await orthancClient.delete(`/studies/${orthancId}`);
-			}
-		} catch (orthancErr) {
-			console.warn(
-				"[Orthanc] No se pudo eliminar de Orthanc:",
-				orthancErr.message,
+			const [rows] = await conn.execute(
+				"SELECT COUNT(*) AS cnt FROM resultado WHERE study_uid = ? AND id_cita != ?",
+				[uid, id_cita],
 			);
+			otrasCitasUsan = (rows[0]?.cnt ?? 0) > 0;
+		} finally {
+			conn.release();
 		}
 
-		// Limpiar study_uid en la BD
-		const conn = await pool.getConnection();
+		// Solo borrar de Orthanc si nadie más lo usa
+		if (!otrasCitasUsan) {
+			try {
+				const lookupRes = await orthancClient.post("/tools/find", {
+					Level: "Study",
+					Query: { StudyInstanceUID: uid },
+				});
+
+				const orthancStudyIds = lookupRes.data || [];
+				for (const orthancId of orthancStudyIds) {
+					await orthancClient.delete(`/studies/${orthancId}`);
+				}
+			} catch (orthancErr) {
+				console.warn(
+					"[Orthanc] No se pudo eliminar de Orthanc:",
+					orthancErr.message,
+				);
+			}
+		}
+
+		// Siempre limpiar study_uid del resultado de esta cita
+		const conn2 = await pool.getConnection();
 		try {
-			await conn.execute(
+			await conn2.execute(
 				"UPDATE resultado SET study_uid = NULL, estado_resultado = CASE WHEN (archivo IS NULL OR archivo = '' OR archivo = '[]') THEN 1 ELSE estado_resultado END WHERE id_cita = ?",
 				[id_cita],
 			);
 		} finally {
-			conn.release();
+			conn2.release();
 		}
 
 		return res
