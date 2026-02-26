@@ -12,7 +12,16 @@ import { useGetEcosQuery } from "../../ecos/ecosApi";
 import { useAprobarDisponibilidadMutation } from "../../disponibilidad/disponibilidadApi";
 import { isSlotAtLeast2HoursFromNow } from "../../disponibilidad/utils/dateUtils";
 import { useGetDolarOficialQuery } from "../../dolar/dolarApi";
-import { FormularioPago, formatFechaLocal, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
+import {
+	FormularioPago,
+	formatFechaLocal,
+	validarNumeroTelefono,
+	parseTelefonoDisplay,
+	parseCedulaDisplay,
+	validarRangoCedula,
+	type PagoFormData,
+	type FormularioPagoInvalidField,
+} from "../../../shared";
 import { getToken } from "../../../shared/utils/token";
 import Swal from "sweetalert2";
 import type { Eco } from "../../ecos/ecosApi";
@@ -314,9 +323,12 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 		if (!pagoData.banco_origen) missing.push("banco_origen");
 		if (!pagoData.banco_destino) missing.push("banco_destino");
 		if (!pagoData.monto?.trim()) missing.push("monto");
-		if (!pagoData.cedula_pagador?.replace(/\D/g, "").trim()) missing.push("cedula_pagador");
-		if (!pagoData.telefono_pagador?.replace(/\D/g, "").trim()) missing.push("telefono_pagador");
-		if (!pagoData.referencia?.trim()) missing.push("referencia");
+		const cedulaNum = parseCedulaDisplay(pagoData.cedula_pagador).numero;
+		if (!cedulaNum || !validarRangoCedula(cedulaNum)) missing.push("cedula_pagador");
+		const telefonoNum = parseTelefonoDisplay(pagoData.telefono_pagador).number;
+		if (!validarNumeroTelefono(telefonoNum)) missing.push("telefono_pagador");
+		const refDigits = (pagoData.referencia ?? "").replace(/\D/g, "");
+		if (!refDigits || refDigits.length > 16) missing.push("referencia");
 		if (!pagoData.imagen && !imagenComprimida) missing.push("imagen");
 		if (!pagoData.orden_medica && !ordenMedicaComprimida) missing.push("orden_medica");
 

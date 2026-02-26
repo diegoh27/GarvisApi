@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useAuth } from "../../../shared";
-import { FormularioPago, type PagoFormData, type FormularioPagoInvalidField } from "../../../shared";
+import {
+	FormularioPago,
+	validarNumeroTelefono,
+	parseTelefonoDisplay,
+	parseCedulaDisplay,
+	validarRangoCedula,
+	type PagoFormData,
+	type FormularioPagoInvalidField,
+} from "../../../shared";
 import { useAsignarCitaCompletaMutation } from "../../moderadores/moderadoresApi";
 import { useResendVerificationMutation } from "../../auth";
 import { useGetDolarOficialQuery } from "../../dolar/dolarApi";
@@ -82,9 +90,12 @@ const ReservarCitaParaMiForm = ({
 		if (!pagoData.banco_origen) missing.push("banco_origen");
 		if (!pagoData.banco_destino) missing.push("banco_destino");
 		if (!pagoData.monto?.trim()) missing.push("monto");
-		if (!pagoData.cedula_pagador?.replace(/\D/g, "").trim()) missing.push("cedula_pagador");
-		if (!pagoData.telefono_pagador?.replace(/\D/g, "").trim()) missing.push("telefono_pagador");
-		if (!pagoData.referencia?.trim()) missing.push("referencia");
+		const cedulaNum = parseCedulaDisplay(pagoData.cedula_pagador).numero;
+		if (!cedulaNum || !validarRangoCedula(cedulaNum)) missing.push("cedula_pagador");
+		const telefonoNum = parseTelefonoDisplay(pagoData.telefono_pagador).number;
+		if (!validarNumeroTelefono(telefonoNum)) missing.push("telefono_pagador");
+		const refDigits = (pagoData.referencia ?? "").replace(/\D/g, "");
+		if (!refDigits || refDigits.length > 16) missing.push("referencia");
 		if (!pagoData.imagen && !imagenComprimida) missing.push("imagen");
 		if (!pagoData.orden_medica && !ordenMedicaComprimida) missing.push("orden_medica");
 
