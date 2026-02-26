@@ -6,7 +6,16 @@ import VerPagoModal from "../../moderadores/components/VerPagoModal";
 import VerResultadosModal from "../../especialista/components/VerResultadosModal";
 import { useGetPagoByCitaQuery } from "../../moderadores/moderadoresApi";
 import { useUpdatePagoMutation } from "../../pagos/pagosApi";
-import FormularioPago, { type PagoFormData } from "../../../shared/components/FormularioPago";
+import FormularioPago, {
+	type PagoFormData,
+	type FormularioPagoInvalidField,
+} from "../../../shared/components/FormularioPago";
+import {
+	validarNumeroTelefono,
+	parseTelefonoDisplay,
+	parseCedulaDisplay,
+	validarRangoCedula,
+} from "../../../shared";
 import { formatFechaLocal } from "../../../shared";
 import Swal from "sweetalert2";
 
@@ -75,6 +84,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 	const [showResultados, setShowResultados] = useState(false);
 	const [isEditingPago, setIsEditingPago] = useState(false);
 	const [pagoFormData, setPagoFormData] = useState<Partial<PagoFormData>>({});
+	const [invalidFields, setInvalidFields] = useState<FormularioPagoInvalidField[]>([]);
 
 	const { data: pago, error: pagoError, isLoading: pagoLoading } = useGetPagoByCitaQuery(cita?.id_cita ?? "", {
 		skip: !showVerPago || !cita?.id_cita,
@@ -97,6 +107,30 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 
 	const handleSubmitCorreccion = async () => {
 		if (!cita?.id_cita) return;
+
+		const missing: FormularioPagoInvalidField[] = [];
+		if (!pagoFormData.banco_origen) missing.push("banco_origen");
+		if (!pagoFormData.banco_destino) missing.push("banco_destino");
+		if (!pagoFormData.monto?.trim()) missing.push("monto");
+		const cedulaNum = parseCedulaDisplay(pagoFormData.cedula_pagador).numero;
+		if (!cedulaNum || !validarRangoCedula(cedulaNum)) missing.push("cedula_pagador");
+		const telefonoNum = parseTelefonoDisplay(pagoFormData.telefono_pagador).number;
+		if (!validarNumeroTelefono(telefonoNum)) missing.push("telefono_pagador");
+		const refDigits = (pagoFormData.referencia ?? "").replace(/\D/g, "");
+		if (!refDigits || refDigits.length > 16) missing.push("referencia");
+		if (!pagoFormData.imagen) missing.push("imagen");
+		if (!pagoFormData.orden_medica) missing.push("orden_medica");
+
+		if (missing.length > 0) {
+			setInvalidFields(missing);
+			Swal.fire({
+				icon: "warning",
+				title: "Campos incompletos",
+				text: "Complete los campos marcados en rojo. Teléfono: 7 dígitos. Referencia: solo números, máximo 16 dígitos.",
+			});
+			return;
+		}
+		setInvalidFields([]);
 
 		try {
 			await updatePago({
@@ -277,6 +311,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									precioEcoUSD={cita?.eco_precio ? parseFloat(cita.eco_precio.toString()) : null}
 									onChange={setPagoFormData}
 									initialData={pagoFormData}
+									invalidFields={invalidFields}
 									isLoading={isUpdatingPago}
 									disabled={isUpdatingPago}
 								/>

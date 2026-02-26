@@ -9,11 +9,9 @@ import { useGetDolarOficialQuery } from "../../features/dolar/dolarApi";
 import imageCompression from "browser-image-compression";
 import Swal from "sweetalert2";
 import { getToken } from "../utils/token";
-import {
-	BANCOS_VENEZUELA,
-	CEDULA_PREFIXES,
-	TELEFONO_PREFIXES,
-} from "../../data/bancosVenezuela";
+import { BANCOS_VENEZUELA } from "../../data/bancosVenezuela";
+import { TelefonoField } from "./TelefonoField";
+import { CedulaField } from "./CedulaField";
 
 export type PagoFormData = {
 	metodo: "Transferencia" | "PagoMovil";
@@ -183,23 +181,6 @@ const FormularioPago = ({
 	}, [bancosPorMetodo, bancoOrigenSearch]);
 
 	const bancoLabel = (code: string, name: string) => `${code} - ${name}`;
-
-	// Parsear cédula "V-12345678" -> { prefix: "V", number: "12345678" }
-	const parseCedula = (s: string): { prefix: string; number: string } => {
-		const m = s.match(/^([VJEPG])-?(\d*)$/i);
-		if (m) return { prefix: m[1].toUpperCase(), number: m[2] };
-		return { prefix: "V", number: s.replace(/^[VJEPG]-?/i, "").replace(/\D/g, "").slice(0, 8) };
-	};
-
-	// Parsear teléfono "04121234567" -> { prefix: "0412", number: "1234567" }
-	const parseTelefono = (s: string): { prefix: string; number: string } => {
-		for (const p of TELEFONO_PREFIXES) {
-			if (s.startsWith(p)) return { prefix: p, number: s.slice(p.length).replace(/\D/g, "").slice(0, 7) };
-		}
-		const digits = s.replace(/\D/g, "").slice(0, 11);
-		const pref = TELEFONO_PREFIXES.find((p) => digits.startsWith(p)) || "0412";
-		return { prefix: pref, number: digits.slice(pref.length).slice(0, 7) };
-	};
 
 	// Cerrar dropdown de banco origen al hacer clic fuera
 	useEffect(() => {
@@ -950,94 +931,74 @@ const FormularioPago = ({
 				{isInvalid("monto") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
 			</div>
 
-			{/* Cédula pagador: prefijo (V, J, E, P, G) + número */}
+			{/* Cédula pagador: mismo componente que en el resto del sistema (tipo + número, rango 100.000–99.000.000) */}
 			<div>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("cedula_pagador") ? "text-red-600" : "text-brand-900"}`}>
-					Cédula del pagador *
-				</label>
-				<div className="flex gap-2">
-					<select
-						value={parseCedula(formData.cedula_pagador).prefix}
-						onChange={(e) => {
-							const { number } = parseCedula(formData.cedula_pagador);
-							setFormData((prev) => ({ ...prev, cedula_pagador: `${e.target.value}-${number}` }));
-						}}
-						className={`w-20 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("cedula_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
-						disabled={isLoading || disabled}
-					>
-						{CEDULA_PREFIXES.map((p) => (
-							<option key={p} value={p}>{p}</option>
-						))}
-					</select>
-					<input
-						type="text"
-						inputMode="numeric"
-						value={parseCedula(formData.cedula_pagador).number}
-						onChange={(e) => {
-							const v = e.target.value.replace(/\D/g, "").slice(0, 8);
-							const { prefix } = parseCedula(formData.cedula_pagador);
-							setFormData((prev) => ({ ...prev, cedula_pagador: v ? `${prefix}-${v}` : "" }));
-						}}
-						className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("cedula_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
-						placeholder="12345678"
-						disabled={isLoading || disabled}
-					/>
-				</div>
-				{isInvalid("cedula_pagador") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				<CedulaField
+					value={formData.cedula_pagador}
+					onChange={(tipo, numero) =>
+						setFormData((prev) => ({
+							...prev,
+							cedula_pagador: numero ? `${tipo}-${numero}` : "",
+						}))
+					}
+					label={
+						<span className={isInvalid("cedula_pagador") ? "text-red-600" : "text-brand-900"}>
+							Cédula del pagador *
+						</span>
+					}
+					error={isInvalid("cedula_pagador") ? "Requerido; número entre 100.000 y 99.000.000" : undefined}
+					required
+					disabled={isLoading || disabled}
+					inputClassName={isInvalid("cedula_pagador") ? invalidClass : ""}
+					selectClassName={isInvalid("cedula_pagador") ? invalidClass : ""}
+				/>
 			</div>
 
-			{/* Teléfono pagador: prefijo móvil Venezuela + 7 dígitos */}
+			{/* Teléfono pagador: mismo formato que otros campos (prefijo + 7 dígitos) */}
 			<div>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("telefono_pagador") ? "text-red-600" : "text-brand-900"}`}>
-					Teléfono del pagador *
-				</label>
-				<div className="flex gap-2">
-					<select
-						value={parseTelefono(formData.telefono_pagador).prefix}
-						onChange={(e) => {
-							const { number } = parseTelefono(formData.telefono_pagador);
-							setFormData((prev) => ({ ...prev, telefono_pagador: e.target.value + number }));
-						}}
-						className={`w-24 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("telefono_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
-						disabled={isLoading || disabled}
-					>
-						{TELEFONO_PREFIXES.map((p) => (
-							<option key={p} value={p}>{p}</option>
-						))}
-					</select>
-					<input
-						type="text"
-						inputMode="numeric"
-						value={parseTelefono(formData.telefono_pagador).number}
-						onChange={(e) => {
-							const v = e.target.value.replace(/\D/g, "").slice(0, 7);
-							const { prefix } = parseTelefono(formData.telefono_pagador);
-							setFormData((prev) => ({ ...prev, telefono_pagador: prefix + v }));
-						}}
-						className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("telefono_pagador") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
-						placeholder="1234567"
-						disabled={isLoading || disabled}
-					/>
-				</div>
-				{isInvalid("telefono_pagador") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				<TelefonoField
+					value={formData.telefono_pagador}
+					onChange={(prefix, number) =>
+						setFormData((prev) => ({ ...prev, telefono_pagador: prefix + number }))
+					}
+					label={
+						<span className={isInvalid("telefono_pagador") ? "text-red-600" : "text-brand-900"}>
+							Teléfono del pagador *
+						</span>
+					}
+					error={isInvalid("telefono_pagador") ? "Campo requerido (7 dígitos)" : undefined}
+					required
+					disabled={isLoading || disabled}
+					inputClassName={isInvalid("telefono_pagador") ? invalidClass : ""}
+					selectClassName={isInvalid("telefono_pagador") ? invalidClass : ""}
+				/>
 			</div>
 
-			{/* Referencia */}
+			{/* Referencia: solo números, máximo 16 caracteres */}
 			<div>
 				<label className={`block text-sm font-medium mb-1 ${isInvalid("referencia") ? "text-red-600" : "text-brand-900"}`}>
 					Referencia *
 				</label>
 				<input
 					type="text"
+					inputMode="numeric"
+					maxLength={16}
 					value={formData.referencia}
-					onChange={(e) =>
-						setFormData((prev) => ({ ...prev, referencia: e.target.value }))
-					}
+					onChange={(e) => {
+						const v = e.target.value.replace(/\D/g, "").slice(0, 16);
+						setFormData((prev) => ({ ...prev, referencia: v }));
+					}}
 					className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("referencia") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
-					placeholder="Número de referencia del pago"
+					placeholder="Solo números, máximo 16 dígitos"
 					disabled={isLoading || disabled}
 				/>
-				{isInvalid("referencia") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("referencia") && (
+					<p className="mt-1 text-xs text-red-600">
+						{!formData.referencia.trim()
+							? "Campo requerido"
+							: "Solo números, máximo 16 dígitos"}
+					</p>
+				)}
 			</div>
 
 			{/* Orden médica */}

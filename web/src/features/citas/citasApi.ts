@@ -105,6 +105,8 @@ export type CitaPacienteCompleta = {
 	paciente_nombre: string;
 	paciente_apellido: string;
 	eco_nombre: string;
+	/** Precio del eco en USD (para formulario de pago) */
+	eco_precio?: number | string;
 	// Datos del representado
 	representado_nombre: string | null;
 	representado_apellido: string | null;
