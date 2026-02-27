@@ -122,9 +122,9 @@ export default function PagarComisionModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Encabezado */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
             {mode === "editar" ? "Editar pago" : "Pagar cita"}
           </h2>
@@ -136,8 +136,8 @@ export default function PagarComisionModal({
           </button>
         </div>
 
-        {/* Contenido */}
-        <div className="px-6 py-4 space-y-4">
+        {/* Contenido con scroll */}
+        <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
           {/* Información de la comisión */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
             <div className="flex justify-between text-sm">
@@ -304,30 +304,33 @@ export default function PagarComisionModal({
                 <p className="text-sm text-red-700">{error}</p>
               </div>
             )}
-
-            {/* Botones */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading
-                  ? "Procesando..."
-                  : mode === "editar"
-                    ? "Guardar cambios"
-                    : "Confirmar pago"}
-              </button>
-            </div>
           </form>
+        </div>
+
+        {/* Footer con botones (siempre visible) */}
+        <div className="px-6 py-4 border-t flex-shrink-0">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading
+                ? "Procesando..."
+                : mode === "editar"
+                  ? "Guardar cambios"
+                  : "Confirmar pago"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
