@@ -491,177 +491,182 @@ const DisponibilidadPendientesPage = () => {
 			title="Gestionar disponibilidades"
 			description="Revisar, aprobar o cancelar bloques de disponibilidad propuestos por especialistas."
 		>
-			<div className="space-y-4">
-				<FiltrosDisponibilidadPendientes
-					value={filtros}
-					onChange={setFiltros}
-					ecoOptions={ecoOptions}
-					onReset={clearFiltros}
-				/>
+			<div className="flex flex-col xl:flex-row gap-6 items-start">
+				
+				{/* Columna Izquierda: Contenido principal (Lista y acciones masivas) */}
+				<div className="flex-1 space-y-4 min-w-0 w-full">
+					{/* Panel Unificado de Acciones Masivas — una sola fila */}
+					<div className="flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-2 shadow-sm">
+						{/* Selección */}
+						{!isLoading && filteredAndSorted.length > 0 && (
+							<>
+								<button
+									type="button"
+									onClick={() => selectPageIds(paginated.map((d) => d.id_disponibilidad))}
+									className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+								>
+									Seleccionar página
+								</button>
+								<button
+									type="button"
+									onClick={() => setSelectedIds(new Set(filteredIds))}
+									className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+								>
+									Seleccionar filtrados ({filteredAndSorted.length})
+								</button>
+							</>
+						)}
 
-				<FiltroFechaCard
-					fechaDesde={filtros.fechaDesde}
-					fechaHasta={filtros.fechaHasta}
-				/>
-
-				<div className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3">
-					<p className="mb-2 text-sm font-medium text-amber-900">
-						Eliminar en lote (sin citas asignadas)
-					</p>
-					<div className="flex flex-wrap gap-2">
+						{/* Eliminación — empujados a la derecha */}
+						<div className="ml-auto flex flex-wrap items-center gap-2">
 						<button
 							type="button"
 							onClick={handleEliminarPasada}
 							disabled={isEliminandoPasada || selectedId === "eliminar-pasada"}
-							className="rounded-full border border-amber-600 bg-paper px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+							className="rounded-lg border border-red-400 bg-paper px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+							title="Borra todo lo anterior a hoy (pendientes, aprobados, cancelados, rechazados sin cita)"
 						>
-							{isEliminandoPasada && selectedId === "eliminar-pasada"
-								? "Procesando..."
-								: "Eliminar disponibilidad pasada"}
+							{isEliminandoPasada && selectedId === "eliminar-pasada" ? "Procesando..." : "Eliminar pasada"}
 						</button>
 						<button
 							type="button"
 							onClick={handleEliminarPorCriterios}
 							disabled={isEliminandoPorCriterios || selectedId === "eliminar-criterios"}
-							className="rounded-full border border-amber-600 bg-paper px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
+							className="rounded-lg border border-red-400 bg-paper px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+							title="Usa fecha/hora desde-hasta del filtro; no elimina bloques con cita"
 						>
-							{isEliminandoPorCriterios && selectedId === "eliminar-criterios"
-								? "Procesando..."
-								: "Eliminar por filtro actual"}
+							{isEliminandoPorCriterios && selectedId === "eliminar-criterios" ? "Procesando..." : "Eliminar por filtro"}
 						</button>
+						</div>
+
+						{/* Acciones con seleccionados (aparecen dinámicamente) */}
+						{selectedIds.size > 0 && (
+							<>
+								<div className="hidden h-5 w-px bg-brand-300 sm:block" />
+								<span className="text-[10px] font-bold text-brand-600 uppercase tracking-wider">{selectedIds.size} selec.</span>
+								<button
+									type="button"
+									onClick={clearSelection}
+									className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+								>
+									Deseleccionar
+								</button>
+								<button
+									type="button"
+									onClick={handleAprobarLote}
+									disabled={isAprobandoLote || selectedId === "lote"}
+									className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-paper hover:bg-brand-800 disabled:opacity-50 transition-colors"
+								>
+									{isAprobandoLote && selectedId === "lote" ? "Procesando..." : "Aprobar lote"}
+								</button>
+								<button
+									type="button"
+									onClick={handleCancelarLote}
+									disabled={isCancelandoLote || selectedId === "cancel-lote"}
+									className="rounded-lg border border-amber-500 bg-paper px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50 transition-colors"
+								>
+									{isCancelandoLote && selectedId === "cancel-lote" ? "Procesando..." : "Cancelar lote"}
+								</button>
+							</>
+						)}
 					</div>
-					<p className="mt-1.5 text-xs text-amber-800">
-						Pasada: borra todo lo anterior a hoy. Por filtro: usa fecha/hora desde-hasta; no se eliminan bloques con cita.
-					</p>
+
+					{isLoading ? (
+						<div className="py-8 text-center text-brand-600">
+							Cargando disponibilidades...
+						</div>
+					) : filteredAndSorted.length === 0 ? (
+						<div className="rounded-xl border border-brand-200 bg-paper p-8 text-center shadow-sm">
+							<p className="text-brand-600">
+								{filtros.query.trim() ||
+									filtros.fechaDesde ||
+									filtros.fechaHasta ||
+									filtros.horaDesde ||
+									filtros.horaHasta ||
+									filtros.ecoId
+									? "No hay resultados con los filtros aplicados."
+									: filtros.estado === "pendientes"
+										? "No hay disponibilidades pendientes de aprobar."
+										: "No hay disponibilidades para mostrar."}
+							</p>
+						</div>
+					) : (
+						<>
+							<div className="space-y-3">
+								{paginated.map((disp: DisponibilidadPendiente) => (
+									<DisponibilidadPendienteCard
+										key={disp.id_disponibilidad}
+										disp={disp}
+										onAprobar={handleAprobar}
+										onRechazar={handleRechazar}
+										onCancelar={handleCancelar}
+										isAprobando={isAprobando}
+										isRechazando={isRechazando}
+										isCancelando={isCancelando}
+										selectedId={selectedId}
+										showCheckbox
+										selected={selectedIds.has(disp.id_disponibilidad)}
+										onToggleSelect={() => toggleSelect(disp.id_disponibilidad)}
+									/>
+								))}
+							</div>
+
+							{totalPages > 1 && (
+								<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
+									<div className="text-xs text-brand-800">
+										Mostrando{" "}
+										{(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
+										{Math.min(
+											currentPage * ITEMS_PER_PAGE,
+											filteredAndSorted.length,
+										)}{" "}
+										de {filteredAndSorted.length} disponibilidades
+									</div>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() =>
+												setCurrentPage((p) => Math.max(1, p - 1))
+											}
+											disabled={currentPage === 1}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Anterior
+										</button>
+										<span className="text-xs text-brand-800">
+											Página {currentPage} de {totalPages}
+										</span>
+										<button
+											type="button"
+											onClick={() =>
+												setCurrentPage((p) => Math.min(totalPages, p + 1))
+											}
+											disabled={currentPage === totalPages}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											Siguiente
+										</button>
+									</div>
+								</div>
+							)}
+						</>
+					)}
 				</div>
 
-				{isLoading ? (
-					<div className="py-8 text-center text-brand-600">
-						Cargando disponibilidades...
-					</div>
-				) : filteredAndSorted.length === 0 ? (
-					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
-						<p className="text-brand-600">
-							{filtros.query.trim() ||
-								filtros.fechaDesde ||
-								filtros.fechaHasta ||
-								filtros.horaDesde ||
-								filtros.horaHasta ||
-								filtros.ecoId
-								? "No hay resultados con los filtros aplicados."
-								: filtros.estado === "pendientes"
-									? "No hay disponibilidades pendientes de aprobar."
-									: "No hay disponibilidades para mostrar."}
-						</p>
-					</div>
-				) : (
-					<>
-						<div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/50 px-3 py-2">
-							<button
-								type="button"
-								onClick={() => selectPageIds(paginated.map((d) => d.id_disponibilidad))}
-								className="rounded-full border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
-							>
-								Seleccionar página
-							</button>
-							<button
-								type="button"
-								onClick={() => setSelectedIds(new Set(filteredIds))}
-								className="rounded-full border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
-							>
-								Seleccionar filtrados ({filteredAndSorted.length})
-							</button>
-							{selectedIds.size > 0 && (
-								<>
-									<button
-										type="button"
-										onClick={clearSelection}
-										className="rounded-full border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
-									>
-										Limpiar selección
-									</button>
-									<button
-										type="button"
-										onClick={handleAprobarLote}
-										disabled={isAprobandoLote || selectedId === "lote"}
-										className="rounded-full bg-brand-700 px-3 py-1.5 text-xs font-semibold text-paper hover:bg-brand-800 disabled:opacity-50"
-									>
-										{isAprobandoLote && selectedId === "lote"
-											? "Procesando..."
-											: `Aprobar seleccionados (${selectedIds.size})`}
-									</button>
-									<button
-										type="button"
-										onClick={handleCancelarLote}
-										disabled={isCancelandoLote || selectedId === "cancel-lote"}
-										className="rounded-full border border-red-500 bg-paper px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-									>
-										{isCancelandoLote && selectedId === "cancel-lote"
-											? "Procesando..."
-											: `Cancelar seleccionados (${selectedIds.size})`}
-									</button>
-								</>
-							)}
-						</div>
-						<div className="space-y-3">
-							{paginated.map((disp: DisponibilidadPendiente) => (
-								<DisponibilidadPendienteCard
-									key={disp.id_disponibilidad}
-									disp={disp}
-									onAprobar={handleAprobar}
-									onRechazar={handleRechazar}
-									onCancelar={handleCancelar}
-									isAprobando={isAprobando}
-									isRechazando={isRechazando}
-									isCancelando={isCancelando}
-									selectedId={selectedId}
-									showCheckbox
-									selected={selectedIds.has(disp.id_disponibilidad)}
-									onToggleSelect={() => toggleSelect(disp.id_disponibilidad)}
-								/>
-							))}
-						</div>
+				{/* Columna Derecha: Sidebar de Filtros */}
+				<div className="w-full xl:w-72 shrink-0 space-y-4 xl:sticky xl:top-4 order-first xl:order-last">
+					<FiltrosDisponibilidadPendientes
+						value={filtros}
+						onChange={setFiltros}
+						ecoOptions={ecoOptions}
+						onReset={clearFiltros}
+					/>
 
-						{totalPages > 1 && (
-							<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
-								<div className="text-xs text-brand-800">
-									Mostrando{" "}
-									{(currentPage - 1) * ITEMS_PER_PAGE + 1} -{" "}
-									{Math.min(
-										currentPage * ITEMS_PER_PAGE,
-										filteredAndSorted.length,
-									)}{" "}
-									de {filteredAndSorted.length} disponibilidades
-								</div>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() =>
-											setCurrentPage((p) => Math.max(1, p - 1))
-										}
-										disabled={currentPage === 1}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										Anterior
-									</button>
-									<span className="text-xs text-brand-800">
-										Página {currentPage} de {totalPages}
-									</span>
-									<button
-										type="button"
-										onClick={() =>
-											setCurrentPage((p) => Math.min(totalPages, p + 1))
-										}
-										disabled={currentPage === totalPages}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
-									>
-										Siguiente
-									</button>
-								</div>
-							</div>
-						)}
-					</>
-				)}
+					<FiltroFechaCard
+						fechaDesde={filtros.fechaDesde}
+						fechaHasta={filtros.fechaHasta}
+					/>
+				</div>
 			</div>
 		</PageShell>
 	);
