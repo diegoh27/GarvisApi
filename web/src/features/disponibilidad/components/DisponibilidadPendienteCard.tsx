@@ -57,11 +57,12 @@ const DisponibilidadPendienteCard = ({
 	const estadoInfo = estadoBadge();
 
 	return (
-		<div className="rounded-lg border border-brand-200 bg-paper p-4">
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				{showCheckbox && onToggleSelect && (
-					<div className="flex items-center">
-						<label className="flex cursor-pointer items-center gap-2">
+		<div className="rounded-lg border border-brand-200 bg-paper px-4 py-3 transition-colors hover:bg-brand-50/30">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				{/* Lado izquierdo: Info y Checkbox */}
+				<div className="flex flex-1 items-center gap-3">
+					{showCheckbox && onToggleSelect && (
+						<label className="flex cursor-pointer items-center shrink-0">
 							<input
 								type="checkbox"
 								checked={selected}
@@ -70,54 +71,62 @@ const DisponibilidadPendienteCard = ({
 							/>
 							<span className="sr-only">Seleccionar para aprobar en lote</span>
 						</label>
-					</div>
-				)}
-				<div className="flex-1 space-y-2">
-					<div className="flex items-center gap-2">
-						<h3 className="font-semibold text-brand-900">
-							{disp.nombre} {disp.apellido}
-						</h3>
-						<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
-							{disp.especialidad}
-						</span>
-						<span
-							className={`rounded-full px-2 py-0.5 text-xs font-medium ${estadoInfo.className}`}
-						>
-							{estadoInfo.label}
-						</span>
-					</div>
-					<div className="space-y-1 text-sm text-brand-600">
-						<div>
-							<span className="font-medium">Fecha:</span>{" "}
-							{formatFecha(disp.fecha)}
+					)}
+
+					<div className="flex flex-col justify-center gap-1.5">
+						{/* Fila 1: Nombre y Badges */}
+						<div className="flex flex-wrap items-center gap-2">
+							<h3 className="font-semibold text-brand-900 text-sm">
+								{disp.nombre} {disp.apellido}
+							</h3>
+							<span className="rounded-full bg-brand-700 px-2 py-0.5 text-[10px] uppercase font-medium text-paper tracking-wider">
+								{disp.especialidad}
+							</span>
+							<span
+								className={`rounded-full px-2 py-0.5 text-[10px] uppercase font-medium tracking-wider ${estadoInfo.className}`}
+							>
+								{estadoInfo.label}
+							</span>
 						</div>
-						<div>
-							<span className="font-medium">Horario:</span>{" "}
-							{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
-						</div>
-						{disp.eco_nombre && (
-							<div>
-								<span className="font-medium">Eco:</span> {disp.eco_nombre}
+
+						{/* Fila 2: Datos: Fecha, Hora y Eco */}
+						<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-brand-600">
+							<div className="flex items-center gap-1">
+								<span className="font-medium text-brand-500">Fecha:</span>{" "}
+								{formatFecha(disp.fecha)}
 							</div>
-						)}
+							<div className="hidden h-3 w-px bg-brand-200 sm:block" />
+							<div className="flex items-center gap-1">
+								<span className="font-medium text-brand-500">Hora:</span>{" "}
+								{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
+							</div>
+							{disp.eco_nombre && (
+								<>
+									<div className="hidden h-3 w-px bg-brand-200 sm:block" />
+									<div className="flex items-center gap-1">
+										<span className="font-medium text-brand-500">Eco:</span> {disp.eco_nombre}
+									</div>
+								</>
+							)}
+						</div>
 					</div>
 				</div>
-				<div className="flex gap-2 sm:flex-col">
+
+				{/* Lado derecho: Botones de Acción */}
+				<div className="flex shrink-0 items-center gap-2 mt-2 sm:mt-0 lg:pl-4">
 					<button
 						type="button"
 						onClick={() => onAprobar(disp.id_disponibilidad)}
 						disabled={isBusy || !canAprobar}
-						className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+						className="min-w-[70px] rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
 					>
-						{isAprobando && selectedId === disp.id_disponibilidad
-							? "Procesando..."
-							: "Aprobar"}
+						{isAprobando && selectedId === disp.id_disponibilidad ? "..." : "Aprobar"}
 					</button>
 					<button
 						type="button"
 						onClick={() => onRechazar(disp.id_disponibilidad)}
 						disabled={isBusy || !canRechazar}
-						className="flex-1 rounded-lg border border-red-500 bg-paper px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+						className="rounded-lg border border-red-500 bg-paper px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
 					>
 						Rechazar
 					</button>
@@ -126,7 +135,7 @@ const DisponibilidadPendienteCard = ({
 							type="button"
 							onClick={() => onCancelar(disp.id_disponibilidad)}
 							disabled={isBusy || !canCancelar}
-							className="flex-1 rounded-lg border border-amber-500 bg-paper px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50"
+							className="rounded-lg border border-amber-500 bg-paper px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50"
 						>
 							Cancelar
 						</button>
