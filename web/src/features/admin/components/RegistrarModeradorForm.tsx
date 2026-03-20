@@ -14,7 +14,7 @@ const RegistrarModeradorForm = () => {
 		correo: "",
 		telefono: "",
 		cedula: "",
-		genero: "Masculino" as "Masculino" | "Femenino" | "Otro",
+		genero: "Masculino" as "Masculino" | "Femenino",
 		fecha_nacimiento: "",
 		contrasena: "",
 		confirmar_contrasena: "",
@@ -40,10 +40,14 @@ const RegistrarModeradorForm = () => {
 			case "nombre":
 				if (!value.trim()) return "El nombre es requerido";
 				if (value.trim().length < 2) return "El nombre debe tener al menos 2 caracteres";
+				if (value.length > 30) return "El nombre no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El nombre solo puede contener letras";
 				break;
 			case "apellido":
 				if (!value.trim()) return "El apellido es requerido";
 				if (value.trim().length < 2) return "El apellido debe tener al menos 2 caracteres";
+				if (value.length > 30) return "El apellido no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El apellido solo puede contener letras";
 				break;
 			case "correo":
 				if (!value.trim()) return "El correo es requerido";
@@ -57,6 +61,10 @@ const RegistrarModeradorForm = () => {
 			case "contrasena":
 				if (!value) return "La contraseña es requerida";
 				if (value.length < 6) return "La contraseña debe tener al menos 6 caracteres";
+				if (value.length > 20) return "La contraseña no puede exceder 20 caracteres";
+				if (!/[A-Z]/.test(value)) return "La contraseña debe contener al menos una mayúscula";
+				if (!/[0-9]/.test(value)) return "La contraseña debe contener al menos un número";
+				if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return "La contraseña debe contener al menos un carácter especial";
 				break;
 			case "confirmar_contrasena":
 				if (!value) return "Debes confirmar la contraseña";
@@ -70,7 +78,21 @@ const RegistrarModeradorForm = () => {
 			}
 			case "fecha_nacimiento":
 				if (!value.trim()) return "La fecha de nacimiento es requerida";
-				if (new Date(value) > new Date()) return "La fecha de nacimiento no puede ser futura";
+				const fechaNac = new Date(value);
+				const hoy = new Date();
+				hoy.setHours(23, 59, 59, 999);
+				if (fechaNac.getTime() > hoy.getTime()) return "La fecha de nacimiento no puede ser futura";
+				
+				const hace100Anos = new Date();
+				hace100Anos.setFullYear(hoy.getFullYear() - 100);
+				if (fechaNac.getTime() < hace100Anos.getTime()) return "La fecha de nacimiento no puede ser mayor a 100 años";
+				
+				const edad = hoy.getFullYear() - fechaNac.getFullYear();
+				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+				const diaDiff = hoy.getDate() - fechaNac.getDate();
+				const yaCumplioEsteAnio = mesDiff > 0 || (mesDiff === 0 && diaDiff >= 0);
+				const edadReal = yaCumplioEsteAnio ? edad : edad - 1;
+				if (edadReal < 18) return "El usuario debe ser mayor de edad (18 años o más)";
 				break;
 		}
 		return "";
@@ -153,7 +175,7 @@ const RegistrarModeradorForm = () => {
 								type="text"
 								required
 								value={form.nombre}
-								onChange={(e) => updateField("nombre", e.target.value)}
+								onChange={(e) => updateField("nombre", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 								onBlur={(e) => {
 									const error = validateField("nombre", e.target.value);
 									if (error) {
@@ -177,7 +199,7 @@ const RegistrarModeradorForm = () => {
 								type="text"
 								required
 								value={form.apellido}
-								onChange={(e) => updateField("apellido", e.target.value)}
+								onChange={(e) => updateField("apellido", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 								onBlur={(e) => {
 									const error = validateField("apellido", e.target.value);
 									if (error) {
@@ -243,7 +265,6 @@ const RegistrarModeradorForm = () => {
 							>
 								<option value="Masculino">Masculino</option>
 								<option value="Femenino">Femenino</option>
-								<option value="Otro">Otro</option>
 							</select>
 						</div>
 						<div>
@@ -298,12 +319,6 @@ const RegistrarModeradorForm = () => {
 							<PasswordField
 								value={form.contrasena}
 								onChange={(value) => updateField("contrasena", value)}
-								onBlur={() => {
-									const error = validateField("contrasena", form.contrasena);
-									if (error) {
-										setFieldErrors((prev) => ({ ...prev, contrasena: error }));
-									}
-								}}
 								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Mínimo 6 caracteres"
@@ -320,12 +335,6 @@ const RegistrarModeradorForm = () => {
 							<PasswordField
 								value={form.confirmar_contrasena}
 								onChange={(value) => updateField("confirmar_contrasena", value)}
-								onBlur={() => {
-									const error = validateField("confirmar_contrasena", form.confirmar_contrasena);
-									if (error) {
-										setFieldErrors((prev) => ({ ...prev, confirmar_contrasena: error }));
-									}
-								}}
 								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Repite la contraseña"
