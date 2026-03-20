@@ -97,7 +97,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				method: "POST",
 				body: payload,
 			}),
-			invalidatesTags: ["Empleado"],
+			invalidatesTags: ["Empleado", "InventarioAuditoria"],
 		}),
 
 		updateEmpleado: builder.mutation<
@@ -109,7 +109,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				method: "PUT",
 				body: payload,
 			}),
-			invalidatesTags: ["Empleado"],
+			invalidatesTags: ["Empleado", "InventarioAuditoria"],
 		}),
 
 		deleteEmpleado: builder.mutation<{ message: string }, string>({
@@ -117,7 +117,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				url: `/nomina/empleados/${idEmpleado}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["Empleado"],
+			invalidatesTags: ["Empleado", "InventarioAuditoria"],
 		}),
 
 		// ==========================================
@@ -142,7 +142,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				method: "POST",
 				body: payload,
 			}),
-			invalidatesTags: ["NominaPago", "Empleado"],
+			invalidatesTags: ["NominaPago", "Empleado", "InventarioAuditoria"],
 		}),
 
 		updatePagoNomina: builder.mutation<
@@ -154,7 +154,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				method: "PUT",
 				body: payload,
 			}),
-			invalidatesTags: ["NominaPago", "Empleado"],
+			invalidatesTags: ["NominaPago", "Empleado", "InventarioAuditoria"],
 		}),
 
 		deletePagoNomina: builder.mutation<{ message: string }, string>({
@@ -162,7 +162,7 @@ export const nominaApi = baseApi.injectEndpoints({
 				url: `/nomina/pagos/${idPago}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["NominaPago", "Empleado"],
+			invalidatesTags: ["NominaPago", "Empleado", "InventarioAuditoria"],
 		}),
 	}),
 });

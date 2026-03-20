@@ -1395,6 +1395,26 @@ DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- =========================
+-- Auditoría de inventario (acciones en productos, entes, nómina, alquiler, comisiones)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_auditoria (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  modulo VARCHAR(50) NOT NULL,
+  accion VARCHAR(500) NOT NULL,
+  entidad_tipo VARCHAR(80) NULL,
+  entidad_id VARCHAR(36) NULL,
+  id_usuario CHAR(36) NULL,
+  usuario_nombre VARCHAR(120) NULL,
+  usuario_rol VARCHAR(50) NULL,
+  detalles JSON NULL,
+  fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_inv_auditoria_fecha (fecha),
+  KEY idx_inv_auditoria_modulo (modulo),
+  KEY idx_inv_auditoria_usuario (id_usuario)
+) ENGINE=InnoDB;
+
+-- =========================
 -- Auditoría de eventos del sistema
 -- =========================
 CREATE TABLE IF NOT EXISTS auditoria_eventos (

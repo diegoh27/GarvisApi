@@ -13,6 +13,7 @@ import {
 import PageShell from "../../../shared/components/PageShell";
 import { EmailVerificationBanner, useAuth } from "../../../shared";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
+import { useGetTienePagoPendienteQuery } from "../../citas/citasApi";
 import {
 	useGetDisponibilidadPublicaPorEcoQuery,
 	type DisponibilidadPublicaPorEcoItem,
@@ -54,6 +55,11 @@ const DisponibilidadPublicaPage = () => {
 	const isEmailVerified = !isPaciente
 		? true
 		: Number(pacienteSelf?.email_verificado) === 1;
+
+	const { data: tienePagoData } = useGetTienePagoPendienteQuery(undefined, {
+		skip: !isPaciente,
+	});
+	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
 
 	const { data: ecos = [], isLoading: loadingEcos } = useGetEcosQuery(undefined, {
 		selectFromResult: ({ data, isLoading }) => ({
@@ -145,6 +151,19 @@ const DisponibilidadPublicaPage = () => {
 		>
 			<div className="space-y-8">
 				<EmailVerificationBanner />
+
+				{/* Banner: pago pendiente de verificación */}
+				{isPaciente && tienePagoPendiente && (
+					<div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
+						<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+						<div className="min-w-0 flex-1 text-sm">
+							<p className="font-semibold">Tiene una cita con pago pendiente de verificación</p>
+							<p className="mt-1">
+								No puede agendar otra cita hasta que un moderador apruebe o rechace el pago de su cita actual. Puede revisar el estado en <strong>Mis citas</strong>.
+							</p>
+						</div>
+					</div>
+				)}
 
 				{/* Aviso: orden médica y asesoría */}
 				<div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
@@ -359,7 +378,7 @@ const DisponibilidadPublicaPage = () => {
 								<ul className="divide-y divide-mist">
 									{pagedSlots.map((b) => {
 										const puedeReservar = isSlotAtLeast2HoursFromNow(b.fecha, b.hora_inicio);
-										const deshabilitar = (isPaciente && !isEmailVerified) || !puedeReservar;
+										const deshabilitar = (isPaciente && !isEmailVerified) || !puedeReservar || (isPaciente && tienePagoPendiente);
 										return (
 											<li
 												key={b.id_disponibilidad}
@@ -382,9 +401,15 @@ const DisponibilidadPublicaPage = () => {
 													</span>
 													<button
 														type="button"
-														onClick={() => puedeReservar && setBlockToReservar(b)}
+														onClick={() => puedeReservar && !tienePagoPendiente && setBlockToReservar(b)}
 														disabled={deshabilitar}
-														title={!puedeReservar ? "Solo se puede reservar con al menos 2 horas de anticipación" : undefined}
+														title={
+															tienePagoPendiente
+																? "Tiene una cita con pago pendiente de verificación"
+																: !puedeReservar
+																	? "Solo se puede reservar con al menos 2 horas de anticipación"
+																	: undefined
+														}
 														className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
 															deshabilitar
 																? "cursor-not-allowed bg-brand-200 text-paper/80"

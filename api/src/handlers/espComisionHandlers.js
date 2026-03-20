@@ -5,6 +5,7 @@ const {
 	editarPagoComisionController,
 	deletePagoComisionController,
 } = require("../controllers/espComisionControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // LISTADO
@@ -48,6 +49,11 @@ exports.generarComisionesPendientesHandler = async (req, res) => {
 		const result = await generarComisionesPendientesController({
 			id_usuario,
 		});
+		const count = result?.inserted ?? 0;
+		logInventarioReq(req, "comisiones", `Generó ${count} comisiones pendientes`, {
+			entidad_tipo: "comision",
+			detalles: { cantidad: count },
+		}).catch((e) => console.error(e));
 
 		return res.status(200).json({
 			ok: true,
@@ -94,6 +100,12 @@ exports.pagarComisionHandler = async (req, res) => {
 				message: "Comision no encontrada",
 			});
 		}
+		const espNombre = data?.nombre_especialista || idComision;
+		logInventarioReq(req, "comisiones", `Pagó comisión de "${espNombre}" (ID: ${idComision})`, {
+			entidad_tipo: "pago_comision",
+			entidad_id: idComision,
+			detalles: { monto: data?.monto },
+		}).catch((e) => console.error(e));
 
 		return res.status(200).json({
 			ok: true,
@@ -152,6 +164,10 @@ exports.editarPagoComisionHandler = async (req, res) => {
 				message: "Comision no encontrada",
 			});
 		}
+		logInventarioReq(req, "comisiones", `Editó pago de comisión (ID: ${idComision})`, {
+			entidad_tipo: "pago_comision",
+			entidad_id: idComision,
+		}).catch((e) => console.error(e));
 
 		return res.status(200).json({
 			ok: true,
@@ -181,6 +197,10 @@ exports.deletePagoComisionHandler = async (req, res) => {
 	try {
 		const { idComision } = req.params;
 		await deletePagoComisionController(idComision);
+		logInventarioReq(req, "comisiones", `Eliminó pago de comisión (ID: ${idComision})`, {
+			entidad_tipo: "pago_comision",
+			entidad_id: idComision,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Pago de comisión eliminado correctamente",

@@ -9,6 +9,7 @@ const {
 	registrarPagoEnteLegalController,
 	deletePagoEnteLegalController,
 } = require("../controllers/entesLegalesControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // ENTES LEGALES
@@ -91,6 +92,10 @@ const createEnteLegalHandler = async (req, res) => {
 		const data = await createEnteLegalController({
 			nombre_ente: nombre_ente.trim(),
 		});
+		logInventarioReq(req, "entes", `Creó ente legal "${data?.nombre_ente || nombre_ente}"`, {
+			entidad_tipo: "ente",
+			entidad_id: data?.id_ente,
+		}).catch((e) => console.error(e));
 
 		return res.status(201).json({
 			ok: true,
@@ -128,6 +133,10 @@ const updateEnteLegalHandler = async (req, res) => {
 			id_ente: id,
 			nombre_ente: nombre_ente.trim(),
 		});
+		logInventarioReq(req, "entes", `Modificó ente legal "${data?.nombre_ente || nombre_ente}"`, {
+			entidad_tipo: "ente",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 
 		return res.status(200).json({
 			ok: true,
@@ -159,6 +168,11 @@ const deleteEnteLegalHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const data = await deleteEnteLegalController(id);
+		const nombre = data?.nombre_ente || id;
+		logInventarioReq(req, "entes", `Eliminó ente legal "${nombre}"`, {
+			entidad_tipo: "ente",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Ente legal eliminado",
@@ -240,6 +254,12 @@ const registrarPagoEnteLegalHandler = async (req, res) => {
 			referencia,
 			id_usuario,
 		});
+		const enteNombre = data?.nombre_ente || id;
+		logInventarioReq(req, "entes", `Registró pago de $${monto} para ente "${enteNombre}"`, {
+			entidad_tipo: "pago_ente",
+			entidad_id: data?.id_pago,
+			detalles: { monto: Number(monto) },
+		}).catch((e) => console.error(e));
 
 		return res.status(201).json({
 			ok: true,
@@ -268,6 +288,10 @@ const deletePagoEnteLegalHandler = async (req, res) => {
 	try {
 		const { idPago } = req.params;
 		await deletePagoEnteLegalController(idPago);
+		logInventarioReq(req, "entes", `Eliminó pago de ente (ID: ${idPago})`, {
+			entidad_tipo: "pago_ente",
+			entidad_id: idPago,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Pago eliminado correctamente",

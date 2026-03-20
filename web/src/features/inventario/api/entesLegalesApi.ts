@@ -124,7 +124,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			}),
 			transformResponse: (response: { ok: boolean; data: EnteLegal }) =>
 				response.data,
-			invalidatesTags: ["EntesLegales"],
+			invalidatesTags: ["EntesLegales", "InventarioAuditoria"],
 		}),
 
 		// PATCH /entes-legales/:id - actualizar ente legal
@@ -142,6 +142,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			invalidatesTags: (_, __, arg) => [
 				"EntesLegales",
 				{ type: "EntesLegales", id: arg.id },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -154,6 +155,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			invalidatesTags: (_, __, arg) => [
 				"EntesLegales",
 				{ type: "EntesLegales", id: arg },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -192,7 +194,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			}),
 			transformResponse: (response: { ok: boolean; data: Obligacion }) =>
 				response.data,
-			invalidatesTags: ["Obligaciones", "EntesLegales"],
+			invalidatesTags: ["Obligaciones", "EntesLegales", "InventarioAuditoria"],
 		}),
 
 		// PATCH /obligaciones/:id - actualizar obligación
@@ -210,6 +212,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			invalidatesTags: (_, __, arg) => [
 				"Obligaciones",
 				{ type: "Obligaciones", id: arg.id },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -222,6 +225,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 			invalidatesTags: (_, __, arg) => [
 				"Obligaciones",
 				{ type: "Obligaciones", id: arg },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -253,7 +257,12 @@ const entesLegalesApi = baseApi.injectEndpoints({
 				method: "PUT",
 				body: payload,
 			}),
-			invalidatesTags: ["Obligaciones", "EntesLegales", "HistorialEnteLegal"],
+			invalidatesTags: [
+				"Obligaciones",
+				"EntesLegales",
+				"HistorialEnteLegal",
+				"InventarioAuditoria",
+			],
 		}),
 
 		// ==========================================
@@ -300,6 +309,7 @@ const entesLegalesApi = baseApi.injectEndpoints({
 				"HistorialEnteLegal",
 				"EntesLegales",
 				{ type: "EntesLegales", id: arg.id },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -309,7 +319,11 @@ const entesLegalesApi = baseApi.injectEndpoints({
 				url: `/entes-legales/pagos/${idPago}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["HistorialEnteLegal", "EntesLegales"],
+			invalidatesTags: [
+				"HistorialEnteLegal",
+				"EntesLegales",
+				"InventarioAuditoria",
+			],
 		}),
 	}),
 	overrideExisting: false,

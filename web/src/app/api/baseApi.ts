@@ -108,6 +108,8 @@ const baseApi = createApi({
 		"EspecialistaComision",
 		// Inventario - Facturación
 		"Facturacion",
+		// Inventario - Auditoría
+		"InventarioAuditoria",
 		// Admin - Métodos de Pago
 		"MetodosPago",
 		// Configuración - Perfil

@@ -6,6 +6,7 @@ const {
 	listCitasByEspecialistaController,
 	cancelCitaController,
 	markCitaAtendidaController,
+	tienePagoPendienteController,
 	listCitasPendientesPagoController,
 	listCitasConPagosController,
 	updateEstadoPagoController,
@@ -271,6 +272,29 @@ const markCitaAtendidaHandler = async (req, res) => {
 				message: err.message,
 			});
 		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const tienePagoPendienteHandler = async (req, res) => {
+	try {
+		const id_paciente = req.user?.id;
+		if (!id_paciente) {
+			return res.status(401).json({
+				ok: false,
+				message: "No autenticado",
+			});
+		}
+		const tienePagoPendiente = await tienePagoPendienteController(id_paciente);
+		return res.status(200).json({
+			ok: true,
+			data: { tienePagoPendiente },
+		});
+	} catch (err) {
 		console.error(err);
 		return res.status(500).json({
 			ok: false,
@@ -691,6 +715,13 @@ const asignarCitaCompletaHandler = async (req, res) => {
 				message: err.message,
 			});
 		}
+		if (err.code === "PAGO_PENDIENTE") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+				code: "PAGO_PENDIENTE",
+			});
+		}
 		console.error("Error al asignar cita completa:", err);
 		return res.status(500).json({
 			ok: false,
@@ -1015,6 +1046,7 @@ module.exports = {
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
 	markCitaAtendidaHandler,
+	tienePagoPendienteHandler,
 	listCitasPendientesPagoHandler,
 	listCitasConPagosHandler,
 	updateEstadoPagoHandler,

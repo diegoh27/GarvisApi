@@ -1,7 +1,7 @@
 import { useState, type FormEvent, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { PasswordField, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, TelefonoField } from "../../../shared";
+import { PasswordField, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, TelefonoField, validarNumeroTelefono, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared";
 import { useCrearEspecialistaMutation } from "../moderadoresApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
@@ -114,7 +114,7 @@ const RegistrarEspecialistaForm = () => {
 			}
 			case "telefono_numero":
 				if (!value.trim()) return "El número de teléfono es requerido";
-				if (!/^\d{7}$/.test(value)) return "El número debe tener 7 dígitos";
+				if (!validarNumeroTelefono(value)) return MENSAJE_TELEFONO_7_DIGITOS;
 				return "";
 			case "correo":
 				if (!value.trim()) return "El correo es requerido";

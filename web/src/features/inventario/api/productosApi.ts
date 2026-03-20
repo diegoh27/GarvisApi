@@ -101,7 +101,7 @@ const productosApi = baseApi.injectEndpoints({
 			}),
 			transformResponse: (response: { ok: boolean; data: Producto }) =>
 				response.data,
-			invalidatesTags: ["Productos"],
+			invalidatesTags: ["Productos", "InventarioAuditoria"],
 		}),
 
 		// PATCH /productos/:id - actualizar producto
@@ -119,6 +119,7 @@ const productosApi = baseApi.injectEndpoints({
 			invalidatesTags: (_, __, arg) => [
 				"Productos",
 				{ type: "Productos", id: arg.id },
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -143,6 +144,7 @@ const productosApi = baseApi.injectEndpoints({
 				{ type: "Productos", id: arg.id },
 				"Compras",
 				"HistorialCompras",
+				"InventarioAuditoria",
 			],
 		}),
 
@@ -158,7 +160,12 @@ const productosApi = baseApi.injectEndpoints({
 			}),
 			transformResponse: (response: { ok: boolean; data: CompraProducto }) =>
 				response.data,
-			invalidatesTags: ["Productos", "Compras", "HistorialCompras"],
+			invalidatesTags: [
+				"Productos",
+				"Compras",
+				"HistorialCompras",
+				"InventarioAuditoria",
+			],
 		}),
 
 		// GET /productos/:id/compras - listar compras de un producto
@@ -189,7 +196,12 @@ const productosApi = baseApi.injectEndpoints({
 				url: `/productos/compras/${idCompra}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["Productos", "Compras", "HistorialCompras"],
+			invalidatesTags: [
+				"Productos",
+				"Compras",
+				"HistorialCompras",
+				"InventarioAuditoria",
+			],
 		}),
 
 		// ==========================================
@@ -213,6 +225,7 @@ const productosApi = baseApi.injectEndpoints({
 				{ type: "Productos", id: arg.id },
 				"Ajustes",
 				"HistorialAjustes",
+				"InventarioAuditoria",
 			],
 		}),
 

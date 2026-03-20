@@ -30,7 +30,7 @@ const authenticateToken = async (req, res, next) => {
 		}
 
 		const [rows] = await pool.execute(
-			`SELECT u.id_usuario, r.nombre AS rol
+			`SELECT u.id_usuario, u.nombre, u.apellido, r.nombre AS rol
 			 FROM usuario u
 			 INNER JOIN roles r ON r.id_rol = u.id_rol
 			 WHERE u.id_usuario = ? AND u.activo = 1
@@ -49,6 +49,8 @@ const authenticateToken = async (req, res, next) => {
 			...payload,
 			id: rows[0].id_usuario,
 			id_usuario: rows[0].id_usuario,
+			nombre: rows[0].nombre,
+			apellido: rows[0].apellido,
 			rol: rows[0].rol,
 		};
 		return next();

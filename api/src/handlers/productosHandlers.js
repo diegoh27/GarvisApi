@@ -12,6 +12,7 @@ const {
 	listAjustesProductoController,
 	listHistorialAjustesController,
 } = require("../controllers/productosControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // PRODUCTOS
@@ -47,6 +48,10 @@ const createProductoHandler = async (req, res) => {
 			stock_actual: Number(stock_actual) || 0,
 			activo: activo !== false && activo !== 0 ? 1 : 0,
 		});
+		logInventarioReq(req, "productos", `Creó producto "${data?.nombre || nombre}"`, {
+			entidad_tipo: "producto",
+			entidad_id: data?.id_producto,
+		}).catch((e) => console.error(e));
 		return res.status(201).json({
 			ok: true,
 			message: "Producto creado",
@@ -100,6 +105,11 @@ const updateProductoHandler = async (req, res) => {
 			nombre: nombre?.trim(),
 			activo: activo !== undefined ? (activo ? 1 : 0) : undefined,
 		});
+		const accion = activo === 0 ? "Desactivó" : activo === 1 ? "Activó" : "Modificó";
+		logInventarioReq(req, "productos", `${accion} producto "${data?.nombre || id}"`, {
+			entidad_tipo: "producto",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Producto actualizado",
@@ -175,7 +185,12 @@ const registrarCompraProductoHandler = async (req, res) => {
 			referencia: referencia || null,
 			id_usuario,
 		});
-
+		const prodNombre = data?.producto_nombre || "producto";
+		logInventarioReq(req, "productos", `Registró compra de ${cantidad} unidades de "${prodNombre}"`, {
+			entidad_tipo: "compra",
+			entidad_id: data?.id_compra,
+			detalles: { cantidad, precio_unitario },
+		}).catch((e) => console.error(e));
 		return res.status(201).json({
 			ok: true,
 			message: "Compra registrada",
@@ -219,7 +234,10 @@ const updateCompraProductoHandler = async (req, res) => {
 			proveedor,
 			referencia,
 		});
-
+		logInventarioReq(req, "productos", `Actualizó compra de producto (ID compra: ${idCompra})`, {
+			entidad_tipo: "compra",
+			entidad_id: idCompra,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Compra actualizada",
@@ -278,6 +296,10 @@ const deleteCompraProductoHandler = async (req, res) => {
 	try {
 		const { idCompra } = req.params;
 		await deleteCompraProductoController(idCompra);
+		logInventarioReq(req, "productos", `Eliminó compra (ID: ${idCompra})`, {
+			entidad_tipo: "compra",
+			entidad_id: idCompra,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Compra eliminada correctamente",
@@ -327,7 +349,13 @@ const registrarAjusteStockHandler = async (req, res) => {
 			motivo: motivo || null,
 			id_usuario,
 		});
-
+		const prodNombre = data?.producto_nombre || "producto";
+		const motivoTxt = motivo ? ` - ${motivo}` : "";
+		logInventarioReq(req, "productos", `Ajustó stock de "${prodNombre}" a ${stock_nuevo}${motivoTxt}`, {
+			entidad_tipo: "ajuste",
+			entidad_id: data?.id_ajuste,
+			detalles: { stock_nuevo: Number(stock_nuevo), motivo },
+		}).catch((e) => console.error(e));
 		return res.status(201).json({
 			ok: true,
 			message: "Ajuste de stock registrado",

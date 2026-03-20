@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../shared";
 import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
+import { useGetTienePagoPendienteQuery } from "../features/citas/citasApi";
 import Sidebar, { type NavItem } from "./Sidebar";
 import Topbar from "./Topbar";
 import { DolarInfoBanner } from "../features/dolar";
@@ -115,12 +116,26 @@ const AppLayout = () => {
 			refetchOnFocus: true,
 		},
 	);
+	const { data: tienePagoData } = useGetTienePagoPendienteQuery(undefined, {
+		skip: role !== "paciente",
+	});
+	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
 	const unreadCount = notificacionesNoLeidas.length;
-	const navItemsWithBadges = navItems.map((item) =>
-		item.to === "/notificaciones" && unreadCount > 0
-			? { ...item, badge: unreadCount }
-			: item,
-	);
+	const navItemsWithBadges = navItems
+		.map((item) =>
+			item.to === "/notificaciones" && unreadCount > 0
+				? { ...item, badge: unreadCount }
+				: item,
+		)
+		.map((item) =>
+			item.to === "/disponibilidad" && role === "paciente" && tienePagoPendiente
+				? {
+						...item,
+						disabled: true,
+						disabledTitle: "Tiene una cita con pago pendiente de verificación",
+					}
+				: item,
+		);
 
 	const handleLogout = () => {
 		logout();
