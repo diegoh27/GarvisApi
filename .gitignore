@@ -1,2 +1,6 @@
 node_modules
 .env
+
+# Ignorar el servidor MCP y configs locales de editor para que no se suban a GitHub
+mcp-mysql/
+.cursor/
