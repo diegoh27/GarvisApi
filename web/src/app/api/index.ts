@@ -31,6 +31,7 @@ import "../../features/inventario/api/alquilerApi";
 import "../../features/inventario/api/especialistasApi";
 import "../../features/inventario/api/comisionesApi";
 import "../../features/inventario/api/facturacionApi";
+import "../../features/inventario/api/inventarioAuditoriaApi";
 
 // Catálogos y soporte
 import "../../features/ecos/ecosApi";

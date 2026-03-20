@@ -215,6 +215,12 @@ const citasApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: CitaPacienteCompleta[] }) => response.data ?? [],
 			providesTags: ["Citas"],
 		}),
+		getTienePagoPendiente: builder.query<{ tienePagoPendiente: boolean }, void>({
+			query: () => "/citas/tiene-pago-pendiente",
+			transformResponse: (response: { ok: boolean; data: { tienePagoPendiente: boolean } }) =>
+				response.data ?? { tienePagoPendiente: false },
+			providesTags: ["Citas"],
+		}),
 		marcarAtendida: builder.mutation<{ id_cita: string; estado_cita: number }, string>({
 			query: (id_cita) => ({
 				url: `/citas/${id_cita}/atender`,
@@ -254,6 +260,7 @@ const citasApi = baseApi.injectEndpoints({
 export const {
 	useGetCitasPendientesPagoQuery,
 	useGetCitasConPagosQuery,
+	useGetTienePagoPendienteQuery,
 	useUpdateEstadoPagoMutation,
 	useCancelCitaMutation,
 	usePosponerCitaMutation,

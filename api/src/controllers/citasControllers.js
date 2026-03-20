@@ -448,6 +448,17 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 	}
 };
 
+// Verificar si el paciente (o sus representados) tiene alguna cita con pago pendiente de verificación
+const tienePagoPendienteController = async (id_paciente) => {
+	const [rows] = await pool.execute(
+		`SELECT 1 FROM cita
+     WHERE id_paciente = ? AND estado_pago = 0 AND estado_cita IN (0, 1)
+     LIMIT 1`,
+		[id_paciente],
+	);
+	return rows.length > 0;
+};
+
 // Listar citas pendientes de pago para moderador
 const listCitasPendientesPagoController = async () => {
 	const sql = `
@@ -1635,6 +1646,21 @@ const asignarCitaCompletaController = async ({
 
 		if (role === "paciente") {
 			await ensurePacienteVerificado(conn, id_paciente);
+
+			// No permitir otra cita con pago si ya hay una pendiente de verificación (paciente o representado)
+			const [pendientes] = await conn.execute(
+				`SELECT id_cita FROM cita
+         WHERE id_paciente = ? AND estado_pago = 0 AND estado_cita IN (0, 1)
+         LIMIT 1`,
+				[id_paciente],
+			);
+			if (pendientes.length > 0) {
+				const err = new Error(
+					"Ya tiene una cita con pago pendiente de verificación. Espere a que un moderador apruebe o rechace el pago antes de solicitar otra cita.",
+				);
+				err.code = "PAGO_PENDIENTE";
+				throw err;
+			}
 		}
 
 		// 1. Verificar y obtener disponibilidad
@@ -1816,6 +1842,7 @@ const asignarCitaCompletaController = async ({
 module.exports = {
 	createCitaFromDisponibilidadController,
 	asignarCitaCompletaController,
+	tienePagoPendienteController,
 	listCitasByPacienteController,
 	listCitasCompletasByPacienteController,
 	listCitasByEspecialistaController,

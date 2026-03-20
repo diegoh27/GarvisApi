@@ -80,7 +80,7 @@ export const alquilerApi = baseApi.injectEndpoints({
         method: "POST",
         body: payload,
       }),
-      invalidatesTags: ["AlquilerContrato"],
+      invalidatesTags: ["AlquilerContrato", "InventarioAuditoria"],
     }),
 
     updateContrato: builder.mutation<
@@ -95,6 +95,7 @@ export const alquilerApi = baseApi.injectEndpoints({
       invalidatesTags: (_, __, arg) => [
         "AlquilerContrato",
         { type: "AlquilerContrato", id: arg.id },
+        "InventarioAuditoria",
       ],
     }),
 
@@ -103,7 +104,7 @@ export const alquilerApi = baseApi.injectEndpoints({
         url: `/alquiler/contratos/${idContrato}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["AlquilerContrato"],
+      invalidatesTags: ["AlquilerContrato", "InventarioAuditoria"],
     }),
 
     // Pagos
@@ -129,7 +130,7 @@ export const alquilerApi = baseApi.injectEndpoints({
         method: "POST",
         body: payload,
       }),
-      invalidatesTags: ["AlquilerPago", "AlquilerContrato"],
+      invalidatesTags: ["AlquilerPago", "AlquilerContrato", "InventarioAuditoria"],
     }),
 
     updatePagoAlquiler: builder.mutation<
@@ -141,7 +142,7 @@ export const alquilerApi = baseApi.injectEndpoints({
         method: "PUT",
         body: payload,
       }),
-      invalidatesTags: ["AlquilerPago", "AlquilerContrato"],
+      invalidatesTags: ["AlquilerPago", "AlquilerContrato", "InventarioAuditoria"],
     }),
 
     deletePagoAlquiler: builder.mutation<{ message: string }, string>({
@@ -149,7 +150,7 @@ export const alquilerApi = baseApi.injectEndpoints({
         url: `/alquiler/pagos/${idPago}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["AlquilerPago", "AlquilerContrato"],
+      invalidatesTags: ["AlquilerPago", "AlquilerContrato", "InventarioAuditoria"],
     }),
   }),
 });

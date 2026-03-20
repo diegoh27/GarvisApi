@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../shared";
-import { useGetMisCitasCompletasQuery } from "../../citas/citasApi";
+import { useGetMisCitasCompletasQuery, useGetTienePagoPendienteQuery } from "../../citas/citasApi";
 import { useGetMisNotificacionesQuery } from "../../notificaciones/notificacionesApi";
 import {
 	CalendarCheck,
@@ -9,6 +9,7 @@ import {
 	Bell,
 	ChevronRight,
 	Sparkles,
+	AlertTriangle,
 } from "lucide-react";
 import RecentNotificationsCard from "./RecentNotificationsCard";
 import { getTodayKey, toDateKey, formatHora, buildDateTime } from "../utils/dateUtils";
@@ -24,6 +25,8 @@ const getSaludo = () => {
 const DashboardPaciente = () => {
 	const { user } = useAuth();
 	const { data: citas = [], isLoading: loadingCitas } = useGetMisCitasCompletasQuery();
+	const { data: tienePagoData } = useGetTienePagoPendienteQuery();
+	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
 	const { data: notificaciones = [], isLoading: loadingNotif } = useGetMisNotificacionesQuery(
 		{ limit: 5 },
 		{ pollingInterval: 20000, refetchOnFocus: true },
@@ -83,6 +86,19 @@ const DashboardPaciente = () => {
 
 	return (
 		<div className="space-y-8">
+			{/* Banner: pago pendiente de verificación */}
+			{tienePagoPendiente && (
+				<div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
+					<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+					<div className="min-w-0 flex-1 text-sm">
+						<p className="font-semibold">Tiene una cita con pago pendiente de verificación</p>
+						<p className="mt-1">
+							No puede agendar otra cita hasta que un moderador apruebe o rechace el pago. Puede revisar el estado en <Link to="/citas" className="font-medium underline hover:text-amber-800">Mis citas</Link>.
+						</p>
+					</div>
+				</div>
+			)}
+
 			{/* Hero bienvenida */}
 			<section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-700 via-teal-800 to-slate-800 px-6 py-8 shadow-xl sm:px-8 sm:py-10">
 				<div className="relative z-10">
@@ -165,13 +181,23 @@ const DashboardPaciente = () => {
 						<p className="mt-1 text-xs text-brand-600">
 							Agenda una cita cuando lo necesites.
 						</p>
-						<Link
-							to="/disponibilidad"
-							className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900"
-						>
-							<CalendarDays className="h-4 w-4" />
-							Agendar cita
-						</Link>
+						{tienePagoPendiente ? (
+							<span
+								className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-200 px-4 py-2 text-sm font-medium text-brand-600 cursor-not-allowed"
+								title="Tiene una cita con pago pendiente de verificación"
+							>
+								<CalendarDays className="h-4 w-4" />
+								Agendar cita (pendiente de pago)
+							</span>
+						) : (
+							<Link
+								to="/disponibilidad"
+								className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900"
+							>
+								<CalendarDays className="h-4 w-4" />
+								Agendar cita
+							</Link>
+						)}
 					</div>
 				)}
 			</section>
@@ -180,19 +206,35 @@ const DashboardPaciente = () => {
 			<section>
 				<h2 className="mb-3 text-lg font-semibold text-brand-900">Accesos rápidos</h2>
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					<Link
-						to="/disponibilidad"
-						className="flex items-center gap-4 rounded-xl border border-brand-200 bg-paper p-4 shadow-sm transition hover:border-brand-400 hover:shadow"
-					>
-						<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-							<CalendarDays className="h-6 w-6" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<p className="font-semibold text-brand-900">Agendar cita</p>
-							<p className="text-xs text-brand-600">Elige fecha, especialista y estudio</p>
-						</div>
-						<ChevronRight className="h-5 w-5 shrink-0 text-brand-400" />
-					</Link>
+					{tienePagoPendiente ? (
+						<span
+							className="flex items-center gap-4 rounded-xl border border-brand-200 bg-cloud/50 p-4 opacity-70 cursor-not-allowed"
+							title="Tiene una cita con pago pendiente de verificación"
+						>
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+								<CalendarDays className="h-6 w-6" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="font-semibold text-brand-700">Agendar cita</p>
+								<p className="text-xs text-brand-600">Pago pendiente de verificación</p>
+							</div>
+							<ChevronRight className="h-5 w-5 shrink-0 text-brand-400" />
+						</span>
+					) : (
+						<Link
+							to="/disponibilidad"
+							className="flex items-center gap-4 rounded-xl border border-brand-200 bg-paper p-4 shadow-sm transition hover:border-brand-400 hover:shadow"
+						>
+							<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+								<CalendarDays className="h-6 w-6" />
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="font-semibold text-brand-900">Agendar cita</p>
+								<p className="text-xs text-brand-600">Elige fecha, especialista y estudio</p>
+							</div>
+							<ChevronRight className="h-5 w-5 shrink-0 text-brand-400" />
+						</Link>
+					)}
 
 					<Link
 						to="/citas"

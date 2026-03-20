@@ -1,7 +1,7 @@
 import { useState, type FormEvent, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { PasswordField, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, TelefonoField } from "../../../shared";
+import { PasswordField, formatNombreApellido, validarRangoCedula, MENSAJE_RANGO_CEDULA, CedulaField, TelefonoField, validarNumeroTelefono, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared";
 import { useCrearEspecialistaMutation } from "../adminApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
@@ -112,7 +112,7 @@ const RegistrarEspecialistaForm = () => {
 			}
 			case "telefono_numero":
 				if (!value.trim()) return "El número de teléfono es requerido";
-				if (!/^\d{7}$/.test(value)) return "El número debe tener 7 dígitos";
+				if (!validarNumeroTelefono(value)) return MENSAJE_TELEFONO_7_DIGITOS;
 				return "";
 			case "correo":
 				if (!value.trim()) return "El correo es requerido";
@@ -182,7 +182,7 @@ const RegistrarEspecialistaForm = () => {
 			}
 		});
 
-		// Validar campos requeridos
+		// Marcar errores de campos requeridos vacíos
 		const required = [
 			"nombre",
 			"apellido",
@@ -196,18 +196,15 @@ const RegistrarEspecialistaForm = () => {
 			"id_especialidad",
 			"porcentaje",
 		];
-		const missing = required.filter(
-			(field) => !form[field as keyof typeof form]
-		);
-
-		if (missing.length) {
-			setError("Completa todos los campos obligatorios.");
-			return;
-		}
+		required.forEach((field) => {
+			const val = form[field as keyof typeof form];
+			if (!val || (typeof val === "string" && !val.trim())) {
+				errors[field] = errors[field] || "Campo requerido";
+			}
+		});
 
 		if (!form.id_ecos || form.id_ecos.length === 0) {
-			setError("Debes seleccionar al menos un eco para el especialista.");
-			return;
+			errors.id_ecos = "Debes seleccionar al menos un eco";
 		}
 
 		setFieldErrors(errors);
@@ -345,7 +342,11 @@ const RegistrarEspecialistaForm = () => {
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>
 					<PasswordField
-						label="Contraseña"
+						label={
+							<>
+								Contraseña <span className="text-red-500">*</span>
+							</>
+						}
 						required
 						value={form.contrasena}
 						onChange={(value) => updateField("contrasena", value)}
@@ -358,7 +359,11 @@ const RegistrarEspecialistaForm = () => {
 				</div>
 				<div>
 					<PasswordField
-						label="Confirmar contraseña"
+						label={
+							<>
+								Confirmar contraseña <span className="text-red-500">*</span>
+							</>
+						}
 						required
 						value={form.confirmar_contrasena}
 						onChange={(value) => updateField("confirmar_contrasena", value)}

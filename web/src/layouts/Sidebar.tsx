@@ -7,6 +7,8 @@ type NavItem = {
 	to: string;
 	icon: LucideIcon;
 	badge?: number;
+	disabled?: boolean;
+	disabledTitle?: string;
 };
 
 type SidebarProps = {
@@ -41,26 +43,37 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 					</button>
 				</div>
 				<nav className="flex-1 overflow-y-auto px-3 pb-4 text-sm">
-					{navItems.map((item) => (
-						<NavLink
-							key={item.to}
-							to={item.to}
-							className={linkClass}
-							onClick={() => {
-								if (window.innerWidth < 1024) {
-									onClose();
-								}
-							}}
-						>
-							<item.icon className="h-4 w-4 text-brand-800" />
-							<span className="flex-1">{item.label}</span>
-							{item.badge && item.badge > 0 ? (
-								<span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-paper">
-									{item.badge > 99 ? "99+" : item.badge}
-								</span>
-							) : null}
-						</NavLink>
-					))}
+					{navItems.map((item) =>
+						item.disabled ? (
+							<span
+								key={item.to}
+								title={item.disabledTitle}
+								className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-brand-500 opacity-60 cursor-not-allowed"
+							>
+								<item.icon className="h-4 w-4" />
+								<span className="flex-1">{item.label}</span>
+							</span>
+						) : (
+							<NavLink
+								key={item.to}
+								to={item.to}
+								className={linkClass}
+								onClick={() => {
+									if (window.innerWidth < 1024) {
+										onClose();
+									}
+								}}
+							>
+								<item.icon className="h-4 w-4 text-brand-800" />
+								<span className="flex-1">{item.label}</span>
+								{item.badge && item.badge > 0 ? (
+									<span className="ml-auto inline-flex min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-paper">
+										{item.badge > 99 ? "99+" : item.badge}
+									</span>
+								) : null}
+							</NavLink>
+						),
+					)}
 				</nav>
 			</div>
 		</aside>

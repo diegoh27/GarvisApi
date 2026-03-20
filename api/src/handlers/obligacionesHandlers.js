@@ -7,6 +7,7 @@ const {
 	registrarPagoObligacionController,
 	updatePagoObligacionController,
 } = require("../controllers/obligacionesControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // OBLIGACIONES HANDLERS
@@ -87,6 +88,10 @@ const createObligacionHandler = async (req, res) => {
 			estado: estado || "Pendiente",
 			recordatorio_dias: recordatorio_dias || 0,
 		});
+		logInventarioReq(req, "entes", `Creó obligación "${concepto}"`, {
+			entidad_tipo: "obligacion",
+			entidad_id: obligacion?.id_obligacion,
+		}).catch((e) => console.error(e));
 
 		return res.status(201).json({ ok: true, data: obligacion });
 	} catch (error) {
@@ -118,6 +123,10 @@ const updateObligacionHandler = async (req, res) => {
 		}
 
 		const obligacion = await updateObligacionController(id, updates);
+		logInventarioReq(req, "entes", `Modificó obligación (ID: ${id})`, {
+			entidad_tipo: "obligacion",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({ ok: true, data: obligacion });
 	} catch (error) {
 		console.error(error);
@@ -142,6 +151,10 @@ const deleteObligacionHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const result = await deleteObligacionController(id);
+		logInventarioReq(req, "entes", `Eliminó obligación (ID: ${id})`, {
+			entidad_tipo: "obligacion",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({ ok: true, data: result });
 	} catch (error) {
 		console.error(error);
@@ -193,6 +206,11 @@ const registrarPagoObligacionHandler = async (req, res) => {
 			referencia,
 			id_usuario,
 		});
+		logInventarioReq(req, "entes", `Registró pago de obligación $${monto} (ID obligación: ${id})`, {
+			entidad_tipo: "pago_obligacion",
+			entidad_id: pago?.id_pago,
+			detalles: { monto: Number(monto) },
+		}).catch((e) => console.error(e));
 
 		return res.status(201).json({ ok: true, data: pago });
 	} catch (error) {
@@ -222,6 +240,10 @@ const updatePagoObligacionHandler = async (req, res) => {
 			metodo,
 			referencia,
 		});
+		logInventarioReq(req, "entes", `Actualizó pago de obligación (ID: ${idPago})`, {
+			entidad_tipo: "pago_obligacion",
+			entidad_id: idPago,
+		}).catch((e) => console.error(e));
 
 		return res.status(200).json({
 			ok: true,

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { PasswordField, formatNombreApellido, TelefonoField, parseTelefonoDisplay, validarNumeroTelefono, MENSAJE_TELEFONO_REQUERIDO, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared";
+import { PasswordField, formatNombreApellido, TelefonoField, parseTelefonoDisplay, validarNumeroTelefono, MENSAJE_TELEFONO_REQUERIDO, MENSAJE_TELEFONO_7_DIGITOS, CedulaField, parseCedulaDisplay, validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared";
 import { useCrearModeradorMutation } from "../adminApi";
 
 const RegistrarModeradorForm = () => {
@@ -13,6 +13,9 @@ const RegistrarModeradorForm = () => {
 		apellido: "",
 		correo: "",
 		telefono: "",
+		cedula: "",
+		genero: "Masculino" as "Masculino" | "Femenino" | "Otro",
+		fecha_nacimiento: "",
 		contrasena: "",
 		confirmar_contrasena: "",
 	});
@@ -49,7 +52,7 @@ const RegistrarModeradorForm = () => {
 				break;
 			case "telefono":
 				if (!value.trim()) return MENSAJE_TELEFONO_REQUERIDO;
-				if (!validarNumeroTelefono(parseTelefonoDisplay(value).numero)) return MENSAJE_TELEFONO_7_DIGITOS;
+				if (!validarNumeroTelefono(parseTelefonoDisplay(value).number)) return MENSAJE_TELEFONO_7_DIGITOS;
 				break;
 			case "contrasena":
 				if (!value) return "La contraseña es requerida";
@@ -58,6 +61,16 @@ const RegistrarModeradorForm = () => {
 			case "confirmar_contrasena":
 				if (!value) return "Debes confirmar la contraseña";
 				if (value !== form.contrasena) return "Las contraseñas no coinciden";
+				break;
+			case "cedula": {
+				const { numero } = parseCedulaDisplay(value);
+				if (!numero) return "La cédula es requerida";
+				if (!validarRangoCedula(numero)) return MENSAJE_RANGO_CEDULA;
+				break;
+			}
+			case "fecha_nacimiento":
+				if (!value.trim()) return "La fecha de nacimiento es requerida";
+				if (new Date(value) > new Date()) return "La fecha de nacimiento no puede ser futura";
 				break;
 		}
 		return "";
@@ -82,15 +95,18 @@ const RegistrarModeradorForm = () => {
 
 		try {
 			// El backend requiere más campos, así que enviamos valores por defecto
+			const { tipo: tipoCedula, numero: numeroCedula } = parseCedulaDisplay(form.cedula);
+			const cedulaFinal = `${tipoCedula}${numeroCedula}`;
+
 			await crearModerador({
 				nombre: formatNombreApellido(form.nombre),
 				apellido: formatNombreApellido(form.apellido),
 				correo: form.correo.trim(),
 				telefono: form.telefono.trim(),
 				contrasena: form.contrasena,
-				genero: "Masculino", // Valor por defecto
-				cedula: `MOD-${Date.now()}`, // Generar cédula temporal única
-				fecha_nacimiento: "1990-01-01", // Valor por defecto
+				genero: form.genero,
+				cedula: cedulaFinal,
+				fecha_nacimiento: form.fecha_nacimiento.trim(),
 			}).unwrap();
 
 			await Swal.fire({
@@ -179,6 +195,25 @@ const RegistrarModeradorForm = () => {
 					</div>
 
 					<div>
+						<CedulaField
+							label={
+								<>
+									Cédula <span className="text-red-500">*</span>
+								</>
+							}
+							value={form.cedula}
+							onChange={(tipo, numero) => {
+								const full = tipo + numero;
+								updateField("cedula", full);
+							}}
+							error={fieldErrors.cedula}
+							required
+							inputClassName="h-10 rounded-lg bg-paper text-sm"
+							selectClassName="h-10 rounded-lg bg-paper text-sm"
+						/>
+					</div>
+
+					<div>
 						<TelefonoField
 							label={
 								<>
@@ -186,18 +221,49 @@ const RegistrarModeradorForm = () => {
 								</>
 							}
 							value={form.telefono}
-							onChange={(prefijo, numero) => {
-								const full = prefijo + numero;
-								setForm((prev) => ({ ...prev, telefono: full }));
-								if (fieldErrors.telefono) {
-									setFieldErrors((prev) => ({ ...prev, telefono: "" }));
-								}
-							}}
+							onChange={(prefijo, numero) => updateField("telefono", prefijo + numero)}
 							error={fieldErrors.telefono}
 							required
 							inputClassName="h-10 rounded-lg bg-paper text-sm"
 							selectClassName="h-10 rounded-lg bg-paper text-sm"
 						/>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="mb-1 block text-sm font-medium text-brand-700">
+								Género <span className="text-red-500">*</span>
+							</label>
+							<select
+								value={form.genero}
+								onChange={(e) =>
+									updateField("genero", e.target.value as typeof form.genero)
+								}
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							>
+								<option value="Masculino">Masculino</option>
+								<option value="Femenino">Femenino</option>
+								<option value="Otro">Otro</option>
+							</select>
+						</div>
+						<div>
+							<label className="mb-1 block text-sm font-medium text-brand-700">
+								Fecha de nacimiento <span className="text-red-500">*</span>
+							</label>
+							<input
+								type="date"
+								value={form.fecha_nacimiento}
+								onChange={(e) => updateField("fecha_nacimiento", e.target.value)}
+								onBlur={(e) => {
+									const err = validateField("fecha_nacimiento", e.target.value);
+									if (err) setFieldErrors((prev) => ({ ...prev, fecha_nacimiento: err }));
+								}}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
+							/>
+							{fieldErrors.fecha_nacimiento && (
+								<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+							)}
+						</div>
 					</div>
 
 					<div>

@@ -3,6 +3,7 @@ const {
 	getResumenFacturacionController,
 	deleteMovimientoFacturacionController,
 } = require("../controllers/facturacionControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 exports.listMovimientosFacturacionHandler = async (req, res) => {
 	try {
@@ -52,6 +53,10 @@ exports.deleteMovimientoFacturacionHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		await deleteMovimientoFacturacionController(id);
+		logInventarioReq(req, "facturacion", `Eliminó movimiento de facturación (ID: ${id})`, {
+			entidad_tipo: "movimiento",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
 		return res.status(200).json({
 			ok: true,
 			message: "Movimiento eliminado correctamente",

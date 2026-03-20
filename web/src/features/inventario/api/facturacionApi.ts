@@ -119,6 +119,7 @@ export const facturacionApi = baseApi.injectEndpoints({
 				"Productos",
 				"NominaPago",
 				"AlquilerPago",
+				"InventarioAuditoria",
 			],
 		}),
 	}),

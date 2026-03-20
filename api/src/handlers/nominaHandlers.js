@@ -11,6 +11,7 @@ const {
 	deletePagoNominaController,
 } = require("../controllers/nominaControllers");
 const { validarCedula } = require("../utils/validacionCedula");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // EMPLEADOS HANDLERS
@@ -70,6 +71,11 @@ exports.createEmpleadoHandler = async (req, res) => {
 			periodo,
 			sueldo: parseFloat(sueldo) || 0,
 		});
+		const nombreCompleto = [nombre, apellido].filter(Boolean).join(" ");
+		logInventarioReq(req, "nomina", `Creó empleado "${nombreCompleto || nombre}"`, {
+			entidad_tipo: "empleado",
+			entidad_id: empleado?.id_empleado,
+		}).catch((e) => console.error(e));
 
 		res.status(201).json(empleado);
 	} catch (error) {
@@ -124,6 +130,11 @@ exports.updateEmpleadoHandler = async (req, res) => {
 		if (!empleado) {
 			return res.status(404).json({ message: "Empleado no encontrado" });
 		}
+		const nombreCompleto = [empleado.nombre, empleado.apellido].filter(Boolean).join(" ");
+		logInventarioReq(req, "nomina", `Modificó empleado "${nombreCompleto || idEmpleado}"`, {
+			entidad_tipo: "empleado",
+			entidad_id: idEmpleado,
+		}).catch((e) => console.error(e));
 
 		res.json(empleado);
 	} catch (error) {
@@ -140,6 +151,10 @@ exports.deleteEmpleadoHandler = async (req, res) => {
 		if (!result.success) {
 			return res.status(404).json({ message: "Empleado no encontrado" });
 		}
+		logInventarioReq(req, "nomina", `Eliminó empleado (ID: ${idEmpleado})`, {
+			entidad_tipo: "empleado",
+			entidad_id: idEmpleado,
+		}).catch((e) => console.error(e));
 
 		res.json({ message: "Empleado eliminado exitosamente" });
 	} catch (error) {
@@ -202,6 +217,12 @@ exports.registrarPagoNominaHandler = async (req, res) => {
 			},
 			idUsuario,
 		);
+		const empleadoNombre = pago?.nombre_empleado || idEmpleado;
+		logInventarioReq(req, "nomina", `Registró pago de nómina $${monto} para "${empleadoNombre}"`, {
+			entidad_tipo: "pago_nomina",
+			entidad_id: pago?.id_pago,
+			detalles: { monto: parseFloat(monto) },
+		}).catch((e) => console.error(e));
 
 		res.status(201).json(pago);
 	} catch (error) {
@@ -243,6 +264,10 @@ exports.deletePagoNominaHandler = async (req, res) => {
 		if (!result.success) {
 			return res.status(404).json({ message: "Pago no encontrado" });
 		}
+		logInventarioReq(req, "nomina", `Eliminó pago de nómina (ID: ${idPago})`, {
+			entidad_tipo: "pago_nomina",
+			entidad_id: idPago,
+		}).catch((e) => console.error(e));
 
 		res.json({ message: "Pago eliminado exitosamente" });
 	} catch (error) {

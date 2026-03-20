@@ -111,7 +111,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 				body: payload,
 			}),
 			transformResponse: (response: { ok: boolean; message: string; data: { inserted: number } }) => response,
-			invalidatesTags: ["EspecialistaComision"],
+			invalidatesTags: ["EspecialistaComision", "InventarioAuditoria"],
 		}),
 
 		// Pagar comisión
@@ -125,7 +125,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 				body: payload,
 			}),
 			transformResponse: (response: { ok: boolean; data: EspecialistaComision }) => response,
-			invalidatesTags: ["EspecialistaComision"],
+			invalidatesTags: ["EspecialistaComision", "InventarioAuditoria"],
 		}),
 
 		// Editar pago de comisión
@@ -139,7 +139,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 				body: payload,
 			}),
 			transformResponse: (response: { ok: boolean; data: EspecialistaComision }) => response,
-			invalidatesTags: ["EspecialistaComision"],
+			invalidatesTags: ["EspecialistaComision", "InventarioAuditoria"],
 		}),
 
 		// Eliminar pago de comisión (revertir a Pendiente y quitar de facturación)
@@ -148,7 +148,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 				url: `/comisiones-especialistas/${idComision}/pago`,
 				method: "DELETE",
 			}),
-			invalidatesTags: ["EspecialistaComision", "Facturacion"],
+			invalidatesTags: ["EspecialistaComision", "Facturacion", "InventarioAuditoria"],
 		}),
 
 		crearCitaMostrador: builder.mutation<

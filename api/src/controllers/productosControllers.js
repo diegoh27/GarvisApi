@@ -322,9 +322,9 @@ const registrarAjusteStockController = async ({
 	try {
 		await conn.beginTransaction();
 
-		// Obtener stock anterior
+		// Obtener stock anterior y nombre
 		const [producto] = await conn.execute(
-			"SELECT stock_actual FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			"SELECT stock_actual, nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
 			[id_producto],
 		);
 		if (!producto.length) {
@@ -363,6 +363,7 @@ const registrarAjusteStockController = async ({
 		return {
 			id_ajuste,
 			id_producto,
+			producto_nombre: producto[0]?.nombre || null,
 			fecha: new Date().toISOString().slice(0, 10),
 			stock_anterior,
 			stock_nuevo: stock_nuevoNum,

@@ -8,6 +8,7 @@ const {
 	listCitasByEspecialistaSelfHandler,
 	cancelCitaHandler,
 	markCitaAtendidaHandler,
+	tienePagoPendienteHandler,
 	listCitasPendientesPagoHandler,
 	listCitasConPagosHandler,
 	updateEstadoPagoHandler,
@@ -144,6 +145,13 @@ citasRoutes.patch(
 	authenticateToken,
 	authorizeRoles("especialista", "paciente", "admin", "moderador"),
 	markCitaAtendidaHandler,
+);
+// GET /citas/tiene-pago-pendiente (paciente)
+citasRoutes.get(
+	"/tiene-pago-pendiente",
+	authenticateToken,
+	authorizeRoles("paciente"),
+	tienePagoPendienteHandler,
 );
 // GET /citas/pendientes-pago (moderador/admin)
 citasRoutes.get(

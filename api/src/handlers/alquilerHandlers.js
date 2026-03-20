@@ -10,6 +10,7 @@ const {
 	updatePagoAlquilerController,
 	deletePagoAlquilerController,
 } = require("../controllers/alquilerControllers");
+const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 // ==========================================
 // CONTRATOS
@@ -65,6 +66,10 @@ exports.createContratoHandler = async (req, res) => {
 			estado,
 			fecha_vencimiento,
 		});
+		logInventarioReq(req, "alquiler", `Creó contrato "${nombre.trim()}"`, {
+			entidad_tipo: "contrato",
+			entidad_id: contrato?.id_contrato,
+		}).catch((e) => console.error(e));
 
 		res.status(201).json(contrato);
 	} catch (error) {
@@ -91,6 +96,10 @@ exports.updateContratoHandler = async (req, res) => {
 		if (!contrato) {
 			return res.status(404).json({ message: "Contrato no encontrado" });
 		}
+		logInventarioReq(req, "alquiler", `Modificó contrato "${contrato?.nombre || idContrato}"`, {
+			entidad_tipo: "contrato",
+			entidad_id: idContrato,
+		}).catch((e) => console.error(e));
 
 		res.json(contrato);
 	} catch (error) {
@@ -107,6 +116,10 @@ exports.deleteContratoHandler = async (req, res) => {
 		if (!result.success) {
 			return res.status(404).json({ message: "Contrato no encontrado" });
 		}
+		logInventarioReq(req, "alquiler", `Eliminó contrato (ID: ${idContrato})`, {
+			entidad_tipo: "contrato",
+			entidad_id: idContrato,
+		}).catch((e) => console.error(e));
 
 		res.json({ message: "Contrato eliminado exitosamente" });
 	} catch (error) {
@@ -170,6 +183,12 @@ exports.registrarPagoAlquilerHandler = async (req, res) => {
 			},
 			idUsuario,
 		);
+		const contratoNombre = pago?.nombre_contrato || idContrato;
+		logInventarioReq(req, "alquiler", `Registró pago de alquiler $${monto} para "${contratoNombre}"`, {
+			entidad_tipo: "pago_alquiler",
+			entidad_id: pago?.id_pago,
+			detalles: { monto: parseFloat(monto) },
+		}).catch((e) => console.error(e));
 
 		res.status(201).json(pago);
 	} catch (error) {
@@ -198,6 +217,10 @@ exports.updatePagoAlquilerHandler = async (req, res) => {
 		if (!pago) {
 			return res.status(404).json({ message: "Pago no encontrado" });
 		}
+		logInventarioReq(req, "alquiler", `Actualizó pago de alquiler (ID: ${idPago})`, {
+			entidad_tipo: "pago_alquiler",
+			entidad_id: idPago,
+		}).catch((e) => console.error(e));
 
 		res.json(pago);
 	} catch (error) {
@@ -214,6 +237,10 @@ exports.deletePagoAlquilerHandler = async (req, res) => {
 		if (!result.success) {
 			return res.status(404).json({ message: "Pago no encontrado" });
 		}
+		logInventarioReq(req, "alquiler", `Eliminó pago de alquiler (ID: ${idPago})`, {
+			entidad_tipo: "pago_alquiler",
+			entidad_id: idPago,
+		}).catch((e) => console.error(e));
 
 		res.json({ message: "Pago eliminado exitosamente" });
 	} catch (error) {

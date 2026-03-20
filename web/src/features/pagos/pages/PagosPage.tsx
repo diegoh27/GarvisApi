@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import Swal from "sweetalert2";
 import { PageShell, formatFechaLocal } from "../../../shared";
 import {
-	useGetCitasConPagosQuery,
+	useGetCitasPendientesPagoQuery,
 	useUpdateEstadoPagoMutation,
 	useCancelCitaMutation,
 } from "../../citas/citasApi";
@@ -25,14 +25,8 @@ const formatHora = (value: string) => {
 	return `${hour12}:${minuteStr} ${period}`;
 };
 
-type FilterOption = {
-	id: string;
-	label: string;
-	estado?: number;
-};
-
 const PagosPage = () => {
-	const { data: citas = [], isLoading, refetch } = useGetCitasConPagosQuery();
+	const { data: citas = [], isLoading, refetch } = useGetCitasPendientesPagoQuery();
 	const [updateEstadoPago, { isLoading: isUpdating }] = useUpdateEstadoPagoMutation();
 	const [cancelCita] = useCancelCitaMutation();
 	const [selectedCita, setSelectedCita] = useState<string | null>(null);
@@ -42,7 +36,6 @@ const PagosPage = () => {
 	const [selectedCitaForPosponer, setSelectedCitaForPosponer] = useState<CitaPendientePago | null>(null);
 	const [citaToReject, setCitaToReject] = useState<{ id_cita: string; nombre: string } | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
-	const [filter, setFilter] = useState("todas");
 	const [query, setQuery] = useState("");
 	const itemsPerPage = 5;
 
@@ -64,24 +57,9 @@ const PagosPage = () => {
 		skip: !selectedCitaIdForView,
 	});
 
-	const filterOptions: FilterOption[] = [
-		{ id: "todas", label: "Todas" },
-		{ id: "pendiente", label: "Pendiente", estado: 0 },
-		{ id: "aprobado", label: "Aprobado", estado: 1 },
-		{ id: "rechazado", label: "Rechazado", estado: 2 },
-	];
-
-	// Filtrar citas según el filtro seleccionado y búsqueda
+	// Filtrar citas según búsqueda (la API ya devuelve solo pendientes ordenados por fecha más vieja primero)
 	const filteredCitas = useMemo(() => {
 		let citasFiltradas = citas;
-
-		// Filtro por estado de pago
-		if (filter !== "todas") {
-			const filterOption = filterOptions.find((opt) => opt.id === filter);
-			if (filterOption?.estado !== undefined) {
-				citasFiltradas = citasFiltradas.filter((cita) => cita.estado_pago === filterOption.estado);
-			}
-		}
 
 		// Filtro por búsqueda
 		if (query.trim()) {
@@ -104,7 +82,7 @@ const PagosPage = () => {
 		}
 
 		return citasFiltradas;
-	}, [citas, filter, filterOptions, query]);
+	}, [citas, query]);
 
 	// Paginación
 	const totalPages = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPage));
@@ -113,10 +91,10 @@ const PagosPage = () => {
 		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
 	}, [filteredCitas, currentPage, itemsPerPage]);
 
-	// Resetear a página 1 cuando cambian los datos, el filtro o la búsqueda
+	// Resetear a página 1 cuando cambian los datos o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [citas.length, filter, query]);
+	}, [citas.length, query]);
 
 	const handleAprobarPago = async (id_cita: string): Promise<boolean> => {
 		const confirmResult = await Swal.fire({
@@ -274,30 +252,14 @@ const PagosPage = () => {
 					/>
 				</div>
 
-				{/* Filtros */}
-				<div className="flex flex-wrap gap-2">
-					{filterOptions.map((option) => (
-						<button
-							key={option.id}
-							onClick={() => setFilter(option.id)}
-							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
-								? "bg-brand-700 text-paper"
-								: "bg-cloud text-brand-800 hover:bg-mist"
-								}`}
-						>
-							{option.label}
-						</button>
-					))}
-				</div>
-
 				{isLoading ? (
 					<div className="text-center py-8 text-brand-600">
-						Cargando citas con pagos...
+						Cargando pagos pendientes...
 					</div>
 				) : filteredCitas.length === 0 ? (
 					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
 						<p className="text-brand-600">
-							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filter !== "todas" ? `con estado ${filterOptions.find((opt) => opt.id === filter)?.label.toLowerCase()}` : "con pagos"}.`}
+							{query.trim() ? "No se encontraron citas pendientes con los criterios de búsqueda." : "No hay pagos pendientes de verificar."}
 						</p>
 					</div>
 				) : (

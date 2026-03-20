@@ -10,6 +10,7 @@ import NominaPage from "./NominaPage";
 import AlquilerPage from "./AlquilerPage";
 import ComisionesEspecialistasPage from "./ComisionesEspecialistasPage";
 import FacturacionPage from "./FacturacionPage";
+import AuditoriaInventarioTable from "../components/AuditoriaInventarioTable";
 
 const INVENTARIO_TAGS = [
 	"Productos",
@@ -26,6 +27,7 @@ const INVENTARIO_TAGS = [
 	"AlquilerPago",
 	"EspecialistaComision",
 	"Facturacion",
+	"InventarioAuditoria",
 ] as const;
 
 type TabType =
@@ -131,13 +133,16 @@ export default function InventarioPage() {
 			</div>
 
 			{/* Tab Content */}
-			<div className="max-w-7xl mx-auto">
+			<div className="max-w-7xl mx-auto px-2 sm:px-0 pb-8">
 				{safeActiveTab === "productos" && <ProductosPage />}
 				{safeActiveTab === "entes" && <ObligacionesPage />}
 				{safeActiveTab === "nomina" && <NominaPage />}
 				{safeActiveTab === "alquiler" && <AlquilerPage />}
 				{safeActiveTab === "comisiones" && <ComisionesEspecialistasPage />}
 				{safeActiveTab === "facturacion" && <FacturacionPage />}
+
+				{/* Tabla de auditoría - filtrada por pestaña activa */}
+				<AuditoriaInventarioTable modulo={safeActiveTab} />
 			</div>
 		</div>
 	);

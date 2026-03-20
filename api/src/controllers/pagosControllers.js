@@ -66,6 +66,14 @@ const updatePagoController = async (id_cita, pagoData) => {
 
 		const pago = rows[0];
 
+		// No permitir registrar/corregir si ya hay un pago pendiente de verificación
+		if (pago.estado_pago === 0) {
+			const err = new Error(
+				"Ya hay un pago pendiente de verificación. No puede enviar otro hasta que un moderador lo revise.",
+			);
+			err.code = "PAGO_PENDIENTE";
+			throw err;
+		}
 		// Solo permitir editar pagos rechazados
 		if (pago.estado_pago !== 2) {
 			const err = new Error("Solo se pueden corregir pagos rechazados");
