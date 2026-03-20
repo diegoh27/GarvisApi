@@ -8,6 +8,7 @@ const {
 } = require("../controllers/pacientesControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 const { validarTelefono } = require("../utils/validacionTelefono");
+const { validarFechaNacimiento } = require("../utils/validacionFecha");
 
 const createPacienteHandler = async (req, res) => {
 	try {
@@ -73,11 +74,11 @@ const createPacienteHandler = async (req, res) => {
 			});
 		}
 
-		const fechaNacPac = new Date(fecha_nacimiento);
-		if (!Number.isNaN(fechaNacPac.getTime()) && fechaNacPac.getTime() > Date.now()) {
+		const fechaNacResult = validarFechaNacimiento(fecha_nacimiento);
+		if (!fechaNacResult.valid) {
 			return res.status(400).json({
 				ok: false,
-				message: "La fecha de nacimiento no puede ser futura",
+				message: fechaNacResult.message,
 			});
 		}
 
@@ -202,6 +203,17 @@ const updatePacienteHandler = async (req, res) => {
 				});
 			}
 			payload.cedula = cedulaResult.value;
+		}
+
+		if (payload.fecha_nacimiento !== undefined && payload.fecha_nacimiento !== null && String(payload.fecha_nacimiento).trim()) {
+			const fechaNacResult = validarFechaNacimiento(payload.fecha_nacimiento);
+			if (!fechaNacResult.valid) {
+				return res.status(400).json({
+					ok: false,
+					message: fechaNacResult.message,
+				});
+			}
+			payload.fecha_nacimiento = fechaNacResult.value;
 		}
 
 		if (payload.telefono !== undefined && payload.telefono !== null && String(payload.telefono).trim()) {
