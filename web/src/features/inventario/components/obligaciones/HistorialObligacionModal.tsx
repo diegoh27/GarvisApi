@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, FileDown } from "lucide-react";
 import type { Obligacion, HistorialEnteLegal } from "../../api";
 import GenericTable from "../GenericTable";
 import { formatFechaCortaLocal, formatFechaHoraLocal } from "../../../../shared";
+import { generateTableReport } from "../../../../utils/generateTableReport";
 
 interface HistorialObligacionModalProps {
   isOpen: boolean;
@@ -70,6 +71,29 @@ export default function HistorialObligacionModal({
     },
   ];
 
+  const handleDownloadReport = () => {
+    const tableHeaders = columns.map(c => c.header);
+    const tableData = historialFiltrado.map(row => {
+      return columns.map(c => typeof c.render(row) === "string" ? c.render(row) : "-");
+    });
+
+    const suma = historialFiltrado.reduce((sum, p) => sum + (Number(p.precio_unitario) || 0), 0);
+    
+    generateTableReport({
+      title: "HISTORIAL DE PAGOS OBLIGACIÓN",
+      subtitle: `Fecha: ${new Date().toLocaleDateString("es-VE")}`,
+      reportInfo: [
+        { label: "Ente Legal", value: obligacion?.nombre_ente || "-" },
+        { label: "Concepto", value: obligacion?.concepto || "-" },
+        { label: "Total Intervenciones", value: historialFiltrado.length.toString() }
+      ],
+      tableHeaders,
+      tableData,
+      total: `$${suma.toFixed(2)}`,
+      filename: `Pagos_${obligacion?.nombre_ente?.replace(/\s+/g, "_")}_${new Date().getTime()}.pdf`
+    });
+  };
+
   if (!isOpen || !obligacion) return null;
 
   return (
@@ -85,12 +109,23 @@ export default function HistorialObligacionModal({
               {obligacion.nombre_ente} - {obligacion.concepto}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-4">
+            {historialFiltrado.length > 0 && (
+              <button
+                onClick={handleDownloadReport}
+                className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+              >
+                <FileDown size={18} />
+                <span className="hidden sm:inline">Descargar Reporte</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

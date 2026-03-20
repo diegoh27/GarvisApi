@@ -32,6 +32,7 @@
     "node-unrar-js": "^2.0.2",
     "nodemailer": "^6.9.4",
     "pdfkit": "^0.17.2",
+    "pdfmake": "^0.3.7",
     "pg": "^8.11.2",
     "pg-hstore": "^2.3.4",
     "request": "^2.88.2",

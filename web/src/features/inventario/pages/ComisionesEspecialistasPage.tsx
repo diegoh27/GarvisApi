@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, FileDown } from "lucide-react";
 import Swal from "sweetalert2";
 import {
   useListComisionesQuery,
@@ -444,6 +444,50 @@ export default function ComisionesEspecialistasPage() {
             >
               Pagadas
             </button>
+            
+            {filteredComisiones.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  import("../../../utils/generateTableReport").then(({ generateTableReport }) => {
+                    const tableHeaders = [
+                      "ID", "Especialista", "Paciente", "Cédula", "RIF", "Eco", "Monto", "%", "Fecha", "Estado"
+                    ];
+                    
+                    const tableData = filteredComisiones.map((c, i) => [
+                      String(i + 1).padStart(3, "0"),
+                      `${c.especialista_nombre} ${c.especialista_apellido || ""}`.trim(),
+                      c.paciente_nombre || "-",
+                      c.paciente_cedula || "-",
+                      c.paciente_rif || "-",
+                      c.eco_nombre || "-",
+                      `$${Number(c.monto).toFixed(2)}`,
+                      `${Number(c.porcentaje).toFixed(1)}%`,
+                      c.fecha_cita ? new Date(c.fecha_cita).toLocaleDateString("es-VE") : "-",
+                      c.estado || "-"
+                    ]);
+
+                    const suma = filteredComisiones.reduce((acc, current) => acc + Number(current.monto || 0), 0);
+
+                    generateTableReport({
+                      title: "REPORTE DE CITAS PARA ESPECIALISTAS",
+                      subtitle: `Filtro actual: ${filtroEstado}`,
+                      reportInfo: [
+                        { label: "Total Registros", value: filteredComisiones.length.toString() }
+                      ],
+                      tableHeaders,
+                      tableData,
+                      total: `$${suma.toFixed(2)}`,
+                      filename: `Citas_${filtroEstado}_${new Date().getTime()}.pdf`
+                    });
+                  });
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-teal-700 ml-auto md:ml-2"
+              >
+                <FileDown size={14} />
+                <span className="hidden sm:inline">Descargar</span>
+              </button>
+            )}
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
