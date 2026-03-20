@@ -16,7 +16,6 @@ import {
 	MENSAJE_RANGO_CEDULA,
 } from "../../../shared";
 import {
-	type PerfilData,
 	type PerfilRol,
 	useGetPerfilQuery,
 	useUpdatePerfilMutation,
@@ -37,7 +36,7 @@ const ConfiguracionPage = () => {
 		perfilRol ?? "paciente",
 		{ skip: !token || !perfilRol },
 	);
-	const [updatePerfil, { isPending: saving }] = useUpdatePerfilMutation();
+	const [updatePerfil, { isLoading: saving }] = useUpdatePerfilMutation();
 
 	const [nombre, setNombre] = useState("");
 	const [apellido, setApellido] = useState("");
@@ -107,14 +106,48 @@ const ConfiguracionPage = () => {
 
     if (isAdmin) {
       if (!nombre.trim()) err.nombre = req;
+      else if (nombre.length > 30) err.nombre = "El nombre no puede exceder 30 caracteres.";
+      else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) err.nombre = "El nombre solo puede contener letras.";
+
       if (!apellido.trim()) err.apellido = req;
+      else if (apellido.length > 30) err.apellido = "El apellido no puede exceder 30 caracteres.";
+      else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellido)) err.apellido = "El apellido solo puede contener letras.";
+
       if (!genero.trim()) err.genero = req;
+
       if (!cedula.trim()) err.cedula = "La cédula es requerida.";
+      else if (!/^\d+$/.test(cedula)) err.cedula = "Debe colocar una cédula válida.";
       else if (!validarRangoCedula(cedula)) err.cedula = MENSAJE_RANGO_CEDULA;
+
       if (!correo.trim()) err.correo = req;
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) err.correo = "Correo electrónico inválido.";
-      if (!fechaNacimiento.trim()) err.fecha_nacimiento = req;
-      else if (new Date(fechaNacimiento).getTime() > new Date().getTime()) err.fecha_nacimiento = "La fecha de nacimiento no puede ser futura.";
+      else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(correo.trim())) err.correo = "Correo electrónico inválido.";
+
+      if (!fechaNacimiento.trim()) {
+        err.fecha_nacimiento = req;
+      } else {
+        const fechaNac = new Date(fechaNacimiento);
+		const hoy = new Date();
+		hoy.setHours(23, 59, 59, 999);
+		
+		if (fechaNac.getTime() > hoy.getTime()) {
+			err.fecha_nacimiento = "La fecha de nacimiento no puede ser futura.";
+		} else {
+			const hace100Anos = new Date();
+			hace100Anos.setFullYear(hoy.getFullYear() - 100);
+			if (fechaNac.getTime() < hace100Anos.getTime()) {
+				err.fecha_nacimiento = "La fecha de nacimiento no puede ser mayor a 100 años.";
+			} else {
+				const edad = hoy.getFullYear() - fechaNac.getFullYear();
+				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
+				const diaDiff = hoy.getDate() - fechaNac.getDate();
+				const yaCumplioEsteAnio = mesDiff > 0 || (mesDiff === 0 && diaDiff >= 0);
+				const edadReal = yaCumplioEsteAnio ? edad : edad - 1;
+				if (edadReal < 18) {
+					err.fecha_nacimiento = "El usuario debe ser mayor de edad (18 años o más).";
+				}
+			}
+		}
+      }
     }
 
     const allowPhoneEdit = isAdmin || editTelefono;
@@ -135,6 +168,17 @@ const ConfiguracionPage = () => {
       else if (!validarNumeroTelefono(numContacto)) err.contacto_emergencia_telefono = MENSAJE_TELEFONO_7_DIGITOS;
     }
 
+    if (contrasena) {
+      if (contrasena.length < 6) err.contrasena = "La contraseña debe tener al menos 6 caracteres.";
+      else if (contrasena.length > 20) err.contrasena = "La contraseña no puede exceder 20 caracteres.";
+      else if (!/[A-Z]/.test(contrasena)) err.contrasena = "La contraseña debe contener al menos una mayúscula.";
+      else if (!/[0-9]/.test(contrasena)) err.contrasena = "La contraseña debe contener al menos un número.";
+      else if (!/[!@#$%^&*(),.?":{}|<>]/.test(contrasena)) err.contrasena = "La contraseña debe contener al menos un carácter especial.";
+      
+      if (!confirmar) err.confirmar = "Confirma tu contraseña.";
+      else if (contrasena !== confirmar) err.confirmar = "Las contraseñas no coinciden.";
+    }
+
     return err;
   };
 
@@ -147,11 +191,6 @@ const ConfiguracionPage = () => {
       setError(
         "Esta sección está disponible para pacientes, especialistas, moderadores y admin.",
       );
-      return;
-    }
-
-    if (contrasena && contrasena !== confirmar) {
-      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -407,7 +446,7 @@ const ConfiguracionPage = () => {
                       value={nombre}
                       onChange={(event) => {
                         clearFieldError("nombre");
-                        setNombre(event.target.value);
+                        setNombre(event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""));
                       }}
                       className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.nombre ? "border-red-500" : "border-mist"}`}
                     />
@@ -419,7 +458,7 @@ const ConfiguracionPage = () => {
                       value={apellido}
                       onChange={(event) => {
                         clearFieldError("apellido");
-                        setApellido(event.target.value);
+                        setApellido(event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""));
                       }}
                       className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.apellido ? "border-red-500" : "border-mist"}`}
                     />
@@ -524,19 +563,27 @@ const ConfiguracionPage = () => {
               <label className="font-semibold">Nueva contraseña</label>
               <PasswordField
                 value={contrasena}
-                onChange={setContrasena}
+                onChange={(v) => {
+					clearFieldError("contrasena");
+					setContrasena(v);
+				}}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-mist bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700"
+                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contrasena ? "border-red-500" : "border-mist"}`}
               />
+              {fieldErrors.contrasena && <p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>}
             </div>
             <div className="space-y-1 text-xs text-brand-800">
               <label className="font-semibold">Confirmar contraseña</label>
               <PasswordField
                 value={confirmar}
-                onChange={setConfirmar}
+                onChange={(v) => {
+					clearFieldError("confirmar");
+					setConfirmar(v);
+				}}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-mist bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700"
+                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.confirmar ? "border-red-500" : "border-mist"}`}
               />
+              {fieldErrors.confirmar && <p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar}</p>}
             </div>
             {isPaciente && (
               <div className="space-y-3">

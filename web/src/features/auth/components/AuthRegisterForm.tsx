@@ -80,6 +80,12 @@ const AuthRegisterForm = () => {
 				const fechaNac = new Date(value);
 				const hoy = new Date();
 				if (fechaNac.getTime() > hoy.getTime()) return "La fecha de nacimiento no puede ser futura";
+
+				const hace100Anos = new Date();
+				hace100Anos.setFullYear(hoy.getFullYear() - 100);
+				if (fechaNac.getTime() < hace100Anos.getTime()) {
+					return "La fecha de nacimiento no puede ser mayor a 100 años";
+				}
 				const edad = hoy.getFullYear() - fechaNac.getFullYear();
 				const mesDiff = hoy.getMonth() - fechaNac.getMonth();
 				const diaDiff = hoy.getDate() - fechaNac.getDate();
@@ -252,7 +258,7 @@ const AuthRegisterForm = () => {
 						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.nombre}
-						onChange={(event) => updateField("nombre", event.target.value)}
+						onChange={(event) => updateField("nombre", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.nombre && (
@@ -269,7 +275,7 @@ const AuthRegisterForm = () => {
 						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.apellido}
-						onChange={(event) => updateField("apellido", event.target.value)}
+						onChange={(event) => updateField("apellido", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.apellido && (

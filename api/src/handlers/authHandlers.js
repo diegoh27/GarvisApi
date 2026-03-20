@@ -9,6 +9,7 @@ const {
 } = require("../controllers/authControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 const { validarTelefono } = require("../utils/validacionTelefono");
+const { validarFechaNacimiento } = require("../utils/validacionFecha");
 
 const wantsHtml = (req) =>
 	req.headers.accept && req.headers.accept.includes("text/html");
@@ -121,6 +122,14 @@ const registerPacienteHandler = async (req, res) => {
 		}
 		const telefonoNormalizado = telefonoResult.value;
 
+		const fechaNacResult = validarFechaNacimiento(fecha_nacimiento);
+		if (!fechaNacResult.valid) {
+			return res.status(400).json({
+				ok: false,
+				message: fechaNacResult.message,
+			});
+		}
+
 		let contactoTelefonoNormalizado = contacto_emergencia_telefono;
 		if (contacto_emergencia_telefono && String(contacto_emergencia_telefono).trim()) {
 			const ctResult = validarTelefono(contacto_emergencia_telefono, { required: false });
@@ -141,7 +150,7 @@ const registerPacienteHandler = async (req, res) => {
 			correo,
 			telefono: telefonoNormalizado,
 			contrasena,
-			fecha_nacimiento,
+			fecha_nacimiento: fechaNacResult.value,
 			tipo_sangre,
 			descripcion,
 			direccion,

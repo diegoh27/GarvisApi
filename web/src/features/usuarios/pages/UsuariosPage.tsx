@@ -482,7 +482,17 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 		const fechaNac = new Date(value);
 		const hoy = new Date();
 		hoy.setHours(23, 59, 59, 999);
-		if (fechaNac.getTime() > hoy.getTime()) return "La fecha de nacimiento no puede ser futura";
+
+		if (fechaNac.getTime() > hoy.getTime()) {
+			return "La fecha de nacimiento no puede ser futura";
+		}
+
+		const hace100Anos = new Date();
+		hace100Anos.setFullYear(hoy.getFullYear() - 100);
+		if (fechaNac.getTime() < hace100Anos.getTime()) {
+			return "La fecha de nacimiento no puede ser mayor a 100 años";
+		}
+
 		const edad = hoy.getFullYear() - fechaNac.getFullYear();
 		const mesDiff = hoy.getMonth() - fechaNac.getMonth();
 		const diaDiff = hoy.getDate() - fechaNac.getDate();
@@ -658,7 +668,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								type="text"
 								required
 								value={form.nombre}
-								onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+								onChange={(e) => setForm({ ...form, nombre: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
 								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 							/>
 						</div>
@@ -670,7 +680,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								type="text"
 								required
 								value={form.apellido}
-								onChange={(e) => setForm({ ...form, apellido: e.target.value })}
+								onChange={(e) => setForm({ ...form, apellido: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
 								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 							/>
 						</div>
