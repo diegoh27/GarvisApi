@@ -422,7 +422,9 @@ const requestPasswordReset = async ({ correo }) => {
 	);
 
 	if (!rows.length || !rows[0].activo) {
-		return { ok: true };
+		const err = new Error("Lo sentimos, no pudimos encontrar tu cuenta.");
+		err.code = "USER_NOT_FOUND";
+		throw err;
 	}
 
 	const user = rows[0];

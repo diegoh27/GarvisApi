@@ -330,9 +330,15 @@ const forgotPasswordHandler = async (req, res) => {
 		return res.status(200).json({
 			ok: true,
 			message:
-				"Si tu correo está registrado, recibirás un correo con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada y correo no deseado.",
+				"Enviamos un correo con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada y correo no deseado.",
 		});
 	} catch (err) {
+		if (err?.code === "USER_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
 		console.error(err);
 		return res.status(500).json({
 			ok: false,
