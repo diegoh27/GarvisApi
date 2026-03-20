@@ -668,7 +668,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								type="text"
 								required
 								value={form.nombre}
-								onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+								onChange={(e) => setForm({ ...form, nombre: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
 								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 							/>
 						</div>
@@ -680,7 +680,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								type="text"
 								required
 								value={form.apellido}
-								onChange={(e) => setForm({ ...form, apellido: e.target.value })}
+								onChange={(e) => setForm({ ...form, apellido: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
 								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
 							/>
 						</div>

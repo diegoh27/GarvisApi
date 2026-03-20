@@ -258,7 +258,7 @@ const AuthRegisterForm = () => {
 						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.nombre}
-						onChange={(event) => updateField("nombre", event.target.value)}
+						onChange={(event) => updateField("nombre", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.nombre && (
@@ -275,7 +275,7 @@ const AuthRegisterForm = () => {
 						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.apellido}
-						onChange={(event) => updateField("apellido", event.target.value)}
+						onChange={(event) => updateField("apellido", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.apellido && (
