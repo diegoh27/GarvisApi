@@ -295,6 +295,164 @@ const VerPagoModal = ({
 						</>
 					)}
 					<button
+						type="button"
+						onClick={() => {
+							if (!pago) return;
+							import("jspdf").then(({ jsPDF }) => {
+								import("jspdf-autotable").then(({ default: autoTable }) => {
+									const doc = new jsPDF();
+									const pageWidth = doc.internal.pageSize.getWidth();
+									const pageHeight = doc.internal.pageSize.getHeight();
+									
+									// Colores
+									const brandColor: [number, number, number] = [17, 94, 89]; // #115e59 (Verde oscuro del sidebar)
+									const headerBgColor: [number, number, number] = [20, 110, 100]; // Verde tabla
+
+									// ==========================================
+									// SIDEBAR IZQUIERDO (Verde Oscuro)
+									// ==========================================
+									const sidebarWidth = 65;
+									doc.setFillColor(...brandColor);
+									doc.rect(0, 0, sidebarWidth, pageHeight, "F");
+
+									// Logo o Nombre en el Sidebar
+									doc.setTextColor(255, 255, 255);
+									doc.setFont("helvetica", "bold");
+									doc.setFontSize(14);
+									doc.text("ULTRASONIDO", sidebarWidth / 2, 30, { align: "center" });
+									doc.text("GARBIS", sidebarWidth / 2, 36, { align: "center" });
+									
+									doc.setFont("helvetica", "normal");
+									doc.setFontSize(9);
+									doc.text("Centro Médico", sidebarWidth / 2, 44, { align: "center" });
+
+									// Terms & Conditions en Sidebar
+									doc.setFont("helvetica", "bold");
+									doc.setFontSize(10);
+									doc.text("TÉRMINOS Y", 10, 160);
+									doc.text("CONDICIONES", 10, 165);
+									
+									doc.setFont("helvetica", "normal");
+									doc.setFontSize(8);
+									doc.text("Este recibo es un", 10, 175);
+									doc.text("comprobante de pago", 10, 180);
+									doc.text("válido. No requiere", 10, 185);
+									doc.text("firma autógrafa ni", 10, 190);
+									doc.text("imagen de referencia.", 10, 195);
+
+									// Contacto en Sidebar inferior
+									doc.setFontSize(8);
+									doc.text("+58 414-XXXXXXX", 10, pageHeight - 30);
+									doc.text("contacto@garbis.com", 10, pageHeight - 25);
+
+									// ==========================================
+									// ZONA DERECHA (Contenido Blanco)
+									// ==========================================
+									const contentX = sidebarWidth + 15;
+									
+									// HEADER DERECHO: Título INVOICE
+									doc.setTextColor(55, 65, 81);
+									doc.setFont("helvetica", "bold");
+									doc.setFontSize(28);
+									doc.text("RECIBO", pageWidth - 15, 35, { align: "right" });
+
+									// "Invoice To" - Datos del Paciente
+									doc.setFontSize(10);
+									doc.text("Paciente / Pagador", contentX, 55);
+									doc.setFontSize(14);
+									doc.text(pago.paciente_rif || pago.paciente_cedula || pago.cedula_pagador || "N/A", contentX, 62);
+									doc.setFont("helvetica", "normal");
+									doc.setFontSize(9);
+									doc.text(`Tlf: ${pago.telefono_pagador || "N/A"}`, contentX, 68);
+
+									// Info del Recibo
+									doc.setFont("helvetica", "bold");
+									doc.text("Referencia:", pageWidth - 80, 55);
+									doc.setFont("helvetica", "normal");
+									doc.text(pago.referencia || "N/A", pageWidth - 80, 60);
+
+									doc.setFont("helvetica", "bold");
+									doc.text("Fecha:", pageWidth - 40, 55);
+									doc.setFont("helvetica", "normal");
+									doc.text(formatFecha(pago.fecha_pago), pageWidth - 40, 60);
+
+									// TABLA
+									const estadoStr = estadoPago === 1 ? "Aprobado" : estadoPago === 0 ? "Pendiente" : "Rechazado";
+
+									autoTable(doc, {
+										startY: 85,
+										margin: { left: contentX, right: 15 },
+										theme: "plain",
+										head: [["DESCRIPCIÓN", "BANCO", "TASA BCV", "ESTADO"]],
+										body: [
+											[
+												pago.eco_nombre || "Estudio Ecográfico", 
+												pago.banco_destino || pago.metodo || "N/A", 
+												pago.tasa_dia_bcv ? formatMonto(pago.tasa_dia_bcv) : "N/A",
+												estadoStr
+											]
+										],
+										headStyles: {
+											fillColor: headerBgColor,
+											textColor: [255, 255, 255],
+											fontStyle: "bold",
+											fontSize: 9,
+											cellPadding: 5
+										},
+										bodyStyles: {
+											fillColor: [243, 244, 246], // Gris muy claro
+											textColor: [55, 65, 81],
+											fontSize: 9,
+											cellPadding: 6
+										},
+										alternateRowStyles: {
+											fillColor: [229, 231, 235]
+										}
+									});
+
+									const finalY = (doc as any).lastAutoTable.finalY || 100;
+
+									// TOTALES (Imitando el subtotal/total del invoice)
+									doc.setFont("helvetica", "bold");
+									doc.setFontSize(10);
+									doc.text("TOTAL (VES)", contentX, finalY + 20);
+									doc.setFontSize(16);
+									doc.text(formatMonto(pago.monto), contentX, finalY + 28);
+									
+									doc.setFont("helvetica", "normal");
+									doc.setFontSize(9);
+									doc.text(`Precio Eco (USD): ${formatUSD(pago.eco_precio)}`, contentX, finalY + 35);
+									doc.text(`Método: ${pago.metodo}`, contentX, finalY + 41);
+
+									// Firma de Aprobación
+									if (pago.validado_por_nombre) {
+										doc.setFont("helvetica", "bold");
+										doc.setFontSize(10);
+										doc.text(`${pago.validado_por_nombre} ${pago.validado_por_apellido || ""}`, pageWidth - 40, finalY + 25, { align: "center" });
+										doc.setDrawColor(156, 163, 175);
+										doc.line(pageWidth - 70, finalY + 28, pageWidth - 10, finalY + 28);
+										doc.setFont("helvetica", "normal");
+										doc.setFontSize(8);
+										doc.text("VALIDADO POR", pageWidth - 40, finalY + 33, { align: "center" });
+									}
+
+									// FOOTER DERECHO
+									doc.setDrawColor(209, 213, 219);
+									doc.line(contentX, pageHeight - 35, pageWidth - 15, pageHeight - 35);
+									
+									doc.setFontSize(8);
+									doc.text("www.garbis.com", pageWidth - 15, pageHeight - 25, { align: "right" });
+									doc.text(`Reporte emitido el ${new Date().toLocaleDateString("es-VE")} a las ${new Date().toLocaleTimeString("es-VE")}`, pageWidth - 15, pageHeight - 20, { align: "right" });
+
+									doc.save(`Recibo_Pago_Garbis_${pago.referencia || "Desconocido"}.pdf`);
+								});
+							});
+						}}
+						className="rounded-lg border border-brand-200 bg-paper px-4 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50"
+					>
+						Descargar Recibo
+					</button>
+					<button
 						onClick={onClose}
 						className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-paper hover:bg-brand-800"
 					>
