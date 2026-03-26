@@ -1,7 +1,8 @@
 import GenericTable from "../GenericTable";
 import { formatFechaCortaLocal } from "../../../../shared";
-import { Trash2 } from "lucide-react";
+import { Trash2, FileDown } from "lucide-react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
+import { generateTableReport } from "../../../../utils/generateTableReport";
 
 interface HistorialComisionesTableProps {
   comisiones: EspecialistaComision[];
@@ -111,12 +112,47 @@ export default function HistorialComisionesTable({
       : []),
   ];
 
+  const handleDownloadReport = () => {
+    const validColumns = columns.filter(c => c.key !== "actions");
+    const headers = validColumns.map(c => c.header);
+    
+    const tableData = comisiones.map((row, index) => {
+      return validColumns.map((c) => {
+        const val = c.render(row, index);
+        return typeof val === "string" || typeof val === "number" ? val : "-";
+      });
+    });
+
+    const suma = comisiones.reduce((acc, current) => acc + Number(current.monto || 0), 0);
+
+    generateTableReport({
+      title: "HISTORIAL PAGOS A ESPECIALISTAS",
+      subtitle: `Fecha: ${new Date().toLocaleDateString("es-VE")}`,
+      reportInfo: [
+        { label: "Total Registros", value: comisiones.length.toString() },
+      ],
+      tableHeaders: headers,
+      tableData,
+      total: `$${suma.toFixed(2)}`,
+      filename: `Historial_Especialistas_${new Date().getTime()}.pdf`
+    });
+  };
+
   return (
-    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="px-4 md:px-6 py-4 bg-gray-50 border-b">
+    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
+      <div className="px-4 md:px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
         <h2 className="text-lg md:text-xl font-semibold text-gray-800">
           Historial de pagos
         </h2>
+        {comisiones.length > 0 && (
+          <button
+            onClick={handleDownloadReport}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+          >
+            <FileDown size={18} />
+            Descargar Reporte
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto max-w-full">
         <GenericTable<EspecialistaComision>

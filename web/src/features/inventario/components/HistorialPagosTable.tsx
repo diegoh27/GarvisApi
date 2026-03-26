@@ -4,7 +4,8 @@ import type { AlquilerPago } from "../api/alquilerApi";
 import type { NominaPago } from "../api/nominaApi";
 import GenericTable from "./GenericTable";
 import { formatFechaLocal, formatFechaCortaLocal, formatFechaHoraLocal } from "../../../shared";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, FileDown } from "lucide-react";
+import { generateTableReport } from "../../../utils/generateTableReport";
 
 type HistorialRow =
   | CompraProducto
@@ -418,10 +419,55 @@ export default function HistorialPagosTable({
     emptyMessage ||
     (isCompras ? "No hay compras registradas" : "No hay pagos registrados");
 
+  const handleDownloadReport = () => {
+    const validColumns = columns.filter((c) => c.key !== "actions");
+    const tableHeaders = validColumns.map((c) => c.header);
+
+    const tableData = historial.map((row) => {
+      return validColumns.map((c) => {
+        const val = c.render(row);
+        return typeof val === "string" || typeof val === "number" ? val : "-";
+      });
+    });
+
+    let totalGenerado = "0.00";
+    if (isCompras) {
+      const suma = historial.reduce((acc, current) => acc + Number((current as CompraProducto).precio_total), 0);
+      totalGenerado = `$${suma.toFixed(2)}`;
+    } else if (isNomina) {
+      const suma = historial.reduce((acc, current) => acc + Number((current as NominaPago).monto), 0);
+      totalGenerado = `$${suma.toFixed(2)}`;
+    } else if (isAlquiler) {
+      const suma = historial.reduce((acc, current) => acc + Number((current as AlquilerPago).monto), 0);
+      totalGenerado = `$${suma.toFixed(2)}`;
+    }
+
+    generateTableReport({
+      title: tableTitle,
+      subtitle: `Reporte general: ${new Date().toLocaleDateString("es-VE")}`,
+      reportInfo: [
+        { label: "Total Registros", value: historial.length.toString() },
+      ],
+      tableHeaders,
+      tableData,
+      total: totalGenerado,
+      filename: `${tableTitle.replace(/\s+/g, "_")}_${new Date().getTime()}.pdf`,
+    });
+  };
+
   return (
-    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="px-4 md:px-6 py-4 bg-gray-50 border-b">
+    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
+      <div className="px-4 md:px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
         <h2 className="text-lg md:text-xl font-semibold text-gray-800">{tableTitle}</h2>
+        {historial.length > 0 && (
+          <button
+            onClick={handleDownloadReport}
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+          >
+            <FileDown size={18} />
+            Descargar Reporte
+          </button>
+        )}
       </div>
       <div className="overflow-x-auto max-w-full">
         <GenericTable
