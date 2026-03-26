@@ -1,16 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { RefreshCw } from "lucide-react";
 import { baseApi } from "../../../app/api/baseApi";
-import { useAuth } from "../../../shared";
-import { useGetPermisosInventarioQuery } from "../../roles/rolesApi";
 import ProductosPage from "./ProductosPage";
-import ObligacionesPage from "./ObligacionesPage";
-import NominaPage from "./NominaPage";
-import AlquilerPage from "./AlquilerPage";
-import ComisionesEspecialistasPage from "./ComisionesEspecialistasPage";
-import FacturacionPage from "./FacturacionPage";
-import AuditoriaInventarioTable from "../components/AuditoriaInventarioTable";
+import ProveedoresPage from "./ProveedoresPage";
+import ComprasPage from "./ComprasPage";
+import RecetasPage from "./RecetasPage";
+import KardexPage from "./KardexPage";
 
 const INVENTARIO_TAGS = [
 	"Productos",
@@ -18,73 +14,23 @@ const INVENTARIO_TAGS = [
 	"HistorialCompras",
 	"Ajustes",
 	"HistorialAjustes",
-	"EntesLegales",
-	"Obligaciones",
-	"HistorialEnteLegal",
-	"Empleado",
-	"NominaPago",
-	"AlquilerContrato",
-	"AlquilerPago",
-	"EspecialistaComision",
-	"Facturacion",
 	"InventarioAuditoria",
 ] as const;
 
-type TabType =
-	| "productos"
-	| "entes"
-	| "nomina"
-	| "alquiler"
-	| "comisiones"
-	| "facturacion";
+type TabType = "productos" | "proveedores" | "compras" | "recetas" | "kardex";
 
 const ALL_TABS: { id: TabType; label: string }[] = [
-	{ id: "productos", label: "Producto" },
-	{ id: "entes", label: "Entes Legales" },
-	{ id: "nomina", label: "Nómina" },
-	{ id: "alquiler", label: "Alquiler" },
-	{ id: "comisiones", label: "Comisiones" },
-	{ id: "facturacion", label: "Facturación" },
+	{ id: "productos", label: "Productos" },
+	{ id: "proveedores", label: "Proveedores" },
+	{ id: "compras", label: "Compras" },
+	{ id: "recetas", label: "Recetas" },
+	{ id: "kardex", label: "Kardex" },
 ];
 
 export default function InventarioPage() {
 	const dispatch = useDispatch();
-	const { user } = useAuth();
-	const { data: permisos, isLoading: permisosLoading } =
-		useGetPermisosInventarioQuery(undefined, {
-			skip: user?.rol !== "admin" && user?.rol !== "moderador",
-		});
 	const [activeTab, setActiveTab] = useState<TabType>("productos");
 	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	const isAdmin = user?.rol === "admin";
-	const isModerador = user?.rol === "moderador";
-
-	const tabs = useMemo(() => {
-		if (isAdmin) return ALL_TABS;
-		if (isModerador && permisos) {
-			const list = ALL_TABS.filter((t) => permisos[t.id] === true);
-			// Si por config quedan cero pestañas, mostrar al menos Producto para no dejar la barra vacía
-			return list.length > 0 ? list : [ALL_TABS[0]];
-		}
-		// Moderador sin permisos cargados aún: conservador (sin facturación)
-		if (isModerador && permisosLoading) {
-			return ALL_TABS.filter((t) => t.id !== "facturacion");
-		}
-		return ALL_TABS.filter((t) => t.id !== "facturacion");
-	}, [isAdmin, isModerador, permisos, permisosLoading]);
-
-	// Si el tab activo ya no está permitido (ej. era facturacion y dejó de ser admin), ir al primero
-	const safeActiveTab = useMemo(() => {
-		const allowed = tabs.map((t) => t.id);
-		return allowed.includes(activeTab) ? activeTab : (tabs[0]?.id ?? "productos");
-	}, [activeTab, tabs]);
-
-	useEffect(() => {
-		if (!tabs.some((t) => t.id === activeTab)) {
-			setActiveTab((tabs[0]?.id ?? "productos") as TabType);
-		}
-	}, [tabs, activeTab]);
 
 	const handleRefrescar = () => {
 		setIsRefreshing(true);
@@ -100,11 +46,11 @@ export default function InventarioPage() {
 					<div className="flex items-center justify-between gap-3 px-2 sm:px-0">
 						<div className="overflow-x-auto flex-1 min-w-0">
 							<div className="flex flex-nowrap gap-0 min-w-max">
-								{tabs.map((tab) => (
+								{ALL_TABS.map((tab) => (
 									<button
 										key={tab.id}
 										onClick={() => setActiveTab(tab.id)}
-										className={`px-6 py-4 font-medium text-sm transition-colors ${safeActiveTab === tab.id
+										className={`px-6 py-4 font-medium text-sm transition-colors ${activeTab === tab.id
 											? "text-teal-600 border-b-2 border-teal-600"
 											: "text-gray-600 hover:text-gray-900"
 											}`}
@@ -134,15 +80,11 @@ export default function InventarioPage() {
 
 			{/* Tab Content */}
 			<div className="max-w-7xl mx-auto px-2 sm:px-0 pb-8">
-				{safeActiveTab === "productos" && <ProductosPage />}
-				{safeActiveTab === "entes" && <ObligacionesPage />}
-				{safeActiveTab === "nomina" && <NominaPage />}
-				{safeActiveTab === "alquiler" && <AlquilerPage />}
-				{safeActiveTab === "comisiones" && <ComisionesEspecialistasPage />}
-				{safeActiveTab === "facturacion" && <FacturacionPage />}
-
-				{/* Tabla de auditoría - filtrada por pestaña activa */}
-				<AuditoriaInventarioTable modulo={safeActiveTab} />
+				{activeTab === "productos" && <ProductosPage />}
+				{activeTab === "proveedores" && <ProveedoresPage />}
+				{activeTab === "compras" && <ComprasPage />}
+				{activeTab === "recetas" && <RecetasPage />}
+				{activeTab === "kardex" && <KardexPage />}
 			</div>
 		</div>
 	);

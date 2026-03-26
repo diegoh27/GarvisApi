@@ -3,6 +3,7 @@ const {
 	createProductoController,
 	getProductoController,
 	updateProductoController,
+	deleteProductoController,
 	registrarCompraProductoController,
 	updateCompraProductoController,
 	deleteCompraProductoController,
@@ -36,7 +37,7 @@ const listProductosHandler = async (req, res) => {
 
 const createProductoHandler = async (req, res) => {
 	try {
-		const { nombre, stock_actual, activo } = req.body;
+		const { nombre, presentacion, contenido, unidad_medida, stock_actual, activo } = req.body;
 		if (!nombre || typeof nombre !== "string" || !nombre.trim()) {
 			return res.status(400).json({
 				ok: false,
@@ -45,6 +46,9 @@ const createProductoHandler = async (req, res) => {
 		}
 		const data = await createProductoController({
 			nombre: nombre.trim(),
+			presentacion,
+			contenido,
+			unidad_medida,
 			stock_actual: Number(stock_actual) || 0,
 			activo: activo !== false && activo !== 0 ? 1 : 0,
 		});
@@ -98,11 +102,14 @@ const getProductoHandler = async (req, res) => {
 const updateProductoHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { nombre, activo } = req.body;
+		const { nombre, presentacion, contenido, unidad_medida, activo } = req.body;
 
 		const data = await updateProductoController({
 			id_producto: id,
 			nombre: nombre?.trim(),
+			presentacion,
+			contenido,
+			unidad_medida,
 			activo: activo !== undefined ? (activo ? 1 : 0) : undefined,
 		});
 		const accion = activo === 0 ? "Desactivó" : activo === 1 ? "Activó" : "Modificó";
@@ -132,6 +139,41 @@ const updateProductoHandler = async (req, res) => {
 		return res.status(500).json({
 			ok: false,
 			message: "Error al actualizar el producto",
+		});
+	}
+};
+
+const deleteProductoHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const data = await deleteProductoController(id);
+
+		logInventarioReq(req, "productos", `Eliminó producto "${data?.nombre || id}"`, {
+			entidad_tipo: "producto",
+			entidad_id: id,
+		}).catch((e) => console.error(e));
+
+		return res.status(200).json({
+			ok: true,
+			message: "Producto eliminado correctamente",
+		});
+	} catch (err) {
+		if (err?.code === "PRODUCTO_NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		if (err?.code === "PRODUCTO_EN_USO") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al eliminar el producto",
 		});
 	}
 };
@@ -416,6 +458,7 @@ module.exports = {
 	createProductoHandler,
 	getProductoHandler,
 	updateProductoHandler,
+	deleteProductoHandler,
 	// Compras
 	registrarCompraProductoHandler,
 	updateCompraProductoHandler,

@@ -14,7 +14,11 @@ export default function CrearProductoModal({
   const [createProducto, { isLoading }] = useCreateProductoMutation();
   const [formData, setFormData] = useState({
     nombre: "",
+    presentacion: "",
+    contenido: "1",
+    unidad_medida: "",
     stock_actual: "0",
+    categoria: "General",
     activo: true,
   });
   const [error, setError] = useState("");
@@ -43,14 +47,18 @@ export default function CrearProductoModal({
       return;
     }
     const stock = Number(formData.stock_actual);
-    if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
-      setError("La cantidad inicial debe ser un número entero mayor o igual a 0");
+    if (!Number.isFinite(stock) || stock < 0) {
+      setError("La cantidad inicial debe ser un número igual o mayor a 0");
       return;
     }
 
     try {
       await createProducto({
         nombre: formData.nombre.trim(),
+        presentacion: formData.presentacion.trim() || undefined,
+        contenido: Number(formData.contenido) || 1,
+        unidad_medida: formData.unidad_medida.trim() || undefined,
+        categoria: formData.categoria,
         stock_actual: Number(formData.stock_actual) || 0,
         activo: formData.activo ? 1 : 0,
       }).unwrap();
@@ -59,6 +67,10 @@ export default function CrearProductoModal({
       setTimeout(() => {
         setFormData({
           nombre: "",
+          presentacion: "",
+          contenido: "1",
+          unidad_medida: "",
+          categoria: "General",
           stock_actual: "0",
           activo: true,
         });
@@ -104,22 +116,103 @@ export default function CrearProductoModal({
               required
             />
           </div>
-          {/* Cantidad Inicial */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cantidad Inicial
-            </label>
-            <input
-              type="number"
-              step="1"
-              min="0"
-              value={formData.stock_actual}
-              onChange={(e) =>
-                setFormData({ ...formData, stock_actual: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="0"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            {/* Presentación */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Presentación
+              </label>
+              <input
+                type="text"
+                value={formData.presentacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, presentacion: e.target.value })
+                }
+                maxLength={50}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: Galón, Caja"
+              />
+            </div>
+
+            {/* Equivalencia */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Cuánto contiene una presentación">
+                Equivalencia
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="0.0001"
+                value={formData.contenido}
+                onChange={(e) =>
+                  setFormData({ ...formData, contenido: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: 3800"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Unidad Medida */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Unidad de Medida
+              </label>
+              <input
+                type="text"
+                value={formData.unidad_medida}
+                onChange={(e) =>
+                  setFormData({ ...formData, unidad_medida: e.target.value })
+                }
+                maxLength={30}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: ml, mg, pzas"
+              />
+            </div>
+
+            {/* Categoría */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoría
+              </label>
+              <select
+                value={formData.categoria}
+                onChange={(e) =>
+                  setFormData({ ...formData, categoria: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+              >
+                <option value="General">General</option>
+                <option value="Insumos Médicos">Insumos Médicos</option>
+                <option value="Medicamentos">Medicamentos</option>
+                <option value="Equipos">Equipos</option>
+                <option value="Descartables">Descartables</option>
+                <option value="Diagnóstico">Diagnóstico</option>
+                <option value="Instrumental">Instrumental</option>
+                <option value="Líquidos">Líquidos</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Cantidad Inicial */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Stock actual expresado en la unidad de medida">
+                Stock (en {formData.unidad_medida || "unidades"})
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="0"
+                value={formData.stock_actual}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock_actual: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="0"
+              />
+            </div>
           </div>
           {/* Activo */}
           <div className="flex items-center">

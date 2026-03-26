@@ -17,6 +17,7 @@ import {
 	Users,
 	ListChecks,
 	CreditCard,
+	Wallet,
 } from "lucide-react";
 import { useAuth } from "../shared";
 import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
@@ -40,6 +41,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Informes", to: "/informes", icon: FileText },
 		// Gestión de inventario
 		{ label: "Inventario", to: "/inventario", icon: Package },
+		{ label: "Finanzas", to: "/finanzas", icon: Wallet },
 		// Administración de usuarios
 		{ label: "Usuarios", to: "/usuarios", icon: Users },
 		{ label: "Moderadores", to: "/moderadores", icon: ShieldCheck },
@@ -70,6 +72,7 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Informes", to: "/informes", icon: FileText },
 		// Gestión de inventario
 		{ label: "Inventario", to: "/inventario", icon: Package },
+		{ label: "Finanzas", to: "/finanzas", icon: Wallet },
 		// Auditoría
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 		// Notificaciones (penúltimo)

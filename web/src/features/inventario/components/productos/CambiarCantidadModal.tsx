@@ -45,10 +45,10 @@ export default function CambiarCantidadModal({
       return;
     }
 
-    const nuevoStock = parseInt(formData.stock_nuevo, 10);
+    const nuevoStock = Number(formData.stock_nuevo);
 
-    if (nuevoStock < 0 || !Number.isInteger(nuevoStock)) {
-      setError("La cantidad debe ser un número entero mayor o igual a 0");
+    if (nuevoStock < 0 || Number.isNaN(nuevoStock)) {
+      setError("La cantidad debe ser un número mayor o igual a 0");
       return;
     }
     if (formData.motivo.trim().length > 500) {
@@ -103,7 +103,7 @@ export default function CambiarCantidadModal({
           {producto && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800">
-                <strong>Stock Actual:</strong> {producto.stock_actual}
+                <strong>Stock Actual:</strong> {Number(producto.stock_actual)}
               </p>
             </div>
           )}
@@ -115,7 +115,7 @@ export default function CambiarCantidadModal({
             </label>
             <input
               type="number"
-              step="1"
+              step="any"
               min="0"
               value={formData.stock_nuevo}
               onChange={(e) =>
@@ -130,8 +130,8 @@ export default function CambiarCantidadModal({
             />
             {formData.stock_nuevo && producto && (
               <p className="text-sm text-gray-600 mt-2">
-                Cambio: {parseInt(formData.stock_nuevo, 10) - producto.stock_actual > 0 ? "+" : ""}
-                {parseInt(formData.stock_nuevo, 10) - producto.stock_actual}
+                Cambio: {Number(formData.stock_nuevo) - Number(producto.stock_actual) > 0 ? "+" : ""}
+                {(Number(formData.stock_nuevo) - Number(producto.stock_actual)).toFixed(4).replace(/\.?0+$/, "")}
               </p>
             )}
           </div>

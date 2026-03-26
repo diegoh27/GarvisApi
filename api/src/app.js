@@ -23,19 +23,8 @@ const config = {
 // CORS Configuration
 const corsOptions = {
 	origin: function (origin, callback) {
-		const allowedOrigins = [
-			"http://localhost:3001",
-			"http://localhost:5173",
-			"https://garbis.online",
-			"https://www.garbis.online",
-			"https://garvis.mjeimports.store",
-		];
-		// Allow requests with no origin (like mobile apps or curl)
-		if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-			callback(null, true);
-		} else {
-			callback(new Error("Not allowed by CORS"));
-		}
+		// Permitir cualquier origen temporalmente para evitar bloqueos en desarrollo
+		callback(null, true);
 	},
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

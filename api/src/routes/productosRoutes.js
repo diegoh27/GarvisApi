@@ -4,6 +4,7 @@ const {
 	createProductoHandler,
 	getProductoHandler,
 	updateProductoHandler,
+	deleteProductoHandler,
 	registrarCompraProductoHandler,
 	updateCompraProductoHandler,
 	deleteCompraProductoHandler,
@@ -52,6 +53,14 @@ productosRoutes.patch(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	updateProductoHandler,
+);
+
+// DELETE /productos/:id - eliminar producto
+productosRoutes.delete(
+	"/:id",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	deleteProductoHandler,
 );
 
 // ==========================================
