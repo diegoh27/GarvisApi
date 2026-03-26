@@ -10,6 +10,7 @@ const {
 } = require("../utils/citaEmails");
 const { createNotificacionController } = require("./notificacionesControllers");
 const { normalizeFechaForDb } = require("../utils/dateUtils");
+const { validarStockParaCitaController } = require("./ecoInsumosControllers");
 
 const MOSTRADOR_PACIENTE_ID = "00000000-0000-0000-0000-000000000900";
 const MOSTRADOR_CORREO = "mostrador@garbis.local";
@@ -103,6 +104,18 @@ const createCitaFromDisponibilidadController = async ({
 		await conn.beginTransaction();
 
 		await ensurePacienteVerificado(conn, id_paciente);
+
+		// Validar stock de insumos antes de agendar
+		const stockCheck = await validarStockParaCitaController(id_eco);
+		if (!stockCheck.ok) {
+			const faltantesMsg = stockCheck.faltantes
+				.map(f => `${f.producto}: necesita ${f.requerido}, disponible ${f.disponible}`)
+				.join("; ");
+			const err = new Error(`Stock insuficiente para agendar: ${faltantesMsg}`);
+			err.code = "STOCK_INSUFICIENTE";
+			err.data = stockCheck.faltantes;
+			throw err;
+		}
 
 		const [rows] = await conn.execute(
 			`SELECT id_especialista, fecha, hora_inicio, hora_fin, estado
@@ -399,7 +412,7 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 	try {
 		await conn.beginTransaction();
 		const [rows] = await conn.execute(
-			`SELECT id_especialista, id_paciente, fecha_cita, estado_cita
+			`SELECT id_especialista, id_paciente, fecha_cita, estado_cita, id_eco
        FROM cita
        WHERE id_cita = ?
        FOR UPDATE`,
@@ -427,6 +440,11 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 			err.code = "INVALID_STATE";
 			throw err;
 		}
+		if (cita.estado_cita === 3) {
+			const err = new Error("Cita ya fue atendida");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
 		const today = new Date().toISOString().slice(0, 10);
 		if (cita.fecha_cita > today) {
 			const err = new Error("No se puede atender una cita futura");
@@ -437,6 +455,70 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 		await conn.execute("UPDATE cita SET estado_cita = 3 WHERE id_cita = ?", [
 			id_cita,
 		]);
+
+		const [insumos] = await conn.execute(
+			`SELECT ei.id_producto, ei.cantidad, p.stock_actual, p.consumo_actual, p.contenido
+			 FROM inv_eco_insumo ei
+			 INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
+			 WHERE ei.id_eco = ?
+			 FOR UPDATE`,
+			[cita.id_eco]
+		);
+
+		for (const ins of insumos) {
+			const cantidadDescontar = Number(ins.cantidad);
+			const stockActual = Number(ins.stock_actual);
+			const consumoActual = Number(ins.consumo_actual || 0);
+			const contenido = Number(ins.contenido > 0 ? ins.contenido : 1);
+
+			// Nueva matemática de consumo:
+			// El producto se suma al "consumo_actual".
+			// Si supera el "contenido", se resta una caja entera del stock_actual y el resto vuelve a consumo.
+			let nuevoConsumo = consumoActual + cantidadDescontar;
+			let unidadesEnterasARestar = Math.floor(nuevoConsumo / contenido);
+			let consumoRestante = parseFloat((nuevoConsumo % contenido).toFixed(4));
+			
+			let nuevoStock = stockActual - unidadesEnterasARestar;
+
+			// 1) Actualizar stock y consumo parcial
+			await conn.execute(
+				"UPDATE inv_producto SET stock_actual = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+				[nuevoStock, consumoRestante, ins.id_producto]
+			);
+
+			// 2) Registrar consumo global (esta tabla puede guardar ml o mg exactos descontados de la sesión)
+			const id_consumo = crypto.randomUUID();
+			await conn.execute(
+				"INSERT INTO inv_cita_consumo (id_consumo, id_cita, id_producto, cantidad) VALUES (?, ?, ?, ?)",
+				[id_consumo, id_cita, ins.id_producto, cantidadDescontar]
+			);
+
+			// 3) Registrar en Kardex. El Kardex representará la merma de Cajas o Unidad global.
+			// Para no romper la semántica visual, si unidadesEnterasARestar > 0 registramos la salida en Cajas, si no registramos Salida 0 (solo consumo interno).
+			// Pero Kardex guarda cantidad decimal. Podemos mantener "Kardex cantidad = cajas decimales (ej: 0.5 cajas)".
+			// El Kardex antes usó 'cantidadDescontar' directamente en unidades (ej. 100ml). Si cambiamos todo el sistema a Cajas,
+			// Quizás aquí guardamos "cantidad descontar en términos de presentación" (ej: 100/500 = 0.2).
+			// Pero la UX indica que la auditoría es solo el decremento natural de transacciones. 
+			// Como Kardex solo se lee visualmente como "Cantidad Movida", vamos a guardar el descuento natural en fracciones de su envase:
+			const fraccionDescontada = parseFloat((cantidadDescontar / contenido).toFixed(4));
+
+			const id_kardex = crypto.randomUUID();
+			await conn.execute(
+				`INSERT INTO inv_kardex 
+				(id_kardex, id_producto, tipo_movimiento, cantidad, stock_anterior, stock_posterior, referencia_tipo, referencia_id, id_usuario, observaciones)
+				VALUES (?, ?, 'SALIDA', ?, ?, ?, 'CITA', ?, ?, ?)`,
+				[
+					id_kardex,
+					ins.id_producto,
+					fraccionDescontada,
+					stockActual, // esto es en cajas
+					nuevoStock,  // esto es en cajas
+					id_cita,
+					userId,
+					`Consumo: ${cantidadDescontar} unidades. Barra al ${parseFloat((consumoRestante / contenido) * 100).toFixed(0)}%`
+				]
+			);
+		}
 
 		await conn.commit();
 		return { id_cita, estado_cita: 3 };
@@ -1191,6 +1273,18 @@ const createCitaMostradorController = async ({
 		if (!espEcoRows.length) {
 			const err = new Error("El especialista no tiene asignado este eco");
 			err.code = "ECO_NOT_AVAILABLE";
+			throw err;
+		}
+
+		// Validar stock de insumos antes de agendar
+		const stockCheck = await validarStockParaCitaController(id_eco);
+		if (!stockCheck.ok) {
+			const faltantesMsg = stockCheck.faltantes
+				.map(f => `${f.producto}: necesita ${f.requerido}, disponible ${f.disponible}`)
+				.join("; ");
+			const err = new Error(`Stock insuficiente para agendar: ${faltantesMsg}`);
+			err.code = "STOCK_INSUFICIENTE";
+			err.data = stockCheck.faltantes;
 			throw err;
 		}
 

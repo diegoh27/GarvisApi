@@ -789,9 +789,11 @@ IF NOT EXISTS inv_producto
 (
   id_producto CHAR
 (36) NOT NULL,
-  nombre VARCHAR
-(255) NOT NULL,
-  stock_actual INT NOT NULL DEFAULT 0,
+  nombre VARCHAR(255) NOT NULL,
+  presentacion VARCHAR(50) NULL,
+  contenido DECIMAL(12,4) NOT NULL DEFAULT 1.0000,
+  stock_actual DECIMAL(12,4) NOT NULL DEFAULT 0,
+  unidad_medida VARCHAR(30) NULL,
   activo TINYINT
 (1) NOT NULL DEFAULT 1,
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -811,7 +813,7 @@ IF NOT EXISTS inv_producto_compra
   id_producto CHAR
 (36) NOT NULL,
   fecha_ingreso DATE NOT NULL,
-  cantidad INT NOT NULL,
+  cantidad DECIMAL(12,4) NOT NULL,
   precio_unitario DECIMAL
 (10,2) NOT NULL,
   precio_total DECIMAL
@@ -1352,6 +1354,144 @@ IF NOT EXISTS fac_movimiento
 UPDATE CASCADE
     ON
 DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 18) MINI-ERP INVENTARIO - Proveedores
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_proveedor (
+  id_proveedor CHAR(36) NOT NULL,
+  nombre VARCHAR(120) NOT NULL,
+  rif VARCHAR(20) NULL,
+  telefono VARCHAR(20) NULL,
+  correo VARCHAR(80) NULL,
+  direccion VARCHAR(255) NULL,
+  contacto_nombre VARCHAR(80) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_proveedor),
+  UNIQUE KEY uk_inv_proveedor_nombre (nombre)
+) ENGINE=InnoDB;
+
+-- =========================
+-- 19) MINI-ERP INVENTARIO - Notas de Compra (cabecera)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_nota_compra (
+  id_nota_compra CHAR(36) NOT NULL,
+  id_proveedor CHAR(36) NOT NULL,
+  numero_factura VARCHAR(60) NULL,
+  fecha_compra DATE NOT NULL,
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+  impuesto DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  monto_usd DECIMAL(12,2) NOT NULL DEFAULT 0,
+  monto_bs DECIMAL(14,2) NOT NULL DEFAULT 0,
+  tasa_dia_bcv DECIMAL(12,4) NOT NULL DEFAULT 0,
+  observaciones VARCHAR(255) NULL,
+  id_usuario CHAR(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_nota_compra),
+  KEY idx_inv_nota_compra_proveedor (id_proveedor),
+  KEY idx_inv_nota_compra_fecha (fecha_compra),
+  KEY idx_inv_nota_compra_usuario (id_usuario),
+  CONSTRAINT fk_inv_nota_compra_proveedor
+    FOREIGN KEY (id_proveedor) REFERENCES inv_proveedor (id_proveedor)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_inv_nota_compra_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 20) MINI-ERP INVENTARIO - Notas de Compra (detalle / líneas)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_nota_compra_detalle (
+  id_detalle CHAR(36) NOT NULL,
+  id_nota_compra CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  cantidad DECIMAL(12,4) NOT NULL,
+  precio_unitario DECIMAL(10,2) NOT NULL,
+  precio_total DECIMAL(12,2) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_detalle),
+  KEY idx_inv_ncd_nota (id_nota_compra),
+  KEY idx_inv_ncd_producto (id_producto),
+  CONSTRAINT fk_inv_ncd_nota
+    FOREIGN KEY (id_nota_compra) REFERENCES inv_nota_compra (id_nota_compra)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_inv_ncd_producto
+    FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 21) MINI-ERP INVENTARIO - Receta de Ecosonograma (insumos por eco)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_eco_insumo (
+  id_eco_insumo CHAR(36) NOT NULL,
+  id_eco CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  cantidad DECIMAL(12,4) NOT NULL DEFAULT 1,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_eco_insumo),
+  UNIQUE KEY uk_inv_eco_insumo (id_eco, id_producto),
+  KEY idx_inv_eco_insumo_eco (id_eco),
+  KEY idx_inv_eco_insumo_producto (id_producto),
+  CONSTRAINT fk_inv_eco_insumo_eco
+    FOREIGN KEY (id_eco) REFERENCES eco (id_eco)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_inv_eco_insumo_producto
+    FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 22) MINI-ERP INVENTARIO - Consumo por Cita (salidas)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_cita_consumo (
+  id_consumo CHAR(36) NOT NULL,
+  id_cita CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  cantidad DECIMAL(12,4) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_consumo),
+  KEY idx_inv_consumo_cita (id_cita),
+  KEY idx_inv_consumo_producto (id_producto),
+  CONSTRAINT fk_inv_consumo_cita
+    FOREIGN KEY (id_cita) REFERENCES cita (id_cita)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_inv_consumo_producto
+    FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- =========================
+-- 23) MINI-ERP INVENTARIO - Kardex (auditoría de movimientos)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_kardex (
+  id_kardex CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  tipo_movimiento ENUM('ENTRADA','SALIDA','AJUSTE') NOT NULL,
+  cantidad DECIMAL(12,4) NOT NULL,
+  stock_anterior DECIMAL(12,4) NOT NULL,
+  stock_posterior DECIMAL(12,4) NOT NULL,
+  referencia_tipo VARCHAR(40) NULL COMMENT 'NOTA_COMPRA | CITA | AJUSTE',
+  referencia_id CHAR(36) NULL,
+  observaciones VARCHAR(255) NULL,
+  id_usuario CHAR(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_kardex),
+  KEY idx_inv_kardex_producto (id_producto),
+  KEY idx_inv_kardex_tipo (tipo_movimiento),
+  KEY idx_inv_kardex_fecha (creado_en),
+  KEY idx_inv_kardex_usuario (id_usuario),
+  CONSTRAINT fk_inv_kardex_producto
+    FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_inv_kardex_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+    ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- =========================
