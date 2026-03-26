@@ -41,8 +41,8 @@ export default function HistorialPagosTable({
       {
         key: "id",
         header: "ID",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
         render: (row: HistorialRow) => {
           const compra = row as CompraProducto;
           return `${compra.id_compra.slice(0, 6)}...`;
@@ -51,30 +51,30 @@ export default function HistorialPagosTable({
       {
         key: "producto",
         header: "Producto",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm font-bold text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).nombre_producto,
       },
       {
         key: "fecha",
         header: "Fecha",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) =>
           formatFechaCortaLocal((row as CompraProducto).fecha_ingreso),
       },
       {
         key: "cant",
         header: "Cant",
-        headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm text-right font-medium text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).cantidad,
       },
       {
         key: "unit",
         header: "P.Unit.",
-        headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm text-right text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) => {
           const compra = row as CompraProducto;
           return `$${Number(compra.precio_unitario).toFixed(2)}`;
@@ -83,8 +83,8 @@ export default function HistorialPagosTable({
       {
         key: "total",
         header: "P.Total",
-        headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right font-semibold text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm text-right font-bold text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => {
           const compra = row as CompraProducto;
           return `$${Number(compra.precio_total).toFixed(2)}`;
@@ -93,8 +93,8 @@ export default function HistorialPagosTable({
       {
         key: "prov",
         header: "Prov.",
-        headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-        cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).proveedor || "-",
       },
       ...(onEditar || onEliminar
@@ -103,26 +103,26 @@ export default function HistorialPagosTable({
             key: "actions",
             header: "Acciones",
             headerClassName:
-              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-center",
+              "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+            cellClassName: "px-3 md:px-6 py-5 text-center",
             render: (row: HistorialRow) => (
               <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
                 {onEditar && (
                   <button
                     onClick={() => onEditar(row)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                    className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-colors"
                     title="Editar compra"
                   >
-                    <Edit size={18} />
+                    <Edit size={15} />
                   </button>
                 )}
                 {onEliminar && (
                   <button
                     onClick={() => onEliminar((row as CompraProducto).id_compra)}
-                    className="text-red-600 hover:text-red-800 transition-colors p-1"
+                    className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
                     title="Eliminar compra"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={15} />
                   </button>
                 )}
               </div>
@@ -456,20 +456,20 @@ export default function HistorialPagosTable({
   };
 
   return (
-    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden border border-gray-100">
-      <div className="px-4 md:px-6 py-4 bg-gray-50 border-b flex items-center justify-between">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-800">{tableTitle}</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+        <h2 className="text-lg font-semibold text-gray-800">{tableTitle}</h2>
         {historial.length > 0 && (
           <button
             onClick={handleDownloadReport}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 max-h-10"
           >
             <FileDown size={18} />
             Descargar Reporte
           </button>
         )}
       </div>
-      <div className="overflow-x-auto max-w-full">
+      <div className="overflow-x-auto max-w-full text-nowrap">
         <GenericTable
           columns={columns}
           rows={historial}
@@ -480,9 +480,9 @@ export default function HistorialPagosTable({
                 ? (row as NominaPago).id_pago
                 : (row as HistorialEnteLegal).id_historial
           }
-          tableClassName="w-full min-w-[720px] text-sm"
-          theadClassName="bg-gray-100"
-          getRowClassName={(_row, index) => (index % 2 === 0 ? "bg-gray-50" : "bg-white")}
+          tableClassName="w-full min-w-full text-sm"
+          theadClassName="bg-white border-b border-gray-100"
+          getRowClassName={() => "bg-white border-b border-gray-50 hover:bg-gray-50/50 transition-colors"}
           isLoading={isLoading}
           loadingState="Cargando historial..."
           emptyState={tableEmptyMessage}

@@ -19,6 +19,10 @@ export default function EditarProductoModal({
   const [updateProducto, { isLoading }] = useUpdateProductoMutation();
   const [formData, setFormData] = useState({
     nombre: "",
+    presentacion: "",
+    contenido: "1",
+    unidad_medida: "",
+    categoria: "General",
     activo: true,
   });
   const [error, setError] = useState("");
@@ -29,6 +33,10 @@ export default function EditarProductoModal({
     if (producto) {
       setFormData({
         nombre: producto.nombre,
+        presentacion: producto.presentacion || "",
+        contenido: String(producto.contenido || 1),
+        unidad_medida: producto.unidad_medida || "",
+        categoria: producto.categoria || "General",
         activo: producto.activo === 1,
       });
     }
@@ -54,6 +62,10 @@ export default function EditarProductoModal({
         id: idProducto,
         payload: {
           nombre: formData.nombre.trim(),
+          presentacion: formData.presentacion.trim() || undefined,
+          contenido: Number(formData.contenido) || 1,
+          unidad_medida: formData.unidad_medida.trim() || undefined,
+          categoria: formData.categoria,
           activo: formData.activo ? 1 : 0,
         },
       }).unwrap();
@@ -103,8 +115,87 @@ export default function EditarProductoModal({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            {/* Presentación */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Presentación
+              </label>
+              <input
+                type="text"
+                value={formData.presentacion}
+                onChange={(e) =>
+                  setFormData({ ...formData, presentacion: e.target.value })
+                }
+                maxLength={50}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: Galón, Caja"
+              />
+            </div>
+
+            {/* Equivalencia */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Cuánto contiene una presentación">
+                Equivalencia
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="0.0001"
+                value={formData.contenido}
+                onChange={(e) =>
+                  setFormData({ ...formData, contenido: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: 3800"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Unidad Medida */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Unidad de Medida
+              </label>
+              <input
+                type="text"
+                value={formData.unidad_medida}
+                onChange={(e) =>
+                  setFormData({ ...formData, unidad_medida: e.target.value })
+                }
+                maxLength={30}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Ej: ml, mg, pzas"
+              />
+            </div>
+
+            {/* Categoría */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Categoría
+              </label>
+              <select
+                value={formData.categoria}
+                onChange={(e) =>
+                  setFormData({ ...formData, categoria: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+              >
+                <option value="General">General</option>
+                <option value="Insumos Médicos">Insumos Médicos</option>
+                <option value="Medicamentos">Medicamentos</option>
+                <option value="Equipos">Equipos</option>
+                <option value="Descartables">Descartables</option>
+                <option value="Diagnóstico">Diagnóstico</option>
+                <option value="Instrumental">Instrumental</option>
+                <option value="Líquidos">Líquidos</option>
+              </select>
+            </div>
+          </div>
+
           {/* Activo */}
-          <div className="flex items-center">
+          <div className="flex items-center mt-2">
             <input
               type="checkbox"
               id="activo"

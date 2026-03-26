@@ -7,7 +7,12 @@ import { baseApi } from "../../../app/api/baseApi";
 export type Producto = {
 	id_producto: string;
 	nombre: string;
+	presentacion: string | null;
+	contenido: number;
 	stock_actual: number;
+	consumo_actual: number;
+	unidad_medida: string | null;
+	categoria: string;
 	activo: number;
 	creado_en: string;
 	actualizado_en: string | null;
@@ -41,12 +46,20 @@ export type AjusteStock = {
 
 export type CreateProductoPayload = {
 	nombre: string;
+	presentacion?: string;
+	contenido?: number;
+	unidad_medida?: string;
+	categoria?: string;
 	stock_actual?: number;
 	activo?: number;
 };
 
 export type UpdateProductoPayload = {
 	nombre?: string;
+	presentacion?: string;
+	contenido?: number;
+	unidad_medida?: string;
+	categoria?: string;
 	activo?: number;
 };
 
@@ -121,6 +134,15 @@ const productosApi = baseApi.injectEndpoints({
 				{ type: "Productos", id: arg.id },
 				"InventarioAuditoria",
 			],
+		}),
+
+		// DELETE /productos/:id - eliminar producto
+		deleteProducto: builder.mutation<{ message: string }, string>({
+			query: (id) => ({
+				url: `/productos/${id}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["Productos", "InventarioAuditoria"],
 		}),
 
 		// ==========================================
@@ -259,6 +281,7 @@ export const {
 	useGetProductoQuery,
 	useCreateProductoMutation,
 	useUpdateProductoMutation,
+	useDeleteProductoMutation,
 	useRegistrarCompraMutation,
 	useUpdateCompraMutation,
 	useDeleteCompraMutation,

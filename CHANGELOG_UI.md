@@ -55,3 +55,14 @@ Este documento registrará paso a paso las modificaciones realizadas en la inter
   1. Fusión estructural paramétrica de dos barras flotantes ("Eliminar en Lote" y "Selección Masiva") dentro de un único contenedor unificado visualmente con el fondo de marca (`bg-brand-50/50`).
   2. Implementación de renderizado condicional inteligente: las opciones de selección desaparecen cuando la página no contiene datos (evitando clicks muertos), mientras que las acciones de eliminación global ("Eliminar pasada") permanecen accesibles de forma persistente.
 - **Justificación Académica:** Aplicación del principio de *Agrupamiento por Proximidad y Región Común (Leyes de Gestalt)*: al agrupar funciones operacionales idénticas (Batch Actions) bajo un mismo contenedor y color de fondo, se reduce dramáticamente la carga cognitiva. El cerebro lo procesa como un único "Centro de Mando" en lugar de dos herramientas competidoras.
+
+### [26-Marzo-2026] - Rediseño Premium del Inventario Gerencial (Fase 5)
+- **Secciones:** `/inventario/productos` y `/inventario/recetas`
+- **Componentes modificados:** `ProductosPage`, `ProductosTable`, `HistorialPagosTable`, `CrearProductoModal`, `EditarProductoModal`, `RecetasPage`.
+- **Acciones:**
+  1. **Dashboard KPI:** Inserción de 4 tarjetas gerenciales al tope de la vista principal (Total Insumos, Alertas de Stock rojo, Valuación total y Entradas Recientes).
+  2. **Consumo Dinámico (Progress Bar):** Creación de una columna interactiva que ilustra porcentualmente el consumo fraccional de un insumo mediante código de colores dinámico.
+  3. **Categorización Visual:** Integración de "Badges/Pills" estilizados para denotar la categoría lógica del insumo directamente en la tabla y los modales.
+  4. **Unificación Clean/Premium:** Rediseño estructural de las datatables principales (`ProductosTable` & `HistorialPagosTable`) erradicando los bordes perimetrales duros, usando tipografía de acento elegante en las cabeceras (`text-gray-400 uppercase tracking-wider`) y controles "tinte-pastel" en las acciones interactivas.
+  5. **Depuración de Layout:** Retiro de metadatos decimales innecesarios en la lista de gestión de Recetas garantizando legibilidad total.
+- **Justificación Académica:** Elevar el software de un simple CRUD transaccional a una **Herramienta de Control Gerencial**. Las barras de métricas KPI actúan como un _Glanceable Display_ (pantalla vistazo rápido) que reduce el tiempo de obtención de información clave a menos de 3 segundos, cumpliendo metas de diseño ejecutivo. Las progresiones en barra aplican el principio de *Mapeo Visual Proporcional* para comunicar en tiempo real el agotamiento fraccional sin forzar lectura aritmética; sumado al nuevo patrón visual de Tablas "Borderless" (sin bordes encasillados), se mitiga drásticamente el ruido de la interfaz (Interface Noise), permitiendo que la data hable por sí misma en entornos de estrés clínico y toma de decisiones.
