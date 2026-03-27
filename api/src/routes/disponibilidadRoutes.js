@@ -2,6 +2,12 @@ const { Router } = require("express");
 const {
 	createDisponibilidadHandler,
 	createDisponibilidadBatchHandler,
+	createSolicitudMacroHandler,
+	createSolicitudMacroManualHandler,
+	listMisSolicitudesHandler,
+	cancelSolicitudMacroHandler,
+	approveSolicitudMacroHandler,
+	rejectSolicitudMacroHandler,
 	listMisDisponibilidadHandler,
 	listPendientesHandler,
 	listDisponibilidadesAdminHandler,
@@ -39,6 +45,42 @@ disponibilidadRoutes.post(
 	authenticateToken,
 	authorizeRoles("especialista"),
 	createDisponibilidadBatchHandler,
+);
+disponibilidadRoutes.post(
+	"/solicitud-macro",
+	authenticateToken,
+	authorizeRoles("especialista"),
+	createSolicitudMacroHandler,
+);
+disponibilidadRoutes.post(
+	"/solicitud-macro-manual",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	createSolicitudMacroManualHandler,
+);
+disponibilidadRoutes.get(
+	"/mis-solicitudes",
+	authenticateToken,
+	authorizeRoles("especialista"),
+	listMisSolicitudesHandler,
+);
+disponibilidadRoutes.patch(
+	"/solicitud/:id/cancelar",
+	authenticateToken,
+	authorizeRoles("especialista"),
+	cancelSolicitudMacroHandler,
+);
+disponibilidadRoutes.patch(
+	"/solicitud/:id/aprobar",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	approveSolicitudMacroHandler,
+);
+disponibilidadRoutes.patch(
+	"/solicitud/:id/rechazar",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	rejectSolicitudMacroHandler,
 );
 disponibilidadRoutes.get(
 	"/mis-bloques",

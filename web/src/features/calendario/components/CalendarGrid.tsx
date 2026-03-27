@@ -71,23 +71,28 @@ const CalendarGrid = ({
 							const tooltip = `${formatFecha(dateKey)} • ${formatHora(
 								hour.value,
 							)} - ${formatHora(horaFin)}`;
+							const isPreview = bloque?.estado === -2;
 							const isPagoPendiente = bloque?.estado === 4 && bloque.estado_pago === 0;
 							const isPagoRechazado = bloque?.estado === 4 && bloque.estado_pago === 2;
 							const isAtendida =
 								bloque?.estado === 4 && bloque.estado_cita === 3;
 							const label = bloque
-								? isAtendida
-									? "Atendida"
-									: estadoLabel[bloque.estado] ?? "Estado"
+								? isPreview
+									? "Vista previa"
+									: isAtendida
+										? "Atendida"
+										: estadoLabel[bloque.estado] ?? "Estado"
 								: "";
 							const colorClass = bloque
-								? isAtendida
-									? "bg-emerald-500 text-paper"
-									: isPagoRechazado
-										? "bg-red-500 text-paper"
-										: isPagoPendiente
-											? "bg-amber-400 text-brand-900"
-											: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
+								? isPreview
+									? "bg-[repeating-linear-gradient(-45deg,#e2e8f0_0px,#e2e8f0_6px,#f1f5f9_6px,#f1f5f9_12px)] text-slate-700 ring-1 ring-inset ring-slate-400/60"
+									: isAtendida
+										? "bg-emerald-500 text-paper"
+										: isPagoRechazado
+											? "bg-red-500 text-paper"
+											: isPagoPendiente
+												? "bg-amber-400 text-brand-900"
+												: estadoColor[bloque.estado] ?? "bg-mist text-brand-800"
 								: "";
 							const isSelected = selectedCells.includes(cellKey) && !bloque;
 							return (

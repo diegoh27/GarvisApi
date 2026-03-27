@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
 import { useAuth, formatFechaLocal } from "../../../shared";
@@ -12,15 +12,15 @@ import {
 	DisponibilidadForm,
 	BloquesList,
 } from "../../calendario";
+import type { SlotPreview } from "../../calendario/components/DisponibilidadForm";
 import {
 	useCancelarDisponibilidadMutation,
 	useCrearDisponibilidadMutation,
-	useCrearDisponibilidadBatchMutation,
 	useGetMisBloquesQuery,
 	useGetMisCitasQuery,
 	useMarcarAtendidaMutation,
 } from "../especialistaApi";
-import type { BloqueBatch } from "../especialistaApi";
+import { useCrearSolicitudMacroMutation } from "../../disponibilidad/disponibilidadApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 
 const estadoLabel: Record<number, string> = {
@@ -104,6 +104,7 @@ const CalendarioPage = () => {
 	const [filter, setFilter] = useState("todas");
 	const [page, setPage] = useState(1);
 	const [selectedCells, setSelectedCells] = useState<string[]>([]);
+	const [previewSlots, setPreviewSlots] = useState<SlotPreview[]>([]);
 
 	const isEspecialista = user?.rol === "especialista";
 	const minFecha = useMemo(() => getLocalDateKey(new Date()), []);
@@ -118,10 +119,23 @@ const CalendarioPage = () => {
 		skip: !shouldFetch,
 	});
 	const [crearDisponibilidad] = useCrearDisponibilidadMutation();
-	const [crearDisponibilidadBatch] = useCrearDisponibilidadBatchMutation();
+	const [crearSolicitudMacro] = useCrearSolicitudMacroMutation();
 	const [cancelarDisponibilidad] = useCancelarDisponibilidadMutation();
 	const [marcarAtendida] = useMarcarAtendidaMutation();
 	const { data: ecos = [] } = useGetEcosQuery();
+
+	const onPreviewSlotsChange = useCallback((slots: SlotPreview[] | null) => {
+		setPreviewSlots(slots ?? []);
+	}, []);
+
+	const previewEcoLabel = useMemo(() => {
+		if (idEcos.length === 0) return "Vista previa";
+		if (idEcos.length === 1) {
+			const n = ecos.find((e) => e.id_eco === idEcos[0])?.nombre;
+			return n ? `Vista previa · ${n}` : "Vista previa";
+		}
+		return `Vista previa · ${idEcos.length} ecos`;
+	}, [idEcos, ecos]);
 
 	const timeOptions = useMemo<TimeOption[]>(
 		() => {
@@ -254,45 +268,46 @@ const CalendarioPage = () => {
 		setSubmitStatus("idle");
 	};
 
-	const handleSubmitBatch = async (bloques: BloqueBatch[]) => {
-		if (!bloques.length) {
-			setError("Selecciona al menos un bloque en la vista previa");
-			return;
-		}
+	const handleSubmitMacro = async (payload: {
+		fecha_desde: string;
+		fecha_hasta: string;
+		hora_inicio: string;
+		hora_fin: string;
+		id_ecos: string[];
+	}) => {
 		setError(null);
 		setSubmitStatus("loading");
 		try {
-			const result = await crearDisponibilidadBatch({ bloques }).unwrap();
-			const creados = result?.creados ?? 0;
-			const fechasEnviadas = Array.from(
-				new Set(bloques.map((bloque) => bloque.fecha)),
-			).sort();
-			const fechasTexto = fechasEnviadas.length
-				? `Se enviaron solicitudes en los dias: ${fechasEnviadas
-					.map((fechaItem) => formatFecha(fechaItem))
-					.join(", ")}.`
-				: "Se enviaron las solicitudes.";
+			await crearSolicitudMacro({
+				fecha_desde: payload.fecha_desde,
+				fecha_hasta: payload.fecha_hasta,
+				hora_inicio: payload.hora_inicio,
+				hora_fin: payload.hora_fin,
+				id_ecos: payload.id_ecos,
+			}).unwrap();
 			setSubmitStatus("done");
 			setSelectedCells([]);
+			setPreviewSlots([]);
 			setFecha("");
 			setHoraInicio("");
 			setIdEcos([]);
 			await Swal.fire({
 				icon: "success",
-				title: "Disponibilidad agregada",
-				text: fechasTexto,
+				title: "Solicitud enviada",
+				text: `Se registró la jornada del ${formatFecha(payload.fecha_desde)} al ${formatFecha(payload.fecha_hasta)}. Pendiente de aprobación del moderador.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
 			});
+			setSubmitStatus("idle");
 		} catch (err: unknown) {
 			const e = err as { data?: { message?: string }; status?: number };
 			setSubmitStatus("idle");
 			setError(
 				e?.data?.message ||
-				(e?.status === 409
-					? "Algunos horarios se solapan con bloques o citas existentes."
-					: "No se pudieron crear los bloques.")
+					(e?.status === 409
+						? "Ya existe una solicitud pendiente que se solapa con este rango y equipo."
+						: "No se pudo registrar la solicitud."),
 			);
 			throw err;
 		}
@@ -459,13 +474,36 @@ const CalendarioPage = () => {
 			});
 		});
 
+		for (const slot of previewSlots) {
+			if (!dayKeys.includes(slot.fecha)) continue;
+			const hourKey =
+				slot.hora_inicio.length === 5
+					? `${slot.hora_inicio}:00`
+					: slot.hora_inicio;
+			const cellKey = `${slot.fecha}|${hourKey}`;
+			if (map.has(cellKey)) continue;
+			const horaFinSlot =
+				slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin;
+			map.set(cellKey, {
+				id_disponibilidad: `preview-${cellKey}`,
+				fecha: slot.fecha,
+				hora_inicio: hourKey,
+				hora_fin: horaFinSlot,
+				estado: -2,
+				eco_nombre: previewEcoLabel,
+			});
+		}
+
 		return map;
-	}, [bloques, citas]);
+	}, [bloques, citas, previewSlots, dayKeys, previewEcoLabel]);
 
 	const handleCellClick = async (dateKey: string, hourValue: string) => {
 		if (!isEspecialista) return;
 		const cellKey = `${dateKey}|${hourValue}`;
 		const bloque = bloquesMap.get(cellKey);
+		if (bloque?.estado === -2) {
+			return;
+		}
 		if (bloque) {
 			const isCita = bloque.id_disponibilidad.startsWith("cita-");
 			if (bloque.estado === 4 && isCita) {
@@ -692,7 +730,8 @@ const CalendarioPage = () => {
 						timeOptions={timeOptions}
 						selectedCellsCount={selectedCells.length}
 						onClearSelection={() => setSelectedCells([])}
-						onSubmitBatch={handleSubmitBatch}
+						onSubmitMacro={handleSubmitMacro}
+						onPreviewSlotsChange={onPreviewSlotsChange}
 						error={
 							error ??
 							(bloquesError as Error | undefined)?.message ??
@@ -711,6 +750,7 @@ const CalendarioPage = () => {
 									setHoraInicio("");
 									setIdEcos([]);
 									setSelectedCells([]);
+									setPreviewSlots([]);
 								}
 								: undefined
 						}

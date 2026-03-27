@@ -5,6 +5,7 @@ export type EstadoFiltro =
 	| "todas"
 	| "pendientes"
 	| "aprobadas"
+	| "historial"
 	| "rechazadas"
 	| "canceladas"
 	| "citas";
@@ -127,6 +128,7 @@ const FiltrosDisponibilidadPendientes = ({
 						<option value="todas">Mostrar todos</option>
 						<option value="pendientes">Pendientes</option>
 						<option value="aprobadas">Aprobadas</option>
+						<option value="historial">Historial (rechazadas / canceladas)</option>
 						<option value="rechazadas">Rechazadas</option>
 						<option value="canceladas">Canceladas</option>
 						<option value="citas">Con cita</option>

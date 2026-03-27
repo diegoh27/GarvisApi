@@ -2,6 +2,91 @@ const { pool } = require("../db");
 const crypto = require("crypto");
 const { createNotificacionController } = require("./notificacionesControllers");
 const { normalizeFechaForDb } = require("../utils/dateUtils");
+const {
+	eachCalendarDay,
+	slots20EnRangoDiario,
+	validateMacroHoraRange,
+} = require("../utils/disponibilidadSolicitudUtils");
+
+/** Mismo eco + fecha: cualquier especialista con bloque pendiente/aprobado/cita que solape. */
+const hasSlotEcoOccupied = async (
+	conn,
+	{ fecha, hora_inicio, hora_fin, id_eco },
+) => {
+	const sql = `
+    SELECT id_disponibilidad
+    FROM disponibilidad
+    WHERE fecha = ?
+      AND (id_eco <=> ?)
+      AND estado IN (0, 1, 4)
+      AND NOT (hora_fin <= ? OR hora_inicio >= ?)
+    LIMIT 1
+  `;
+	const [rows] = await conn.execute(sql, [
+		fecha,
+		id_eco,
+		hora_inicio,
+		hora_fin,
+	]);
+	return rows.length > 0;
+};
+
+const MAX_SOLICITUD_RANGE_DAYS = 31;
+
+/** Normaliza DATE (mysql2 puede devolver Date o string) a YYYY-MM-DD para JSON estable. */
+const fechaRowToYmd = (val) => {
+	if (val == null) return val;
+	if (typeof val === "string") {
+		return val.length >= 10 ? val.slice(0, 10) : val;
+	}
+	if (val instanceof Date) {
+		const y = val.getFullYear();
+		const m = String(val.getMonth() + 1).padStart(2, "0");
+		const d = String(val.getDate()).padStart(2, "0");
+		return `${y}-${m}-${d}`;
+	}
+	return String(val).slice(0, 10);
+};
+
+const mapSolicitudRowDates = (row) => ({
+	...row,
+	fecha_desde: fechaRowToYmd(row.fecha_desde),
+	fecha_hasta: fechaRowToYmd(row.fecha_hasta),
+});
+
+/** Nombres de eco cuando la solicitud agrupa varios (id_ecos_json). */
+const enrichSolicitudesEcoNombres = async (rows) => {
+	const out = [];
+	for (const row of rows) {
+		const r = mapSolicitudRowDates(row);
+		if (r.id_ecos_json) {
+			let ids = [];
+			try {
+				const raw = r.id_ecos_json;
+				ids =
+					typeof raw === "string"
+						? JSON.parse(raw)
+						: Array.isArray(raw)
+							? raw
+							: [];
+			} catch (_) {
+				ids = [];
+			}
+			if (Array.isArray(ids) && ids.length) {
+				const placeholders = ids.map(() => "?").join(",");
+				const [ecos] = await pool.execute(
+					`SELECT nombre FROM eco WHERE id_eco IN (${placeholders}) AND activo = 1 ORDER BY nombre ASC`,
+					ids,
+				);
+				if (ecos.length) {
+					r.eco_nombre = ecos.map((e) => e.nombre).join(" · ");
+				}
+			}
+		}
+		out.push(r);
+	}
+	return out;
+};
 
 const hasOverlap = async (
 	conn,
@@ -19,6 +104,34 @@ const hasOverlap = async (
   `;
 	const params = [id_especialista, fecha, ...estados, hora_inicio, hora_fin];
 	const [rows] = await conn.execute(sql, params);
+	return rows.length > 0;
+};
+
+/**
+ * Paso 3 (recurso único): otro especialista ya tiene ese tramo en el mismo eco
+ * (o ambos sin eco) aprobado (1) o con cita (4).
+ */
+const hasOverlapOtherSpecialistOccupied = async (
+	conn,
+	{ id_especialista, fecha, hora_inicio, hora_fin, id_eco },
+) => {
+	const sql = `
+    SELECT d.id_disponibilidad
+    FROM disponibilidad d
+    WHERE d.fecha = ?
+      AND (d.id_eco <=> ?)
+      AND d.id_especialista <> ?
+      AND d.estado IN (1, 4)
+      AND NOT (d.hora_fin <= ? OR d.hora_inicio >= ?)
+    LIMIT 1
+  `;
+	const [rows] = await conn.execute(sql, [
+		fecha,
+		id_eco,
+		id_especialista,
+		hora_inicio,
+		hora_fin,
+	]);
 	return rows.length > 0;
 };
 
@@ -278,8 +391,338 @@ const listMisDisponibilidadController = async ({ id_especialista, estado }) => {
 	return rows;
 };
 
-const listPendientesController = async () => {
+const listSolicitudesSqlBase = `
+    SELECT
+      s.id_solicitud,
+      s.id_especialista,
+      s.fecha_desde,
+      s.fecha_hasta,
+      s.hora_inicio,
+      s.hora_fin,
+      s.id_eco,
+      s.id_ecos_json,
+      s.es_manual,
+      s.estado,
+      s.creado_en,
+      u.nombre,
+      u.apellido,
+      es.nombre AS especialidad,
+      e.nombre AS eco_nombre
+    FROM disponibilidad_solicitud s
+    INNER JOIN usuario u ON u.id_usuario = s.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = s.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    LEFT JOIN eco e ON e.id_eco = s.id_eco
+`;
+
+/**
+ * Solicitud macro (rango) sin crear bloques hasta aprobar.
+ * Una fila por solicitud: varios ecos en `id_ecos_json` (más de un eco) o `id_eco` (uno solo).
+ */
+const createSolicitudMacroController = async ({
+	id_especialista,
+	fecha_desde,
+	fecha_hasta,
+	hora_inicio,
+	hora_fin,
+	id_eco,
+	id_ecos,
+	creado_por,
+	es_manual = false,
+}) => {
+	let id_ecos_list = [];
+	if (Array.isArray(id_ecos) && id_ecos.length) {
+		id_ecos_list = [...new Set(id_ecos.filter(Boolean))];
+	} else if (id_eco) {
+		id_ecos_list = [id_eco];
+	}
+	if (id_ecos_list.length === 0) {
+		const err = new Error(
+			"Debes indicar al menos un tipo de eco (id_ecos o id_eco)",
+		);
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+
+	const fd = normalizeFechaForDb(fecha_desde);
+	const fh = normalizeFechaForDb(fecha_hasta);
+	if (fd > fh) {
+		const err = new Error("fecha_hasta debe ser mayor o igual a fecha_desde");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const days = eachCalendarDay(fd, fh);
+	if (days.length === 0) {
+		const err = new Error("Rango de fechas inválido");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	if (days.length > MAX_SOLICITUD_RANGE_DAYS) {
+		const err = new Error(
+			`El rango máximo permitido es de ${MAX_SOLICITUD_RANGE_DAYS} días`,
+		);
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const horaCheck = validateMacroHoraRange(hora_inicio, hora_fin);
+	if (!horaCheck.ok) {
+		const err = new Error(horaCheck.message);
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		for (const ecoId of id_ecos_list) {
+			const [ecoRows] = await conn.execute(
+				"SELECT id_eco FROM eco WHERE id_eco = ? AND activo = 1",
+				[ecoId],
+			);
+			if (!ecoRows.length) {
+				const err = new Error("Eco no encontrado o inactivo");
+				err.code = "ECO_NOT_FOUND";
+				throw err;
+			}
+		}
+
+		/* Reemplazo de solicitudes macro pendientes solapadas: el especialista no gestiona varias
+		   pendientes a la vez en la UI; si envía un nuevo rango que choca con una pendiente (0),
+		   cancelamos la anterior (3) y guardamos la nueva. Rechazadas (2), procesadas (1) y
+		   canceladas (3) no participan en el UPDATE. */
+		await conn.execute(
+			`UPDATE disponibilidad_solicitud
+       SET estado = 3
+       WHERE id_especialista = ?
+         AND estado = 0
+         AND NOT (fecha_hasta < ? OR fecha_desde > ?)
+         AND hora_inicio < ?
+         AND hora_fin > ?`,
+			[id_especialista, fd, fh, hora_fin, hora_inicio],
+		);
+
+		const id_eco_single = id_ecos_list.length === 1 ? id_ecos_list[0] : null;
+		const id_ecos_json_val =
+			id_ecos_list.length > 1 ? JSON.stringify(id_ecos_list) : null;
+
+		const id_solicitud = crypto.randomUUID();
+		await conn.execute(
+			`INSERT INTO disponibilidad_solicitud
+        (id_solicitud, id_especialista, fecha_desde, fecha_hasta, hora_inicio, hora_fin, id_eco, id_ecos_json, es_manual, estado, creado_por)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+			[
+				id_solicitud,
+				id_especialista,
+				fd,
+				fh,
+				hora_inicio,
+				hora_fin,
+				id_eco_single,
+				id_ecos_json_val,
+				es_manual ? 1 : 0,
+				creado_por,
+			],
+		);
+		await conn.commit();
+
+		notificarAdminModeradorDisponibilidadPendiente({
+			cantidad: 1,
+			id_especialista,
+		}).catch((e) => console.error("Error notificando solicitud macro:", e));
+
+		return { id_solicitud };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+const listMisSolicitudesController = async ({ id_especialista, estado }) => {
+	let sql = `${listSolicitudesSqlBase} WHERE s.id_especialista = ?`;
+	const params = [id_especialista];
+	if (estado !== undefined) {
+		sql += " AND s.estado = ?";
+		params.push(estado);
+	}
+	sql += " ORDER BY s.fecha_desde DESC, s.creado_en DESC";
+	const [rows] = await pool.execute(sql, params);
+	return enrichSolicitudesEcoNombres(rows);
+};
+
+const cancelSolicitudMacroController = async ({ id_solicitud, id_especialista }) => {
 	const sql = `
+    UPDATE disponibilidad_solicitud
+    SET estado = 3
+    WHERE id_solicitud = ? AND id_especialista = ? AND estado = 0
+  `;
+	const [res] = await pool.execute(sql, [id_solicitud, id_especialista]);
+	if (res.affectedRows === 0) {
+		const err = new Error("Solicitud no encontrada o no se puede cancelar");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+	return { id_solicitud, estado: 3 };
+};
+
+const approveSolicitudMacroController = async ({ id_solicitud, aprobado_por }) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		let aprobadoPorFinal = aprobado_por;
+		if (aprobado_por) {
+			const [userRows] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[aprobado_por],
+			);
+			if (!userRows.length) aprobadoPorFinal = null;
+		}
+
+		const [solRows] = await conn.execute(
+			`SELECT id_solicitud, id_especialista, fecha_desde, fecha_hasta, hora_inicio, hora_fin, id_eco, id_ecos_json, estado
+       FROM disponibilidad_solicitud WHERE id_solicitud = ? FOR UPDATE`,
+			[id_solicitud],
+		);
+		if (!solRows.length) {
+			const err = new Error("Solicitud no encontrada");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		const sol = solRows[0];
+		if (sol.estado !== 0) {
+			const err = new Error("La solicitud no está pendiente");
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		const fechaDesde = normalizeFechaForDb(sol.fecha_desde);
+		const fechaHasta = normalizeFechaForDb(sol.fecha_hasta);
+		const idEsp = sol.id_especialista;
+		let ecosIds = [];
+		if (sol.id_ecos_json) {
+			try {
+				const raw = sol.id_ecos_json;
+				const parsed =
+					typeof raw === "string" ? JSON.parse(raw) : raw;
+				if (Array.isArray(parsed)) {
+					ecosIds = parsed.filter(Boolean);
+				}
+			} catch (_) {
+				ecosIds = [];
+			}
+		}
+		if (!ecosIds.length && sol.id_eco) {
+			ecosIds = [sol.id_eco];
+		}
+		if (!ecosIds.length) {
+			const err = new Error(
+				"La solicitud no tiene equipos (eco) asociados; no se puede aprobar",
+			);
+			err.code = "INVALID_STATE";
+			throw err;
+		}
+
+		const slots = slots20EnRangoDiario(sol.hora_inicio, sol.hora_fin);
+		const dias = eachCalendarDay(fechaDesde, fechaHasta);
+
+		let bloques_creados = 0;
+		let bloques_omitidos = 0;
+		const ids_creados = [];
+
+		for (const idEco of ecosIds) {
+			for (const fecha of dias) {
+				for (const slot of slots) {
+					const ocupado = await hasSlotEcoOccupied(conn, {
+						fecha,
+						hora_inicio: slot.hora_inicio,
+						hora_fin: slot.hora_fin,
+						id_eco: idEco,
+					});
+					if (ocupado) {
+						bloques_omitidos += 1;
+						continue;
+					}
+					const id_disponibilidad = crypto.randomUUID();
+					await conn.execute(
+						`INSERT INTO disponibilidad
+            (id_disponibilidad, id_especialista, fecha, hora_inicio, hora_fin, id_eco, id_solicitud, estado, creado_por, aprobado_por)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+						[
+							id_disponibilidad,
+							idEsp,
+							fecha,
+							slot.hora_inicio,
+							slot.hora_fin,
+							idEco,
+							id_solicitud,
+							idEsp,
+							aprobadoPorFinal,
+						],
+					);
+					bloques_creados += 1;
+					ids_creados.push(id_disponibilidad);
+				}
+			}
+		}
+
+		await conn.execute(
+			`UPDATE disponibilidad_solicitud SET estado = 1, aprobado_por = ? WHERE id_solicitud = ?`,
+			[aprobadoPorFinal, id_solicitud],
+		);
+
+		await conn.commit();
+		return {
+			id_solicitud,
+			bloques_creados,
+			bloques_omitidos,
+			ids_creados,
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+const rejectSolicitudMacroController = async ({ id_solicitud, aprobado_por }) => {
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		let aprobadoPorFinal = aprobado_por;
+		if (aprobado_por) {
+			const [userRows] = await conn.execute(
+				"SELECT id_usuario FROM usuario WHERE id_usuario = ? LIMIT 1",
+				[aprobado_por],
+			);
+			if (!userRows.length) aprobadoPorFinal = null;
+		}
+		const [res] = await conn.execute(
+			`UPDATE disponibilidad_solicitud SET estado = 2, aprobado_por = ? WHERE id_solicitud = ? AND estado = 0`,
+			[aprobadoPorFinal, id_solicitud],
+		);
+		if (res.affectedRows === 0) {
+			const err = new Error("Solicitud no encontrada o no está pendiente");
+			err.code = "NOT_FOUND";
+			throw err;
+		}
+		await conn.commit();
+		return { id_solicitud, estado: 2 };
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+const createSolicitudMacroManualController = async (params) =>
+	createSolicitudMacroController({ ...params, es_manual: true });
+
+const listPendientesController = async () => {
+	const sqlBloques = `
     SELECT
       d.id_disponibilidad,
       d.id_especialista,
@@ -300,8 +743,15 @@ const listPendientesController = async () => {
     WHERE d.estado = 0
     ORDER BY d.fecha ASC, d.hora_inicio ASC
   `;
-	const [rows] = await pool.execute(sql);
-	return rows;
+	const sqlSolicitudes = `${listSolicitudesSqlBase} WHERE s.estado = 0 ORDER BY s.fecha_desde ASC, s.creado_en ASC`;
+	const [bloques] = await pool.execute(sqlBloques);
+	const [solicitudesRaw] = await pool.execute(sqlSolicitudes);
+	const solicitudes = await enrichSolicitudesEcoNombres(solicitudesRaw);
+	const out = [
+		...solicitudes.map((s) => ({ ...s, tipo: "solicitud_macro" })),
+		...bloques.map((b) => ({ ...b, tipo: "bloque" })),
+	];
+	return out;
 };
 
 const listDisponibilidadesAdminController = async ({ estado }) => {
@@ -330,8 +780,22 @@ const listDisponibilidadesAdminController = async ({ estado }) => {
 		params.push(estado);
 	}
 	sql += " ORDER BY d.fecha ASC, d.hora_inicio ASC";
-	const [rows] = await pool.execute(sql, params);
-	return rows;
+	const [bloques] = await pool.execute(sql, params);
+
+	let sqlSol = `${listSolicitudesSqlBase} `;
+	const paramsSol = [];
+	if (estado !== undefined) {
+		sqlSol += " WHERE s.estado = ?";
+		paramsSol.push(estado);
+	}
+	sqlSol += " ORDER BY s.fecha_desde ASC, s.creado_en DESC";
+	const [solicitudesRaw] = await pool.execute(sqlSol, paramsSol);
+	const solicitudes = await enrichSolicitudesEcoNombres(solicitudesRaw);
+
+	return {
+		bloques,
+		solicitudes,
+	};
 };
 
 const approveDisponibilidadController = async ({
@@ -360,7 +824,7 @@ const approveDisponibilidadController = async ({
 		}
 
 		const [rows] = await conn.execute(
-			"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
+			"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado, id_eco FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
 			[id_disponibilidad],
 		);
 		if (!rows.length) {
@@ -377,20 +841,44 @@ const approveDisponibilidadController = async ({
 			throw err;
 		}
 
-		// Solo impedimos aprobar si el bloque se solapa con otro que ya tiene cita (estado 4).
-		// Es válido tener varios bloques aprobados solapados (por ejemplo, diferentes ecos en el mismo horario);
-		// cuando se genere una cita, citasControllers se encarga de marcar como cancelados los demás bloques.
-		const overlap = await hasOverlap(conn, {
+		const fechaNorm = normalizeFechaForDb(bloque.fecha);
+
+		// Mismo especialista: no aprobar si choca con un bloque suyo que ya tiene cita (4).
+		const overlapCita = await hasOverlap(conn, {
 			id_especialista: bloque.id_especialista,
-			fecha: bloque.fecha,
+			fecha: fechaNorm,
 			hora_inicio: bloque.hora_inicio,
 			hora_fin: bloque.hora_fin,
 			estados: [4],
 		});
-		if (overlap) {
+		if (overlapCita) {
 			const err = new Error("Bloque se solapa con una cita existente");
 			err.code = "OVERLAP";
 			throw err;
+		}
+
+		// Otro especialista ya ocupa ese tramo en el mismo eco (recurso único): archivar como rechazado.
+		const ocupadoPorOtro = await hasOverlapOtherSpecialistOccupied(conn, {
+			id_especialista: bloque.id_especialista,
+			fecha: fechaNorm,
+			hora_inicio: bloque.hora_inicio,
+			hora_fin: bloque.hora_fin,
+			id_eco: bloque.id_eco ?? null,
+		});
+
+		if (ocupadoPorOtro) {
+			await conn.execute(
+				"UPDATE disponibilidad SET estado = 2, aprobado_por = ? WHERE id_disponibilidad = ?",
+				[aprobadoPorFinal, id_disponibilidad],
+			);
+			await conn.commit();
+			return {
+				id_disponibilidad,
+				estado: 2,
+				rechazo_automatico: true,
+				message:
+					"Ese horario ya está asignado a otro especialista en el mismo equipo; se registró como rechazado.",
+			};
 		}
 
 		await conn.execute(
@@ -413,7 +901,7 @@ const approveDisponibilidadController = async ({
  * @param {Object} params
  * @param {string[]} params.ids - id_disponibilidad
  * @param {string|null} params.aprobado_por
- * @returns {{ aprobados: number, ids: string[] }}
+ * @returns {{ aprobados: number, ids: string[], rechazados_automatico: number, ids_rechazados_automatico: string[] }}
  */
 const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 	if (!Array.isArray(ids) || ids.length === 0) {
@@ -421,6 +909,7 @@ const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 		err.code = "INVALID_INPUT";
 		throw err;
 	}
+	const uniqueIds = [...new Set(ids)];
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -432,21 +921,38 @@ const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 			);
 			if (!userRows.length) aprobadoPorFinal = null;
 		}
-		const aprobados = [];
-		for (const id_disponibilidad of ids) {
-			const [rows] = await conn.execute(
-				"SELECT id_especialista, fecha, hora_inicio, hora_fin, estado FROM disponibilidad WHERE id_disponibilidad = ? LIMIT 1",
-				[id_disponibilidad],
-			);
-			if (!rows.length) {
-				const err = new Error(
-					`Disponibilidad no encontrada: ${id_disponibilidad}`,
-				);
+		const placeholders = uniqueIds.map(() => "?").join(",");
+		const [allRows] = await conn.execute(
+			`SELECT id_disponibilidad, id_especialista, fecha, hora_inicio, hora_fin, estado, id_eco FROM disponibilidad WHERE id_disponibilidad IN (${placeholders})`,
+			uniqueIds,
+		);
+		const byId = new Map(
+			allRows.map((r) => [String(r.id_disponibilidad), r]),
+		);
+		for (const id of uniqueIds) {
+			if (!byId.has(String(id))) {
+				const err = new Error(`Disponibilidad no encontrada: ${id}`);
 				err.code = "NOT_FOUND";
-				err.id = id_disponibilidad;
+				err.id = id;
 				throw err;
 			}
-			const bloque = rows[0];
+		}
+		const sortedIds = [...uniqueIds].sort((a, b) => {
+			const ra = byId.get(String(a));
+			const rb = byId.get(String(b));
+			const fa = normalizeFechaForDb(ra.fecha);
+			const fb = normalizeFechaForDb(rb.fecha);
+			if (fa !== fb) return fa.localeCompare(fb);
+			const ta = String(ra.hora_inicio);
+			const tb = String(rb.hora_inicio);
+			if (ta !== tb) return ta.localeCompare(tb);
+			return String(a).localeCompare(String(b));
+		});
+
+		const aprobados = [];
+		const rechazados_automatico = [];
+		for (const id_disponibilidad of sortedIds) {
+			const bloque = byId.get(String(id_disponibilidad));
 			if (bloque.estado !== 0) {
 				const err = new Error(
 					`Solo se puede aprobar si está en estado propuesto: ${id_disponibilidad}`,
@@ -455,20 +961,36 @@ const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 				err.id = id_disponibilidad;
 				throw err;
 			}
-			const overlap = await hasOverlap(conn, {
+			const fechaNorm = normalizeFechaForDb(bloque.fecha);
+			const overlapCita = await hasOverlap(conn, {
 				id_especialista: bloque.id_especialista,
-				fecha: bloque.fecha,
+				fecha: fechaNorm,
 				hora_inicio: bloque.hora_inicio,
 				hora_fin: bloque.hora_fin,
 				estados: [4],
 			});
-			if (overlap) {
+			if (overlapCita) {
 				const err = new Error(
 					`Bloque se solapa con una cita existente: ${id_disponibilidad}`,
 				);
 				err.code = "OVERLAP";
 				err.id = id_disponibilidad;
 				throw err;
+			}
+			const ocupadoPorOtro = await hasOverlapOtherSpecialistOccupied(conn, {
+				id_especialista: bloque.id_especialista,
+				fecha: fechaNorm,
+				hora_inicio: bloque.hora_inicio,
+				hora_fin: bloque.hora_fin,
+				id_eco: bloque.id_eco ?? null,
+			});
+			if (ocupadoPorOtro) {
+				await conn.execute(
+					"UPDATE disponibilidad SET estado = 2, aprobado_por = ? WHERE id_disponibilidad = ?",
+					[aprobadoPorFinal, id_disponibilidad],
+				);
+				rechazados_automatico.push(id_disponibilidad);
+				continue;
 			}
 			await conn.execute(
 				"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
@@ -477,7 +999,12 @@ const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 			aprobados.push(id_disponibilidad);
 		}
 		await conn.commit();
-		return { aprobados: aprobados.length, ids: aprobados };
+		return {
+			aprobados: aprobados.length,
+			ids: aprobados,
+			rechazados_automatico: rechazados_automatico.length,
+			ids_rechazados_automatico: rechazados_automatico,
+		};
 	} catch (err) {
 		await conn.rollback();
 		throw err;
@@ -997,7 +1524,13 @@ const listPublicaPorFechaController = async ({ fecha }) => {
 module.exports = {
 	createDisponibilidadController,
 	createDisponibilidadBatchController,
+	createSolicitudMacroController,
+	createSolicitudMacroManualController,
 	listMisDisponibilidadController,
+	listMisSolicitudesController,
+	cancelSolicitudMacroController,
+	approveSolicitudMacroController,
+	rejectSolicitudMacroController,
 	listPendientesController,
 	listDisponibilidadesAdminController,
 	approveDisponibilidadController,

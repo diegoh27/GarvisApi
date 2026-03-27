@@ -66,7 +66,16 @@ type DisponibilidadFormProps = {
 	timeOptions: TimeOption[];
 	selectedCellsCount?: number;
 	onClearSelection?: () => void;
-	onSubmitBatch?: (bloques: { fecha: string; hora_inicio: string; hora_fin: string; id_eco?: string }[]) => Promise<void>;
+	/** Solicitud macro (rango + horario); un POST con todos los ecos. */
+	onSubmitMacro?: (payload: {
+		fecha_desde: string;
+		fecha_hasta: string;
+		hora_inicio: string;
+		hora_fin: string;
+		id_ecos: string[];
+	}) => Promise<void>;
+	/** Slots de vista previa para pintar el calendario (borrador) antes de enviar. */
+	onPreviewSlotsChange?: (slots: SlotPreview[] | null) => void;
 	error: string | null;
 	submitStatus: "idle" | "loading" | "done";
 	onFechaChange: (value: string) => void;
@@ -84,7 +93,8 @@ const DisponibilidadForm = ({
 	timeOptions,
 	selectedCellsCount = 0,
 	onClearSelection,
-	onSubmitBatch,
+	onSubmitMacro,
+	onPreviewSlotsChange,
 	error,
 	submitStatus,
 	onFechaChange,
@@ -100,7 +110,6 @@ const DisponibilidadForm = ({
 	const [fechaHasta, setFechaHasta] = useState("");
 	const [horaInicioRango, setHoraInicioRango] = useState("");
 	const [horaFinRango, setHoraFinRango] = useState("");
-	const [selectedSlotKeys, setSelectedSlotKeys] = useState<Set<string>>(new Set());
 	const [rangeError, setRangeError] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -123,6 +132,15 @@ const DisponibilidadForm = ({
 	}, [fechaDesde, fechaHasta, horaInicioRango, horaFinRango, rangeError]);
 
 	useEffect(() => {
+		if (!onPreviewSlotsChange) return;
+		if (!modoRango || rangeError || slotsPrevia.length === 0) {
+			onPreviewSlotsChange(null);
+			return;
+		}
+		onPreviewSlotsChange(slotsPrevia);
+	}, [modoRango, rangeError, slotsPrevia, onPreviewSlotsChange]);
+
+	useEffect(() => {
 		if (!modoRango) {
 			setRangeError(null);
 			setSubmitError(null);
@@ -142,41 +160,16 @@ const DisponibilidadForm = ({
 			setRangeError("La fecha hasta debe ser mayor o igual a la fecha desde");
 			return;
 		}
-		if (rangeDays > 6) {
-			setRangeError("El rango máximo permitido es de 6 días");
+		if (rangeDays > 31) {
+			setRangeError("El rango máximo permitido es de 31 días");
 			return;
 		}
 		setRangeError(null);
 	}, [fechaDesde, fechaHasta, modoRango, rangeDays]);
 
-	// Cuando se generan slots nuevos, marcar todos como seleccionados
-	useEffect(() => {
-		if (slotsPrevia.length > 0) {
-			setSelectedSlotKeys(
-				new Set(slotsPrevia.map((s) => `${s.fecha}|${s.hora_inicio}`))
-			);
-		}
-	}, [slotsPrevia]);
-
 	useEffect(() => {
 		setSubmitError(null);
-	}, [idEcos, selectedSlotKeys, fechaDesde, fechaHasta, horaInicioRango, horaFinRango]);
-
-	const toggleSlot = (key: string) => {
-		setSelectedSlotKeys((prev) => {
-			const next = new Set(prev);
-			if (next.has(key)) next.delete(key);
-			else next.add(key);
-			return next;
-		});
-	};
-
-	const selectAllSlots = () => {
-		setSelectedSlotKeys(new Set(slotsPrevia.map((s) => `${s.fecha}|${s.hora_inicio}`)));
-	};
-	const deselectAllSlots = () => {
-		setSelectedSlotKeys(new Set());
-	};
+	}, [idEcos, fechaDesde, fechaHasta, horaInicioRango, horaFinRango]);
 
 	const handleSubmit = async (event: FormEvent) => {
 		event.preventDefault();
@@ -191,42 +184,31 @@ const DisponibilidadForm = ({
 			});
 			return;
 		}
-		if (modoRango && onSubmitBatch && slotsPrevia.length > 0 && !rangeError) {
-			const selected = slotsPrevia.filter((s) =>
-				selectedSlotKeys.has(`${s.fecha}|${s.hora_inicio}`)
-			);
-			if (selected.length === 0) {
-				setSubmitError("Selecciona al menos un bloque en la vista previa");
-				return;
-			}
+		if (modoRango && onSubmitMacro && slotsPrevia.length > 0 && !rangeError) {
 			if (idEcos.length === 0) {
 				setSubmitError("Selecciona al menos un tipo de eco");
 				return;
 			}
-			const bloques = selected.flatMap((slot) =>
-				idEcos.map((id_eco) => ({
-					fecha: slot.fecha,
-					hora_inicio: slot.hora_inicio,
-					hora_fin: slot.hora_fin,
-					id_eco,
-				}))
-			);
 			try {
-				await onSubmitBatch(bloques);
+				await onSubmitMacro({
+					fecha_desde: fechaDesde,
+					fecha_hasta: fechaHasta,
+					hora_inicio: horaInicioRango,
+					hora_fin: horaFinRango,
+					id_ecos: idEcos,
+				});
 				setSubmitError(null);
-				setModoRango(false);
 				setFechaDesde("");
 				setFechaHasta("");
 				setHoraInicioRango("");
 				setHoraFinRango("");
-				setSelectedSlotKeys(new Set());
 				return;
 			} catch (err) {
 				const apiMessage =
 					(err as { data?: { message?: string }; message?: string })?.data
 						?.message ||
 					(err as { message?: string })?.message ||
-					"No se pudieron crear los bloques.";
+					"No se pudo registrar la solicitud.";
 				await Swal.fire({
 					icon: "warning",
 					title: "No se pudo enviar",
@@ -307,14 +289,6 @@ const DisponibilidadForm = ({
 		return timeOptions.filter((opt) => parseTimeToMinutes(opt.value) > start);
 	}, [timeOptions, horaInicioRango]);
 
-	const formatHoraShort = (timeStr: string) => {
-		const [h, m] = timeStr.split(":");
-		const hh = Number(h);
-		const period = hh >= 12 ? "PM" : "AM";
-		const h12 = hh % 12 === 0 ? 12 : hh % 12;
-		return `${h12}:${m} ${period}`;
-	};
-
 	return (
 		<div className="rounded-2xl bg-paper p-4 shadow-sm">
 			<div className="flex items-center justify-between">
@@ -394,7 +368,7 @@ const DisponibilidadForm = ({
 								/>
 							</div>
 						</div>
-						<p className="text-[10px] text-brand-700">Rango máximo: 6 días</p>
+						<p className="text-[10px] text-brand-700">Rango máximo: 31 días · se crea una solicitud (los bloques de 20 min se generan al aprobar el moderador).</p>
 						<div className="grid grid-cols-2 gap-2">
 							<div className="space-y-1 text-xs text-brand-800">
 								<label className="font-semibold">Hora inicio</label>
@@ -434,35 +408,9 @@ const DisponibilidadForm = ({
 						{!rangeError && slotsPrevia.length > 0 && (
 							<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-xs text-brand-800">
 								<p className="font-semibold">
-									Vista previa: {slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} · {selectedSlotKeys.size} seleccionado{selectedSlotKeys.size !== 1 ? "s" : ""}
+									Vista previa: {slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} de 20 min en {rangeDays} día
+									{rangeDays !== 1 ? "s" : ""} (una sola solicitud con los ecos elegidos; los bloques se generan al aprobar).
 								</p>
-								<div className="mt-2 flex gap-2">
-									<button type="button" onClick={selectAllSlots} className="text-brand-700 underline hover:no-underline">
-										Marcar todos
-									</button>
-									<button type="button" onClick={deselectAllSlots} className="text-brand-700 underline hover:no-underline">
-										Desmarcar todos
-									</button>
-								</div>
-								<div className="mt-2 max-h-40 overflow-y-auto space-y-1">
-									{slotsPrevia.map((slot) => {
-										const key = `${slot.fecha}|${slot.hora_inicio}`;
-										const checked = selectedSlotKeys.has(key);
-										return (
-											<label key={key} className="flex items-center gap-2 cursor-pointer hover:bg-brand-100/50 rounded px-1 py-0.5">
-												<input
-													type="checkbox"
-													checked={checked}
-													onChange={() => toggleSlot(key)}
-													className="rounded border-brand-600 text-brand-700"
-												/>
-												<span>
-													{slot.fecha} · {formatHoraShort(slot.hora_inicio)} - {formatHoraShort(slot.hora_fin)}
-												</span>
-											</label>
-										);
-									})}
-								</div>
 							</div>
 						)}
 					</>
