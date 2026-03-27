@@ -262,14 +262,23 @@ const citasApi = baseApi.injectEndpoints({
 				id_especialista: string;
 				id_disponibilidad: string;
 				orden_medica?: string;
-				metodo: "PagoMovil" | "Transferencia";
+				metodo:
+					| "Transferencia"
+					| "PagoMovil"
+					| "EfectivoBs"
+					| "EfectivoUSD"
+					| "Zelle"
+					| "Binance"
+					| "PayPal"
+					| "Otro"
+					| "Efectivo";
 				imagen?: string;
-				banco_origen: string;
-				banco_destino: string;
+				banco_origen?: string;
+				banco_destino?: string;
 				monto: number;
 				cedula_pagador: string;
 				telefono_pagador: string;
-				referencia: string;
+				referencia?: string;
 			}
 		>({
 			query: (body) => ({

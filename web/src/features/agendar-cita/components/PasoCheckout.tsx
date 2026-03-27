@@ -16,7 +16,12 @@ import { useGetEcosQuery } from "../../ecos/ecosApi";
 import { useGetDolarOficialQuery } from "../../dolar";
 import { useAsignarCitaMutation, useUploadOrdenMedicaMutation } from "../../citas/citasApi";
 import { useGetMetodosPagoDisponiblesQuery } from "../../metodos-pago/metodosPagoApi";
-import { useAuth } from "../../../shared";
+import { useAuth, getToken } from "../../../shared";
+import { CedulaField } from "../../../shared/components/CedulaField";
+import { TelefonoField, validarNumeroTelefono, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared/components/TelefonoField";
+import { parseCedulaDisplay } from "../../../shared/utils/cedulaDisplay";
+import { parseTelefonoDisplay } from "../../../shared/utils/telefonoDisplay";
+import { validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared/utils/validation";
 
 type PasoCheckoutProps = {
 	idEco: string;
@@ -54,6 +59,45 @@ const formatHora = (hora: string): string => {
 const copyToClipboard = (text: string) => {
 	navigator.clipboard.writeText(text).catch(() => { /* ignore */ });
 };
+
+const labelTipoPago = (tipo: string): string => {
+	const m: Record<string, string> = {
+		PagoMovil: "Pago Móvil",
+		Transferencia: "Transferencia",
+		EfectivoBs: "Efectivo (Bs.)",
+		EfectivoUSD: "Efectivo ($)",
+		Zelle: "Zelle",
+		Binance: "Binance",
+		PayPal: "PayPal",
+		Otro: "Otro",
+		Efectivo: "Efectivo",
+	};
+	return m[tipo] ?? tipo;
+};
+
+const isCashTipo = (tipo: string) =>
+	tipo === "EfectivoBs" || tipo === "EfectivoUSD" || tipo === "Efectivo";
+
+const needsBanksTipo = (tipo: string) =>
+	tipo === "Transferencia" || tipo === "PagoMovil";
+
+const needsComprobanteTipo = (tipo: string) => !isCashTipo(tipo);
+
+/** Monto en BS (eco USD × tasa) o monto en USD (precio eco) */
+const montoParaMetodo = (
+	tipoPago: string,
+	moneda: string | undefined,
+	precioUSD: number,
+	precioBS: number,
+): number => {
+	if (tipoPago === "EfectivoBs" || moneda === "BS") {
+		return precioBS;
+	}
+	return precioUSD;
+};
+
+const esVistaBs = (tipoPago: string, moneda: string | undefined) =>
+	tipoPago === "EfectivoBs" || moneda === "BS";
 
 /* ─── Component ─── */
 
@@ -98,6 +142,11 @@ const PasoCheckout = ({
 		}
 	}, [metodosPago, selectedMetodoId]);
 
+	useEffect(() => {
+		const t = selectedMetodo?.tipo_pago ?? "";
+		if (isCashTipo(t)) setComprobanteFile(null);
+	}, [selectedMetodo?.tipo_pago]);
+
 	// Form state
 	const [bancoOrigen, setBancoOrigen] = useState("");
 	const [referencia, setReferencia] = useState("");
@@ -106,8 +155,11 @@ const PasoCheckout = ({
 
 	// File upload
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const comprobanteInputRef = useRef<HTMLInputElement>(null);
 	const [ordenFile, setOrdenFile] = useState<File | null>(null);
+	const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
 	const [dragActive, setDragActive] = useState(false);
+	const [dragComprobanteActive, setDragComprobanteActive] = useState(false);
 
 	// Result
 	const [success, setSuccess] = useState(false);
@@ -129,6 +181,32 @@ const PasoCheckout = ({
 		}
 	};
 
+	const handleComprobanteDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		setDragComprobanteActive(false);
+		const file = e.dataTransfer.files[0];
+		if (file && file.size <= 5 * 1024 * 1024) {
+			setComprobanteFile(file);
+		}
+	};
+
+	const handleComprobanteSelect = (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file && file.size <= 5 * 1024 * 1024) {
+			setComprobanteFile(file);
+		}
+	};
+
+	const tipoPagoSel = selectedMetodo?.tipo_pago ?? "";
+	const monedaSel = selectedMetodo?.moneda ?? "";
+	const showBanks = Boolean(selectedMetodo && needsBanksTipo(tipoPagoSel));
+	const showReferencia = Boolean(selectedMetodo && !isCashTipo(tipoPagoSel));
+	const showComprobante = Boolean(selectedMetodo && needsComprobanteTipo(tipoPagoSel));
+	const vistaBs = selectedMetodo ? esVistaBs(tipoPagoSel, monedaSel) : true;
+	const montoEnviar = selectedMetodo
+		? montoParaMetodo(tipoPagoSel, monedaSel, precioUSD, precioBS)
+		: 0;
+
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		setErrorMsg(null);
@@ -141,38 +219,78 @@ const PasoCheckout = ({
 			setErrorMsg("Seleccione un método de pago.");
 			return;
 		}
-		if (!referencia.trim()) {
+		const metodo = selectedMetodo.tipo_pago;
+		const { numero: cedulaNum } = parseCedulaDisplay(cedulaPagador);
+		if (!cedulaNum || !validarRangoCedula(cedulaNum)) {
+			setErrorMsg(MENSAJE_RANGO_CEDULA);
+			return;
+		}
+		const cedulaApi = cedulaPagador.trim().toUpperCase();
+		const telParsed = parseTelefonoDisplay(telefonoPagador);
+		if (!validarNumeroTelefono(telParsed.number)) {
+			setErrorMsg(MENSAJE_TELEFONO_7_DIGITOS);
+			return;
+		}
+		const telefonoApi = `${telParsed.prefix}${telParsed.number}`;
+
+		if (showReferencia && !referencia.trim()) {
 			setErrorMsg("La referencia de pago es obligatoria.");
 			return;
 		}
-		if (!cedulaPagador.trim()) {
-			setErrorMsg("La cédula del pagador es obligatoria.");
-			return;
-		}
-		if (!telefonoPagador.trim()) {
-			setErrorMsg("El teléfono del pagador es obligatorio.");
-			return;
-		}
-		if (!bancoOrigen.trim()) {
+		if (showBanks && !bancoOrigen.trim()) {
 			setErrorMsg("Seleccione el banco origen.");
 			return;
 		}
+		if (showComprobante && !comprobanteFile) {
+			setErrorMsg("Debe adjuntar el comprobante de pago para este método.");
+			return;
+		}
 
-		// Resolve banco_destino & metodo from the selected payment method
 		const bancoDestino = `${selectedMetodo.banco_nombre} (${selectedMetodo.banco_codigo})`;
-		const metodo = selectedMetodo.tipo_pago as "PagoMovil" | "Transferencia";
+		const monto = montoParaMetodo(
+			selectedMetodo.tipo_pago,
+			selectedMetodo.moneda,
+			precioUSD,
+			precioBS,
+		);
 
 		try {
-			// 1. Upload medical order if provided
+			let imagenUrl = "";
+			if (showComprobante && comprobanteFile) {
+				const token = getToken();
+				if (!token) {
+					setErrorMsg("Sesión expirada. Vuelva a iniciar sesión.");
+					return;
+				}
+				const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
+				const formData = new FormData();
+				formData.append("comprobante", comprobanteFile);
+				const response = await fetch(`${baseUrl}/pagos/upload-comprobante`, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}` },
+					body: formData,
+				});
+				if (!response.ok) {
+					const err = await response.json().catch(() => ({}));
+					setErrorMsg((err as { message?: string }).message || "No se pudo subir el comprobante.");
+					return;
+				}
+				const data = await response.json();
+				imagenUrl = data?.data?.url ?? "";
+				if (!imagenUrl) {
+					setErrorMsg("No se recibió la URL del comprobante.");
+					return;
+				}
+			}
+
 			let ordenUrl: string | undefined;
 			if (ordenFile) {
 				const formData = new FormData();
-				formData.append("orden", ordenFile);
+				formData.append("orden_medica", ordenFile);
 				const uploadResult = await uploadOrden(formData).unwrap();
 				ordenUrl = uploadResult.url;
 			}
 
-			// 2. Create cita with payment (estado_pago = 0 on backend)
 			await asignarCita({
 				id_paciente: user.id_usuario,
 				id_representado: idRepresentado,
@@ -181,12 +299,13 @@ const PasoCheckout = ({
 				id_disponibilidad: idDisponibilidad,
 				orden_medica: ordenUrl,
 				metodo,
-				banco_origen: bancoOrigen,
+				imagen: imagenUrl || undefined,
+				banco_origen: showBanks ? bancoOrigen : "",
 				banco_destino: bancoDestino,
-				monto: precioBS,
-				cedula_pagador: cedulaPagador,
-				telefono_pagador: telefonoPagador,
-				referencia: referencia.trim(),
+				monto,
+				cedula_pagador: cedulaApi,
+				telefono_pagador: telefonoApi,
+				referencia: showReferencia ? referencia.trim() : "",
 			}).unwrap();
 
 			setSuccess(true);
@@ -205,7 +324,7 @@ const PasoCheckout = ({
 	const displayTelefono = selectedMetodo?.telefono || "—";
 	const displayCuenta = selectedMetodo?.numero_cuenta || null;
 	const displayQrUrl = selectedMetodo?.imagen_url || null;
-	const displayTipo = selectedMetodo?.tipo_pago === "PagoMovil" ? "Pago Móvil" : "Transferencia";
+	const displayTipo = selectedMetodo ? labelTipoPago(selectedMetodo.tipo_pago) : "—";
 
 	/* ─── SUCCESS STATE ─── */
 	if (success) {
@@ -302,7 +421,7 @@ const PasoCheckout = ({
 							</div>
 
 							{/* Teléfono (for PagoMovil) */}
-							{displayTelefono !== "—" && (
+							{selectedMetodo?.tipo_pago === "PagoMovil" && displayTelefono !== "—" && (
 								<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 									<div className="min-w-0 flex-1">
 										<p className="text-[10px] text-slate-400 font-bold uppercase">Teléfono</p>
@@ -319,7 +438,7 @@ const PasoCheckout = ({
 							)}
 
 							{/* Cuenta (for Transferencia) */}
-							{displayCuenta && (
+							{selectedMetodo?.tipo_pago === "Transferencia" && displayCuenta && (
 								<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 									<div className="min-w-0 flex-1">
 										<p className="text-[10px] text-slate-400 font-bold uppercase">Nro. Cuenta</p>
@@ -373,19 +492,25 @@ const PasoCheckout = ({
 								<span className="text-sm text-slate-400">Precio Ecografía</span>
 								<span className="text-sm font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
 							</div>
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-slate-400">Tasa BCV</span>
-								<span className="text-sm font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
-							</div>
+							{vistaBs && (
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-slate-400">Tasa BCV</span>
+									<span className="text-sm font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
+								</div>
+							)}
 							<div className="mt-4 p-5 rounded-2xl bg-cloud border border-brand-200/20 flex items-center justify-between">
 								<div>
 									<span className="text-[10px] font-bold text-brand-800 uppercase tracking-widest">
 										Total a Pagar
 									</span>
-									<p className="text-xs text-slate-400">Pago en bolívares</p>
+									<p className="text-xs text-slate-400">
+										{vistaBs ? "Pago en bolívares" : "Pago en dólares"}
+									</p>
 								</div>
 								<span className="text-2xl font-black text-brand-900 font-headline">
-									{precioBS.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
+									{vistaBs
+										? `${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`
+										: `$${montoEnviar.toFixed(2)}`}
 								</span>
 							</div>
 						</div>
@@ -417,122 +542,158 @@ const PasoCheckout = ({
 										)}
 										{metodosPago.map((m) => (
 											<option key={m.id_metodo_pago} value={m.id_metodo_pago}>
-												{m.nombre} — {m.tipo_pago === "PagoMovil" ? "Pago Móvil" : "Transferencia"}
+												{m.nombre} — {labelTipoPago(m.tipo_pago)} ({m.moneda})
 											</option>
 										))}
 									</select>
 									<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
 								</div>
 
-								{/* Tasa */}
-								<div className="space-y-1.5">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Tasa del día (BCV)
-									</label>
-									<input
-										type="text"
-										readOnly
-										value={`${tasaBCV.toFixed(2)} Bs/USD`}
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm font-bold text-brand-800"
-									/>
-								</div>
+								{vistaBs && (
+									<div className="space-y-1.5">
+										<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+											Tasa del día (BCV)
+										</label>
+										<input
+											type="text"
+											readOnly
+											value={`${tasaBCV.toFixed(2)} Bs/USD`}
+											className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm font-bold text-brand-800"
+										/>
+									</div>
+								)}
 
-								{/* Banco Origen */}
+								{showBanks && (
+									<>
+										<div className="space-y-1.5 relative">
+											<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+												Banco Origen
+											</label>
+											<select
+												value={bancoOrigen}
+												onChange={(e) => setBancoOrigen(e.target.value)}
+												className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
+											>
+												<option value="">Seleccionar...</option>
+												<option value="Banesco">Banesco</option>
+												<option value="Banco de Venezuela">Banco de Venezuela</option>
+												<option value="Mercantil">Mercantil</option>
+												<option value="Provincial">Provincial</option>
+												<option value="BNC">BNC</option>
+												<option value="Venezuela">Venezuela</option>
+												<option value="Banco del Tesoro">Banco del Tesoro</option>
+												<option value="Bicentenario">Bicentenario</option>
+												<option value="Otro">Otro</option>
+											</select>
+											<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
+										</div>
+
+										<div className="space-y-1.5">
+											<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+												Banco Destino
+											</label>
+											<input
+												type="text"
+												readOnly
+												value={displayBanco}
+												className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm font-bold text-brand-800"
+											/>
+										</div>
+									</>
+								)}
+
 								<div className="space-y-1.5 relative">
 									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Banco Origen
-									</label>
-									<select
-										value={bancoOrigen}
-										onChange={(e) => setBancoOrigen(e.target.value)}
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
-									>
-										<option value="">Seleccionar...</option>
-										<option value="Banesco">Banesco</option>
-										<option value="Banco de Venezuela">Banco de Venezuela</option>
-										<option value="Mercantil">Mercantil</option>
-										<option value="Provincial">Provincial</option>
-										<option value="BNC">BNC</option>
-										<option value="Venezuela">Venezuela</option>
-										<option value="Banco del Tesoro">Banco del Tesoro</option>
-										<option value="Bicentenario">Bicentenario</option>
-										<option value="Otro">Otro</option>
-									</select>
-									<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
-								</div>
-
-								{/* Banco Destino (read-only, from selected method) */}
-								<div className="space-y-1.5">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Banco Destino
+										{vistaBs ? "Monto en Bs" : "Monto en USD"}
 									</label>
 									<input
 										type="text"
 										readOnly
-										value={displayBanco}
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm font-bold text-brand-800"
-									/>
-								</div>
-
-								{/* Monto BS (auto-calculated, read-only) */}
-								<div className="space-y-1.5 relative">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Monto en Bs
-									</label>
-									<input
-										type="text"
-										readOnly
-										value={precioBS.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										value={
+											vistaBs
+												? montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+												: `$${montoEnviar.toFixed(2)}`
+										}
 										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm font-bold text-brand-900"
 									/>
-								</div>
-
-								{/* Referencia */}
-								<div className="space-y-1.5 relative">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Referencia (Últimos 16 dígitos)
-									</label>
-									<input
-										type="text"
-										maxLength={16}
-										value={referencia}
-										onChange={(e) => setReferencia(e.target.value)}
-										placeholder="Ej: 837462947163"
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
-									/>
 									<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
 								</div>
 
-								{/* Cédula */}
-								<div className="space-y-1.5 relative">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Cédula del pagador
-									</label>
-									<input
-										type="text"
+								{showReferencia && (
+									<div className="space-y-1.5 relative">
+										<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+											Referencia (Últimos 16 dígitos)
+										</label>
+										<input
+											type="text"
+											maxLength={16}
+											value={referencia}
+											onChange={(e) => setReferencia(e.target.value)}
+											placeholder="Ej: 837462947163"
+											className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
+										/>
+										<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
+									</div>
+								)}
+
+								<div className="space-y-1.5 relative md:col-span-2">
+									<CedulaField
+										label="Cédula del pagador"
 										value={cedulaPagador}
-										onChange={(e) => setCedulaPagador(e.target.value)}
-										placeholder="V-00.000.000"
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
+										onChange={(tipo, numero) => setCedulaPagador(`${tipo}${numero}`)}
+										required
+										inputClassName="bg-cloud border-none rounded-xl"
+										selectClassName="bg-cloud border-none rounded-xl"
 									/>
-									<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
+									<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 								</div>
 
-								{/* Teléfono */}
-								<div className="space-y-1.5 relative">
-									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-										Teléfono del pagador
-									</label>
-									<input
-										type="text"
+								<div className="space-y-1.5 relative md:col-span-2">
+									<TelefonoField
+										label="Teléfono del pagador"
 										value={telefonoPagador}
-										onChange={(e) => setTelefonoPagador(e.target.value)}
-										placeholder="0412-0000000"
-										className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20"
+										onChange={(prefix, number) => setTelefonoPagador(`${prefix}${number}`)}
+										required
+										inputClassName="bg-cloud border-none rounded-xl"
+										selectClassName="bg-cloud border-none rounded-xl"
 									/>
-									<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto" />
+									<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 								</div>
 							</div>
+
+							{showComprobante && (
+								<div className="pt-4">
+									<label className="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-2 block">
+										Comprobante de pago *
+									</label>
+									<div
+										onClick={() => comprobanteInputRef.current?.click()}
+										onDragOver={(e) => { e.preventDefault(); setDragComprobanteActive(true); }}
+										onDragLeave={() => setDragComprobanteActive(false)}
+										onDrop={handleComprobanteDrop}
+										className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
+											dragComprobanteActive
+												? "border-brand-800 bg-brand-100/30"
+												: comprobanteFile
+													? "border-emerald-500/40 bg-emerald-50/30"
+													: "border-slate-200 bg-cloud hover:bg-brand-100/20"
+										}`}
+									>
+										<input
+											ref={comprobanteInputRef}
+											type="file"
+											accept=".jpg,.jpeg,.png"
+											className="hidden"
+											onChange={handleComprobanteSelect}
+										/>
+										{comprobanteFile ? (
+											<p className="text-sm font-bold text-brand-900">{comprobanteFile.name}</p>
+										) : (
+											<p className="text-sm text-brand-700">Adjunte captura del pago (JPG/PNG, máx. 5MB)</p>
+										)}
+									</div>
+								</div>
+							)}
 
 							{/* File Dropzone */}
 							<div className="pt-4">

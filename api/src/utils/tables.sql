@@ -606,7 +606,7 @@ IF NOT EXISTS pagos
   id_paciente CHAR
 (36) NOT NULL,
   metodo ENUM
-('Transferencia','PagoMovil','Efectivo','Zelle','Otro') NOT NULL,
+('Transferencia','PagoMovil','Efectivo','Zelle','Otro','Binance','PayPal','EfectivoBs','EfectivoUSD') NOT NULL,
   imagen VARCHAR
 (255) NOT NULL,
   banco_origen VARCHAR

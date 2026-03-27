@@ -6,7 +6,11 @@ const isBsPaymentMethod = (metodo = "") => {
 	const normalized = String(metodo || "")
 		.trim()
 		.toLowerCase();
-	return normalized === "transferencia" || normalized === "pagomovil";
+	return (
+		normalized === "transferencia" ||
+		normalized === "pagomovil" ||
+		normalized === "efectivobs"
+	);
 };
 
 const normalizeCitaAmounts = ({ montoInput, metodo, tasaBcv }) => {

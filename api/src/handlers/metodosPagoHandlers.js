@@ -21,6 +21,31 @@ const normalizeTipoBs = (value = "") => {
 		.replace(/\s+/g, "");
 	if (raw === "transferencia") return "Transferencia";
 	if (raw === "pagomovil") return "PagoMovil";
+	if (raw === "efectivobs") return "EfectivoBs";
+	return null;
+};
+
+/** Tipos permitidos en checkout (BS/USD); debe alinearse con pagos.metodo y citas/asignar */
+const normalizeTipoCheckoutDisponible = (value = "") => {
+	const raw = String(value || "")
+		.trim()
+		.toLowerCase()
+		.replace(/\s+/g, "");
+	if (!raw) return null;
+	const bs = {
+		transferencia: "Transferencia",
+		pagomovil: "PagoMovil",
+		efectivobs: "EfectivoBs",
+	};
+	const usd = {
+		zelle: "Zelle",
+		binance: "Binance",
+		paypal: "PayPal",
+		efectivousd: "EfectivoUSD",
+		otro: "Otro",
+	};
+	if (bs[raw]) return { moneda: "BS", tipo: bs[raw] };
+	if (usd[raw]) return { moneda: "USD", tipo: usd[raw] };
 	return null;
 };
 
@@ -57,10 +82,8 @@ const listMetodosPagoDisponiblesHandler = async (_req, res) => {
 
 		const filtered = data.filter((item) => {
 			const moneda = normalizeMoneda(item.moneda);
-			const tipoBs = normalizeTipoBs(item.tipo_pago);
-			return (
-				moneda === "BS" && ["Transferencia", "PagoMovil"].includes(tipoBs || "")
-			);
+			const n = normalizeTipoCheckoutDisponible(item.tipo_pago);
+			return Boolean(n && moneda === n.moneda);
 		});
 
 		return res.status(200).json({
@@ -174,7 +197,8 @@ const createMetodoPagoHandler = async (req, res) => {
 			if (!tipoBs) {
 				return res.status(400).json({
 					ok: false,
-					message: "Para BS solo se permite Transferencia o PagoMovil",
+					message:
+						"Para BS solo se permite Transferencia, PagoMovil o EfectivoBs",
 				});
 			}
 			tipoPagoValue = tipoBs;
@@ -189,14 +213,15 @@ const createMetodoPagoHandler = async (req, res) => {
 
 			const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
 
-			if (tipoPagoValue === "PagoMovil" && !telefonoValue) {
+			if (tipoPagoValue === "EfectivoBs") {
+				telefonoValue = null;
+				numeroCuentaValue = null;
+			} else if (tipoPagoValue === "PagoMovil" && !telefonoValue) {
 				return res.status(400).json({
 					ok: false,
 					message: "Para PagoMovil debe indicar un teléfono",
 				});
-			}
-
-			if (tipoPagoValue === "PagoMovil") {
+			} else if (tipoPagoValue === "PagoMovil") {
 				const telefonoDigits = telefonoValue.replace(/\D/g, "");
 				if (telefonoDigits.length < 10 || telefonoDigits.length > 11) {
 					return res.status(400).json({
@@ -422,7 +447,8 @@ const updateMetodoPagoHandler = async (req, res) => {
 					.status(400)
 					.json({
 						ok: false,
-						message: "Para BS solo se permite Transferencia o PagoMovil",
+						message:
+							"Para BS solo se permite Transferencia, PagoMovil o EfectivoBs",
 					});
 			}
 			tipoPagoValue = tipoBs;
@@ -448,7 +474,10 @@ const updateMetodoPagoHandler = async (req, res) => {
 					});
 			}
 
-			if (tipoPagoValue === "PagoMovil") {
+			if (tipoPagoValue === "EfectivoBs") {
+				telefonoValue = null;
+				numeroCuentaValue = null;
+			} else if (tipoPagoValue === "PagoMovil") {
 				if (!telefonoValue) {
 					return res
 						.status(400)

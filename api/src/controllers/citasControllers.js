@@ -17,6 +17,11 @@ const MOSTRADOR_CORREO = "mostrador@garbis.local";
 const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
 const MOSTRADOR_RIF = "J0000000000";
 
+const isCashPaymentMethodCita = (m) => {
+	const x = String(m || "");
+	return x === "EfectivoBs" || x === "EfectivoUSD" || x === "Efectivo";
+};
+
 const ensurePacienteVerificado = async (conn, id_paciente) => {
 	const [rows] = await conn.execute(
 		"SELECT email_verificado FROM paciente WHERE id_paciente = ? LIMIT 1",
@@ -1859,6 +1864,12 @@ const asignarCitaCompletaController = async ({
       VALUES
         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
     `;
+		const bancoOrigenVal = String(banco_origen ?? "").trim();
+		const bancoDestinoVal = String(banco_destino ?? "").trim();
+		let referenciaVal = String(referencia ?? "").trim();
+		if (isCashPaymentMethodCita(metodo) && !referenciaVal) {
+			referenciaVal = `WEB-${id_cita}`;
+		}
 		const normalizedPago = normalizeCitaAmounts({
 			montoInput: Number(monto),
 			metodo,
@@ -1870,14 +1881,14 @@ const asignarCitaCompletaController = async ({
 			id_paciente,
 			metodo,
 			imagen || "",
-			banco_origen,
-			banco_destino,
+			bancoOrigenVal,
+			bancoDestinoVal,
 			monto,
 			normalizedPago.monto_usd,
 			normalizedPago.monto_bs,
 			cedula_pagador,
 			telefono_pagador,
-			referencia,
+			referenciaVal,
 			normalizedPago.tasa_dia_bcv,
 		]);
 
