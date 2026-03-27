@@ -959,6 +959,41 @@ const deleteDisponibilidadPorCriteriosController = async ({
 	}
 };
 
+// Disponibilidad pública filtrada SOLO por fecha: todos los ecos y especialistas aprobados
+const listPublicaPorFechaController = async ({ fecha }) => {
+	const sql = `
+    SELECT
+      d.id_disponibilidad,
+      d.fecha,
+      d.hora_inicio,
+      d.hora_fin,
+      d.id_eco,
+      e.nombre AS eco_nombre,
+      d.id_especialista,
+      u.nombre AS especialista_nombre,
+      u.apellido AS especialista_apellido,
+      es.nombre AS especialidad_nombre
+    FROM disponibilidad d
+    INNER JOIN usuario u ON u.id_usuario = d.id_especialista
+    INNER JOIN especialista esp ON esp.id_especialista = d.id_especialista
+    INNER JOIN especialidad es ON es.id_especialidad = esp.id_especialidad
+    LEFT JOIN eco e ON e.id_eco = d.id_eco
+    WHERE d.estado = 1
+      AND d.fecha = ?
+      AND d.id_eco IS NOT NULL
+      AND (
+        d.fecha > CURDATE()
+        OR (
+          d.fecha = CURDATE()
+          AND d.hora_inicio > CURTIME()
+        )
+      )
+    ORDER BY e.nombre ASC, d.hora_inicio ASC
+  `;
+	const [rows] = await pool.execute(sql, [fecha]);
+	return rows;
+};
+
 module.exports = {
 	createDisponibilidadController,
 	createDisponibilidadBatchController,
@@ -977,6 +1012,7 @@ module.exports = {
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
+	listPublicaPorFechaController,
 	deleteDisponibilidadPasadaController,
 	deleteDisponibilidadPorCriteriosController,
 };

@@ -59,6 +59,19 @@ const disponibilidadApi = baseApi.injectEndpoints({
 			) => response.data ?? [],
 			providesTags: ["Disponibilidad"],
 		}),
+		getDisponibilidadPorFecha: builder.query<
+			DisponibilidadPublicaPorEcoItem[],
+			{ fecha: string }
+		>({
+			query: (params) => ({
+				url: "/disponibilidad/publica",
+				params,
+			}),
+			transformResponse: (
+				response: { ok: boolean; data: DisponibilidadPublicaPorEcoItem[] }
+			) => response.data ?? [],
+			providesTags: ["Disponibilidad"],
+		}),
 		getDisponibilidadPendientes: builder.query<DisponibilidadPendiente[], void>({
 			query: () => "/disponibilidad/pendientes",
 			transformResponse: (response: { ok: boolean; data: DisponibilidadPendiente[] }) =>
@@ -162,6 +175,7 @@ const disponibilidadApi = baseApi.injectEndpoints({
 const {
 	useGetDisponibilidadPublicaQuery,
 	useGetDisponibilidadPublicaPorEcoQuery,
+	useGetDisponibilidadPorFechaQuery,
 	useGetDisponibilidadPendientesQuery,
 	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,
@@ -178,6 +192,7 @@ export {
 	disponibilidadApi,
 	useGetDisponibilidadPublicaQuery,
 	useGetDisponibilidadPublicaPorEcoQuery,
+	useGetDisponibilidadPorFechaQuery,
 	useGetDisponibilidadPendientesQuery,
 	useGetDisponibilidadAdminQuery,
 	useAprobarDisponibilidadMutation,

@@ -13,6 +13,7 @@ const {
 	cancelDisponibilidadBatchController,
 	listPublicaController,
 	listPublicaPorEcoController,
+	listPublicaPorFechaController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
@@ -513,10 +514,18 @@ const listPublicaHandler = async (req, res) => {
 				data,
 			});
 		}
+		// Date-only query: return all ecos with availability for that date
+		if (fecha && !id_especialista) {
+			const data = await listPublicaPorFechaController({ fecha });
+			return res.status(200).json({
+				ok: true,
+				data,
+			});
+		}
 		if (!id_especialista) {
 			return res.status(400).json({
 				ok: false,
-				message: "id_especialista o id_eco es requerido",
+				message: "id_especialista, id_eco o fecha es requerido",
 			});
 		}
 		const data = await listPublicaController({ id_especialista, fecha });

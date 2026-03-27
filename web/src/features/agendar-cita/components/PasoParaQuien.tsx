@@ -32,6 +32,16 @@ const InitialAvatar = ({ nombre, apellido, size = "w-12 h-12" }: { nombre: strin
 	);
 };
 
+/** Radio-style circle indicator for mobile selection */
+const RadioCircle = ({ active }: { active: boolean }) => (
+	<div
+		className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${active ? "border-brand-800 bg-brand-800" : "border-slate-300"
+			}`}
+	>
+		{active && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+	</div>
+);
+
 const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -46,7 +56,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 	const [selectedRepresentadoId, setSelectedRepresentadoId] = useState<string | null>(null);
 	const [showForm, setShowForm] = useState(false);
 
-	// Form state for new representado
+	// Form state
 	const [formNombre, setFormNombre] = useState("");
 	const [formApellido, setFormApellido] = useState("");
 	const [formCedula, setFormCedula] = useState("");
@@ -89,10 +99,8 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 				genero: formGenero as "Masculino" | "Femenino",
 				parentesco: formParentesco || null,
 			}).unwrap();
-			// Auto-select the newly created representado
 			setSelectedRepresentadoId(result.id_representado);
 			setShowForm(false);
-			// Reset form
 			setFormNombre("");
 			setFormApellido("");
 			setFormCedula("");
@@ -117,178 +125,165 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 
 	return (
 		<div>
-			{/* Header */}
-			<div className="mb-8 text-center lg:mb-10">
-				<h2 className="font-headline text-2xl font-extrabold text-brand-900 tracking-tight mb-2 sm:text-3xl lg:text-4xl">
+			{/* ─── HEADER ─── */}
+			<div className="mb-6 lg:mb-10 lg:text-center">
+				<h2 className="font-headline text-2xl font-extrabold text-brand-900 tracking-tight mb-1 leading-tight sm:text-3xl lg:text-4xl lg:mb-2">
 					¿Para quién es la cita?
 				</h2>
-				<p className="text-brand-600 text-sm sm:text-base">
+				<p className="text-brand-600 text-sm lg:text-base">
 					Selecciona el perfil del paciente para continuar con el agendamiento.
 				</p>
 			</div>
 
-			{/* Selection Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 lg:gap-8 lg:mb-12">
-				{/* Option: Para Mí */}
+			{/* ─── SELECTION CARDS ─── */}
+			<div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 mb-6 lg:mb-12">
+				{/* Card: Para Mí */}
 				<button
 					type="button"
 					onClick={handleSelectYo}
-					className={`group relative flex flex-col items-center p-6 rounded-3xl border-2 transition-all duration-300 shadow-lg text-center lg:p-8 lg:rounded-[2rem] ${
-						selectionType === "yo"
-							? "bg-brand-800 text-white border-brand-800 shadow-brand-800/20"
-							: "bg-paper border-transparent hover:border-brand-200 shadow-brand-800/5 hover:shadow-xl"
-					}`}
+					className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 lg:flex lg:flex-col lg:items-center lg:text-center lg:p-8 lg:rounded-[2rem] ${selectionType === "yo"
+						? "bg-brand-800 text-white border-brand-800 shadow-xl shadow-brand-800/20 lg:shadow-brand-800/20"
+						: "bg-paper border-transparent shadow-lg shadow-brand-800/5 hover:border-brand-200 lg:hover:shadow-xl"
+						}`}
 				>
-					{selectionType === "yo" && (
-						<div className="absolute top-4 right-4 lg:top-6 lg:right-6">
-							<div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-								<Check className="h-3.5 w-3.5 text-brand-800" strokeWidth={3} />
-							</div>
+					{/* Mobile layout: icon + radio inline */}
+					<div className="flex items-center justify-between mb-3 lg:hidden">
+						<div
+							className={`w-12 h-12 rounded-2xl flex items-center justify-center ${selectionType === "yo"
+								? "bg-white/20 text-white"
+								: "bg-brand-100 text-brand-600"
+								}`}
+						>
+							<UserCircle className="h-7 w-7" />
 						</div>
-					)}
-					<div
-						className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 ring-4 transition-all lg:w-24 lg:h-24 lg:rounded-3xl lg:mb-6 ${
-							selectionType === "yo"
+						<RadioCircle active={selectionType === "yo"} />
+					</div>
+					{/* Desktop layout: large centered icon */}
+					<div className="hidden lg:block mb-6">
+						{selectionType === "yo" && (
+							<div className="absolute top-6 right-6">
+								<div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
+									<Check className="h-3.5 w-3.5 text-brand-800" strokeWidth={3} />
+								</div>
+							</div>
+						)}
+						<div
+							className={`w-24 h-24 rounded-3xl flex items-center justify-center ring-4 transition-all ${selectionType === "yo"
 								? "bg-white/20 ring-white/10"
 								: "bg-brand-100 ring-cloud group-hover:ring-brand-200"
-						}`}
-					>
-						<UserCircle
-							className={`h-10 w-10 lg:h-12 lg:w-12 ${
-								selectionType === "yo" ? "text-white" : "text-brand-600"
-							}`}
-						/>
+								}`}
+						>
+							<UserCircle className={`h-12 w-12 ${selectionType === "yo" ? "text-white" : "text-brand-600"}`} />
+						</div>
 					</div>
-					<h3 className="font-headline text-lg font-bold mb-1 lg:text-xl">Para mí</h3>
-					<p
-						className={`text-sm font-medium ${
-							selectionType === "yo" ? "text-white/80" : "text-brand-600"
-						}`}
-					>
-						{userName}
-					</p>
+					{/* Text content */}
+					<div>
+						<h3 className="font-headline text-lg font-bold mb-0.5 lg:text-xl lg:mb-1">Para mí</h3>
+						<p className={`text-sm font-semibold ${selectionType === "yo" ? "text-white/80" : "text-brand-600"}`}>
+							{userName}
+						</p>
+					</div>
 				</button>
 
-				{/* Option: Para un Familiar */}
+				{/* Card: Para un Familiar */}
 				<button
 					type="button"
 					onClick={handleSelectFamiliar}
-					className={`group relative flex flex-col items-center p-6 rounded-3xl border-2 transition-all duration-300 shadow-lg text-center lg:p-8 lg:rounded-[2rem] ${
-						selectionType === "representado"
-							? "bg-brand-800 text-white border-brand-800 shadow-brand-800/20"
-							: "bg-paper border-transparent hover:border-brand-200 shadow-brand-800/5 hover:shadow-xl"
-					}`}
+					className={`w-full text-left p-5 rounded-3xl border-2 transition-all duration-300 lg:flex lg:flex-col lg:items-center lg:text-center lg:p-8 lg:rounded-[2rem] ${selectionType === "representado"
+						? "bg-brand-800 text-white border-brand-800 shadow-xl shadow-brand-800/20"
+						: "bg-paper border-transparent shadow-lg shadow-brand-800/5 hover:border-brand-200 lg:hover:shadow-xl"
+						}`}
 				>
-					{selectionType === "representado" && (
-						<div className="absolute top-4 right-4 lg:top-6 lg:right-6">
-							<div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
-								<Check className="h-3.5 w-3.5 text-brand-800" strokeWidth={3} />
-							</div>
+					{/* Mobile layout: icon + radio inline */}
+					<div className="flex items-center justify-between mb-3 lg:hidden">
+						<div
+							className={`w-12 h-12 rounded-2xl flex items-center justify-center ${selectionType === "representado"
+								? "bg-white/20 text-white"
+								: "bg-brand-100 text-brand-600"
+								}`}
+						>
+							<UserPlus className="h-7 w-7" />
 						</div>
-					)}
-					<div
-						className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 ring-4 transition-all lg:w-24 lg:h-24 lg:rounded-3xl lg:mb-6 ${
-							selectionType === "representado"
-								? "bg-white/20 ring-white/10"
-								: "bg-brand-100 ring-cloud group-hover:ring-brand-200"
-						}`}
-					>
-						<UserPlus
-							className={`h-10 w-10 lg:h-12 lg:w-12 ${
-								selectionType === "representado" ? "text-white" : "text-brand-600"
-							}`}
-						/>
+						<RadioCircle active={selectionType === "representado"} />
 					</div>
-					<h3 className="font-headline text-lg font-bold mb-1 lg:text-xl">Para un familiar</h3>
-					<p
-						className={`text-sm font-medium ${
-							selectionType === "representado" ? "text-white/80" : "text-brand-600"
-						}`}
-					>
-						Seleccionar representado
-					</p>
-					<p
-						className={`text-xs mt-1 ${
-							selectionType === "representado" ? "text-white/60" : "text-slate-400"
-						}`}
-					>
-						Hijos, pareja, padres o allegados
-					</p>
+					{/* Desktop layout: large centered icon */}
+					<div className="hidden lg:block mb-6 relative">
+						{selectionType === "representado" && (
+							<div className="absolute -top-2 -right-2">
+								<div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
+									<Check className="h-3.5 w-3.5 text-brand-800" strokeWidth={3} />
+								</div>
+							</div>
+						)}
+						<div
+							className={`w-24 h-24 rounded-3xl flex items-center justify-center ring-4 transition-all ${selectionType === "representado"
+								? "bg-white/20 ring-white/10"
+								: "bg-brand-100 ring-cloud"
+								}`}
+						>
+							<UserPlus className={`h-12 w-12 ${selectionType === "representado" ? "text-white" : "text-brand-600"}`} />
+						</div>
+					</div>
+					{/* Text content */}
+					<div>
+						<h3 className="font-headline text-lg font-bold mb-0.5 lg:text-xl lg:mb-1">Para un familiar</h3>
+						<p className={`text-sm ${selectionType === "representado" ? "text-white/70" : "text-brand-600"}`}>
+							Registra los datos de tu dependiente o familiar.
+						</p>
+					</div>
 				</button>
 			</div>
 
-			{/* Representados List + Form (only when "Para un familiar" is selected) */}
+			{/* ─── REPRESENTADOS PANEL (visible when "Para un familiar" is selected) ─── */}
 			{selectionType === "representado" && (
-				<div className="bg-cloud/30 rounded-3xl p-6 mb-8 border border-brand-200/30 lg:rounded-[2rem] lg:p-10 lg:mb-12">
-					<div className="flex items-center gap-3 mb-6 lg:gap-4 lg:mb-8">
+				<div className="bg-paper/80 rounded-3xl p-5 mb-6 border border-brand-200/30 lg:rounded-[2rem] lg:p-10 lg:mb-12">
+					<div className="flex items-center gap-3 mb-5 lg:gap-4 lg:mb-8">
 						<div className="w-1.5 h-8 bg-brand-800 rounded-full" />
-						<h4 className="font-headline text-lg font-bold text-brand-900 lg:text-xl">
+						<h4 className="font-headline text-base font-bold text-brand-900 lg:text-xl">
 							{showForm ? "Registrar nuevo familiar" : "Selecciona un representado"}
 						</h4>
 					</div>
 
 					{!showForm ? (
 						<>
-							{/* Existing representados */}
 							{representados.length > 0 ? (
-								<div className="space-y-3 mb-6">
+								<div className="space-y-3 mb-5">
 									{representados.map((rep) => (
 										<button
 											key={rep.id_representado}
 											type="button"
 											onClick={() => handleSelectRepresentado(rep)}
-											className={`w-full p-4 rounded-2xl flex items-center justify-between transition-all ${
-												selectedRepresentadoId === rep.id_representado
-													? "bg-brand-800 text-white shadow-lg shadow-brand-800/20"
-													: "bg-paper hover:shadow-md shadow-sm"
-											}`}
+											className={`w-full p-4 rounded-2xl flex items-center justify-between transition-all ${selectedRepresentadoId === rep.id_representado
+												? "bg-brand-800 text-white shadow-lg shadow-brand-800/20"
+												: "bg-paper hover:shadow-md shadow-sm"
+												}`}
 										>
-											<div className="flex items-center gap-4 min-w-0">
+											<div className="flex items-center gap-3 lg:gap-4 min-w-0">
 												{selectedRepresentadoId === rep.id_representado ? (
-													<div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+													<div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
 														<Check className="h-5 w-5" strokeWidth={3} />
 													</div>
 												) : (
-													<InitialAvatar nombre={rep.nombre} apellido={rep.apellido} />
+													<InitialAvatar nombre={rep.nombre} apellido={rep.apellido} size="w-10 h-10 lg:w-12 lg:h-12" />
 												)}
 												<div className="text-left min-w-0">
-													<p
-														className={`font-bold text-sm truncate ${
-															selectedRepresentadoId === rep.id_representado
-																? "text-white"
-																: "text-brand-900"
-														}`}
-													>
+													<p className={`font-bold text-sm truncate ${selectedRepresentadoId === rep.id_representado ? "text-white" : "text-brand-900"}`}>
 														{rep.nombre} {rep.apellido}
 													</p>
-													<p
-														className={`text-xs font-medium uppercase tracking-wider truncate ${
-															selectedRepresentadoId === rep.id_representado
-																? "text-white/60"
-																: "text-brand-600"
-														}`}
-													>
+													<p className={`text-xs font-medium uppercase tracking-wider truncate ${selectedRepresentadoId === rep.id_representado ? "text-white/60" : "text-brand-600"}`}>
 														{rep.parentesco ?? "Familiar"}
 													</p>
 												</div>
 											</div>
-											<ChevronRight
-												className={`h-4 w-4 shrink-0 ${
-													selectedRepresentadoId === rep.id_representado
-														? "text-white/60"
-														: "text-slate-400"
-												}`}
-											/>
+											<ChevronRight className={`h-4 w-4 shrink-0 ${selectedRepresentadoId === rep.id_representado ? "text-white/60" : "text-slate-400"}`} />
 										</button>
 									))}
 								</div>
 							) : (
-								<div className="text-center py-6 text-brand-600 text-sm mb-6">
+								<div className="text-center py-4 text-brand-600 text-sm mb-5 lg:py-6 lg:mb-6">
 									No tienes representados registrados aún.
 								</div>
 							)}
-
-							{/* Add new button */}
 							<button
 								type="button"
 								onClick={() => setShowForm(true)}
@@ -300,37 +295,45 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 						</>
 					) : (
 						<>
-							{/* New representado form */}
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5 lg:gap-x-8 lg:gap-y-6">
-								{/* Nombre */}
-								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-										Nombre <span className="text-red-400">*</span>
-									</label>
-									<input
-										type="text"
-										value={formNombre}
-										onChange={(e) => setFormNombre(e.target.value)}
-										className="w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
-										placeholder="Ej: Maria"
-									/>
+							{/* ─── NEW FAMILY MEMBER FORM ─── */}
+							<div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-x-8 lg:gap-y-6 lg:space-y-0 pr-6">
+								{/* Nombre + Apellido (side by side on mobile too) */}
+								<div className="flex gap-3 lg:contents">
+									<div className="flex-1 space-y-1.5">
+										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+											Nombre <span className="text-red-400">*</span>
+										</label>
+										<div className="relative">
+											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
+											<input
+												type="text"
+												value={formNombre}
+												onChange={(e) => setFormNombre(e.target.value)}
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												placeholder="Ej: Maria"
+											/>
+										</div>
+									</div>
+									<div className="flex-1 space-y-1.5">
+										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+											Apellido <span className="text-red-400">*</span>
+										</label>
+										<div className="relative">
+											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
+											<input
+												type="text"
+												value={formApellido}
+												onChange={(e) => setFormApellido(e.target.value)}
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												placeholder="Ej: González"
+											/>
+										</div>
+									</div>
 								</div>
-								{/* Apellido */}
-								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-										Apellido <span className="text-red-400">*</span>
-									</label>
-									<input
-										type="text"
-										value={formApellido}
-										onChange={(e) => setFormApellido(e.target.value)}
-										className="w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
-										placeholder="Ej: González"
-									/>
-								</div>
+
 								{/* Cédula */}
 								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
 										Cédula
 									</label>
 									<CedulaField
@@ -338,78 +341,106 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										onChange={(tipo: TipoCedula, numero: string) =>
 											setFormCedula(numero ? `${tipo}${numero}` : "")
 										}
-										inputClassName="!bg-paper !border-brand-200 !rounded-xl !py-3 !px-4"
-										selectClassName="!bg-paper !border-brand-200 !rounded-xl !py-3"
+										inputClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3 !px-4"
+										selectClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3"
 									/>
 								</div>
-								{/* Fecha de Nacimiento */}
-								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-										Fecha de Nacimiento <span className="text-red-400">*</span>
-									</label>
-									<input
-										type="date"
-										value={formFechaNacimiento}
-										onChange={(e) => setFormFechaNacimiento(e.target.value)}
-										className="w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
-									/>
+
+								{/* Fecha + Parentesco (side by side on mobile too) */}
+								<div className="flex gap-3 lg:contents">
+									<div className="flex-1 space-y-1.5">
+										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+											Nacimiento <span className="text-red-400">*</span>
+										</label>
+										<div className="relative">
+											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
+											<input
+												type="date"
+												value={formFechaNacimiento}
+												onChange={(e) => setFormFechaNacimiento(e.target.value)}
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 text-brand-600"
+											/>
+										</div>
+									</div>
+									<div className="flex-1 space-y-1.5">
+										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
+											Parentesco
+										</label>
+										<div className="relative">
+											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
+											<select
+												value={formParentesco}
+												onChange={(e) => setFormParentesco(e.target.value)}
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 text-brand-600 appearance-none"
+											>
+												<option value="">Seleccionar...</option>
+												{parentescos.length > 0 ? (
+													parentescos.map((p) => (
+														<option key={p} value={p}>{p}</option>
+													))
+												) : (
+													<>
+														<option value="Hijo/a">Hijo/a</option>
+														<option value="Padre/Madre">Padre/Madre</option>
+														<option value="Cónyuge">Cónyuge</option>
+														<option value="Otro">Otro</option>
+													</>
+												)}
+											</select>
+										</div>
+									</div>
 								</div>
-								{/* Género */}
+
+								{/* Género — toggle buttons on mobile, select on desktop */}
 								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
 										Género <span className="text-red-400">*</span>
 									</label>
+									{/* Mobile: toggle buttons */}
+									<div className="flex gap-3 lg:hidden">
+										<button
+											type="button"
+											onClick={() => setFormGenero("Masculino")}
+											className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-colors ${formGenero === "Masculino"
+												? "border-brand-800 bg-brand-800 text-white"
+												: "border-transparent bg-paper text-brand-900 hover:border-brand-300"
+												}`}
+										>
+											Masculino
+										</button>
+										<button
+											type="button"
+											onClick={() => setFormGenero("Femenino")}
+											className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-colors ${formGenero === "Femenino"
+												? "border-brand-800 bg-brand-800 text-white"
+												: "border-transparent bg-paper text-brand-900 hover:border-brand-300"
+												}`}
+										>
+											Femenino
+										</button>
+									</div>
+									{/* Desktop: select */}
 									<select
 										value={formGenero}
 										onChange={(e) => setFormGenero(e.target.value)}
-										className="w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
+										className="hidden lg:block w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
 									>
 										<option value="">Seleccionar...</option>
 										<option value="Femenino">Femenino</option>
 										<option value="Masculino">Masculino</option>
 									</select>
 								</div>
-								{/* Parentesco */}
-								<div className="space-y-1.5">
-									<label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
-										Parentesco
-									</label>
-									<select
-										value={formParentesco}
-										onChange={(e) => setFormParentesco(e.target.value)}
-										className="w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
-									>
-										<option value="">Seleccionar...</option>
-										{parentescos.length > 0 ? (
-											parentescos.map((p) => (
-												<option key={p} value={p}>
-													{p}
-												</option>
-											))
-										) : (
-											<>
-												<option value="Hijo/a">Hijo/a</option>
-												<option value="Padre/Madre">Padre/Madre</option>
-												<option value="Cónyuge">Cónyuge</option>
-												<option value="Otro">Otro</option>
-											</>
-										)}
-									</select>
-								</div>
 							</div>
 
 							{formError && (
-								<p className="mt-4 text-sm text-red-600 font-medium">{formError}</p>
+								<p className="mt-3 text-sm text-red-600 font-medium lg:mt-4">{formError}</p>
 							)}
 
-							<div className="flex gap-3 mt-6 lg:mt-8">
+							<div className="flex gap-3 mt-5 lg:mt-8">
 								<button
 									type="button"
-									onClick={() => {
-										setShowForm(false);
-										setFormError("");
-									}}
-									className="px-6 py-3 rounded-xl text-brand-600 font-semibold hover:bg-brand-100 transition-colors text-sm"
+									onClick={() => { setShowForm(false); setFormError(""); }}
+									className="px-5 py-2.5 rounded-xl text-brand-600 font-semibold hover:bg-brand-100 transition-colors text-sm lg:px-6 lg:py-3"
 								>
 									Cancelar
 								</button>
@@ -417,15 +448,10 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 									type="button"
 									onClick={handleCreateRepresentado}
 									disabled={creando}
-									className="px-6 py-3 rounded-xl bg-brand-800 text-white font-bold hover:bg-brand-900 transition-colors text-sm flex items-center gap-2 disabled:opacity-60"
+									className="px-5 py-2.5 rounded-xl bg-brand-800 text-white font-bold hover:bg-brand-900 transition-colors text-sm flex items-center gap-2 disabled:opacity-60 lg:px-6 lg:py-3"
 								>
-									{creando ? (
-										"Registrando..."
-									) : (
-										<>
-											<PlusCircle className="h-4 w-4" />
-											Registrar familiar
-										</>
+									{creando ? "Registrando..." : (
+										<><PlusCircle className="h-4 w-4" /> Registrar familiar</>
 									)}
 								</button>
 							</div>
@@ -434,12 +460,32 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 				</div>
 			)}
 
-			{/* Action Footer */}
-			<div className="flex justify-between items-center mt-8 lg:mt-12">
+			{/* ─── ACTION FOOTER ─── */}
+			{/* Mobile: full-width stacked buttons */}
+			<div className="mt-8 lg:hidden">
+				<button
+					type="button"
+					onClick={handleContinue}
+					disabled={!canContinue}
+					className="w-full bg-gradient-to-br from-brand-900 to-brand-800 text-white py-4 rounded-3xl font-headline font-bold text-lg shadow-xl shadow-brand-800/20 active:scale-95 transition-transform duration-200 disabled:opacity-40 disabled:active:scale-100"
+				>
+					Continuar a Especialidad
+				</button>
 				<button
 					type="button"
 					onClick={() => navigate("/dashboard")}
-					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-4 py-3 rounded-xl text-sm lg:px-6"
+					className="w-full mt-3 py-3 text-brand-800 font-semibold text-sm hover:bg-cloud rounded-xl transition-colors"
+				>
+					Cancelar solicitud
+				</button>
+			</div>
+
+			{/* Desktop: inline left-right */}
+			<div className="hidden lg:flex justify-between items-center mt-12 pb-10">
+				<button
+					type="button"
+					onClick={() => navigate("/dashboard")}
+					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-sm"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					<span className="font-headline tracking-tight">Cancelar</span>
@@ -448,7 +494,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					type="button"
 					onClick={handleContinue}
 					disabled={!canContinue}
-					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-8 py-3.5 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm lg:px-10 lg:py-4"
+					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
 				>
 					Continuar al Paso 2
 					<ArrowRight className="h-4 w-4" />

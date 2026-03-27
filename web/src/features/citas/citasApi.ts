@@ -253,6 +253,44 @@ const citasApi = baseApi.injectEndpoints({
 			}) => response.data,
 			invalidatesTags: ["Citas"],
 		}),
+		asignarCita: builder.mutation<
+			{ id_cita: string },
+			{
+				id_paciente: string;
+				id_representado?: string;
+				id_eco: string;
+				id_especialista: string;
+				id_disponibilidad: string;
+				orden_medica?: string;
+				metodo: "PagoMovil" | "Transferencia";
+				imagen?: string;
+				banco_origen: string;
+				banco_destino: string;
+				monto: number;
+				cedula_pagador: string;
+				telefono_pagador: string;
+				referencia: string;
+			}
+		>({
+			query: (body) => ({
+				url: "/citas/asignar",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Citas", "Disponibilidad"],
+		}),
+		uploadOrdenMedica: builder.mutation<
+			{ url: string },
+			FormData
+		>({
+			query: (formData) => ({
+				url: "/citas/upload-orden-medica",
+				method: "POST",
+				body: formData,
+			}),
+			transformResponse: (response: { ok: boolean; data: { url: string } }) =>
+				response.data,
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -269,6 +307,8 @@ export const {
 	useMarcarAtendidaMutation,
 	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
 	useVincularCitasMostradorMutation,
+	useAsignarCitaMutation,
+	useUploadOrdenMedicaMutation,
 } = citasApi;
 
 export { citasApi };
