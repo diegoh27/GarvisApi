@@ -17,7 +17,7 @@ const listInsumosEcoController = async (id_eco) => {
 			ei.cantidad,
 			ei.creado_en,
 			p.nombre AS producto_nombre,
-			p.stock_actual
+			p.stock_base_total
 		FROM inv_eco_insumo ei
 		INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
 		WHERE ei.id_eco = ?
@@ -165,7 +165,7 @@ const validarStockParaCitaController = async (id_eco) => {
 			ei.id_producto,
 			ei.cantidad AS cantidad_requerida,
 			p.nombre AS producto_nombre,
-			p.stock_actual
+			p.stock_base_total
 		 FROM inv_eco_insumo ei
 		 INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
 		 WHERE ei.id_eco = ?`,
@@ -179,12 +179,12 @@ const validarStockParaCitaController = async (id_eco) => {
 
 	const faltantes = [];
 	for (const ins of insumos) {
-		if (Number(ins.stock_actual) < Number(ins.cantidad_requerida)) {
+		if (Number(ins.stock_base_total) < Number(ins.cantidad_requerida)) {
 			faltantes.push({
 				producto: ins.producto_nombre,
 				requerido: Number(ins.cantidad_requerida),
-				disponible: Number(ins.stock_actual),
-				faltante: Number(ins.cantidad_requerida) - Number(ins.stock_actual),
+				disponible: Number(ins.stock_base_total),
+				faltante: Number(ins.cantidad_requerida) - Number(ins.stock_base_total),
 			});
 		}
 	}

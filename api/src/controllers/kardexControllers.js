@@ -12,7 +12,7 @@ const listKardexController = async ({ id_producto, limit = 500 } = {}) => {
 			k.id_kardex,
 			k.id_producto,
 			p.nombre AS producto_nombre,
-			p.unidad_medida,
+			p.unidad_consumo,
 			k.tipo_movimiento,
 			k.cantidad,
 			k.stock_anterior,

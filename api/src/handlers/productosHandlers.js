@@ -37,7 +37,7 @@ const listProductosHandler = async (req, res) => {
 
 const createProductoHandler = async (req, res) => {
 	try {
-		const { nombre, presentacion, contenido, unidad_medida, stock_actual, activo } = req.body;
+		const { nombre, presentacion, categoria, unidad_compra, unidad_consumo, factor_conversion, stock_base_total, stock_minimo_base, activo } = req.body;
 		if (!nombre || typeof nombre !== "string" || !nombre.trim()) {
 			return res.status(400).json({
 				ok: false,
@@ -47,9 +47,12 @@ const createProductoHandler = async (req, res) => {
 		const data = await createProductoController({
 			nombre: nombre.trim(),
 			presentacion,
-			contenido,
-			unidad_medida,
-			stock_actual: Number(stock_actual) || 0,
+			categoria,
+			unidad_compra,
+			unidad_consumo,
+			factor_conversion: Number(factor_conversion) || 1,
+			stock_base_total: Number(stock_base_total) || 0,
+			stock_minimo_base: Number(stock_minimo_base) || 0,
 			activo: activo !== false && activo !== 0 ? 1 : 0,
 		});
 		logInventarioReq(req, "productos", `Creó producto "${data?.nombre || nombre}"`, {
@@ -102,14 +105,17 @@ const getProductoHandler = async (req, res) => {
 const updateProductoHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { nombre, presentacion, contenido, unidad_medida, activo } = req.body;
+		const { nombre, presentacion, categoria, unidad_compra, unidad_consumo, factor_conversion, stock_minimo_base, activo } = req.body;
 
 		const data = await updateProductoController({
 			id_producto: id,
 			nombre: nombre?.trim(),
 			presentacion,
-			contenido,
-			unidad_medida,
+			categoria,
+			unidad_compra,
+			unidad_consumo,
+			factor_conversion: factor_conversion !== undefined ? Number(factor_conversion) : undefined,
+			stock_minimo_base: stock_minimo_base !== undefined ? Number(stock_minimo_base) : undefined,
 			activo: activo !== undefined ? (activo ? 1 : 0) : undefined,
 		});
 		const accion = activo === 0 ? "Desactivó" : activo === 1 ? "Activó" : "Modificó";

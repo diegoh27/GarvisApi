@@ -457,7 +457,7 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 		]);
 
 		const [insumos] = await conn.execute(
-			`SELECT ei.id_producto, ei.cantidad, p.stock_actual, p.consumo_actual, p.contenido
+			`SELECT ei.id_producto, ei.cantidad, p.stock_base_total, p.consumo_actual, p.factor_conversion
 			 FROM inv_eco_insumo ei
 			 INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
 			 WHERE ei.id_eco = ?
@@ -467,41 +467,28 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 
 		for (const ins of insumos) {
 			const cantidadDescontar = Number(ins.cantidad);
-			const stockActual = Number(ins.stock_actual);
+			const stockBase = Number(ins.stock_base_total);
 			const consumoActual = Number(ins.consumo_actual || 0);
-			const contenido = Number(ins.contenido > 0 ? ins.contenido : 1);
+			const factorConversion = Number(ins.factor_conversion > 0 ? ins.factor_conversion : 1);
 
-			// Nueva matemática de consumo:
-			// El producto se suma al "consumo_actual".
-			// Si supera el "contenido", se resta una caja entera del stock_actual y el resto vuelve a consumo.
+			// New logic: directly subtract from stock_base_total
 			let nuevoConsumo = consumoActual + cantidadDescontar;
-			let unidadesEnterasARestar = Math.floor(nuevoConsumo / contenido);
-			let consumoRestante = parseFloat((nuevoConsumo % contenido).toFixed(4));
-			
-			let nuevoStock = stockActual - unidadesEnterasARestar;
+			let nuevoStock = stockBase - cantidadDescontar;
 
-			// 1) Actualizar stock y consumo parcial
+			// 1) Actualizar stock base y consumo
 			await conn.execute(
-				"UPDATE inv_producto SET stock_actual = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-				[nuevoStock, consumoRestante, ins.id_producto]
+				"UPDATE inv_producto SET stock_base_total = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+				[nuevoStock, nuevoConsumo, ins.id_producto]
 			);
 
-			// 2) Registrar consumo global (esta tabla puede guardar ml o mg exactos descontados de la sesión)
+			// 2) Registrar consumo global
 			const id_consumo = crypto.randomUUID();
 			await conn.execute(
 				"INSERT INTO inv_cita_consumo (id_consumo, id_cita, id_producto, cantidad) VALUES (?, ?, ?, ?)",
 				[id_consumo, id_cita, ins.id_producto, cantidadDescontar]
 			);
 
-			// 3) Registrar en Kardex. El Kardex representará la merma de Cajas o Unidad global.
-			// Para no romper la semántica visual, si unidadesEnterasARestar > 0 registramos la salida en Cajas, si no registramos Salida 0 (solo consumo interno).
-			// Pero Kardex guarda cantidad decimal. Podemos mantener "Kardex cantidad = cajas decimales (ej: 0.5 cajas)".
-			// El Kardex antes usó 'cantidadDescontar' directamente en unidades (ej. 100ml). Si cambiamos todo el sistema a Cajas,
-			// Quizás aquí guardamos "cantidad descontar en términos de presentación" (ej: 100/500 = 0.2).
-			// Pero la UX indica que la auditoría es solo el decremento natural de transacciones. 
-			// Como Kardex solo se lee visualmente como "Cantidad Movida", vamos a guardar el descuento natural en fracciones de su envase:
-			const fraccionDescontada = parseFloat((cantidadDescontar / contenido).toFixed(4));
-
+			// 3) Registrar en Kardex
 			const id_kardex = crypto.randomUUID();
 			await conn.execute(
 				`INSERT INTO inv_kardex 
@@ -510,12 +497,12 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 				[
 					id_kardex,
 					ins.id_producto,
-					fraccionDescontada,
-					stockActual, // esto es en cajas
-					nuevoStock,  // esto es en cajas
+					cantidadDescontar,
+					stockBase,
+					nuevoStock,
 					id_cita,
 					userId,
-					`Consumo: ${cantidadDescontar} unidades. Barra al ${parseFloat((consumoRestante / contenido) * 100).toFixed(0)}%`
+					`Consumo cita: ${cantidadDescontar} unidades base`
 				]
 			);
 		}

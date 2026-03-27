@@ -4,7 +4,7 @@ export interface KardexEntry {
 	id_kardex: string;
 	id_producto: string;
 	producto_nombre: string;
-	unidad_medida: string | null;
+	unidad_consumo: string | null;
 	tipo_movimiento: "ENTRADA" | "SALIDA" | "AJUSTE";
 	cantidad: number;
 	stock_anterior: number;

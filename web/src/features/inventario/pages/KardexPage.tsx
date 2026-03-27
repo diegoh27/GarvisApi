@@ -83,7 +83,7 @@ export default function KardexPage() {
 				const color = isPos ? "text-green-600" : row.tipo_movimiento === "SALIDA" ? "text-red-600" : "text-gray-900";
 				return (
 					<span className={`font-semibold ${color}`}>
-						{sign}{Number(row.cantidad)} {row.unidad_medida || ""}
+						{sign}{Number(row.cantidad)} {row.unidad_consumo || ""}
 					</span>
 				);
 			},
@@ -93,7 +93,7 @@ export default function KardexPage() {
 			header: "Saldo Final",
 			headerClassName: "px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider",
 			cellClassName: "px-4 py-3 text-sm text-right tabular-nums text-gray-900 font-medium",
-			render: (row: any) => `${Number(row.stock_posterior)} ${row.unidad_medida || ""}`.trim(),
+			render: (row: any) => `${Number(row.stock_posterior)} ${row.unidad_consumo || ""}`.trim(),
 		},
 		{
 			key: "referencia",

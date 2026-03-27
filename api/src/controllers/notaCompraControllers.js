@@ -167,7 +167,7 @@ const createNotaCompraController = async ({
 		for (const linea of lineasProcesadas) {
 			// Validar que el producto exista y obtener stock actual
 			const [prodRows] = await conn.execute(
-				"SELECT id_producto, nombre, stock_actual, contenido FROM inv_producto WHERE id_producto = ? LIMIT 1",
+				"SELECT id_producto, nombre, stock_base_total, factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1",
 				[linea.id_producto],
 			);
 			if (!prodRows.length) {
@@ -175,9 +175,9 @@ const createNotaCompraController = async ({
 				err.code = "PRODUCTO_NOT_FOUND";
 				throw err;
 			}
-			const stockAnterior = Number(prodRows[0].stock_actual);
-			const contenidoNum = Number(prodRows[0].contenido) || 1;
-			const cantidadIngresadaBase = linea.cantidad * contenidoNum;
+			const stockAnterior = Number(prodRows[0].stock_base_total);
+			const factorConversion = Number(prodRows[0].factor_conversion) || 1;
+			const cantidadIngresadaBase = linea.cantidad * factorConversion;
 
 			// Insertar línea de detalle
 			await conn.execute(
@@ -194,10 +194,10 @@ const createNotaCompraController = async ({
 				],
 			);
 
-			// Sumar stock al producto en unidades enteras (Fase 5: UI Gerencial)
+			// Sumar stock al producto en unidades base (factor_conversion)
 			await conn.execute(
-				`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
-				[linea.cantidad, linea.id_producto],
+				`UPDATE inv_producto SET stock_base_total = stock_base_total + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
+				[cantidadIngresadaBase, linea.id_producto],
 			);
 
 			// Registrar ENTRADA en kardex en unidades enteras (cajas/presentaciones)
@@ -209,9 +209,9 @@ const createNotaCompraController = async ({
 				[
 					id_kardex,
 					linea.id_producto,
-					linea.cantidad,
+					cantidadIngresadaBase,
 					stockAnterior,
-					stockAnterior + linea.cantidad,
+					stockAnterior + cantidadIngresadaBase,
 					id_nota_compra,
 					`Compra a ${proveedorNombre} - Fact: ${numero_factura || "S/N"}`,
 					id_usuario,
@@ -299,9 +299,15 @@ const deleteNotaCompraController = async (id_nota_compra) => {
 
 		// Revertir stock por cada línea
 		for (const det of detalleRows) {
+			const [prodRows] = await conn.execute(
+				"SELECT factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1",
+				[det.id_producto],
+			);
+			const factorConversion = Number(prodRows[0]?.factor_conversion) || 1;
+			const cantidadBase = Number(det.cantidad) * factorConversion;
 			await conn.execute(
-				"UPDATE inv_producto SET stock_actual = GREATEST(0, stock_actual - ?), actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-				[Number(det.cantidad), det.id_producto],
+				"UPDATE inv_producto SET stock_base_total = GREATEST(0, stock_base_total - ?), actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+				[cantidadBase, det.id_producto],
 			);
 		}
 

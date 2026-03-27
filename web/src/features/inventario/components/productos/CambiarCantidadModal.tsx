@@ -103,7 +103,7 @@ export default function CambiarCantidadModal({
           {producto && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800">
-                <strong>Stock Actual:</strong> {Number(producto.stock_actual)}
+                <strong>Stock Actual:</strong> {Number(producto.stock_base_total)} {producto.unidad_consumo || "base"}
               </p>
             </div>
           )}
@@ -130,8 +130,8 @@ export default function CambiarCantidadModal({
             />
             {formData.stock_nuevo && producto && (
               <p className="text-sm text-gray-600 mt-2">
-                Cambio: {Number(formData.stock_nuevo) - Number(producto.stock_actual) > 0 ? "+" : ""}
-                {(Number(formData.stock_nuevo) - Number(producto.stock_actual)).toFixed(4).replace(/\.?0+$/, "")}
+                Cambio: {Number(formData.stock_nuevo) - Number(producto.stock_base_total) > 0 ? "+" : ""}
+                {(Number(formData.stock_nuevo) - Number(producto.stock_base_total)).toFixed(4).replace(/\.?0+$/, "")} {producto.unidad_consumo || "base"}
               </p>
             )}
           </div>

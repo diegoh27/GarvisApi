@@ -256,7 +256,7 @@ export default function ComprasPage() {
 									<option value="">Seleccionar producto...</option>
 									{productos.map((p) => (
 										<option key={p.id_producto} value={p.id_producto}>
-											{p.nombre} (Stock: {p.stock_actual})
+											{p.nombre} - {p.unidad_compra || "Caja"} x{Number(p.factor_conversion) || 1} (Stock: {Math.floor(Number(p.stock_base_total || 0) / (Number(p.factor_conversion) || 1))} {p.unidad_compra || "Caja"})
 										</option>
 									))}
 								</select>

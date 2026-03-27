@@ -54,7 +54,7 @@ export default function RecetasPage() {
 
 		const options = productosDisponibles.reduce(
 			(acc, p) => {
-				acc[p.id_producto] = `${p.nombre} (Stock: ${p.stock_actual})`;
+				acc[p.id_producto] = `${p.nombre} (Stock: ${Math.floor(Number(p.stock_base_total))} ${p.unidad_consumo || 'u'})`;
 				return acc;
 			},
 			{} as Record<string, string>,
@@ -302,7 +302,7 @@ export default function RecetasPage() {
 										<tbody className="divide-y divide-gray-100">
 											{insumos.map((ins) => {
 												const stockOk =
-													Number(ins.stock_actual) >= Number(ins.cantidad);
+													Number(ins.stock_base_total) >= Number(ins.cantidad);
 												return (
 													<tr
 														key={ins.id_eco_insumo}
@@ -320,7 +320,7 @@ export default function RecetasPage() {
 															</button>
 														</td>
 														<td className="px-6 py-4 text-center text-gray-700">
-															{Number(ins.stock_actual)}
+															{Number(ins.stock_base_total)}
 														</td>
 														<td className="px-6 py-4 text-center">
 															{stockOk ? (

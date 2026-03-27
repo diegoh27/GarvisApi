@@ -265,9 +265,12 @@ exports.deleteMovimientoFacturacionController = async (id_movimiento) => {
 					if (compraRows.length) {
 						const { id_producto, cantidad } = compraRows[0];
 						const cantidadNum = Number(cantidad);
+						const [prodRows] = await conn.execute("SELECT factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1", [id_producto]);
+						const factorConversion = Number(prodRows[0]?.factor_conversion) || 1;
+						const cantidadBase = cantidadNum * factorConversion;
 						await conn.execute(
-							"UPDATE inv_producto SET stock_actual = stock_actual - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-							[cantidadNum, id_producto],
+							"UPDATE inv_producto SET stock_base_total = stock_base_total - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+							[cantidadBase, id_producto],
 						);
 						await conn.execute("DELETE FROM inv_producto_compra WHERE id_compra = ?", [origen_id]);
 					}

@@ -8,11 +8,13 @@ export type Producto = {
 	id_producto: string;
 	nombre: string;
 	presentacion: string | null;
-	contenido: number;
-	stock_actual: number;
-	consumo_actual: number;
-	unidad_medida: string | null;
 	categoria: string;
+	unidad_compra: string;
+	unidad_consumo: string;
+	factor_conversion: number;
+	stock_base_total: number;
+	consumo_actual: number;
+	stock_minimo_base: number;
 	activo: number;
 	creado_en: string;
 	actualizado_en: string | null;
@@ -47,19 +49,23 @@ export type AjusteStock = {
 export type CreateProductoPayload = {
 	nombre: string;
 	presentacion?: string;
-	contenido?: number;
-	unidad_medida?: string;
 	categoria?: string;
-	stock_actual?: number;
+	unidad_compra: string;
+	unidad_consumo: string;
+	factor_conversion: number;
+	stock_base_total?: number;
+	stock_minimo_base?: number;
 	activo?: number;
 };
 
 export type UpdateProductoPayload = {
 	nombre?: string;
 	presentacion?: string;
-	contenido?: number;
-	unidad_medida?: string;
 	categoria?: string;
+	unidad_compra?: string;
+	unidad_consumo?: string;
+	factor_conversion?: number;
+	stock_minimo_base?: number;
 	activo?: number;
 };
 

@@ -787,22 +787,21 @@ DELETE CASCADE
 CREATE TABLE
 IF NOT EXISTS inv_producto
 (
-  id_producto CHAR
-(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
   nombre VARCHAR(255) NOT NULL,
   presentacion VARCHAR(50) NULL,
-  contenido DECIMAL(12,4) NOT NULL DEFAULT 1.0000,
-  stock_actual DECIMAL(12,4) NOT NULL DEFAULT 0,
-  unidad_medida VARCHAR(30) NULL,
-  activo TINYINT
-(1) NOT NULL DEFAULT 1,
+  categoria VARCHAR(50) NOT NULL DEFAULT 'General',
+  unidad_compra VARCHAR(50) NOT NULL,
+  unidad_consumo VARCHAR(50) NOT NULL,
+  factor_conversion DECIMAL(12,4) NOT NULL DEFAULT 1.0000,
+  stock_base_total DECIMAL(12,4) NOT NULL DEFAULT 0,
+  consumo_actual DECIMAL(12,4) NOT NULL DEFAULT 0,
+  stock_minimo_base DECIMAL(12,4) NOT NULL DEFAULT 0,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
   creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
-UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY
-(id_producto),
-  UNIQUE KEY uk_inv_producto_nombre
-(nombre)
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id_producto),
+  UNIQUE KEY uk_inv_producto_nombre (nombre)
 ) ENGINE=InnoDB;
 
 CREATE TABLE
