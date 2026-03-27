@@ -32,7 +32,7 @@ import { FinanzasPage } from "../features/finanzas";
 import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
 import { PagosPage } from "../features/pagos";
-
+import { AgendarCitaPage } from "../features/agendar-cita";
 import { RepresentadosPage } from "../features/representados";
 import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
@@ -162,6 +162,16 @@ const App = () => {
 							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
 								<DisponibilidadPublicaPage />
 							</RoleRoute>
+						}
+					/>
+					<Route
+						path="agendar-cita"
+						element={
+							<ProtectedRoute>
+								<RoleRoute allowed={["paciente"]}>
+									<AgendarCitaPage />
+								</RoleRoute>
+							</ProtectedRoute>
 						}
 					/>
 					<Route

@@ -24,6 +24,8 @@ import { useGetMisNotificacionesQuery } from "../features/notificaciones/notific
 import { useGetTienePagoPendienteQuery } from "../features/citas/citasApi";
 import Sidebar, { type NavItem } from "./Sidebar";
 import Topbar from "./Topbar";
+import MobilePatientTopbar from "./MobilePatientTopbar";
+import MobilePatientBottomNav from "./MobilePatientBottomNav";
 import { DolarInfoBanner } from "../features/dolar";
 
 const navByRole: Record<string, NavItem[]> = {
@@ -91,7 +93,7 @@ const navByRole: Record<string, NavItem[]> = {
 	],
 	paciente: [
 		{ label: "Home", to: "/dashboard", icon: Home },
-		{ label: "Agendar cita", to: "/disponibilidad", icon: CalendarDays },
+		{ label: "Agendar cita", to: "/agendar-cita", icon: CalendarDays },
 		{ label: "Mis citas", to: "/citas", icon: CalendarCheck },
 		{ label: "Representados", to: "/representados", icon: Users },
 		// { label: "Especialistas", to: "/especialistas", icon: Stethoscope },
@@ -164,30 +166,65 @@ const AppLayout = () => {
 		);
 	}
 
+	const isPaciente = role === "paciente";
+
 	return (
 		<div className="min-h-screen bg-mist text-brand-900">
-			{/* Overlay para móvil cuando el sidebar está abierto */}
-			{sidebarOpen && (
+			{/* Overlay para móvil cuando el sidebar está abierto (NO paciente) */}
+			{sidebarOpen && !isPaciente && (
 				<div
 					className="fixed inset-0 z-40 bg-black/50 lg:hidden"
 					onClick={closeSidebar}
 					aria-hidden="true"
 				/>
 			)}
+
+			{/* Mobile patient topbar: solo visible en <lg para pacientes */}
+			{isPaciente && (
+				<div className="lg:hidden">
+					<MobilePatientTopbar fullName={fullName} unreadCount={unreadCount} />
+				</div>
+			)}
+
 			<div className="flex min-h-screen">
-				<Sidebar
-					navItems={navItemsWithBadges}
-					isOpen={sidebarOpen}
-					onClose={closeSidebar}
-				/>
-				<div className="flex min-h-screen flex-1 flex-col min-w-0">
-					<Topbar
-						onToggleSidebar={toggleSidebar}
-						fullName={fullName}
-						role={user?.rol}
-						onLogout={handleLogout}
+				{/* Sidebar: para pacientes se oculta completamente en mobile, para otros roles mantiene comportamiento normal */}
+				{isPaciente ? (
+					<div className="hidden lg:block">
+						<Sidebar
+							navItems={navItemsWithBadges}
+							isOpen={false}
+							onClose={() => {}}
+						/>
+					</div>
+				) : (
+					<Sidebar
+						navItems={navItemsWithBadges}
+						isOpen={sidebarOpen}
+						onClose={closeSidebar}
 					/>
-					<main className="flex-1 p-4 sm:p-6 min-w-0">
+				)}
+
+				<div className="flex min-h-screen flex-1 flex-col min-w-0">
+					{/* Topbar: para pacientes se oculta en mobile (reemplazada por MobilePatientTopbar), otros roles normal */}
+					{isPaciente ? (
+						<div className="hidden lg:block">
+							<Topbar
+								onToggleSidebar={toggleSidebar}
+								fullName={fullName}
+								role={user?.rol}
+								onLogout={handleLogout}
+							/>
+						</div>
+					) : (
+						<Topbar
+							onToggleSidebar={toggleSidebar}
+							fullName={fullName}
+							role={user?.rol}
+							onLogout={handleLogout}
+						/>
+					)}
+
+					<main className={`flex-1 p-4 sm:p-6 min-w-0 ${isPaciente ? "mt-16 pb-24 lg:mt-0 lg:pb-0" : ""}`}>
 						{/* Banner informativo de tasa del dólar */}
 						{(role === "admin" || role === "moderador" || role === "paciente") && (
 							<DolarInfoBanner />
@@ -196,6 +233,13 @@ const AppLayout = () => {
 					</main>
 				</div>
 			</div>
+
+			{/* Mobile bottom nav: solo visible en <lg para pacientes */}
+			{isPaciente && (
+				<div className="lg:hidden">
+					<MobilePatientBottomNav tienePagoPendiente={tienePagoPendiente} />
+				</div>
+			)}
 		</div>
 	);
 };
