@@ -1,62 +1,14 @@
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TimeOption } from "../types";
-import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosApi";
+import {
+	useGetEcosQuery,
+	useGetEcosByEspecialistaQuery,
+} from "../../ecos/ecosApi";
 import { useAuth } from "../../../shared";
 import Swal from "sweetalert2";
-
-export type SlotPreview = { fecha: string; hora_inicio: string; hora_fin: string };
-
-const parseTimeToMinutes = (timeStr: string): number => {
-	const [h, m] = timeStr.split(":").map(Number);
-	if (Number.isNaN(h) || Number.isNaN(m)) return 0;
-	return h * 60 + m;
-};
-const minutesToTime = (totalMinutes: number): string => {
-	const h = Math.floor(totalMinutes / 60);
-	const m = totalMinutes % 60;
-	return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
-};
-
-const generateSlots = (
-	fecha: string,
-	horaInicio: string,
-	horaFin: string
-): SlotPreview[] => {
-	const start = parseTimeToMinutes(horaInicio);
-	const end = parseTimeToMinutes(horaFin);
-	if (start >= end) return [];
-	const slots: SlotPreview[] = [];
-	for (let m = start; m < end; m += 20) {
-		const hora_inicio = minutesToTime(m);
-		const hora_fin = minutesToTime(m + 20);
-		slots.push({ fecha, hora_inicio, hora_fin });
-	}
-	return slots;
-};
-
-const generateSlotsRange = (
-	fechaDesde: string,
-	fechaHasta: string,
-	horaInicio: string,
-	horaFin: string
-): SlotPreview[] => {
-	const startDate = new Date(`${fechaDesde}T00:00:00`);
-	const endDate = new Date(`${fechaHasta}T00:00:00`);
-	if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-		return [];
-	}
-	if (startDate > endDate) return [];
-
-	const slots: SlotPreview[] = [];
-	for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-		const y = d.getFullYear();
-		if (y < 1000 || y > 9999) continue; // evitar años erróneos (ej. 20260)
-		const dateKey = `${y}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-		slots.push(...generateSlots(dateKey, horaInicio, horaFin));
-	}
-	return slots;
-};
+import { generateSlotsRange, parseTimeToMinutes } from "../utils/slotUtils";
+import { CalendarDays, Clock, Send, X } from "lucide-react";
 
 type DisponibilidadFormProps = {
 	fecha: string;
@@ -64,7 +16,15 @@ type DisponibilidadFormProps = {
 	idEcos: string[];
 	minFecha: string;
 	timeOptions: TimeOption[];
-	selectedCellsCount?: number;
+	/** Estado de rango elevado (sincronía con grilla). */
+	fechaDesde: string;
+	fechaHasta: string;
+	horaInicioRango: string;
+	horaFinRango: string;
+	onFechaDesdeChange: (value: string) => void;
+	onFechaHastaChange: (value: string) => void;
+	onHoraInicioRangoChange: (value: string) => void;
+	onHoraFinRangoChange: (value: string) => void;
 	onClearSelection?: () => void;
 	/** Solicitud macro (rango + horario); un POST con todos los ecos. */
 	onSubmitMacro?: (payload: {
@@ -74,8 +34,6 @@ type DisponibilidadFormProps = {
 		hora_fin: string;
 		id_ecos: string[];
 	}) => Promise<void>;
-	/** Slots de vista previa para pintar el calendario (borrador) antes de enviar. */
-	onPreviewSlotsChange?: (slots: SlotPreview[] | null) => void;
 	error: string | null;
 	submitStatus: "idle" | "loading" | "done";
 	onFechaChange: (value: string) => void;
@@ -91,10 +49,16 @@ const DisponibilidadForm = ({
 	idEcos,
 	minFecha,
 	timeOptions,
-	selectedCellsCount = 0,
+	fechaDesde,
+	fechaHasta,
+	horaInicioRango,
+	horaFinRango,
+	onFechaDesdeChange,
+	onFechaHastaChange,
+	onHoraInicioRangoChange,
+	onHoraFinRangoChange,
 	onClearSelection,
 	onSubmitMacro,
-	onPreviewSlotsChange,
 	error,
 	submitStatus,
 	onFechaChange,
@@ -103,13 +67,7 @@ const DisponibilidadForm = ({
 	onSubmit,
 	onCancel,
 }: DisponibilidadFormProps) => {
-	const useCalendarSelection = selectedCellsCount > 0;
-	// Especialista: solo "Por rango" (Una fecha/hora comentado)
-	const [modoRango, setModoRango] = useState(true);
-	const [fechaDesde, setFechaDesde] = useState("");
-	const [fechaHasta, setFechaHasta] = useState("");
-	const [horaInicioRango, setHoraInicioRango] = useState("");
-	const [horaFinRango, setHoraFinRango] = useState("");
+	const [modoRango] = useState(true);
 	const [rangeError, setRangeError] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -132,18 +90,8 @@ const DisponibilidadForm = ({
 	}, [fechaDesde, fechaHasta, horaInicioRango, horaFinRango, rangeError]);
 
 	useEffect(() => {
-		if (!onPreviewSlotsChange) return;
-		if (!modoRango || rangeError || slotsPrevia.length === 0) {
-			onPreviewSlotsChange(null);
-			return;
-		}
-		onPreviewSlotsChange(slotsPrevia);
-	}, [modoRango, rangeError, slotsPrevia, onPreviewSlotsChange]);
-
-	useEffect(() => {
 		if (!modoRango) {
 			setRangeError(null);
-			setSubmitError(null);
 			return;
 		}
 		if (!fechaDesde || !fechaHasta) {
@@ -198,10 +146,6 @@ const DisponibilidadForm = ({
 					id_ecos: idEcos,
 				});
 				setSubmitError(null);
-				setFechaDesde("");
-				setFechaHasta("");
-				setHoraInicioRango("");
-				setHoraFinRango("");
 				return;
 			} catch (err) {
 				const apiMessage =
@@ -227,15 +171,21 @@ const DisponibilidadForm = ({
 	const idEspecialista = user?.id_usuario || "";
 
 	const { data: ecosEspecialista = [], isLoading: loadingEcosEspecialista } =
-		useGetEcosByEspecialistaQuery(idEspecialista, { skip: !isEspecialista || !idEspecialista });
-	const { data: ecosTodos = [], isLoading: loadingEcosTodos } =
-		useGetEcosQuery(undefined, { skip: isEspecialista });
+		useGetEcosByEspecialistaQuery(idEspecialista, {
+			skip: !isEspecialista || !idEspecialista,
+		});
+	const { data: ecosTodos = [], isLoading: loadingEcosTodos } = useGetEcosQuery(
+		undefined,
+		{ skip: isEspecialista },
+	);
 
 	const ecos = isEspecialista ? ecosEspecialista : ecosTodos;
 	const loadingEcos = isEspecialista ? loadingEcosEspecialista : loadingEcosTodos;
 
 	const [isEcosDropdownOpen, setIsEcosDropdownOpen] = useState(false);
-	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">("bottom");
+	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">(
+		"bottom",
+	);
 	const ecosDropdownRef = useRef<HTMLDivElement | null>(null);
 	const ecosButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -289,265 +239,283 @@ const DisponibilidadForm = ({
 		return timeOptions.filter((opt) => parseTimeToMinutes(opt.value) > start);
 	}, [timeOptions, horaInicioRango]);
 
+	const formatShortDate = (iso: string) => {
+		if (!iso) return "";
+		const d = new Date(`${iso}T12:00:00`);
+		if (Number.isNaN(d.getTime())) return iso;
+		return d.toLocaleDateString("es-VE", { day: "numeric", month: "short", year: "numeric" });
+	};
+
 	return (
-		<div className="rounded-2xl bg-paper p-4 shadow-sm">
-			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold text-brand-900">
-					Solicitar disponibilidad
-				</h3>
-				<span className="text-[10px] text-brand-800">Bloques de 20 minutos</span>
-			</div>
-			{!useCalendarSelection && (
-				<div className="mt-2 rounded-lg border border-mist p-1">
-					{/* Una fecha/hora - comentado; solo Por rango para especialista
-					<button
-						type="button"
-						onClick={() => {
-							setModoRango(false);
-							setFechaDesde("");
-							setFechaHasta("");
-							setHoraInicioRango("");
-							setHoraFinRango("");
-							setSelectedSlotKeys(new Set());
-						}}
-						className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${!modoRango ? "bg-brand-700 text-paper" : "text-brand-800 hover:bg-cloud"
-							}`}
-					>
-						Una fecha/hora
-					</button>
-					*/}
-					<button
-						type="button"
-						onClick={() => setModoRango(true)}
-						className="w-full rounded-md px-3 py-1.5 text-xs font-medium transition-colors bg-brand-700 text-paper"
-					>
-						Por rango
-					</button>
+		<div className="space-y-6">
+			<div className="rounded-3xl border border-mist/80 bg-paper p-8 shadow-xl shadow-slate-200/50">
+				<div className="mb-6">
+					<h3 className="font-headline text-xl font-extrabold text-brand-900">
+						Nueva solicitud
+					</h3>
 				</div>
-			)}
-			<form className="mt-3 space-y-3" onSubmit={handleSubmit}>
-				{useCalendarSelection ? (
-					<div className="rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-3 text-xs text-brand-800">
-						<p className="font-semibold">
-							{selectedCellsCount} celda{selectedCellsCount !== 1 ? "s" : ""} seleccionada{selectedCellsCount !== 1 ? "s" : ""} en el calendario
-						</p>
-						<p className="mt-1 text-[11px] text-brand-700">
-							Haz clic en celdas vacías para sumar o quitar. Elige el tipo de eco y envía la solicitud.
-						</p>
-						{onClearSelection && (
-							<button
-								type="button"
-								onClick={onClearSelection}
-								className="mt-2 rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
-							>
-								Limpiar selección
-							</button>
-						)}
-					</div>
-				) : modoRango ? (
-					<>
-						<div className="grid grid-cols-2 gap-2">
+				<form className="space-y-6" onSubmit={handleSubmit}>
+					{modoRango ? (
+						<>
+							<div className="space-y-2">
+								<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+									Rango de fechas
+								</label>
+								<div className="grid grid-cols-2 gap-3">
+									<div className="relative flex items-center gap-3 rounded-2xl bg-cloud/80 p-3 pl-4">
+										<div className="absolute bottom-0 left-0 top-0 w-1 rounded-l-2xl bg-brand-800" />
+										<CalendarDays className="h-5 w-5 shrink-0 text-slate-400" />
+										<div className="min-w-0">
+											<span className="mb-1 block text-[10px] font-bold leading-none text-slate-400">
+												Desde
+											</span>
+											<input
+												type="date"
+												value={fechaDesde}
+												min={minFecha}
+												onChange={(e) => onFechaDesdeChange(e.target.value)}
+												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
+											/>
+										</div>
+									</div>
+									<div className="flex items-center gap-3 rounded-2xl bg-cloud/80 p-3">
+										<CalendarDays className="h-5 w-5 shrink-0 text-slate-400" />
+										<div className="min-w-0">
+											<span className="mb-1 block text-[10px] font-bold leading-none text-slate-400">
+												Hasta
+											</span>
+											<input
+												type="date"
+												value={fechaHasta}
+												min={minFecha}
+												onChange={(e) => onFechaHastaChange(e.target.value)}
+												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
+											/>
+										</div>
+									</div>
+								</div>
+								<p className="text-[10px] text-brand-700">
+									Vista previa: {formatShortDate(fechaDesde)} — {formatShortDate(fechaHasta)} · máximo 31 días
+								</p>
+							</div>
+							<div className="space-y-2">
+								<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+									Horario
+								</label>
+								<div className="grid grid-cols-2 gap-3">
+									<div className="rounded-2xl bg-cloud/80 p-3">
+										<span className="mb-1 block text-[10px] font-bold text-slate-400">
+											Inicio
+										</span>
+										<div className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+											<Clock className="h-5 w-5 shrink-0 text-slate-400" />
+											<select
+												value={horaInicioRango}
+												onChange={(e) => {
+													onHoraInicioRangoChange(e.target.value);
+													if (
+														horaFinRango &&
+														parseTimeToMinutes(e.target.value) >=
+															parseTimeToMinutes(horaFinRango)
+													) {
+														onHoraFinRangoChange("");
+													}
+												}}
+												className="min-w-0 flex-1 border-none bg-transparent p-0 font-semibold outline-none focus:ring-0"
+											>
+												<option value="">Seleccionar</option>
+												{timeOptions.map((opt) => (
+													<option key={opt.value} value={opt.value}>
+														{opt.label}
+													</option>
+												))}
+											</select>
+										</div>
+									</div>
+									<div className="rounded-2xl bg-cloud/80 p-3">
+										<span className="mb-1 block text-[10px] font-bold text-slate-400">
+											Fin
+										</span>
+										<div className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+											<Clock className="h-5 w-5 shrink-0 text-slate-400" />
+											<select
+												value={horaFinRango}
+												onChange={(e) => onHoraFinRangoChange(e.target.value)}
+												className="min-w-0 flex-1 border-none bg-transparent p-0 font-semibold outline-none focus:ring-0"
+											>
+												<option value="">Seleccionar</option>
+												{horaFinOptions.map((opt) => (
+													<option key={opt.value} value={opt.value}>
+														{opt.label}
+													</option>
+												))}
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+							{rangeError && (
+								<p className="text-[11px] font-semibold text-red-600">{rangeError}</p>
+							)}
+							{!rangeError && slotsPrevia.length > 0 && (
+								<div className="rounded-xl border border-brand-200 bg-brand-100/40 p-3 text-xs text-brand-800">
+									<p className="font-semibold">
+										{slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} de 20 min ·{" "}
+										{rangeDays} día{rangeDays !== 1 ? "s" : ""}
+									</p>
+								</div>
+							)}
+						</>
+					) : (
+						<>
 							<div className="space-y-1 text-xs text-brand-800">
-								<label className="font-semibold">Desde</label>
+								<label className="font-semibold">Fecha</label>
 								<input
 									type="date"
-									value={fechaDesde}
-									onChange={(e) => setFechaDesde(e.target.value)}
+									value={fecha}
+									onChange={(event) => onFechaChange(event.target.value)}
 									min={minFecha}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-800"
 								/>
 							</div>
-							<div className="space-y-1 text-xs text-brand-800">
-								<label className="font-semibold">Hasta</label>
-								<input
-									type="date"
-									value={fechaHasta}
-									onChange={(e) => setFechaHasta(e.target.value)}
-									min={minFecha}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-								/>
-							</div>
-						</div>
-						<p className="text-[10px] text-brand-700">Rango máximo: 31 días · se crea una solicitud (los bloques de 20 min se generan al aprobar el moderador).</p>
-						<div className="grid grid-cols-2 gap-2">
 							<div className="space-y-1 text-xs text-brand-800">
 								<label className="font-semibold">Hora inicio</label>
 								<select
-									value={horaInicioRango}
-									onChange={(e) => {
-										setHoraInicioRango(e.target.value);
-										if (horaFinRango && parseTimeToMinutes(e.target.value) >= parseTimeToMinutes(horaFinRango)) {
-											setHoraFinRango("");
-										}
-									}}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+									value={horaInicio}
+									onChange={(event) => onHoraInicioChange(event.target.value)}
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-800"
 								>
-									<option value="">Inicio</option>
-									{timeOptions.map((opt) => (
-										<option key={opt.value} value={opt.value}>{opt.label}</option>
+									<option value="">Selecciona hora</option>
+									{timeOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
 									))}
 								</select>
 							</div>
-							<div className="space-y-1 text-xs text-brand-800">
-								<label className="font-semibold">Hora fin</label>
-								<select
-									value={horaFinRango}
-									onChange={(e) => setHoraFinRango(e.target.value)}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
+						</>
+					)}
+					<div className="space-y-2">
+						<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+							Servicios (ecos)
+						</label>
+						<div className="flex flex-wrap items-center gap-2">
+							{idEcos.map((id) => {
+								const eco = ecos.find((e) => e.id_eco === id);
+								if (!eco) return null;
+								return (
+									<span
+										key={id}
+										className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-1.5 text-xs font-bold text-brand-800"
+									>
+										{eco.nombre}
+										<button
+											type="button"
+											onClick={() => onIdEcosChange(idEcos.filter((x) => x !== id))}
+											className="rounded-full p-0.5 hover:bg-brand-200/80"
+											aria-label={`Quitar ${eco.nombre}`}
+										>
+											<X className="h-3.5 w-3.5" />
+										</button>
+									</span>
+								);
+							})}
+							<div className="relative" ref={ecosDropdownRef}>
+								<button
+									type="button"
+									ref={ecosButtonRef}
+									onClick={handleToggleDropdown}
+									disabled={loadingEcos}
+									className="rounded-full border border-dashed border-slate-300 bg-cloud/50 px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-cloud disabled:opacity-50"
 								>
-									<option value="">Fin</option>
-									{horaFinOptions.map((opt) => (
-										<option key={opt.value} value={opt.value}>{opt.label}</option>
-									))}
-								</select>
-							</div>
-						</div>
-						{rangeError && (
-							<p className="text-[11px] font-semibold text-brand-900">{rangeError}</p>
-						)}
-						{!rangeError && slotsPrevia.length > 0 && (
-							<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-xs text-brand-800">
-								<p className="font-semibold">
-									Vista previa: {slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} de 20 min en {rangeDays} día
-									{rangeDays !== 1 ? "s" : ""} (una sola solicitud con los ecos elegidos; los bloques se generan al aprobar).
-								</p>
-							</div>
-						)}
-					</>
-				) : (
-					<>
-						<div className="space-y-1 text-xs text-brand-800">
-							<label className="font-semibold">Fecha</label>
-							<input
-								type="date"
-								value={fecha}
-								onChange={(event) => onFechaChange(event.target.value)}
-								min={minFecha}
-								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-						<div className="space-y-1 text-xs text-brand-800">
-							<label className="font-semibold">Hora inicio</label>
-							<select
-								value={horaInicio}
-								onChange={(event) => onHoraInicioChange(event.target.value)}
-								className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700"
-							>
-								<option value="">Selecciona hora</option>
-								{timeOptions.map((option) => (
-									<option key={option.value} value={option.value}>
-										{option.label}
-									</option>
-								))}
-							</select>
-						</div>
-					</>
-				)}
-				<div className="space-y-1 text-xs text-brand-800">
-					<label className="font-semibold">
-						Tipo de eco <span className="text-red-500">*</span>
-					</label>
-					<div className="relative" ref={ecosDropdownRef}>
-						<button
-							type="button"
-							ref={ecosButtonRef}
-							onClick={handleToggleDropdown}
-							disabled={loadingEcos}
-							className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-left text-xs outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between"
-						>
-							<span className="truncate">
-								{loadingEcos
-									? "Cargando ecos..."
-									: idEcos.length === 0
-										? "Selecciona los ecos"
-										: idEcos.length === 1
-											? "1 eco seleccionado"
-											: `${idEcos.length} ecos seleccionados`}
-							</span>
-							<span className="ml-2 text-[10px] text-brand-600">
-								{isEcosDropdownOpen ? "▲" : "▼"}
-							</span>
-						</button>
-						{isEcosDropdownOpen && (
-							<div
-								className={`absolute z-50 w-full rounded-lg border border-brand-300 bg-paper shadow-lg max-h-60 overflow-auto ${dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
-									}`}
-							>
-								{loadingEcos ? (
-									<div className="p-3 text-xs text-brand-600">Cargando ecos...</div>
-								) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
-									<div className="p-3 text-xs text-brand-600">
-										No hay ecos disponibles
-									</div>
-								) : (
-									<div className="p-1">
-										{ecos
-											.filter((eco) => eco.activo === 1)
-											.map((eco) => {
-												const isSelected = idEcos.includes(eco.id_eco);
-												return (
-													<button
-														key={eco.id_eco}
-														type="button"
-														onClick={() => toggleEco(eco.id_eco)}
-														className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
-															}`}
-													>
-														<div
-															className={`flex h-3 w-3 items-center justify-center rounded border ${isSelected
-																? "border-brand-700 bg-brand-700"
-																: "border-brand-300 bg-paper"
+									+ Añadir
+								</button>
+								{isEcosDropdownOpen && (
+									<div
+										className={`absolute z-50 w-56 rounded-lg border border-mist bg-paper shadow-lg max-h-60 overflow-auto ${
+											dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"
+										}`}
+									>
+										{loadingEcos ? (
+											<div className="p-3 text-xs text-brand-600">Cargando ecos...</div>
+										) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
+											<div className="p-3 text-xs text-brand-600">No hay ecos disponibles</div>
+										) : (
+											<div className="p-1">
+												{ecos
+													.filter((eco) => eco.activo === 1)
+													.map((eco) => {
+														const isSelected = idEcos.includes(eco.id_eco);
+														return (
+															<button
+																key={eco.id_eco}
+																type="button"
+																onClick={() => toggleEco(eco.id_eco)}
+																className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors hover:bg-brand-100/60 ${
+																	isSelected ? "bg-brand-100/50" : ""
 																}`}
-														>
-															{isSelected && (
-																<span className="block h-2 w-2 rounded-sm bg-paper" />
-															)}
-														</div>
-														<span className="flex-1 text-left">{eco.nombre}</span>
-													</button>
-												);
-											})}
+															>
+																<span className="flex-1 text-left">{eco.nombre}</span>
+															</button>
+														);
+													})}
+											</div>
+										)}
 									</div>
 								)}
 							</div>
-						)}
+						</div>
 					</div>
-					<p className="text-[10px] text-brand-700">
-						{useCalendarSelection
-							? "Selecciona uno o varios ecos para aplicar a todas las celdas."
-							: "Puedes seleccionar uno o varios ecos desde el desplegable."}
-					</p>
-				</div>
-				{error || submitError ? (
-					<p className="text-[11px] font-semibold text-brand-900">
-						{error ?? submitError}
-					</p>
-				) : null}
-				<div className="flex gap-2">
-					{onCancel && (
+					{error || submitError ? (
+						<p className="text-[11px] font-semibold text-red-600">{error ?? submitError}</p>
+					) : null}
+					<div className="flex flex-col gap-2 sm:flex-row">
+						{onCancel && (
+							<button
+								type="button"
+								onClick={onCancel}
+								className="rounded-2xl border border-mist px-4 py-3 text-sm font-semibold text-brand-800 hover:bg-cloud"
+							>
+								Limpiar
+							</button>
+						)}
+						<button
+							type="submit"
+							disabled={submitStatus === "loading"}
+							className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-800 py-4 text-sm font-bold text-paper shadow-lg shadow-brand-800/20 transition hover:scale-[0.98] active:scale-95 disabled:opacity-60"
+						>
+							{submitStatus === "loading" ? "Enviando..." : "Enviar solicitud al administrador"}
+							<Send className="h-4 w-4" />
+						</button>
+					</div>
+					{onClearSelection && (
 						<button
 							type="button"
-							onClick={onCancel}
-							className="flex-1 rounded-full border border-brand-300 bg-paper px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+							onClick={onClearSelection}
+							className="w-full text-center text-xs font-medium text-brand-700 underline-offset-2 hover:underline"
 						>
-							Cancelar
+							Limpiar selección en el calendario
 						</button>
 					)}
-					<button
-						type="submit"
-						disabled={submitStatus === "loading"}
-						className={`rounded-full bg-brand-700 px-3 py-2 text-xs font-semibold text-paper disabled:opacity-60 ${onCancel ? "flex-1" : "w-full"
-							}`}
-					>
-						{submitStatus === "loading" ? "Enviando..." : "Enviar solicitud"}
-					</button>
-				</div>
-				{submitStatus === "done" ? (
-					<p className="text-[11px] font-semibold text-brand-800">
-						Solicitud enviada
-					</p>
-				) : null}
-			</form>
+					{submitStatus === "done" ? (
+						<p className="text-center text-[11px] font-semibold text-brand-800">
+							Solicitud enviada
+						</p>
+					) : null}
+				</form>
+			</div>
+			<div className="rounded-3xl border border-brand-800/10 bg-brand-100/30 p-6">
+				<h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-brand-800">
+					<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-200/50 text-xs">
+						i
+					</span>
+					Estado de solicitudes
+				</h4>
+				<p className="text-xs leading-relaxed text-slate-600">
+					Las solicitudes enviadas suelen ser procesadas por administración en un plazo máximo de 24
+					horas hábiles. Recibirás una notificación cuando se aprueben.
+				</p>
+			</div>
 		</div>
 	);
 };

@@ -8,6 +8,9 @@ type Disponibilidad = {
 	estado: number;
 	estado_pago?: number;
 	estado_cita?: number;
+	/** Solo UI: datos de cita para popover */
+	paciente_nombre?: string | null;
+	paciente_apellido?: string | null;
 };
 
 type TimeOption = {

@@ -1,18 +1,18 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { FileDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth, formatFechaLocal } from "../../../shared";
 import {
 	type FilterOption,
 	type Disponibilidad,
 	type TimeOption,
-	CalendarHeader,
-	CalendarLegend,
 	CalendarGrid,
 	DisponibilidadForm,
 	BloquesList,
 } from "../../calendario";
-import type { SlotPreview } from "../../calendario/components/DisponibilidadForm";
+import type { SlotPreview } from "../../calendario/utils/slotUtils";
+import { generateSlotsRange } from "../../calendario/utils/slotUtils";
 import {
 	useCancelarDisponibilidadMutation,
 	useCrearDisponibilidadMutation,
@@ -60,12 +60,13 @@ const getDateKey = (value: string | Date) => {
 	return value.includes("T") ? value.split("T")[0] : value;
 };
 
-const formatShortDay = (date: Date) => {
+const formatShortDayUpper = (date: Date) => {
 	const weekday = date
 		.toLocaleDateString("es-VE", { weekday: "short" })
-		.replace(".", "");
-	const capitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
-	return `${capitalized} ${date.getDate()}`;
+		.replace(".", "")
+		.toUpperCase();
+	const short = weekday.length > 3 ? weekday.slice(0, 3) : weekday;
+	return `${short} ${date.getDate()}`;
 };
 
 const startOfWeek = (base: Date) => {
@@ -95,7 +96,6 @@ const CalendarioPage = () => {
 	const [horaInicio, setHoraInicio] = useState("");
 	const [idEcos, setIdEcos] = useState<string[]>([]);
 	const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
-	const [busyCell] = useState<string | null>(null);
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "done">(
 		"idle",
@@ -103,8 +103,17 @@ const CalendarioPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState("todas");
 	const [page, setPage] = useState(1);
-	const [selectedCells, setSelectedCells] = useState<string[]>([]);
-	const [previewSlots, setPreviewSlots] = useState<SlotPreview[]>([]);
+
+	const [fechaDesde, setFechaDesde] = useState("");
+	const [fechaHasta, setFechaHasta] = useState("");
+	const [horaInicioRango, setHoraInicioRango] = useState("");
+	const [horaFinRango, setHoraFinRango] = useState("");
+
+	const [citaPopover, setCitaPopover] = useState<{
+		bloque: Disponibilidad;
+		x: number;
+		y: number;
+	} | null>(null);
 
 	const isEspecialista = user?.rol === "especialista";
 	const minFecha = useMemo(() => getLocalDateKey(new Date()), []);
@@ -124,10 +133,6 @@ const CalendarioPage = () => {
 	const [marcarAtendida] = useMarcarAtendidaMutation();
 	const { data: ecos = [] } = useGetEcosQuery();
 
-	const onPreviewSlotsChange = useCallback((slots: SlotPreview[] | null) => {
-		setPreviewSlots(slots ?? []);
-	}, []);
-
 	const previewEcoLabel = useMemo(() => {
 		if (idEcos.length === 0) return "Vista previa";
 		if (idEcos.length === 1) {
@@ -137,25 +142,56 @@ const CalendarioPage = () => {
 		return `Vista previa · ${idEcos.length} ecos`;
 	}, [idEcos, ecos]);
 
-	const timeOptions = useMemo<TimeOption[]>(
-		() => {
-			const options: TimeOption[] = [];
-			// Desde 06:00 hasta 19:40 en intervalos de 20 minutos
-			for (let hour = 6; hour < 20; hour += 1) {
-				for (let minute = 0; minute < 60; minute += 20) {
-					const value = `${String(hour).padStart(2, "0")}:${String(
-						minute,
-					).padStart(2, "0")}:00`;
-					options.push({
-						value,
-						label: buildTimeLabel(hour, minute),
-					});
-				}
+	const rangeDays = useMemo(() => {
+		if (!fechaDesde || !fechaHasta) return 0;
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 0;
+		const diffMs = endDate.getTime() - startDate.getTime();
+		return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+	}, [fechaDesde, fechaHasta]);
+
+	const rangeError = useMemo(() => {
+		if (!fechaDesde || !fechaHasta) return null;
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+			return "Fecha inválida";
+		}
+		if (endDate < startDate) return "La fecha hasta debe ser mayor o igual a la fecha desde";
+		if (rangeDays > 31) return "El rango máximo permitido es de 31 días";
+		return null;
+	}, [fechaDesde, fechaHasta, rangeDays]);
+
+	const previewSlots = useMemo((): SlotPreview[] => {
+		if (!fechaDesde || !fechaHasta || !horaInicioRango || !horaFinRango) return [];
+		if (rangeError) return [];
+		return generateSlotsRange(fechaDesde, fechaHasta, horaInicioRango, horaFinRango);
+	}, [fechaDesde, fechaHasta, horaInicioRango, horaFinRango, rangeError]);
+
+	const highlightSlotKeys = useMemo(() => {
+		const set = new Set<string>();
+		for (const slot of previewSlots) {
+			const hourKey =
+				slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+			set.add(`${slot.fecha}|${hourKey}`);
+		}
+		return set;
+	}, [previewSlots]);
+
+	const timeOptions = useMemo<TimeOption[]>(() => {
+		const options: TimeOption[] = [];
+		for (let hour = 6; hour < 20; hour += 1) {
+			for (let minute = 0; minute < 60; minute += 20) {
+				const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+				options.push({
+					value,
+					label: buildTimeLabel(hour, minute),
+				});
 			}
-			return options;
-		},
-		[],
-	);
+		}
+		return options;
+	}, []);
 
 	const showConflict = async (message: string) => {
 		await Swal.fire({
@@ -175,10 +211,7 @@ const CalendarioPage = () => {
 		const totalMinutes = h * 60 + m + 20;
 		const endHour = Math.floor(totalMinutes / 60);
 		const endMinute = totalMinutes % 60;
-		return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(
-			2,
-			"0",
-		)}:00`;
+		return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}:00`;
 	};
 
 	const submitDisponibilidad = async (payload: {
@@ -223,11 +256,7 @@ const CalendarioPage = () => {
 
 		if (exitosos.length > 0) {
 			setSubmitStatus("done");
-			setSelectedCells([]);
-
-			const ecosSeleccionados = ecos.filter((eco) =>
-				exitosos.includes(eco.id_eco),
-			);
+			const ecosSeleccionados = ecos.filter((eco) => exitosos.includes(eco.id_eco));
 			const nombresEcos = ecosSeleccionados.map((eco) => eco.nombre);
 			const ecosTexto =
 				nombresEcos.length === 1
@@ -237,9 +266,7 @@ const CalendarioPage = () => {
 			await Swal.fire({
 				icon: "success",
 				title: "Disponibilidad agregada",
-				text: `La disponibilidad para el ${formatFecha(
-					payload.fecha,
-				)} a las ${formatHora(payload.hora_inicio)} ${ecosTexto} ha sido agregada exitosamente.`,
+				text: `La disponibilidad para el ${formatFecha(payload.fecha)} a las ${formatHora(payload.hora_inicio)} ${ecosTexto} ha sido agregada exitosamente.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
@@ -247,14 +274,13 @@ const CalendarioPage = () => {
 		}
 
 		if (lastError) {
-			const err: any = lastError;
+			const err: unknown = lastError;
 			const apiMessage =
-				err?.data?.message ||
-				err?.error ||
+				(err as { data?: { message?: string } })?.data?.message ||
 				(err as Error).message ||
 				"No se pudo enviar una o más disponibilidades";
 
-			if (err?.status === 409) {
+			if ((err as { status?: number }).status === 409) {
 				const conflictMessage =
 					apiMessage ||
 					"Ya solicitaste este eco en ese horario, o ya hay una cita en ese horario.";
@@ -267,6 +293,13 @@ const CalendarioPage = () => {
 
 		setSubmitStatus("idle");
 	};
+
+	const clearRango = useCallback(() => {
+		setFechaDesde("");
+		setFechaHasta("");
+		setHoraInicioRango("");
+		setHoraFinRango("");
+	}, []);
 
 	const handleSubmitMacro = async (payload: {
 		fecha_desde: string;
@@ -286,11 +319,10 @@ const CalendarioPage = () => {
 				id_ecos: payload.id_ecos,
 			}).unwrap();
 			setSubmitStatus("done");
-			setSelectedCells([]);
-			setPreviewSlots([]);
 			setFecha("");
 			setHoraInicio("");
 			setIdEcos([]);
+			clearRango();
 			await Swal.fire({
 				icon: "success",
 				title: "Solicitud enviada",
@@ -320,64 +352,6 @@ const CalendarioPage = () => {
 			return;
 		}
 		setError(null);
-
-		if (selectedCells.length > 0) {
-			setSubmitStatus("loading");
-			let creados = 0;
-			let lastError: unknown = null;
-			for (const cellKey of selectedCells) {
-				const [dateKey, hourValue] = cellKey.split("|");
-				if (!dateKey || !hourValue) continue;
-				const hora_fin = computeHoraFin(hourValue);
-				if (!hora_fin) continue;
-				for (const id_eco of idEcos) {
-					try {
-						await crearDisponibilidad({
-							fecha: dateKey,
-							hora_inicio: hourValue,
-							hora_fin,
-							id_eco,
-						}).unwrap();
-						creados += 1;
-					} catch (err) {
-						lastError = err;
-					}
-				}
-			}
-			setSubmitStatus("done");
-			setSelectedCells([]);
-			setIdEcos([]);
-			if (creados > 0) {
-				await Swal.fire({
-					icon: "success",
-					title: "Disponibilidad agregada",
-					text: `Se agregaron ${creados} bloque${creados !== 1 ? "s" : ""} exitosamente.`,
-					timer: 3000,
-					showConfirmButton: false,
-					confirmButtonColor: "#1C837F",
-				});
-			}
-			if (lastError) {
-				const err: any = lastError;
-				const apiMessage =
-					err?.data?.message ||
-					err?.error ||
-					(err as Error).message ||
-					"No se pudo enviar una o más disponibilidades";
-				if (err?.status === 409) {
-					const conflictMessage =
-						apiMessage ||
-						"Ya solicitaste este eco en uno o mas horarios, o ya hay citas en esos horarios.";
-					setError(conflictMessage);
-					await showConflict(conflictMessage);
-				} else {
-					setError(apiMessage);
-				}
-			}
-			setSubmitStatus("idle");
-			return;
-		}
-
 		await submitDisponibilidad({
 			fecha,
 			hora_inicio: horaInicio,
@@ -387,6 +361,21 @@ const CalendarioPage = () => {
 		setHoraInicio("");
 		setIdEcos([]);
 	};
+
+	const onRangeSelectFromGrid = useCallback(
+		(payload: {
+			fechaDesde: string;
+			fechaHasta: string;
+			horaInicio: string;
+			horaFin: string;
+		}) => {
+			setFechaDesde(payload.fechaDesde);
+			setFechaHasta(payload.fechaHasta);
+			setHoraInicioRango(payload.horaInicio);
+			setHoraFinRango(payload.horaFin);
+		},
+		[],
+	);
 
 	const days = useMemo(() => {
 		return Array.from({ length: 7 }, (_, idx) => {
@@ -398,10 +387,7 @@ const CalendarioPage = () => {
 
 	const dayKeys = useMemo(() => days.map(getLocalDateKey), [days]);
 
-	const dayLabels = useMemo(
-		() => days.map((day) => formatShortDay(day)),
-		[days],
-	);
+	const dayLabels = useMemo(() => days.map((day) => formatShortDayUpper(day)), [days]);
 
 	const weekRangeLabel = useMemo(() => {
 		const start = days[0];
@@ -409,29 +395,26 @@ const CalendarioPage = () => {
 		if (!start || !end) return "";
 		const startLabel = start.toLocaleDateString("es-VE", {
 			day: "2-digit",
-			month: "short",
+			month: "long",
 		});
 		const endLabel = end.toLocaleDateString("es-VE", {
 			day: "2-digit",
-			month: "short",
+			month: "long",
+			year: "numeric",
 		});
-		return `${startLabel} - ${endLabel}`;
+		return `${startLabel} — ${endLabel}`;
 	}, [days]);
 
 	const bloquesMap = useMemo(() => {
 		const map = new Map<string, Disponibilidad>();
 		const counts = new Map<string, number>();
 
-		// Mapear bloques de disponibilidad (propuestas / aprobadas)
 		bloques.forEach((bloque) => {
 			const dateKey = getDateKey(bloque.fecha);
 			const hourKey =
-				bloque.hora_inicio.length === 5
-					? `${bloque.hora_inicio}:00`
-					: bloque.hora_inicio;
-			const cellKey = `${dateKey}|${hourKey}`;
+				bloque.hora_inicio.length === 5 ? `${bloque.hora_inicio}:00` : bloque.hora_inicio;
+			const cellKeyStr = `${dateKey}|${hourKey}`;
 
-			// Convertir al tipo Disponibilidad del calendario (fecha debe ser string)
 			const disponibilidad: Disponibilidad = {
 				...bloque,
 				fecha:
@@ -440,30 +423,27 @@ const CalendarioPage = () => {
 						: bloque.fecha.toISOString().split("T")[0],
 			};
 
-			const existing = map.get(cellKey);
+			const existing = map.get(cellKeyStr);
 			if (!existing) {
-				map.set(cellKey, disponibilidad);
-				counts.set(cellKey, 1);
+				map.set(cellKeyStr, disponibilidad);
+				counts.set(cellKeyStr, 1);
 			} else {
-				const newCount = (counts.get(cellKey) || 1) + 1;
-				counts.set(cellKey, newCount);
-
-				// Si hay más de un eco para este horario, mostrar un label genérico
-				map.set(cellKey, {
+				const newCount = (counts.get(cellKeyStr) || 1) + 1;
+				counts.set(cellKeyStr, newCount);
+				map.set(cellKeyStr, {
 					...existing,
 					eco_nombre: newCount > 1 ? "Varios ecos" : existing.eco_nombre,
 				});
 			}
 		});
 
-		// Mapear citas (tienen prioridad visual sobre bloques de disponibilidad)
 		citas.forEach((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
 				cita.hora_cita.length === 5 ? `${cita.hora_cita}:00` : cita.hora_cita;
-			const cellKey = `${dateKey}|${hourKey}`;
+			const cellKeyStr = `${dateKey}|${hourKey}`;
 			const horaFin = computeHoraFin(hourKey);
-			map.set(cellKey, {
+			map.set(cellKeyStr, {
 				id_disponibilidad: `cita-${cita.id_cita}`,
 				fecha: dateKey,
 				hora_inicio: hourKey,
@@ -471,21 +451,22 @@ const CalendarioPage = () => {
 				estado: 4,
 				estado_pago: Number(cita.estado_pago),
 				estado_cita: Number(cita.estado_cita),
+				eco_nombre: cita.eco_nombre,
+				paciente_nombre: cita.paciente_nombre,
+				paciente_apellido: cita.paciente_apellido,
 			});
 		});
 
 		for (const slot of previewSlots) {
 			if (!dayKeys.includes(slot.fecha)) continue;
 			const hourKey =
-				slot.hora_inicio.length === 5
-					? `${slot.hora_inicio}:00`
-					: slot.hora_inicio;
-			const cellKey = `${slot.fecha}|${hourKey}`;
-			if (map.has(cellKey)) continue;
+				slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+			const cellKeyStr = `${slot.fecha}|${hourKey}`;
+			if (map.has(cellKeyStr)) continue;
 			const horaFinSlot =
 				slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin;
-			map.set(cellKey, {
-				id_disponibilidad: `preview-${cellKey}`,
+			map.set(cellKeyStr, {
+				id_disponibilidad: `preview-${cellKeyStr}`,
 				fecha: slot.fecha,
 				hora_inicio: hourKey,
 				hora_fin: horaFinSlot,
@@ -497,102 +478,108 @@ const CalendarioPage = () => {
 		return map;
 	}, [bloques, citas, previewSlots, dayKeys, previewEcoLabel]);
 
-	const handleCellClick = async (dateKey: string, hourValue: string) => {
-		if (!isEspecialista) return;
-		const cellKey = `${dateKey}|${hourValue}`;
-		const bloque = bloquesMap.get(cellKey);
-		if (bloque?.estado === -2) {
-			return;
-		}
-		if (bloque) {
-			const isCita = bloque.id_disponibilidad.startsWith("cita-");
-			if (bloque.estado === 4 && isCita) {
-				if (bloque.estado_pago !== 1) {
-					await Swal.fire({
-						title: "Pago pendiente",
-						text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
-						icon: "info",
-						confirmButtonText: "Entendido",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				if (bloque.estado_cita === 3) {
-					await Swal.fire({
-						title: "Cita ya atendida",
-						icon: "info",
-						confirmButtonText: "Listo",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				const today = new Date().toISOString().slice(0, 10);
-				if (dateKey > today) {
-					await Swal.fire({
-						title: "Aún no puedes marcar esta cita",
-						text: "Solo puedes marcar como atendida cuando llegue el día.",
-						icon: "info",
-						confirmButtonText: "Entendido",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				const confirmResult = await Swal.fire({
-					title: "¿Marcar cita como atendida?",
-					text: "Esta acción confirma que el paciente fue atendido.",
-					icon: "question",
-					showCancelButton: true,
-					confirmButtonText: "Sí, atender",
-					cancelButtonText: "No",
-					confirmButtonColor: "#1C837F",
-					cancelButtonColor: "#9FD8E1",
-				});
-				if (!confirmResult.isConfirmed) return;
-				try {
-					const citaId = bloque.id_disponibilidad.replace("cita-", "");
-					await marcarAtendida(citaId).unwrap();
-				} catch (err) {
-					setError((err as Error).message ?? "No se pudo marcar como atendida");
-				}
-				return;
-			}
-			if (bloque.estado === 4 || bloque.estado === 2 || bloque.estado === 3) return;
-			const confirmResult = await Swal.fire({
-				title: "¿Cancelar disponibilidad?",
-				text: "Este bloque pasará a estado cancelado.",
-				icon: "warning",
-				showCancelButton: true,
-				confirmButtonText: "Sí, cancelar",
-				cancelButtonText: "No",
-				footer:
-					"<span style=\"font-size:12px;color:#3f5b5a;\">Si deseas volver a solicitar la fecha, puedes hacerlo desde el select.</span>",
+	const handleCitaPopoverOpen = useCallback(
+		(bloque: Disponibilidad, anchor: { x: number; y: number }) => {
+			setCitaPopover({ bloque, x: anchor.x, y: anchor.y });
+		},
+		[],
+	);
+
+	const closeCitaPopover = useCallback(() => setCitaPopover(null), []);
+
+	useEffect(() => {
+		if (!citaPopover) return;
+		const close = () => setCitaPopover(null);
+		const id = window.setTimeout(() => {
+			document.addEventListener("click", close);
+		}, 0);
+		return () => {
+			window.clearTimeout(id);
+			document.removeEventListener("click", close);
+		};
+	}, [citaPopover]);
+
+	const handleMarcarAtendidaFromPopover = async () => {
+		if (!citaPopover) return;
+		const bloque = citaPopover.bloque;
+		const dateKey = getDateKey(bloque.fecha);
+		closeCitaPopover();
+
+		if (bloque.estado_pago !== 1) {
+			await Swal.fire({
+				title: "Pago pendiente",
+				text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
+				icon: "info",
+				confirmButtonText: "Entendido",
 				confirmButtonColor: "#1C837F",
-				cancelButtonColor: "#9FD8E1",
 			});
-			if (!confirmResult.isConfirmed) {
-				return;
-			}
-			setCancelingId(bloque.id_disponibilidad);
-			try {
-				await cancelarDisponibilidad(bloque.id_disponibilidad).unwrap();
-			} catch (err) {
-				setError((err as Error).message ?? "No se pudo cancelar el bloque");
-			} finally {
-				setCancelingId(null);
-			}
 			return;
 		}
-		if (dateKey < minFecha) return;
-		// Toggle celda vacía en la selección múltiple
-		setSelectedCells((prev) =>
-			prev.includes(cellKey)
-				? prev.filter((k) => k !== cellKey)
-				: [...prev, cellKey],
-		);
+		if (bloque.estado_cita === 3) {
+			await Swal.fire({
+				title: "Cita ya atendida",
+				icon: "info",
+				confirmButtonText: "Listo",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const today = new Date().toISOString().slice(0, 10);
+		if (dateKey > today) {
+			await Swal.fire({
+				title: "Aún no puedes marcar esta cita",
+				text: "Solo puedes marcar como atendida cuando llegue el día.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const confirmResult = await Swal.fire({
+			title: "¿Marcar cita como atendida?",
+			text: "Esta acción confirma que el paciente fue atendido.",
+			icon: "question",
+			showCancelButton: true,
+			confirmButtonText: "Sí, atender",
+			cancelButtonText: "No",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+		if (!confirmResult.isConfirmed) return;
+		try {
+			const citaId = bloque.id_disponibilidad.replace("cita-", "");
+			await marcarAtendida(citaId).unwrap();
+		} catch (err) {
+			setError((err as Error).message ?? "No se pudo marcar como atendida");
+		}
+	};
+
+	const handleBloqueDisponibilidadClick = async (bloque: Disponibilidad) => {
+		if (bloque.estado === 4 || bloque.estado === 2 || bloque.estado === 3) return;
+		const confirmResult = await Swal.fire({
+			title: "¿Cancelar disponibilidad?",
+			text: "Este bloque pasará a estado cancelado.",
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Sí, cancelar",
+			cancelButtonText: "No",
+			footer:
+				"<span style=\"font-size:12px;color:#3f5b5a;\">Si deseas volver a solicitar la fecha, puedes hacerlo desde el formulario.</span>",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+		if (!confirmResult.isConfirmed) return;
+		setCancelingId(bloque.id_disponibilidad);
+		try {
+			await cancelarDisponibilidad(bloque.id_disponibilidad).unwrap();
+		} catch (err) {
+			setError((err as Error).message ?? "No se pudo cancelar el bloque");
+		} finally {
+			setCancelingId(null);
+		}
 	};
 
 	const mergedBloques = useMemo(() => {
-		// Normalizar bloques de disponibilidad (asegurar que fecha sea string)
 		const normalizedBloques: Disponibilidad[] = bloques.map((bloque) => ({
 			...bloque,
 			fecha:
@@ -601,7 +588,6 @@ const CalendarioPage = () => {
 					: bloque.fecha.toISOString().split("T")[0],
 		}));
 
-		// Convertir citas a elementos tipo Disponibilidad independientes
 		const citaBloques: Disponibilidad[] = citas.map((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
@@ -618,8 +604,6 @@ const CalendarioPage = () => {
 			} as Disponibilidad;
 		});
 
-		// Para el listado de "Mis bloques" queremos ver cada bloque individual,
-		// por eso NO colapsamos por celda como en el calendario visual.
 		return [...normalizedBloques, ...citaBloques];
 	}, [bloques, citas]);
 
@@ -663,128 +647,239 @@ const CalendarioPage = () => {
 		setPage(1);
 	}, [filter]);
 
+	const popoverPaciente =
+		citaPopover?.bloque.paciente_nombre || citaPopover?.bloque.paciente_apellido
+			? `${citaPopover.bloque.paciente_nombre ?? ""} ${citaPopover.bloque.paciente_apellido ?? ""}`.trim()
+			: "Paciente";
+
 	return (
-		<div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-			<section className="space-y-6 min-w-0">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold text-brand-900">Calendario</h1>
-					<p className="text-sm text-brand-800">
-						Agenda semanal y gestión de disponibilidades.
+		<div className="min-w-0">
+			<div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+				<div>
+					<h1 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">
+						Mi agenda y disponibilidad
+					</h1>
+					<p className="mt-2 font-medium text-slate-500">
+						Gestiona tus jornadas laborales y solicitudes de servicio.
 					</p>
 				</div>
+				<button
+					type="button"
+					className="inline-flex items-center gap-2 self-start rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-brand-800 transition hover:bg-mist sm:self-auto"
+					onClick={() => {
+						void Swal.fire({
+							icon: "info",
+							title: "Exportar",
+							text: "La exportación estará disponible próximamente.",
+							confirmButtonColor: "#1C837F",
+						});
+					}}
+				>
+					<FileDown className="h-4 w-4" />
+					Exportar
+				</button>
+			</div>
 
-				<div className="rounded-2xl bg-paper p-4 shadow-sm max-h-[60vh] overflow-y-auto">
-					<CalendarHeader
-						weekRangeLabel={weekRangeLabel}
-						onPrevWeek={() => {
-							const prev = new Date(weekStart);
-							prev.setDate(prev.getDate() - 7);
-							setWeekStart(prev);
-						}}
-						onNextWeek={() => {
-							const next = new Date(weekStart);
-							next.setDate(next.getDate() + 7);
-							setWeekStart(next);
-						}}
-					/>
-					<CalendarLegend
-						items={[
-							{ label: "Aprobada", colorClass: "bg-brand-700" },
-							{ label: "Pendiente", colorClass: "bg-accent" },
-							{ label: "Cita", colorClass: "bg-sky-500" },
-							{ label: "Pago pendiente", colorClass: "bg-amber-400" },
-							{ label: "Atendida", colorClass: "bg-emerald-500" },
-							{ label: "Cancelada", colorClass: "bg-brand-900" },
-							{ label: "Rechazada", colorClass: "bg-red-500" },
-							...(selectedCells.length > 0
-								? [{ label: "Seleccionada (clic para quitar)", colorClass: "bg-brand-200" }]
-								: []),
-						]}
-					/>
-					<CalendarGrid
-						dayLabels={dayLabels}
-						dayKeys={dayKeys}
-						timeOptions={timeOptions}
-						bloquesMap={bloquesMap}
-						isEspecialista={isEspecialista}
-						minFecha={minFecha}
-						busyCell={busyCell}
-						cancelingId={cancelingId}
-						selectedCells={selectedCells}
-						estadoColor={estadoColor}
-						estadoLabel={estadoLabel}
-						formatHora={formatHora}
-						formatFecha={formatFecha}
-						onCellClick={handleCellClick}
-					/>
-				</div>
-			</section>
+			<div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-10">
+				<section className="min-w-0 space-y-4 xl:col-span-7">
+					<div className="rounded-3xl border border-mist/80 bg-paper p-6 shadow-sm">
+						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+							<div className="flex flex-wrap items-center gap-3">
+								<h2 className="font-headline text-lg font-bold capitalize text-brand-900 sm:text-xl">
+									{weekRangeLabel}
+								</h2>
+								<div className="flex rounded-lg bg-cloud p-1">
+									<button
+										type="button"
+										className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+										onClick={() => {
+											const prev = new Date(weekStart);
+											prev.setDate(prev.getDate() - 7);
+											setWeekStart(prev);
+										}}
+										aria-label="Semana anterior"
+									>
+										<ChevronLeft className="h-5 w-5 text-slate-600" />
+									</button>
+									<button
+										type="button"
+										className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+										onClick={() => {
+											const next = new Date(weekStart);
+											next.setDate(next.getDate() + 7);
+											setWeekStart(next);
+										}}
+										aria-label="Semana siguiente"
+									>
+										<ChevronRight className="h-5 w-5 text-slate-600" />
+									</button>
+								</div>
+							</div>
+							<div className="flex rounded-xl bg-cloud p-1 text-sm font-semibold">
+								<button
+									type="button"
+									disabled
+									className="rounded-lg px-4 py-1.5 text-slate-400"
+								>
+									Día
+								</button>
+								<button
+									type="button"
+									className="rounded-lg bg-paper px-4 py-1.5 text-brand-800 shadow-sm"
+								>
+									Semana
+								</button>
+								<button
+									type="button"
+									disabled
+									className="rounded-lg px-4 py-1.5 text-slate-400"
+								>
+									Mes
+								</button>
+							</div>
+						</div>
 
-			<aside className="space-y-4 min-w-0">
-				{isEspecialista ? (
-					<DisponibilidadForm
-						fecha={fecha}
-						horaInicio={horaInicio}
-						idEcos={idEcos}
-						minFecha={minFecha}
-						timeOptions={timeOptions}
-						selectedCellsCount={selectedCells.length}
-						onClearSelection={() => setSelectedCells([])}
-						onSubmitMacro={handleSubmitMacro}
-						onPreviewSlotsChange={onPreviewSlotsChange}
-						error={
-							error ??
-							(bloquesError as Error | undefined)?.message ??
-							(citasError as Error | undefined)?.message ??
-							null
-						}
-						submitStatus={submitStatus}
-						onFechaChange={setFecha}
-						onHoraInicioChange={setHoraInicio}
-						onIdEcosChange={setIdEcos}
-						onSubmit={handleSubmitDisponibilidad}
-						onCancel={
-							fecha || horaInicio || idEcos.length || selectedCells.length > 0
-								? () => {
-									setFecha("");
-									setHoraInicio("");
-									setIdEcos([]);
-									setSelectedCells([]);
-									setPreviewSlots([]);
-								}
-								: undefined
-						}
-					/>
-				) : (
-					<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">
-						Este calendario es interactivo solo para especialistas.
+						<CalendarGrid
+							dayLabels={dayLabels}
+							dayKeys={dayKeys}
+							timeOptions={timeOptions}
+							bloquesMap={bloquesMap}
+							isEspecialista={isEspecialista}
+							minFecha={minFecha}
+							cancelingId={cancelingId}
+							highlightSlotKeys={highlightSlotKeys}
+							formatHora={formatHora}
+							onCitaClick={handleCitaPopoverOpen}
+							onBloqueDisponibilidadClick={(bloque) => {
+								void handleBloqueDisponibilidadClick(bloque);
+							}}
+							onRangeSelect={onRangeSelectFromGrid}
+						/>
 					</div>
-				)}
 
-				<BloquesList
-					bloques={pagedBloques}
-					loading={loadingBloques}
-					filter={filter}
-					filterOptions={
-						[
-							{ id: "todas", label: "Todas" },
-							{ id: "pendientes", label: "Pendientes" },
-							{ id: "citas", label: "Citas" },
-							{ id: "aprobadas", label: "Aprobadas" },
-							{ id: "rechazadas", label: "Rechazadas" },
-							{ id: "canceladas", label: "Canceladas" },
-						] as FilterOption[]
-					}
-					currentPage={currentPage}
-					totalPages={totalPages}
-					onFilterChange={setFilter}
-					onPageChange={setPage}
-					formatFecha={formatFecha}
-					formatHora={formatHora}
-					estadoLabel={estadoLabel}
-					estadoColor={estadoColor}
-				/>
-			</aside>
+					<div className="rounded-2xl border border-mist/60 bg-paper p-4">
+						<BloquesList
+							bloques={pagedBloques}
+							loading={loadingBloques}
+							filter={filter}
+							filterOptions={
+								[
+									{ id: "todas", label: "Todas" },
+									{ id: "pendientes", label: "Pendientes" },
+									{ id: "citas", label: "Citas" },
+									{ id: "aprobadas", label: "Aprobadas" },
+									{ id: "rechazadas", label: "Rechazadas" },
+									{ id: "canceladas", label: "Canceladas" },
+								] as FilterOption[]
+							}
+							currentPage={currentPage}
+							totalPages={totalPages}
+							onFilterChange={setFilter}
+							onPageChange={setPage}
+							formatFecha={formatFecha}
+							formatHora={formatHora}
+							estadoLabel={estadoLabel}
+							estadoColor={estadoColor}
+						/>
+					</div>
+				</section>
+
+				<aside className="min-w-0 space-y-6 xl:col-span-3">
+					{citaPopover ? (
+						<div
+							className="fixed z-[200] w-[min(92vw,280px)] rounded-2xl border border-mist bg-paper p-4 shadow-2xl"
+							style={{
+								left: Math.min(
+									typeof window !== "undefined" ? window.innerWidth - 300 : 0,
+									citaPopover.x + 8,
+								),
+								top: citaPopover.y + 8,
+							}}
+							onClick={(e) => e.stopPropagation()}
+							role="dialog"
+							aria-label="Detalle de cita"
+						>
+							<p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+								Cita
+							</p>
+							<p className="mt-1 font-headline text-base font-bold text-brand-900">
+								{popoverPaciente}
+							</p>
+							<p className="mt-2 text-sm text-slate-600">
+								<span className="font-semibold text-slate-700">Hora: </span>
+								{formatHora(citaPopover.bloque.hora_inicio)}
+							</p>
+							<p className="mt-1 text-sm text-slate-600">
+								<span className="font-semibold text-slate-700">Tipo de eco: </span>
+								{citaPopover.bloque.eco_nombre ?? "—"}
+							</p>
+							{citaPopover.bloque.estado_pago === 1 &&
+								citaPopover.bloque.estado_cita !== 3 &&
+								getDateKey(citaPopover.bloque.fecha) <=
+									new Date().toISOString().slice(0, 10) && (
+									<button
+										type="button"
+										className="mt-4 w-full rounded-xl bg-brand-800 py-2.5 text-sm font-semibold text-paper"
+										onClick={() => void handleMarcarAtendidaFromPopover()}
+									>
+										Marcar como atendida
+									</button>
+								)}
+						</div>
+					) : null}
+
+					{isEspecialista ? (
+						<DisponibilidadForm
+							fecha={fecha}
+							horaInicio={horaInicio}
+							idEcos={idEcos}
+							minFecha={minFecha}
+							timeOptions={timeOptions}
+							fechaDesde={fechaDesde}
+							fechaHasta={fechaHasta}
+							horaInicioRango={horaInicioRango}
+							horaFinRango={horaFinRango}
+							onFechaDesdeChange={setFechaDesde}
+							onFechaHastaChange={setFechaHasta}
+							onHoraInicioRangoChange={setHoraInicioRango}
+							onHoraFinRangoChange={setHoraFinRango}
+							onClearSelection={clearRango}
+							onSubmitMacro={handleSubmitMacro}
+							error={
+								error ??
+								(bloquesError as Error | undefined)?.message ??
+								(citasError as Error | undefined)?.message ??
+								null
+							}
+							submitStatus={submitStatus}
+							onFechaChange={setFecha}
+							onHoraInicioChange={setHoraInicio}
+							onIdEcosChange={setIdEcos}
+							onSubmit={handleSubmitDisponibilidad}
+							onCancel={
+								fecha ||
+								horaInicio ||
+								idEcos.length ||
+								fechaDesde ||
+								fechaHasta ||
+								horaInicioRango ||
+								horaFinRango
+									? () => {
+											setFecha("");
+											setHoraInicio("");
+											setIdEcos([]);
+											clearRango();
+										}
+									: undefined
+							}
+						/>
+					) : (
+						<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">
+							Este calendario es interactivo solo para especialistas.
+						</div>
+					)}
+				</aside>
+			</div>
 		</div>
 	);
 };
