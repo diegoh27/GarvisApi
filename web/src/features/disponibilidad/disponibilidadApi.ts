@@ -165,6 +165,38 @@ const disponibilidadApi = baseApi.injectEndpoints({
 				normalizeGestionAdmin(response?.data),
 			providesTags: ["Disponibilidad"],
 		}),
+		/** Solicitudes macro del especialista (p. ej. estado 0 = pendiente de moderador). */
+		getMisSolicitudes: builder.query<
+			DisponibilidadSolicitudMacro[],
+			{ estado?: number } | void
+		>({
+			query: (arg) => ({
+				url: "/disponibilidad/mis-solicitudes",
+				params:
+					arg && typeof arg === "object" && arg.estado !== undefined
+						? { estado: arg.estado }
+						: undefined,
+			}),
+			transformResponse: (response: {
+				ok: boolean;
+				data: DisponibilidadSolicitudMacro[];
+			}) =>
+				(response.data ?? []).map((s) => ({
+					...s,
+					estado: Number(s.estado),
+				})) as DisponibilidadSolicitudMacro[],
+			providesTags: ["Disponibilidad"],
+		}),
+		cancelarSolicitudMacro: builder.mutation<void, string>({
+			query: (id) => {
+				const clean = String(id ?? "").trim();
+				return {
+					url: `/disponibilidad/solicitud/${encodeURIComponent(clean)}/cancelar`,
+					method: "PATCH",
+				};
+			},
+			invalidatesTags: ["Disponibilidad"],
+		}),
 		crearSolicitudMacro: builder.mutation<
 			{ id_solicitud: string },
 			{
@@ -325,6 +357,8 @@ const {
 	useGetDisponibilidadPorFechaQuery,
 	useGetDisponibilidadPendientesQuery,
 	useGetDisponibilidadAdminQuery,
+	useGetMisSolicitudesQuery,
+	useCancelarSolicitudMacroMutation,
 	useCrearSolicitudMacroMutation,
 	useCrearSolicitudMacroManualMutation,
 	useAprobarSolicitudMacroMutation,
@@ -346,6 +380,8 @@ export {
 	useGetDisponibilidadPorFechaQuery,
 	useGetDisponibilidadPendientesQuery,
 	useGetDisponibilidadAdminQuery,
+	useGetMisSolicitudesQuery,
+	useCancelarSolicitudMacroMutation,
 	useCrearSolicitudMacroMutation,
 	useCrearSolicitudMacroManualMutation,
 	useAprobarSolicitudMacroMutation,

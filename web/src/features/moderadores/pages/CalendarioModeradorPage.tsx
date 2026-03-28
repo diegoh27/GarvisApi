@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { PageShell } from "../../../shared";
 import { MonthCalendar } from "../../calendario";
+import { formatHora } from "../../disponibilidad/utils/dateUtils";
 import { useGetDisponibilidadesByFechaQuery } from "../moderadoresApi";
 import { useGetCitasByFechaQuery } from "../moderadoresApi";
 import DiaItemsList from "../components/DiaItemsList";
@@ -47,9 +48,11 @@ const CalendarioModeradorPage = () => {
 					<MonthCalendar
 						currentMonth={currentMonth}
 						selectedDate={selectedDate}
-						disponibilidades={disponibilidadesParaCalendario}
+						bloques={disponibilidadesParaCalendario}
 						onDateClick={handleDateClick}
 						onMonthChange={handleMonthChange}
+						formatHora={formatHora}
+						showMonthNavigation
 					/>
 				</div>
 

@@ -18,6 +18,7 @@ const {
 	cancelDisponibilidadHandler,
 	cancelDisponibilidadAdminHandler,
 	cancelDisponibilidadBatchHandler,
+	cancelDisponibilidadBatchEspecialistaHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,
@@ -87,6 +88,12 @@ disponibilidadRoutes.get(
 	authenticateToken,
 	authorizeRoles("especialista"),
 	listMisDisponibilidadHandler,
+);
+disponibilidadRoutes.post(
+	"/cancelar-mi-lote",
+	authenticateToken,
+	authorizeRoles("especialista"),
+	cancelDisponibilidadBatchEspecialistaHandler,
 );
 disponibilidadRoutes.patch(
 	"/:id/cancelar",

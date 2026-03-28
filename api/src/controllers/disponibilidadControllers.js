@@ -135,6 +135,54 @@ const hasOverlapOtherSpecialistOccupied = async (
 	return rows.length > 0;
 };
 
+/**
+ * Quita bloques cancelados (3) del mismo especialista/fecha/eco que solapan el tramo,
+ * para no convivir con un bloque recién aprobado (históricos de cancel–re-solicitud).
+ */
+const deleteCancelledOverlappingSlot = async (
+	conn,
+	{
+		id_especialista,
+		fecha,
+		hora_inicio,
+		hora_fin,
+		id_eco,
+		excludeIdDisponibilidad,
+	},
+) => {
+	const fechaNorm = normalizeFechaForDb(fecha);
+	const esp = String(id_especialista ?? "").trim();
+	if (!excludeIdDisponibilidad) {
+		await conn.execute(
+			`DELETE FROM disponibilidad
+       WHERE TRIM(id_especialista) = ?
+         AND estado = 3
+         AND fecha = ?
+         AND (id_eco <=> ?)
+         AND NOT (hora_fin <= ? OR hora_inicio >= ?)`,
+			[esp, fechaNorm, id_eco ?? null, hora_inicio, hora_fin],
+		);
+		return;
+	}
+	await conn.execute(
+		`DELETE FROM disponibilidad
+     WHERE TRIM(id_especialista) = ?
+       AND estado = 3
+       AND fecha = ?
+       AND (id_eco <=> ?)
+       AND TRIM(id_disponibilidad) <> TRIM(?)
+       AND NOT (hora_fin <= ? OR hora_inicio >= ?)`,
+		[
+			esp,
+			fechaNorm,
+			id_eco ?? null,
+			String(excludeIdDisponibilidad).trim(),
+			hora_inicio,
+			hora_fin,
+		],
+	);
+};
+
 const createDisponibilidadController = async ({
 	id_especialista,
 	fecha,
@@ -368,7 +416,7 @@ const createDisponibilidadBatchController = async ({
 const listMisDisponibilidadController = async ({ id_especialista, estado }) => {
 	let sql = `
     SELECT
-      d.id_disponibilidad,
+      TRIM(d.id_disponibilidad) AS id_disponibilidad,
       d.fecha,
       d.hora_inicio,
       d.hora_fin,
@@ -379,9 +427,9 @@ const listMisDisponibilidadController = async ({ id_especialista, estado }) => {
       e.nombre AS eco_nombre
     FROM disponibilidad d
     LEFT JOIN eco e ON e.id_eco = d.id_eco
-    WHERE d.id_especialista = ?
+    WHERE TRIM(d.id_especialista) = TRIM(?)
   `;
-	const params = [id_especialista];
+	const params = [String(id_especialista ?? "").trim()];
 	if (estado !== undefined) {
 		sql += " AND d.estado = ?";
 		params.push(estado);
@@ -486,13 +534,8 @@ const createSolicitudMacroController = async ({
 			}
 		}
 
-		/* Reemplazo de solicitudes macro pendientes solapadas: el especialista no gestiona varias
-		   pendientes a la vez en la UI; si envía un nuevo rango que choca con una pendiente (0),
-		   cancelamos la anterior (3) y guardamos la nueva. Rechazadas (2), procesadas (1) y
-		   canceladas (3) no participan en el UPDATE. */
-		await conn.execute(
-			`UPDATE disponibilidad_solicitud
-       SET estado = 3
+		const [pendSolapa] = await conn.execute(
+			`SELECT id_solicitud FROM disponibilidad_solicitud
        WHERE id_especialista = ?
          AND estado = 0
          AND NOT (fecha_hasta < ? OR fecha_desde > ?)
@@ -500,6 +543,13 @@ const createSolicitudMacroController = async ({
          AND hora_fin > ?`,
 			[id_especialista, fd, fh, hora_fin, hora_inicio],
 		);
+		if (pendSolapa.length > 0) {
+			const err = new Error(
+				"Ya tienes una solicitud de disponibilidad pendiente que se solapa con este rango de fechas y horario. Cancela esa solicitud desde el calendario o espera la respuesta del moderador antes de enviar otra.",
+			);
+			err.code = "OVERLAP_SOLICITUD";
+			throw err;
+		}
 
 		const id_eco_single = id_ecos_list.length === 1 ? id_ecos_list[0] : null;
 		const id_ecos_json_val =
@@ -634,6 +684,14 @@ const approveSolicitudMacroController = async ({ id_solicitud, aprobado_por }) =
 		for (const idEco of ecosIds) {
 			for (const fecha of dias) {
 				for (const slot of slots) {
+					await deleteCancelledOverlappingSlot(conn, {
+						id_especialista: idEsp,
+						fecha,
+						hora_inicio: slot.hora_inicio,
+						hora_fin: slot.hora_fin,
+						id_eco: idEco,
+						excludeIdDisponibilidad: null,
+					});
 					const ocupado = await hasSlotEcoOccupied(conn, {
 						fecha,
 						hora_inicio: slot.hora_inicio,
@@ -885,6 +943,14 @@ const approveDisponibilidadController = async ({
 			"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
 			[aprobadoPorFinal, id_disponibilidad],
 		);
+		await deleteCancelledOverlappingSlot(conn, {
+			id_especialista: bloque.id_especialista,
+			fecha: fechaNorm,
+			hora_inicio: bloque.hora_inicio,
+			hora_fin: bloque.hora_fin,
+			id_eco: bloque.id_eco ?? null,
+			excludeIdDisponibilidad: id_disponibilidad,
+		});
 
 		await conn.commit();
 		return { id_disponibilidad, estado: 1 };
@@ -996,6 +1062,14 @@ const approveDisponibilidadBatchController = async ({ ids, aprobado_por }) => {
 				"UPDATE disponibilidad SET estado = 1, aprobado_por = ? WHERE id_disponibilidad = ?",
 				[aprobadoPorFinal, id_disponibilidad],
 			);
+			await deleteCancelledOverlappingSlot(conn, {
+				id_especialista: bloque.id_especialista,
+				fecha: fechaNorm,
+				hora_inicio: bloque.hora_inicio,
+				hora_fin: bloque.hora_fin,
+				id_eco: bloque.id_eco ?? null,
+				excludeIdDisponibilidad: id_disponibilidad,
+			});
 			aprobados.push(id_disponibilidad);
 		}
 		await conn.commit();
@@ -1030,34 +1104,56 @@ const cancelDisponibilidadController = async ({
 	id_disponibilidad,
 	id_especialista,
 }) => {
+	const idDisp =
+		typeof id_disponibilidad === "string" ? id_disponibilidad.trim() : "";
+	const idEsp = String(id_especialista ?? "").trim();
+	if (!idDisp || !idEsp) return { updated: 0, code: "NOT_FOUND" };
+
 	const conn = await pool.getConnection();
 	try {
+		/* CHAR(36) puede traer espacios de relleno: comparar con TRIM y actualizar por PK devuelta. */
 		const [rows] = await conn.execute(
-			`SELECT estado FROM disponibilidad
-       WHERE id_disponibilidad = ? AND id_especialista = ?
+			`SELECT id_disponibilidad, estado FROM disponibilidad
+       WHERE TRIM(id_disponibilidad) = TRIM(?)
+         AND TRIM(id_especialista) = TRIM(?)
        LIMIT 1`,
-			[id_disponibilidad, id_especialista],
+			[idDisp, idEsp],
 		);
-		if (!rows.length) return { updated: 0 };
+		if (!rows.length) return { updated: 0, code: "NOT_FOUND" };
 
-		if (rows[0].estado === 4) {
+		const pk = rows[0].id_disponibilidad;
+		const est = Number(rows[0].estado);
+
+		if (est === 4) {
 			const err = new Error("Bloque reservado no se puede cancelar");
 			err.code = "RESERVED";
 			throw err;
 		}
+		if (est === 3) {
+			return { updated: 0, code: "ALREADY_CANCELLED", id_disponibilidad: pk };
+		}
+		if (est === 2) {
+			return { updated: 0, code: "REJECTED", id_disponibilidad: pk };
+		}
+		if (est !== 0 && est !== 1) {
+			return { updated: 0, code: "INVALID_STATE", id_disponibilidad: pk, estado: est };
+		}
 
-		const sql = `
-      UPDATE disponibilidad
-      SET estado = 3
-      WHERE id_disponibilidad = ?
-        AND id_especialista = ?
-        AND estado IN (0, 1)
-    `;
-		const [result] = await conn.execute(sql, [
-			id_disponibilidad,
-			id_especialista,
-		]);
-		return { updated: result.affectedRows, id_disponibilidad, estado: 3 };
+		/* Misma lógica que el SELECT: no depender del valor de PK tal cual devuelve el driver. */
+		const [result] = await conn.execute(
+			`UPDATE disponibilidad
+       SET estado = 3
+       WHERE TRIM(id_disponibilidad) = TRIM(?)
+         AND TRIM(id_especialista) = TRIM(?)
+         AND estado IN (0, 1)`,
+			[idDisp, idEsp],
+		);
+		return {
+			updated: result.affectedRows,
+			id_disponibilidad: idDisp,
+			estado: 3,
+			code: result.affectedRows ? "OK" : "UPDATE_FAILED",
+		};
 	} finally {
 		conn.release();
 	}
@@ -1130,6 +1226,98 @@ const cancelDisponibilidadBatchController = async ({ ids }) => {
 				[id_disponibilidad],
 			);
 			cancelados.push(id_disponibilidad);
+		}
+
+		await conn.commit();
+		return {
+			cancelados: cancelados.length,
+			ids: cancelados,
+			reservados,
+			omitidos,
+			no_encontrados,
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
+/**
+ * Especialista: cancela varios bloques propios en una transacción (misma semántica que cancelDisponibilidadController).
+ */
+const cancelDisponibilidadBatchEspecialistaController = async ({
+	ids,
+	id_especialista,
+}) => {
+	if (!Array.isArray(ids) || ids.length === 0) {
+		const err = new Error("ids debe ser un array con al menos un id");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+	const idEsp = String(id_especialista ?? "").trim();
+	if (!idEsp) {
+		const err = new Error("Especialista inválido");
+		err.code = "INVALID_INPUT";
+		throw err;
+	}
+
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+		const cancelados = [];
+		const reservados = [];
+		const omitidos = [];
+		const no_encontrados = [];
+
+		for (const rawId of ids) {
+			const idDisp = String(rawId ?? "").trim();
+			if (!idDisp) continue;
+
+			const [rows] = await conn.execute(
+				`SELECT id_disponibilidad, estado FROM disponibilidad
+         WHERE TRIM(id_disponibilidad) = TRIM(?)
+           AND TRIM(id_especialista) = TRIM(?)
+         LIMIT 1`,
+				[idDisp, idEsp],
+			);
+			if (!rows.length) {
+				no_encontrados.push(idDisp);
+				continue;
+			}
+
+			const pk = rows[0].id_disponibilidad;
+			const est = Number(rows[0].estado);
+
+			if (est === 4) {
+				reservados.push(pk);
+				continue;
+			}
+			if (est === 3) {
+				omitidos.push(pk);
+				continue;
+			}
+			if (est === 2) {
+				omitidos.push(pk);
+				continue;
+			}
+			if (est !== 0 && est !== 1) {
+				omitidos.push(pk);
+				continue;
+			}
+
+			const [result] = await conn.execute(
+				`UPDATE disponibilidad
+         SET estado = 3
+         WHERE TRIM(id_disponibilidad) = TRIM(?)
+           AND TRIM(id_especialista) = TRIM(?)
+           AND estado IN (0, 1)`,
+				[idDisp, idEsp],
+			);
+			if (result.affectedRows) {
+				cancelados.push(pk);
+			}
 		}
 
 		await conn.commit();
@@ -1540,6 +1728,7 @@ module.exports = {
 	cancelDisponibilidadController,
 	cancelDisponibilidadAdminController,
 	cancelDisponibilidadBatchController,
+	cancelDisponibilidadBatchEspecialistaController,
 	listPublicaController,
 	listPublicaPorEcoController,
 	closeDisponibilidadDiaController,

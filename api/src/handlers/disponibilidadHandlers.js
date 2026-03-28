@@ -17,6 +17,7 @@ const {
 	cancelDisponibilidadController,
 	cancelDisponibilidadAdminController,
 	cancelDisponibilidadBatchController,
+	cancelDisponibilidadBatchEspecialistaController,
 	listPublicaController,
 	listPublicaPorEcoController,
 	listPublicaPorFechaController,
@@ -459,23 +460,66 @@ const rejectDisponibilidadHandler = async (req, res) => {
 
 const cancelDisponibilidadHandler = async (req, res) => {
 	try {
-		const { id } = req.params;
-		const result = await cancelDisponibilidadController({
-			id_disponibilidad: id,
-			id_especialista: req.user.id,
-		});
-		if (!result.updated) {
-			return res.status(404).json({
+		const id = typeof req.params.id === "string" ? req.params.id.trim() : "";
+		if (!id) {
+			return res.status(400).json({
 				ok: false,
-				message: "Disponibilidad no encontrada o ya cancelada",
+				message: "id de disponibilidad inválido",
 			});
 		}
-		return res.status(200).json({
-			ok: true,
-			message: "Bloque cancelado",
-			data: result,
+		const result = await cancelDisponibilidadController({
+			id_disponibilidad: id,
+			id_especialista: String(req.user.id ?? "").trim(),
+		});
+		if (result.updated) {
+			return res.status(200).json({
+				ok: true,
+				message: "Bloque cancelado",
+				data: result,
+			});
+		}
+		if (result.code === "ALREADY_CANCELLED") {
+			return res.status(409).json({
+				ok: false,
+				message: "Este bloque ya está cancelado",
+			});
+		}
+		if (result.code === "REJECTED") {
+			return res.status(409).json({
+				ok: false,
+				message: "No se puede cancelar un bloque rechazado",
+			});
+		}
+		if (result.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: "Disponibilidad no encontrada",
+			});
+		}
+		if (result.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: "Este bloque no se puede cancelar en su estado actual",
+			});
+		}
+		if (result.code === "UPDATE_FAILED") {
+			return res.status(409).json({
+				ok: false,
+				message:
+					"No se pudo actualizar el bloque. Actualiza la página e inténtalo de nuevo.",
+			});
+		}
+		return res.status(409).json({
+			ok: false,
+			message: "No se pudo cancelar el bloque",
 		});
 	} catch (err) {
+		if (err?.code === "RESERVED") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
 		console.error(err);
 		return res.status(500).json({
 			ok: false,
@@ -520,6 +564,41 @@ const cancelDisponibilidadBatchHandler = async (req, res) => {
 	try {
 		const { ids } = req.body;
 		const result = await cancelDisponibilidadBatchController({ ids });
+		return res.status(200).json({
+			ok: true,
+			message: "Cancelación en lote completada",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "INVALID_INPUT") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+const cancelDisponibilidadBatchEspecialistaHandler = async (req, res) => {
+	try {
+		const { ids } = req.body;
+		const result = await cancelDisponibilidadBatchEspecialistaController({
+			ids,
+			id_especialista: String(req.user?.id ?? "").trim(),
+		});
+		if (!result.cancelados) {
+			return res.status(409).json({
+				ok: false,
+				message:
+					"No se pudo cancelar ningún bloque. Actualiza la página e inténtalo de nuevo.",
+				data: result,
+			});
+		}
 		return res.status(200).json({
 			ok: true,
 			message: "Cancelación en lote completada",
@@ -915,6 +994,7 @@ module.exports = {
 	cancelDisponibilidadHandler,
 	cancelDisponibilidadAdminHandler,
 	cancelDisponibilidadBatchHandler,
+	cancelDisponibilidadBatchEspecialistaHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,

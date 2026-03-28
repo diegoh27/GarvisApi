@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Disponibilidad, TimeOption } from "../types";
+import type { DisponibilidadSegmentContext } from "./DisponibilidadBloqueModal";
 import { parseTimeToMinutes } from "../utils/slotUtils";
-import { Check, Clock, Lightbulb, MoreHorizontal, AlertCircle } from "lucide-react";
+import { buildMergedSegments, cellKey } from "../utils/calendarSegmentUtils";
+import { estadoDisponibilidadNum } from "../utils/disponibilidadEstado";
+import { Ban, Check, Clock, Lightbulb, AlertCircle } from "lucide-react";
 
 const SLOT_PX = 22;
 
@@ -19,7 +22,8 @@ type CalendarGridProps = {
 		bloque: Disponibilidad,
 		anchor: { x: number; y: number },
 	) => void;
-	onBloqueDisponibilidadClick: (bloque: Disponibilidad) => void;
+	/** Clic en bloque sin cita: pendiente, aprobada, cancelada o solicitud macro. */
+	onDisponibilidadSegmentClick: (ctx: DisponibilidadSegmentContext) => void;
 	onRangeSelect: (payload: {
 		fechaDesde: string;
 		fechaHasta: string;
@@ -28,65 +32,16 @@ type CalendarGridProps = {
 	}) => void;
 };
 
-const cellKey = (dateKey: string, hourValue: string) => `${dateKey}|${hourValue}`;
-
-function canMergeBlocks(a: Disponibilidad, b: Disponibilidad): boolean {
-	if (a.id_disponibilidad === b.id_disponibilidad) return true;
-	if (a.estado !== b.estado) return false;
-	if (a.estado === 4 || b.estado === 4) return false;
-	if ((a.eco_nombre ?? "") !== (b.eco_nombre ?? "")) return false;
-	return true;
-}
-
-type MergedSegment = {
-	startSlot: number;
-	endSlot: number;
-	bloque: Disponibilidad;
-};
-
-function buildMergedSegments(
-	dayKey: string,
-	timeOptions: TimeOption[],
-	bloquesMap: Map<string, Disponibilidad>,
-): MergedSegment[] {
-	const segments: MergedSegment[] = [];
-	let i = 0;
-	while (i < timeOptions.length) {
-		const hv = timeOptions[i].value;
-		const key = cellKey(dayKey, hv);
-		const b = bloquesMap.get(key);
-		if (!b) {
-			i += 1;
-			continue;
-		}
-		let j = i;
-		while (j + 1 < timeOptions.length) {
-			const hvNext = timeOptions[j + 1].value;
-			const keyNext = cellKey(dayKey, hvNext);
-			const bNext = bloquesMap.get(keyNext);
-			if (!bNext) break;
-			const endMin = parseTimeToMinutes(hv) + 20 * (j - i + 1);
-			const startNext = parseTimeToMinutes(hvNext);
-			if (endMin !== startNext) break;
-			if (!canMergeBlocks(b, bNext)) break;
-			j += 1;
-		}
-		segments.push({ startSlot: i, endSlot: j, bloque: b });
-		i = j + 1;
-	}
-	return segments;
-}
-
 function blockSubtitle(b: Disponibilidad): string {
-	if (b.estado === 4) {
+	if (estadoDisponibilidadNum(b.estado) === 4) {
 		if (b.estado_cita === 3) return "Atendida";
 		if (b.estado_pago === 0) return "Pago pendiente";
 		if (b.estado_pago === 2) return "Pago rechazado";
 		return "Confirmada";
 	}
 	if (b.estado === -2) return "Borrador";
-	if (b.estado === 0) return "Sin confirmar";
-	if (b.estado === 1) return "Aprobado";
+	if (b.estado === 0) return "En espera de aprobación";
+	if (b.estado === 1) return "Aprobada";
 	return "";
 }
 
@@ -101,7 +56,7 @@ const CalendarGrid = ({
 	highlightSlotKeys,
 	formatHora,
 	onCitaClick,
-	onBloqueDisponibilidadClick,
+	onDisponibilidadSegmentClick,
 	onRangeSelect,
 }: CalendarGridProps) => {
 	const [dragging, setDragging] = useState(false);
@@ -260,8 +215,9 @@ const CalendarGrid = ({
 	const renderBlockCard = (b: Disponibilidad, horaStart: string, horaEnd: string) => {
 		const rangeText = `${formatHora(horaStart)} – ${formatHora(horaEnd)}`;
 		const sub = blockSubtitle(b);
-		const isCita = b.estado === 4;
-		const isPreview = b.estado === -2;
+		const est = estadoDisponibilidadNum(b.estado);
+		const isCita = est === 4;
+		const isPreview = est === -2;
 		const isPagoPendiente = isCita && b.estado_pago === 0;
 		const isAtendida = isCita && b.estado_cita === 3;
 
@@ -278,20 +234,20 @@ const CalendarGrid = ({
 			);
 		}
 
-		if (b.estado === 0) {
+		if (est === 0) {
 			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-dashed border-slate-300 bg-white p-3 text-left leading-snug shadow-sm">
+				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-dashed border-amber-300 bg-amber-50/80 p-3 text-left leading-snug shadow-sm">
 					<div className="flex items-start justify-between gap-2">
 						<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
-						<Lightbulb className="h-4 w-4 shrink-0 text-teal-600/70" />
+						<Lightbulb className="h-4 w-4 shrink-0 text-amber-600" />
 					</div>
-					<p className="mt-2 text-sm font-medium text-slate-700">Propuesta</p>
-					<p className="mt-0.5 text-sm text-slate-500">Sin confirmar</p>
+					<p className="mt-2 text-sm font-medium text-slate-800">{b.eco_nombre ?? "Eco"}</p>
+					<p className="mt-0.5 text-sm font-medium text-amber-800">En espera de aprobación</p>
 				</div>
 			);
 		}
 
-		if (b.estado === 1) {
+		if (est === 1) {
 			return (
 				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-teal-700 p-3 text-left shadow-sm leading-snug">
 					<div className="flex items-start justify-between gap-2">
@@ -301,7 +257,7 @@ const CalendarGrid = ({
 					<p className="mt-2 text-sm font-medium leading-snug text-slate-600">
 						{b.eco_nombre ?? "Eco"}
 					</p>
-					<p className="mt-1 text-sm font-medium leading-snug text-teal-600">Aprobado</p>
+					<p className="mt-1 text-sm font-medium leading-snug text-teal-600">Aprobada</p>
 				</div>
 			);
 		}
@@ -342,7 +298,7 @@ const CalendarGrid = ({
 			);
 		}
 
-		if (b.estado === 2) {
+		if (est === 2) {
 			return (
 				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-slate-200 bg-red-50 border-l-[6px] border-l-red-500 p-3 text-left shadow-sm leading-snug">
 					<div className="flex items-start justify-between gap-1">
@@ -354,14 +310,17 @@ const CalendarGrid = ({
 			);
 		}
 
-		if (b.estado === 3) {
+		if (est === 3) {
 			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-slate-200 bg-slate-100 p-3 text-left shadow-sm leading-snug">
+				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-rose-200 bg-rose-50 p-3 text-left shadow-sm leading-snug border-l-[6px] border-l-rose-700">
 					<div className="flex items-start justify-between gap-1">
-						<span className="text-sm font-semibold text-slate-700">{rangeText}</span>
-						<MoreHorizontal className="h-4 w-4 shrink-0 text-slate-500" />
+						<span className="text-sm font-semibold text-rose-950">{rangeText}</span>
+						<Ban className="h-4 w-4 shrink-0 text-rose-800" strokeWidth={2} />
 					</div>
-					<p className="mt-1 text-sm font-medium text-slate-800">Cancelada</p>
+					<p className="mt-2 text-sm font-medium text-rose-950">Cancelado por especialista</p>
+					{b.eco_nombre ? (
+						<p className="mt-0.5 text-sm text-rose-900/85">{b.eco_nombre}</p>
+					) : null}
 				</div>
 			);
 		}
@@ -512,7 +471,8 @@ const CalendarGrid = ({
 											const hv1 = timeOptions[seg.endSlot].value;
 											const endMin = parseTimeToMinutes(hv1) + 20;
 											const horaEndStr = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}:00`;
-											const isCita = b.estado === 4;
+											const estSeg = estadoDisponibilidadNum(b.estado);
+											const isCita = estSeg === 4;
 											const canceling = cancelingId === b.id_disponibilidad;
 											/** Por encima de celdas (z-1) y del preview de arrastre (z-25); por debajo del popover fijo (z-200 en CalendarioPage). */
 											const stackZ = 100 + seg.startSlot;
@@ -528,12 +488,21 @@ const CalendarGrid = ({
 														className="relative z-10 h-full w-full text-left"
 														onClick={(e) => {
 															if (!isEspecialista) return;
-															if (b.estado === -2) return;
+															if (!Number.isFinite(estSeg)) return;
+															if (estSeg === -2) return;
 															if (isCita) {
 																onCitaClick(b, { x: e.clientX, y: e.clientY });
 																return;
 															}
-															onBloqueDisponibilidadClick(b);
+															if (estSeg === 2 || estSeg === 4) return;
+															onDisponibilidadSegmentClick({
+																bloque: b,
+																dayKey,
+																startSlot: seg.startSlot,
+																endSlot: seg.endSlot,
+																horaInicio: hv0,
+																horaFin: horaEndStr,
+															});
 														}}
 													>
 														{canceling ? (
