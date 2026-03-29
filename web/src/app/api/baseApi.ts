@@ -80,6 +80,7 @@ const baseApi = createApi({
 	baseQuery: baseQueryWithFormData,
 	tagTypes: [
 		"Citas",
+		"Pacientes",
 		"Disponibilidad",
 		"Informes",
 		"Resultados",

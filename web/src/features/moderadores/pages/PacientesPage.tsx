@@ -1,7 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
-import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
+import {
+	ClipboardList,
+	ChevronLeft,
+	ChevronRight,
+	Search,
+	UserPlus,
+	Users,
+} from "lucide-react";
 import { PageShell, formatFechaLocal } from "../../../shared";
 import {
 	useGetCitasAtendidasConResultadosQuery,
@@ -14,6 +20,7 @@ import VerCitaModal from "../components/VerCitaModal";
 import VerResultadosModal from "../components/VerResultadosModal";
 import HistorialCitasModal from "../components/HistorialCitasModal";
 import AsignarCitaModal from "../components/AsignarCitaModal";
+import CrearPacienteModal from "../components/CrearPacienteModal";
 
 const formatFecha = (value: string) => (value ? formatFechaLocal(value) : "");
 
@@ -145,6 +152,7 @@ const PacientesPage = () => {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [filter, setFilter] = useState("todas");
 	const [search, setSearch] = useState("");
+	const [crearPacienteOpen, setCrearPacienteOpen] = useState(false);
 	const itemsPerPage = 5;
 
 	// Obtener datos completos de la cita cuando se selecciona para ver
@@ -296,26 +304,38 @@ const PacientesPage = () => {
 	return (
 		<PageShell title="Pacientes">
 			<div className="relative space-y-8 pb-36">
-				<section className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-					<div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-						<p className="text-sm text-slate-600">
-							<span className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-500">
+				<section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-stretch sm:gap-6">
+					<div className="flex min-h-[5.5rem] min-w-[220px] flex-1 items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+						<div
+							className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-100/90"
+							aria-hidden
+						>
+							<Users className="h-7 w-7 text-[#006965]" strokeWidth={2} />
+						</div>
+						<div className="flex min-w-0 flex-1 flex-col gap-1">
+							<p className="font-sans text-[11px] font-semibold uppercase tracking-widest text-slate-500">
 								Total pacientes
-							</span>
-							<span className="ml-2 font-headline text-xl font-bold tabular-nums text-[#006965]">
+							</p>
+							<p className="font-headline text-3xl font-bold leading-none tabular-nums text-[#006965]">
 								{totalPacientesKpi.toLocaleString("es-VE")}
-							</span>
-						</p>
+							</p>
+						</div>
 					</div>
-					<div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-						<p className="text-sm text-slate-600">
-							<span className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-500">
+					<div className="flex min-h-[5.5rem] min-w-[220px] flex-1 items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+						<div
+							className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-100/90"
+							aria-hidden
+						>
+							<ClipboardList className="h-7 w-7 text-[#ae2b30]" strokeWidth={2} />
+						</div>
+						<div className="flex min-w-0 flex-1 flex-col gap-1">
+							<p className="font-sans text-[11px] font-semibold uppercase tracking-widest text-slate-500">
 								Sin resultados
-							</span>
-							<span className="ml-2 font-headline text-xl font-bold tabular-nums text-[#ae2b30]">
-								{sinResultadosKpi}
-							</span>
-						</p>
+							</p>
+							<p className="font-headline text-3xl font-bold leading-none tabular-nums text-[#ae2b30]">
+								{sinResultadosKpi.toLocaleString("es-VE")}
+							</p>
+						</div>
 					</div>
 				</section>
 
@@ -527,14 +547,24 @@ const PacientesPage = () => {
 				</section>
 			</div>
 
-			<Link
-				to="/register"
+			<button
+				type="button"
+				onClick={() => setCrearPacienteOpen(true)}
 				className="fixed bottom-8 right-8 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-[#006965] text-white shadow-2xl shadow-[#006965]/40 transition-all hover:scale-110 active:scale-95"
-				aria-label="Registrar nuevo paciente (registro público)"
-				title="Registrar nuevo paciente"
+				aria-label="Crear nuevo paciente"
+				title="Crear nuevo paciente"
 			>
 				<UserPlus className="h-8 w-8" aria-hidden />
-			</Link>
+			</button>
+
+			<CrearPacienteModal
+				isOpen={crearPacienteOpen}
+				onClose={() => setCrearPacienteOpen(false)}
+				onSuccess={async () => {
+					await refetchPacientes();
+					await refetchCitas();
+				}}
+			/>
 
 			{/* Modal para subir resultados */}
 			{selectedCita && (
