@@ -50,6 +50,20 @@ IF NOT EXISTS moderador_permisos_inventario
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 1.2) Permisos menú lateral moderador
+-- =========================
+CREATE TABLE
+IF NOT EXISTS moderador_permisos_menu
+(
+  seccion VARCHAR
+(64) NOT NULL,
+  permitido TINYINT
+(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY
+(seccion)
+) ENGINE=InnoDB;
+
+-- =========================
 -- 2) Usuario (tabla base)
 -- =========================
 CREATE TABLE

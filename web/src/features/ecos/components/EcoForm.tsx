@@ -187,7 +187,39 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				)}
 			</div>
 
-			<div className="grid gap-4 sm:grid-cols-2">
+			{isEditing ? (
+				<div className="grid gap-4 sm:grid-cols-2">
+					<div>
+						<label className="mb-1 block text-sm font-medium text-brand-700">
+							Precio ($) <span className="text-red-500">*</span> (mín. 0,01)
+						</label>
+						<input
+							type="number"
+							required
+							min={MONTO_MIN}
+							max={MONTO_MAX}
+							step="0.01"
+							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							value={form.precio}
+							onChange={(e) => updateField("precio", sanitizeMonto(e.target.value))}
+							placeholder="0.01"
+						/>
+					</div>
+					<div>
+						<label className="mb-1 block text-sm font-medium text-brand-700">
+							Duración (minutos)
+						</label>
+						<input
+							type="number"
+							min="0"
+							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							value={form.duracion_min}
+							onChange={(e) => updateField("duracion_min", e.target.value)}
+							placeholder="0"
+						/>
+					</div>
+				</div>
+			) : (
 				<div>
 					<label className="mb-1 block text-sm font-medium text-brand-700">
 						Precio ($) <span className="text-red-500">*</span> (mín. 0,01)
@@ -204,26 +236,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 						placeholder="0.01"
 					/>
 				</div>
-				<div>
-					<label className="mb-1 block text-sm font-medium text-brand-700">
-						Duración (minutos)
-					</label>
-					<input
-						type="number"
-						min="0"
-						disabled={!isEditing}
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500 disabled:bg-cloud disabled:cursor-not-allowed"
-						value={isEditing ? form.duracion_min : String(DURACION_CREAR)}
-						onChange={(e) => updateField("duracion_min", e.target.value)}
-						placeholder="0"
-					/>
-					{!isEditing && (
-						<p className="mt-1 text-xs text-brand-600">
-							Al crear un eco la duración es fija: 20 minutos.
-						</p>
-					)}
-				</div>
-			</div>
+			)}
 
 			{isEditing && (
 				<div>

@@ -368,11 +368,9 @@ const PasoCheckout = ({
 				</p>
 			</div>
 
-			{/* Grid: Summary (left) + Form (right) */}
+			{/* Grid: móvil = pago → formulario → resumen; desktop = [pago][form]; [resumen][form] */}
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-				{/* LEFT: Dynamic Payment Info + Summary */}
-				<div className="lg:col-span-5 space-y-6">
-					{/* Dynamic Payment Method Card */}
+				<div className="order-1 lg:col-span-5 lg:row-start-1 lg:col-start-1">
 					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20 flex flex-col items-center">
 						<h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">
 							{selectedMetodo ? `Datos para ${displayTipo}` : "Datos de Pago"}
@@ -455,70 +453,10 @@ const PasoCheckout = ({
 							)}
 						</div>
 					</div>
-
-					{/* Appointment Summary */}
-					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
-						<div className="flex justify-between items-center mb-6">
-							<h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-								Resumen de la Cita
-							</h3>
-							<div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
-								<ScanHeart className="h-5 w-5 text-brand-800" />
-							</div>
-						</div>
-						<p className="text-xl font-bold text-brand-900 font-headline tracking-tight mb-3">
-							{ecoNombre}
-						</p>
-						<div className="flex items-center gap-4 mb-6">
-							<div className="flex items-center gap-1.5 text-brand-600">
-								<Calendar className="h-4 w-4" />
-								<span className="text-xs font-medium">{formatFecha(fecha)}</span>
-							</div>
-							<div className="flex items-center gap-1.5 text-brand-600">
-								<Clock className="h-4 w-4" />
-								<span className="text-xs font-medium">{formatHora(hora)}</span>
-							</div>
-						</div>
-						<div className="flex items-center gap-2 mb-6">
-							<User className="h-4 w-4 text-brand-600" />
-							<span className="text-xs text-brand-600">
-								Dr./Dra. {especialistaNombre}
-							</span>
-						</div>
-
-						{/* Price breakdown */}
-						<div className="space-y-3 pt-6 border-t border-brand-200/20">
-							<div className="flex justify-between items-center">
-								<span className="text-sm text-slate-400">Precio Ecografía</span>
-								<span className="text-sm font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
-							</div>
-							{vistaBs && (
-								<div className="flex justify-between items-center">
-									<span className="text-sm text-slate-400">Tasa BCV</span>
-									<span className="text-sm font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
-								</div>
-							)}
-							<div className="mt-4 p-5 rounded-2xl bg-cloud border border-brand-200/20 flex items-center justify-between">
-								<div>
-									<span className="text-[10px] font-bold text-brand-800 uppercase tracking-widest">
-										Total a Pagar
-									</span>
-									<p className="text-xs text-slate-400">
-										{vistaBs ? "Pago en bolívares" : "Pago en dólares"}
-									</p>
-								</div>
-								<span className="text-2xl font-black text-brand-900 font-headline">
-									{vistaBs
-										? `${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`
-										: `$${montoEnviar.toFixed(2)}`}
-								</span>
-							</div>
-						</div>
-					</div>
 				</div>
 
 				{/* RIGHT: Payment Form */}
-				<div className="lg:col-span-7">
+				<div className="order-2 lg:col-span-7 lg:row-start-1 lg:row-span-2 lg:col-start-6">
 					<div className="bg-paper rounded-3xl p-8 lg:p-10 shadow-sm border border-brand-200/20">
 						<h3 className="text-xl font-bold text-brand-900 mb-8 flex items-center gap-3 font-headline">
 							<ArrowRight className="h-5 w-5 text-brand-800" />
@@ -773,6 +711,67 @@ const PasoCheckout = ({
 								</p>
 							</div>
 						</form>
+					</div>
+				</div>
+
+				{/* Resumen de la cita: último en móvil; debajo del bloque de pago en desktop */}
+				<div className="order-3 lg:col-span-5 lg:row-start-2 lg:col-start-1">
+					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
+						<div className="flex justify-between items-center mb-6">
+							<h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+								Resumen de la Cita
+							</h3>
+							<div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
+								<ScanHeart className="h-5 w-5 text-brand-800" />
+							</div>
+						</div>
+						<p className="text-xl font-bold text-brand-900 font-headline tracking-tight mb-3">
+							{ecoNombre}
+						</p>
+						<div className="flex items-center gap-4 mb-6">
+							<div className="flex items-center gap-1.5 text-brand-600">
+								<Calendar className="h-4 w-4" />
+								<span className="text-xs font-medium">{formatFecha(fecha)}</span>
+							</div>
+							<div className="flex items-center gap-1.5 text-brand-600">
+								<Clock className="h-4 w-4" />
+								<span className="text-xs font-medium">{formatHora(hora)}</span>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 mb-6">
+							<User className="h-4 w-4 text-brand-600" />
+							<span className="text-xs text-brand-600">
+								Dr./Dra. {especialistaNombre}
+							</span>
+						</div>
+
+						<div className="space-y-3 pt-6 border-t border-brand-200/20">
+							<div className="flex justify-between items-center">
+								<span className="text-sm text-slate-400">Precio Ecografía</span>
+								<span className="text-sm font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
+							</div>
+							{vistaBs && (
+								<div className="flex justify-between items-center">
+									<span className="text-sm text-slate-400">Tasa BCV</span>
+									<span className="text-sm font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
+								</div>
+							)}
+							<div className="mt-4 p-5 rounded-2xl bg-cloud border border-brand-200/20 flex items-center justify-between">
+								<div>
+									<span className="text-[10px] font-bold text-brand-800 uppercase tracking-widest">
+										Total a Pagar
+									</span>
+									<p className="text-xs text-slate-400">
+										{vistaBs ? "Pago en bolívares" : "Pago en dólares"}
+									</p>
+								</div>
+								<span className="text-2xl font-black text-brand-900 font-headline">
+									{vistaBs
+										? `${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`
+										: `$${montoEnviar.toFixed(2)}`}
+								</span>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

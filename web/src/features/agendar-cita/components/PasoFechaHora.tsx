@@ -15,6 +15,8 @@ import { useGetDisponibilidadPublicaPorEcoQuery } from "../../disponibilidad/dis
 type PasoFechaHoraProps = {
 	idEco: string;
 	ecoNombre: string;
+	/** YYYY-MM-DD elegida en paso 2 o al volver desde paso 4 */
+	fechaInicial?: string;
 	onNext: (data: {
 		fecha: string;
 		hora: string;
@@ -47,6 +49,24 @@ const isSameDay = (a: Date, b: Date): boolean =>
 	a.getFullYear() === b.getFullYear() &&
 	a.getMonth() === b.getMonth() &&
 	a.getDate() === b.getDate();
+
+/** Alinea una fecha ISO al rango de tarjetas disponibles (hoy … hoy+N). */
+const clampDateToRange = (iso: string | undefined, cards: Date[], fallback: Date): Date => {
+	if (!iso || cards.length === 0) return fallback;
+	const parts = iso.split("-").map(Number);
+	const y = parts[0];
+	const m = parts[1];
+	const d = parts[2];
+	if (y == null || m == null || d == null) return fallback;
+	const candidate = new Date(y, m - 1, d);
+	candidate.setHours(0, 0, 0, 0);
+	const tMin = cards[0].getTime();
+	const tMax = cards[cards.length - 1].getTime();
+	const t = candidate.getTime();
+	if (t < tMin) return new Date(tMin);
+	if (t > tMax) return new Date(tMax);
+	return candidate;
+};
 
 /** Parse "HH:MM:SS" or "HH:MM" to total minutes */
 const timeToMinutes = (t: string): number => {
@@ -127,7 +147,7 @@ const groupSlotsByPeriod = (slots: TimeSlot[]): SlotGroup[] => {
 
 /* ─── Component ─── */
 
-const PasoFechaHora = ({ idEco, ecoNombre, onNext, onBack }: PasoFechaHoraProps) => {
+const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoFechaHoraProps) => {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
@@ -142,9 +162,12 @@ const PasoFechaHora = ({ idEco, ecoNombre, onNext, onBack }: PasoFechaHoraProps)
 		return cards;
 	}, []);
 
-	const [selectedDate, setSelectedDate] = useState<Date>(today);
+	const [selectedDate, setSelectedDate] = useState<Date>(() =>
+		clampDateToRange(fechaInicial, dateCards, today),
+	);
 	const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const horariosSectionRef = useRef<HTMLElement>(null);
 
 	const fechaStr = toISODate(selectedDate);
 
@@ -201,7 +224,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, onNext, onBack }: PasoFechaHoraProps)
 		scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
 	};
 
-	// Auto-scroll to today on mount
+	// Centrar la tarjeta del día seleccionado en el carrusel (incl. fecha del paso 2)
 	useEffect(() => {
 		const el = scrollRef.current;
 		if (!el) return;
@@ -209,7 +232,16 @@ const PasoFechaHora = ({ idEco, ecoNombre, onNext, onBack }: PasoFechaHoraProps)
 		if (selected) {
 			selected.scrollIntoView({ inline: "center", behavior: "smooth" });
 		}
-	}, []);
+	}, [selectedDate]);
+
+	// Tras cargar turnos o cambiar día: scroll suave a la cuadrícula de horarios
+	useEffect(() => {
+		if (isLoading || isFetching) return;
+		const id = window.setTimeout(() => {
+			horariosSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+		}, 100);
+		return () => window.clearTimeout(id);
+	}, [fechaStr, idEco, isLoading, isFetching, allSlots.length]);
 
 	const PeriodIcon = ({ type }: { type: "morning" | "afternoon" | "evening" }) => {
 		if (type === "morning") return <Sun className="h-5 w-5 text-amber-500" />;
@@ -301,7 +333,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, onNext, onBack }: PasoFechaHoraProps)
 			</section>
 
 			{/* ─── TIME SLOTS: Bento Grid ─── */}
-			<section className="mb-10">
+			<section ref={horariosSectionRef} className="mb-10 scroll-mt-28">
 				<h3 className="text-lg font-bold font-headline text-brand-900 flex items-center gap-2 mb-6">
 					<span className="w-1.5 h-7 bg-brand-600 rounded-full" />
 					Seleccione el Horario

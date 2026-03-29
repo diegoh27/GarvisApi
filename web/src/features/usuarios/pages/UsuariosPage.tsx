@@ -13,9 +13,29 @@ import {
 } from "../usuariosApi";
 import { useGetEcosQuery, useGetEcosByEspecialistaQuery } from "../../ecos/ecosApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
-import { Edit, X, Check, ChevronDown } from "lucide-react";
+import { Edit, X, Check, ChevronDown, Search } from "lucide-react";
 
 const formatFecha = (value: string | null) => (value ? formatFechaLocal(value) : "N/A");
+
+const ROLE_TABS = [
+	{ label: "Administradores", value: "admin" },
+	{ label: "Especialistas", value: "especialista" },
+	{ label: "Moderadores", value: "moderador" },
+	{ label: "Pacientes", value: "paciente" },
+] as const;
+
+const AVATAR_RING = [
+	"bg-brand-100 text-brand-900",
+	"bg-mint/60 text-brand-900",
+	"bg-ice/70 text-brand-800",
+	"bg-cloud text-brand-800",
+];
+
+function userInitials(nombre: string, apellido: string) {
+	const a = nombre?.trim().charAt(0) ?? "";
+	const b = apellido?.trim().charAt(0) ?? "";
+	return `${a}${b}`.toUpperCase() || "?";
+}
 
 const UsuariosPage = () => {
 	const [filtroRol, setFiltroRol] = useState<string>("todos");
@@ -153,232 +173,260 @@ const UsuariosPage = () => {
 		}
 	};
 
-	const rolesUnicos = useMemo(() => {
-		const roles = new Set(usuarios.map((u) => u.rol));
-		return Array.from(roles).sort();
-	}, [usuarios]);
+	const sectionHeading =
+		filtroRol === "todos"
+			? "Todos los usuarios"
+			: `${ROLE_TABS.find((t) => t.value === filtroRol)?.label ?? "Usuarios"}`;
+
+	const estadoSuffix =
+		filtroEstado === "1" ? " — activos" : filtroEstado === "0" ? " — desactivados" : "";
 
 	return (
-		<PageShell
-			title="Usuarios"
-			description="Gestiona todos los usuarios del sistema: especialistas, moderadores y pacientes."
-		>
-			<div className="space-y-4">
-				{/* Filtros */}
-				<div className="rounded-lg border border-brand-300 bg-paper p-4">
-					<div className="flex flex-col gap-3 sm:flex-row">
-						<select
-							value={filtroRol}
-							onChange={(e) => setFiltroRol(e.target.value)}
-							className="h-10 rounded-lg border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
-						>
-							<option value="todos">Todos los roles</option>
-							{rolesUnicos.map((rol) => (
-								<option key={rol} value={rol}>
-									{rol.charAt(0).toUpperCase() + rol.slice(1)}
-								</option>
-							))}
-						</select>
-						<select
-							value={filtroEstado}
-							onChange={(e) => setFiltroEstado(e.target.value)}
-							className="h-10 rounded-lg border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
-						>
-							<option value="todos">Todos los estados</option>
-							<option value="1">Activos</option>
-							<option value="0">Desactivados</option>
-						</select>
-						<input
-							type="text"
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Buscar por cédula, nombre, apellido o correo..."
-							className="h-10 flex-1 rounded-lg border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
-						/>
+		<PageShell hideHeader title="Gestión de Usuarios">
+			<div className="space-y-8">
+				{/* Cabecera + búsqueda + filtro estado */}
+				<div className="space-y-6">
+					<div>
+						<h2 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">
+							Gestión de Usuarios
+						</h2>
+						<p className="mt-2 max-w-2xl text-sm text-brand-800 sm:text-base">
+							Administra el acceso al sistema: personal, especialistas, moderadores y pacientes. Busca por
+							cédula, nombre, apellido o correo y filtra por estado.
+						</p>
+					</div>
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+						<div className="relative w-full lg:max-w-md">
+							<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-600" />
+							<input
+								type="text"
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+								placeholder="Buscar por cédula, nombre, apellido o correo..."
+								className="h-11 w-full rounded-full border border-mist bg-paper pl-10 pr-4 text-sm text-brand-900 shadow-sm outline-none transition-shadow placeholder:text-brand-600/70 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
+							/>
+						</div>
+						<div className="flex flex-wrap items-center gap-3">
+							<label className="sr-only" htmlFor="filtro-estado-usuarios">
+								Estado
+							</label>
+							<select
+								id="filtro-estado-usuarios"
+								value={filtroEstado}
+								onChange={(e) => setFiltroEstado(e.target.value)}
+								className="h-11 rounded-xl border border-mist bg-paper px-4 text-sm font-medium text-brand-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
+							>
+								<option value="todos">Todos los estados</option>
+								<option value="1">Activos</option>
+								<option value="0">Desactivados</option>
+							</select>
+						</div>
 					</div>
 				</div>
-				{/* Lista de usuarios */}
-				<div className="rounded-lg border border-brand-200 bg-paper">
+
+				{/* Pestañas por rol */}
+				<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+					<div className="flex w-full gap-1 rounded-2xl border border-mist bg-cloud/80 p-1 sm:w-fit">
+						{ROLE_TABS.map((tab) => {
+							const active = filtroRol === tab.value;
+							return (
+								<button
+									key={tab.value}
+									type="button"
+									onClick={() => setFiltroRol(tab.value)}
+									className={`flex-1 rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition-all sm:flex-none sm:px-6 sm:text-sm ${active
+										? "bg-paper text-brand-800 shadow-sm"
+										: "text-brand-800/75 hover:bg-paper/60 hover:text-brand-900"
+										}`}
+								>
+									{tab.label}
+								</button>
+							);
+						})}
+					</div>
+					{filtroRol !== "todos" ? (
+						<button
+							type="button"
+							onClick={() => setFiltroRol("todos")}
+							className="text-sm font-semibold text-brand-800 underline-offset-2 hover:text-brand-900 hover:underline"
+						>
+							Ver todos los roles
+						</button>
+					) : null}
+				</div>
+
+				{/* Lista tipo tarjetas-fila */}
+				<div className="rounded-2xl border border-mist bg-paper p-6 shadow-sm sm:rounded-[1.75rem] sm:p-8">
+					<div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+						<h3 className="font-headline flex items-center gap-3 text-lg font-bold text-brand-900 sm:text-xl">
+							<span className="h-8 w-1.5 shrink-0 rounded-full bg-brand-700" aria-hidden />
+							<span>
+								{sectionHeading}
+								{estadoSuffix}
+							</span>
+						</h3>
+					</div>
+
 					{isLoading ? (
-						<div className="p-8 text-center text-brand-600">
+						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-sm font-medium text-brand-800">
 							Cargando usuarios...
 						</div>
 					) : filteredUsuarios.length === 0 ? (
-						<div className="p-8 text-center text-brand-600">
+						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-sm font-medium text-brand-800">
 							No se encontraron usuarios con los filtros seleccionados.
 						</div>
 					) : (
 						<>
-							{/* Versión tabla - solo escritorio/tablet */}
-							<div className="hidden md:block overflow-x-auto">
-								<table className="min-w-[900px] w-full">
-									<thead className="bg-cloud border-b border-mist">
-										<tr>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Nombre
-											</th>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Cédula
-											</th>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Correo
-											</th>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Rol
-											</th>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Estado
-											</th>
-											<th className="px-4 py-3 text-left text-xs font-semibold text-brand-900">
-												Fecha registro
-											</th>
-											<th className="px-4 py-3 text-center text-xs font-semibold text-brand-900">
-												Acciones
-											</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-mist">
-										{paginatedUsuarios.map((usuario) => (
-											<tr key={usuario.id_usuario} className="hover:bg-cloud/50">
-												<td className="px-4 py-3 text-sm text-brand-900">
-													{usuario.nombre} {usuario.apellido}
-												</td>
-												<td className="px-4 py-3 text-sm text-brand-800">
+							<div className="mb-4 hidden gap-2 px-4 text-[10px] font-bold uppercase tracking-widest text-brand-700/60 lg:grid lg:grid-cols-12 lg:items-center">
+								<div className="col-span-3">Nombre</div>
+								<div className="col-span-2">Cédula</div>
+								<div className="col-span-2">Correo</div>
+								<div className="col-span-1">Rol</div>
+								<div className="col-span-1 text-center">Estado</div>
+								<div className="col-span-2">Fecha registro</div>
+								<div className="col-span-1 text-right">Acciones</div>
+							</div>
+
+							<div className="space-y-3">
+								{paginatedUsuarios.map((usuario, idx) => {
+									const ring = AVATAR_RING[idx % AVATAR_RING.length];
+									const rolLabel = usuario.rol.charAt(0).toUpperCase() + usuario.rol.slice(1);
+									return (
+										<div
+											key={usuario.id_usuario}
+											className="rounded-2xl border border-mist bg-paper p-4 shadow-sm transition-all hover:border-brand-300/50 hover:shadow-md"
+										>
+											{/* Desktop grid */}
+											<div className="hidden items-center gap-2 lg:grid lg:grid-cols-12 lg:px-2">
+												<div className="col-span-3 flex min-w-0 items-center gap-3">
+													<div
+														className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${ring}`}
+													>
+														{userInitials(usuario.nombre, usuario.apellido)}
+													</div>
+													<div className="min-w-0">
+														<p className="truncate font-bold text-brand-900">
+															{usuario.nombre} {usuario.apellido}
+														</p>
+														<p className="truncate text-xs text-brand-800/70">{rolLabel}</p>
+													</div>
+												</div>
+												<div className="col-span-2 font-mono text-sm text-brand-800">
 													{usuario.cedula}
-												</td>
-												<td className="px-4 py-3 text-sm text-brand-800">
+												</div>
+												<div className="col-span-2 truncate text-sm text-brand-800" title={usuario.correo}>
 													{usuario.correo}
-												</td>
-												<td className="px-4 py-3 text-sm text-brand-800">
-													<span className="rounded-full bg-brand-100 px-2 py-1 text-xs font-medium text-brand-700">
-														{usuario.rol.charAt(0).toUpperCase() + usuario.rol.slice(1)}
+												</div>
+												<div className="col-span-1">
+													<span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900">
+														{rolLabel}
 													</span>
-												</td>
-												<td className="px-4 py-3 text-sm">
+												</div>
+												<div className="col-span-1 flex justify-center">
 													{usuario.activo === 1 ? (
-														<span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+														<span className="flex items-center gap-1.5 rounded-full bg-brand-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-900">
+															<span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
 															Activo
 														</span>
 													) : (
-														<span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
+														<span className="flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800/80">
+															<span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
 															Desactivado
 														</span>
 													)}
-												</td>
-												<td className="px-4 py-3 text-sm text-brand-800">
+												</div>
+												<div className="col-span-2 text-sm text-brand-800">
 													{formatFecha(usuario.fecha_registro)}
-												</td>
-												<td className="px-4 py-3">
-													<div className="flex items-center justify-center gap-2">
-														<button
-															type="button"
-															onClick={() => handleEdit(usuario)}
-															className="rounded-lg p-1.5 text-brand-600 hover:bg-brand-50 transition-colors"
-															title="Editar"
-														>
-															<Edit className="h-4 w-4" />
-														</button>
-														<button
-															type="button"
-															onClick={() => handleToggleActive(usuario)}
-															disabled={isToggling}
-															className={`rounded-lg p-1.5 transition-colors ${usuario.activo === 1
-																? "text-red-600 hover:bg-red-50"
-																: "text-green-600 hover:bg-green-50"
-																}`}
-															title={usuario.activo === 1 ? "Desactivar" : "Activar"}
-														>
-															{usuario.activo === 1 ? (
-																<X className="h-4 w-4" />
-															) : (
-																<Check className="h-4 w-4" />
-															)}
-														</button>
+												</div>
+												<div className="col-span-1 flex justify-end gap-1">
+													<button
+														type="button"
+														onClick={() => handleEdit(usuario)}
+														className="rounded-lg p-2 text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-900"
+														title="Editar"
+													>
+														<Edit className="h-4 w-4" />
+													</button>
+													<button
+														type="button"
+														onClick={() => handleToggleActive(usuario)}
+														disabled={isToggling}
+														className={`rounded-lg p-2 transition-colors disabled:opacity-50 ${usuario.activo === 1
+															? "text-brand-600 hover:bg-red-50 hover:text-red-600"
+															: "text-brand-600 hover:bg-brand-100 hover:text-brand-800"
+															}`}
+														title={usuario.activo === 1 ? "Desactivar" : "Activar"}
+													>
+														{usuario.activo === 1 ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+													</button>
+												</div>
+											</div>
+
+											{/* Mobile / tablet stack */}
+											<div className="flex flex-col gap-3 lg:hidden">
+												<div className="flex items-start gap-3">
+													<div
+														className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold ${ring}`}
+													>
+														{userInitials(usuario.nombre, usuario.apellido)}
 													</div>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-
-							{/* Versión cards - solo móvil */}
-							<div className="block divide-y divide-mist md:hidden">
-								{paginatedUsuarios.map((usuario) => (
-									<div
-										key={usuario.id_usuario}
-										className="p-4 space-y-2 hover:bg-cloud/60 transition-colors"
-									>
-										<div className="flex items-start justify-between gap-3">
-											<div>
-												<p className="text-sm font-semibold text-brand-900">
-													{usuario.nombre} {usuario.apellido}
-												</p>
-												<p className="text-xs text-brand-700">
-													CI: <span className="font-medium">{usuario.cedula}</span>
-												</p>
-												<p className="text-xs text-brand-700 truncate max-w-[230px]">
-													Correo:{" "}
-													<span className="font-medium break-all">{usuario.correo}</span>
-												</p>
-											</div>
-											<div className="flex flex-col items-end gap-1">
-												<span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">
-													{usuario.rol.charAt(0).toUpperCase() + usuario.rol.slice(1)}
-												</span>
-												{usuario.activo === 1 ? (
-													<span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700">
-														Activo
-													</span>
-												) : (
-													<span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700">
-														Desactivado
-													</span>
-												)}
-											</div>
-										</div>
-
-										<div className="flex items-center justify-between pt-1">
-											<p className="text-[11px] text-brand-700">
-												Registrado:{" "}
-												<span className="font-medium">
-													{formatFecha(usuario.fecha_registro)}
-												</span>
-											</p>
-											<div className="flex items-center gap-2">
-												<button
-													type="button"
-													onClick={() => handleEdit(usuario)}
-													className="rounded-full border border-mist bg-paper p-1.5 text-brand-600 hover:bg-brand-50 transition-colors"
-													title="Editar"
-												>
-													<Edit className="h-4 w-4" />
-												</button>
-												<button
-													type="button"
-													onClick={() => handleToggleActive(usuario)}
-													disabled={isToggling}
-													className={`rounded-full border border-mist bg-paper p-1.5 transition-colors ${usuario.activo === 1
-														? "text-red-600 hover:bg-red-50"
-														: "text-green-600 hover:bg-green-50"
-														}`}
-													title={usuario.activo === 1 ? "Desactivar" : "Activar"}
-												>
-													{usuario.activo === 1 ? (
-														<X className="h-4 w-4" />
-													) : (
-														<Check className="h-4 w-4" />
-													)}
-												</button>
+													<div className="min-w-0 flex-1">
+														<p className="font-bold text-brand-900">
+															{usuario.nombre} {usuario.apellido}
+														</p>
+														<p className="text-xs text-brand-800/80">Cédula: {usuario.cedula}</p>
+														<p className="break-all text-xs text-brand-800">{usuario.correo}</p>
+														<div className="mt-2 flex flex-wrap items-center gap-2">
+															<span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-900">
+																{rolLabel}
+															</span>
+															{usuario.activo === 1 ? (
+																<span className="flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-900">
+																	<span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
+																	Activo
+																</span>
+															) : (
+																<span className="flex items-center gap-1 rounded-full bg-cloud px-2 py-0.5 text-[11px] font-semibold text-brand-800/80">
+																	<span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+																	Desactivado
+																</span>
+															)}
+														</div>
+														<p className="mt-1 text-[11px] text-brand-800/70">
+															Fecha registro: {formatFecha(usuario.fecha_registro)}
+														</p>
+													</div>
+												</div>
+												<div className="flex justify-end gap-1 border-t border-mist pt-3">
+													<button
+														type="button"
+														onClick={() => handleEdit(usuario)}
+														className="rounded-lg p-2 text-brand-600 hover:bg-brand-100 hover:text-brand-900"
+														title="Editar"
+													>
+														<Edit className="h-4 w-4" />
+													</button>
+													<button
+														type="button"
+														onClick={() => handleToggleActive(usuario)}
+														disabled={isToggling}
+														className={`rounded-lg p-2 disabled:opacity-50 ${usuario.activo === 1
+															? "text-brand-600 hover:bg-red-50 hover:text-red-600"
+															: "text-brand-600 hover:bg-brand-100 hover:text-brand-800"
+															}`}
+														title={usuario.activo === 1 ? "Desactivar" : "Activar"}
+													>
+														{usuario.activo === 1 ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+													</button>
+												</div>
 											</div>
 										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 
-							{/* Paginación */}
-							{filteredUsuarios.length > itemsPerPage && (
-								<div className="flex flex-col gap-2 border-t border-mist bg-cloud px-4 py-3 text-xs text-brand-800 sm:flex-row sm:items-center sm:justify-between">
+							{filteredUsuarios.length > itemsPerPage ? (
+								<div className="mt-8 flex flex-col gap-3 border-t border-mist pt-6 text-xs text-brand-800 sm:flex-row sm:items-center sm:justify-between">
 									<p>
 										Mostrando{" "}
 										{paginatedUsuarios.length > 0
@@ -392,24 +440,24 @@ const UsuariosPage = () => {
 											type="button"
 											onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
 											disabled={currentPage === 1}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Anterior
 										</button>
-										<span>
+										<span className="text-brand-900">
 											Página {currentPage} de {totalPages}
 										</span>
 										<button
 											type="button"
 											onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
 											disabled={currentPage >= totalPages}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Siguiente
 										</button>
 									</div>
 								</div>
-							)}
+							) : null}
 						</>
 					)}
 				</div>
@@ -427,7 +475,7 @@ const UsuariosPage = () => {
 					/>
 				)}
 			</div>
-		</PageShell >
+		</PageShell>
 	);
 };
 

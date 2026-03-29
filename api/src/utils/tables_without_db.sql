@@ -53,6 +53,35 @@ INSERT IGNORE INTO moderador_permisos_inventario (seccion, permitido) VALUES
   ('facturacion', 0);
 
 -- =========================
+-- 1.2) Permisos menú lateral moderador (visibilidad por módulo)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS moderador_permisos_menu
+(
+  seccion VARCHAR
+(64) NOT NULL,
+  permitido TINYINT
+(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY
+(seccion)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO moderador_permisos_menu (seccion, permitido) VALUES
+  ('calendario', 1),
+  ('todas_las_citas', 1),
+  ('verificacion_pagos', 1),
+  ('disponibilidad_pendientes', 1),
+  ('pacientes', 1),
+  ('subir_resultados', 1),
+  ('informes', 1),
+  ('inventario', 1),
+  ('finanzas', 1),
+  ('registrar_especialista', 1),
+  ('registrar_moderador', 1),
+  ('especialidades', 1),
+  ('ecos', 1);
+
+-- =========================
 -- 2) Usuario (tabla base)
 -- =========================
 CREATE TABLE

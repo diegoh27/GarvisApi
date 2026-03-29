@@ -127,7 +127,7 @@ const App = () => {
 					<Route
 						path="admin/registrar-especialista"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<RegistrarEspecialistaPage />
 							</RoleRoute>
 						}
@@ -135,7 +135,7 @@ const App = () => {
 					<Route
 						path="admin/registrar-moderador"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<RegistrarModeradorPage />
 							</RoleRoute>
 						}
@@ -211,7 +211,7 @@ const App = () => {
 					<Route
 						path="especialidades"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<EspecialidadesPage />
 							</RoleRoute>
 						}
@@ -219,7 +219,7 @@ const App = () => {
 					<Route
 						path="ecos"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<EcosPage />
 							</RoleRoute>
 						}

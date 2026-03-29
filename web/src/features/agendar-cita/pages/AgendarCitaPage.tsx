@@ -14,6 +14,8 @@ export type AgendarCitaState = {
 	id_representado?: string;
 	id_eco?: string;
 	ecoNombre?: string;
+	/** Fecha elegida en el paso 2 (YYYY-MM-DD); al volver del paso 4 se usa `fecha` del paso 3. */
+	fechaElegidaPaso2?: string;
 	fecha?: string;
 	hora?: string;
 	id_disponibilidad?: string;
@@ -36,11 +38,12 @@ const AgendarCitaPage = () => {
 		setStep(2);
 	};
 
-	const handleStep2Next = (data: { id_eco: string; ecoNombre: string }) => {
+	const handleStep2Next = (data: { id_eco: string; ecoNombre: string; fecha: string }) => {
 		setState((prev) => ({
 			...prev,
 			id_eco: data.id_eco,
 			ecoNombre: data.ecoNombre,
+			fechaElegidaPaso2: data.fecha,
 		}));
 		setStep(3);
 	};
@@ -95,6 +98,7 @@ const AgendarCitaPage = () => {
 				<PasoFechaHora
 					idEco={state.id_eco}
 					ecoNombre={state.ecoNombre}
+					fechaInicial={state.fecha ?? state.fechaElegidaPaso2}
 					onNext={handleStep3Next}
 					onBack={handleStep3Back}
 				/>

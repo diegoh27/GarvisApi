@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
 	CalendarCheck,
@@ -25,6 +25,8 @@ import Topbar from "./Topbar";
 import MobilePatientTopbar from "./MobilePatientTopbar";
 import MobilePatientBottomNav from "./MobilePatientBottomNav";
 import { DolarFloatingWidget } from "../features/dolar";
+import { MODERADOR_MENU_MODULES } from "../features/roles/moderadorMenuModules";
+import { useGetPermisosMenuQuery } from "../features/roles/rolesApi";
 
 const navByRole: Record<string, NavItem[]> = {
 	admin: [
@@ -55,22 +57,8 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 	],
 	moderador: [
-		// Navegación principal
+		// Placeholder: el menú real se arma en AppLayout con MODERADOR_MENU_MODULES + permisos.
 		{ label: "Home", to: "/dashboard", icon: Home },
-		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
-		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
-		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
-		{ label: "Disponibilidad pendientes", to: "/disponibilidad/pendientes", icon: CalendarCheck },
-		// Gestión de pacientes
-		{ label: "Pacientes", to: "/pacientes", icon: Users },
-		// Resultados e informes
-		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
-		{ label: "Informes", to: "/informes", icon: FileText },
-		// Gestión de inventario
-		{ label: "Inventario", to: "/inventario", icon: Package },
-		{ label: "Finanzas", to: "/finanzas", icon: Wallet },
-		// Auditoría
-		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 	],
 	especialista: [
 		{ label: "Home", to: "/dashboard", icon: Home },
@@ -96,7 +84,33 @@ const AppLayout = () => {
 	const fullName = [user?.nombre, user?.apellido].filter(Boolean).join(" ") || null;
 	const isAuthRoute = location.pathname.startsWith("/auth/");
 	const role = user?.rol ?? "guest";
-	const navItems = navByRole[role] ?? [];
+
+	const { data: menuPermisosModerador } = useGetPermisosMenuQuery(undefined, {
+		skip: role !== "moderador",
+	});
+
+	const navItems = useMemo(() => {
+		if (role !== "moderador") {
+			return navByRole[role] ?? [];
+		}
+		const home: NavItem = { label: "Home", to: "/dashboard", icon: Home };
+		const auditoria: NavItem = {
+			label: "Auditoría de Eventos",
+			to: "/auditoria",
+			icon: ShieldAlert,
+		};
+		const perm = menuPermisosModerador;
+		const middle: NavItem[] = MODERADOR_MENU_MODULES.filter((m) => {
+			if (!perm) return true;
+			return perm[m.key] === true;
+		}).map((m) => ({
+			label: m.label,
+			to: m.to,
+			icon: m.icon,
+		}));
+		return [home, ...middle, auditoria];
+	}, [role, menuPermisosModerador]);
+
 	const showShell = !!token && !isAuthRoute;
 
 	const { data: notificacionesNoLeidas = [] } = useGetMisNotificacionesQuery(

@@ -69,6 +69,76 @@ const updatePermisosInventarioModeradorController = async (payload) => {
 	return getPermisosInventarioController("moderador");
 };
 
+/** Claves de visibilidad del menú lateral para el rol moderador (Home no se configura aquí). */
+const SECCIONES_MENU_MODERADOR = [
+	"calendario",
+	"todas_las_citas",
+	"verificacion_pagos",
+	"disponibilidad_pendientes",
+	"pacientes",
+	"subir_resultados",
+	"informes",
+	"inventario",
+	"finanzas",
+	"registrar_especialista",
+	"registrar_moderador",
+	"especialidades",
+	"ecos",
+];
+
+const ensureTableModeradorPermisosMenu = async () => {
+	await pool.execute(`
+    CREATE TABLE IF NOT EXISTS moderador_permisos_menu (
+      seccion VARCHAR(64) NOT NULL,
+      permitido TINYINT(1) NOT NULL DEFAULT 1,
+      PRIMARY KEY (seccion)
+    ) ENGINE=InnoDB
+  `);
+	for (const seccion of SECCIONES_MENU_MODERADOR) {
+		await pool.execute(
+			"INSERT IGNORE INTO moderador_permisos_menu (seccion, permitido) VALUES (?, ?)",
+			[seccion, 1],
+		);
+	}
+};
+
+/**
+ * Permisos de ítems del menú para moderadores (persistidos en BD).
+ * - admin: todos true (referencia; el admin no usa estos ítems en su propio menú).
+ * - moderador: lee moderador_permisos_menu.
+ */
+const getPermisosMenuModeradorController = async (rol) => {
+	if (rol === "admin") {
+		return SECCIONES_MENU_MODERADOR.reduce((acc, s) => ({ ...acc, [s]: true }), {});
+	}
+	if (rol !== "moderador") {
+		return SECCIONES_MENU_MODERADOR.reduce((acc, s) => ({ ...acc, [s]: false }), {});
+	}
+	await ensureTableModeradorPermisosMenu();
+	const [rows] = await pool.execute(
+		"SELECT seccion, permitido FROM moderador_permisos_menu",
+	);
+	const out = SECCIONES_MENU_MODERADOR.reduce((acc, s) => ({ ...acc, [s]: true }), {});
+	for (const row of rows) {
+		if (SECCIONES_MENU_MODERADOR.includes(row.seccion)) {
+			out[row.seccion] = Number(row.permitido) === 1;
+		}
+	}
+	return out;
+};
+
+const updatePermisosMenuModeradorController = async (payload) => {
+	await ensureTableModeradorPermisosMenu();
+	for (const seccion of SECCIONES_MENU_MODERADOR) {
+		const permitido = payload[seccion] === true ? 1 : 0;
+		await pool.execute(
+			"INSERT INTO moderador_permisos_menu (seccion, permitido) VALUES (?, ?) ON DUPLICATE KEY UPDATE permitido = VALUES(permitido)",
+			[seccion, permitido],
+		);
+	}
+	return getPermisosMenuModeradorController("moderador");
+};
+
 const listRolesController = async () => {
 	const sql = `
     SELECT id_rol, nombre
@@ -108,4 +178,6 @@ module.exports = {
 	getRolePermissionsController,
 	getPermisosInventarioController,
 	updatePermisosInventarioModeradorController,
+	getPermisosMenuModeradorController,
+	updatePermisosMenuModeradorController,
 };

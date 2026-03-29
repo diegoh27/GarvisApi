@@ -1,5 +1,6 @@
 import { useState, type FormEvent, useEffect } from "react";
 import Swal from "sweetalert2";
+import { Stethoscope } from "lucide-react";
 import {
 	useCreateEspecialidadMutation,
 	useUpdateEspecialidadMutation,
@@ -21,13 +22,11 @@ const EspecialidadForm = ({
 		useCreateEspecialidadMutation();
 	const [updateEspecialidad, { isLoading: isUpdating }] =
 		useUpdateEspecialidadMutation();
-	const [nombre, setNombre] = useState(especialidad?.nombre || "");
+	const [nombre, setNombre] = useState(especialidad?.nombre ?? "");
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		if (especialidad) {
-			setNombre(especialidad.nombre);
-		}
+		setNombre(especialidad?.nombre ?? "");
 	}, [especialidad]);
 
 	const isLoading = isCreating || isUpdating;
@@ -79,46 +78,63 @@ const EspecialidadForm = ({
 	};
 
 	return (
-		<form className="space-y-4" onSubmit={onSubmit}>
+		<form className="space-y-5" onSubmit={onSubmit}>
 			{error && (
-				<div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+				<div
+					className="rounded-2xl border border-red-100 bg-red-50/90 px-4 py-3 text-sm text-red-800"
+					role="alert"
+				>
 					{error}
 				</div>
 			)}
 
 			<div>
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label
+					htmlFor="especialidad-nombre"
+					className="mb-2 block text-sm font-semibold text-brand-900"
+				>
 					Nombre <span className="text-red-500">*</span>
 				</label>
-				<input
-					type="text"
-					required
-					className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
-					value={nombre}
-					onChange={(e) => setNombre(e.target.value)}
-					placeholder="Ej: Cardiología, Neurología..."
-				/>
+				<div className="relative">
+					<span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-700/80">
+						<Stethoscope className="h-5 w-5" strokeWidth={2} aria-hidden />
+					</span>
+					<input
+						id="especialidad-nombre"
+						type="text"
+						required
+						autoComplete="off"
+						autoFocus
+						className="h-12 w-full rounded-2xl border border-brand-200 bg-cloud/50 pl-11 pr-4 text-sm text-brand-900 outline-none ring-brand-800/0 transition placeholder:text-brand-700/50 focus:border-brand-400 focus:bg-paper focus:ring-4 focus:ring-brand-500/20"
+						value={nombre}
+						onChange={(e) => setNombre(e.target.value)}
+						placeholder="Ej: Cardiología, Neurología…"
+					/>
+				</div>
+				<p className="mt-2 text-xs text-brand-700/85">
+					Así aparecerá en fichas de especialistas y en los listados del sistema.
+				</p>
 			</div>
 
-			<div className="flex gap-3 pt-4">
+			<div className="flex flex-col-reverse gap-3 border-t border-mist pt-5 sm:flex-row sm:justify-end">
 				<button
 					type="button"
 					onClick={onCancel}
-					className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+					className="inline-flex h-11 items-center justify-center rounded-2xl border border-brand-200 bg-paper px-5 text-sm font-semibold text-brand-800 transition hover:bg-cloud"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+					className="inline-flex h-11 min-w-[160px] items-center justify-center rounded-2xl bg-brand-800 px-6 text-sm font-bold text-paper shadow-lg shadow-brand-900/20 transition hover:bg-brand-900 disabled:opacity-50"
 				>
 					{isLoading
 						? isEditing
-							? "Actualizando..."
-							: "Creando..."
+							? "Actualizando…"
+							: "Creando…"
 						: isEditing
-							? "Actualizar especialidad"
+							? "Guardar cambios"
 							: "Crear especialidad"}
 				</button>
 			</div>

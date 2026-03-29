@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -12,7 +12,7 @@ import { useGetDisponibilidadPorFechaQuery } from "../../disponibilidad/disponib
 import type { DisponibilidadPublicaPorEcoItem } from "../../disponibilidad/disponibilidadApi";
 
 type PasoServicioProps = {
-	onNext: (data: { id_eco: string; ecoNombre: string }) => void;
+	onNext: (data: { id_eco: string; ecoNombre: string; fecha: string }) => void;
 	onBack: () => void;
 };
 
@@ -235,6 +235,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 
 	const [selectedDate, setSelectedDate] = useState<Date>(today);
 	const [selectedEcoId, setSelectedEcoId] = useState<string | null>(null);
+	const ecoListSectionRef = useRef<HTMLDivElement>(null);
 
 	const fechaStr = toISODate(selectedDate);
 
@@ -252,6 +253,9 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 	const handleSelectDate = (d: Date) => {
 		setSelectedDate(d);
 		setSelectedEcoId(null); // reset eco when date changes
+		window.setTimeout(() => {
+			ecoListSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+		}, 0);
 	};
 
 	const handleSelectEco = (eco: EcoGroup) => {
@@ -260,7 +264,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 
 	const handleContinue = () => {
 		if (!canContinue || !selectedEcoId || !selectedGroup) return;
-		onNext({ id_eco: selectedEcoId, ecoNombre: selectedGroup.nombre });
+		onNext({ id_eco: selectedEcoId, ecoNombre: selectedGroup.nombre, fecha: fechaStr });
 	};
 
 	return (
@@ -276,159 +280,169 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 				</p>
 			</div>
 
-			{/* ─── GRID: Eco list (left) + Calendar (right) ─── */}
-			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-				{/* LEFT: Eco list (driven by date selection) */}
-				<div className="lg:col-span-7 order-2 lg:order-1">
-					{isLoading || isFetching ? (
-						<div className="flex items-center justify-center py-16">
-							<div className="animate-spin rounded-full h-8 w-8 border-2 border-brand-800 border-t-transparent" />
-						</div>
-					) : ecoGroups.length > 0 ? (
-						<div className="space-y-3">
-							{ecoGroups.map((eco) => {
-								const isSelected = selectedEcoId === eco.id_eco;
-								return (
-									<button
-										key={eco.id_eco}
-										type="button"
-										onClick={() => handleSelectEco(eco)}
-										className={`w-full text-left p-5 lg:p-6 rounded-2xl flex items-center gap-4 lg:gap-6 transition-all duration-200 group ${isSelected
-											? "bg-paper border-l-4 border-brand-800 shadow-md"
-											: "bg-paper/50 hover:bg-paper hover:shadow-sm border-l-4 border-transparent"
-											}`}
-									>
-										{/* Icon */}
-										<div className={`w-14 h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-200 ${isSelected
-											? "bg-brand-800/10 scale-105"
-											: "bg-cloud group-hover:bg-brand-100"
-											}`}>
-											<ScanHeart className={`h-7 w-7 lg:h-8 lg:w-8 ${isSelected ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}`} />
-										</div>
-										{/* Content */}
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center justify-between gap-2 flex-wrap">
-												<h4 className="text-base lg:text-lg font-bold font-headline text-brand-900 truncate">
-													{eco.nombre}
-												</h4>
-												<div className="flex items-center gap-2 shrink-0">
-													<span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 text-[10px] font-bold uppercase tracking-wider">
-														20 min
-													</span>
-													<span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-800 text-[10px] font-bold uppercase tracking-wider hidden sm:inline-block">
-														{eco.slotsCount} disponible{eco.slotsCount !== 1 ? "s" : ""}
-													</span>
-													{isSelected ? (
-														<Check className="h-5 w-5 text-brand-800" strokeWidth={3} />
-													) : (
-														<ArrowRight className="h-4 w-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-													)}
-												</div>
-											</div>
-											<p className="text-sm text-brand-600 mt-1 leading-snug line-clamp-2">
-												{getEcoDescription(eco.nombre)}
-											</p>
-											{isSelected && eco.especialistas.length > 0 && (
-												<p className="text-xs text-brand-500 mt-2">
-													Especialista{eco.especialistas.length > 1 ? "s" : ""}: {eco.especialistas.join(", ")}
-												</p>
-											)}
-										</div>
-									</button>
-								);
-							})}
-						</div>
-					) : (
-						/* Empty state */
-						<div className="text-center py-16">
-							<ScanHeart className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-							<p className="text-lg font-bold text-brand-900 font-headline mb-2">
-								No hay servicios disponibles
-							</p>
-							<p className="text-sm text-brand-600 max-w-sm mx-auto">
-								No hay especialistas con disponibilidad para el día seleccionado.
-								Intenta seleccionar otra fecha en el calendario.
-							</p>
-						</div>
-					)}
-				</div>
-
-				{/* RIGHT: Calendar + Details */}
-				<div className="lg:col-span-5 order-1 lg:order-2">
-					<div className="lg:sticky lg:top-32 space-y-5">
-						{/* Calendar Card */}
+			{/* ─── GRID: móvil = calendario → tipo de eco → detalles → orientación; desktop = eco+detalles | calendario+orientación ─── */}
+			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+				{/* Calendario — primero en móvil */}
+				<div className="order-1 lg:col-span-5 lg:col-start-8 lg:row-start-1">
+					<div className="lg:sticky lg:top-32">
 						<div className="bg-paper rounded-2xl p-4 border border-brand-200/20 shadow-sm">
 							<MiniCalendar
 								selectedDate={selectedDate}
 								onSelectDate={handleSelectDate}
 							/>
 						</div>
+					</div>
+				</div>
 
-						{/* Appointment Details Card */}
-						<div className="bg-cloud/40 rounded-2xl p-6 lg:p-8 border border-brand-200/20">
-							<h5 className="text-xs font-bold uppercase tracking-widest text-brand-800 mb-6">
-								Detalles de la cita
-							</h5>
-							{selectedGroup ? (
-								<div className="space-y-5">
-									<div>
-										<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-											Ecografía seleccionada
-										</span>
-										<p className="text-lg font-bold font-headline text-brand-900 mt-0.5">
-											{selectedGroup.nombre}
-										</p>
-									</div>
-									<div>
-										<span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-											Disponibilidad de especialistas
-										</span>
-										<div className="flex items-center gap-2 mt-1">
-											<div className="w-2 h-2 rounded-full bg-amber-400" />
-											<p className="text-sm font-medium text-brand-900">
-												{selectedGroup.especialistas.length} especialista{selectedGroup.especialistas.length > 1 ? "s" : ""} disponible{selectedGroup.especialistas.length > 1 ? "s" : ""}
-											</p>
-										</div>
-									</div>
-									<div className="pt-4 border-t border-brand-200/30">
-										<p className="text-xs text-brand-600 leading-relaxed mb-6">
-											Al continuar, verás los horarios disponibles para esta ecografía
-											con nuestros especialistas.
-										</p>
-										<button
-											type="button"
-											onClick={handleContinue}
-											className="hidden lg:flex w-full py-3.5 bg-brand-800 text-white font-bold rounded-xl shadow-lg shadow-brand-800/20 hover:bg-brand-900 transition-all items-center justify-center gap-2 text-sm"
-										>
-											Continuar al Paso 3
-											<ArrowRight className="h-4 w-4" />
-										</button>
-									</div>
-								</div>
-							) : (
-								<div className="text-center py-6">
-									<ScanHeart className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-									<p className="text-sm text-slate-400 font-medium">
-										{ecoGroups.length > 0
-											? "Selecciona una ecografía para ver los detalles"
-											: "Selecciona una fecha con disponibilidad"}
-									</p>
-								</div>
-							)}
-						</div>
-
-						{/* Info card */}
-						<div className="bg-paper rounded-2xl p-5 border border-brand-200/20 flex items-start gap-3 lg:gap-4">
-							<div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
-								<Info className="h-4 w-4 lg:h-5 lg:w-5 text-brand-600" />
+				{/* Tipo de eco + Detalles de la cita — segundo en móvil */}
+				<div
+					ref={ecoListSectionRef}
+					className="order-2 lg:col-span-7 lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-6 scroll-mt-24"
+				>
+					<div className="rounded-xl border border-slate-200 bg-paper/30 p-4">
+						<h3 className="mb-4 font-headline text-sm font-bold text-brand-900">
+							Tipo de eco
+						</h3>
+						{isLoading || isFetching ? (
+							<div className="flex items-center justify-center py-16">
+								<div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-800 border-t-transparent" />
 							</div>
-							<div>
-								<h6 className="text-sm font-bold text-brand-900">¿Necesitas orientación?</h6>
-								<p className="text-xs text-brand-600 mt-1 leading-relaxed">
-									Si no estás seguro qué tipo de ecografía necesitas, consulta con
-									tu médico tratante antes de agendar.
+						) : ecoGroups.length > 0 ? (
+							<div className="space-y-3">
+								{ecoGroups.map((eco) => {
+									const isSelected = selectedEcoId === eco.id_eco;
+									return (
+										<button
+											key={eco.id_eco}
+											type="button"
+											onClick={() => handleSelectEco(eco)}
+											className={`group flex w-full items-center gap-4 rounded-2xl p-5 text-left transition-all duration-200 lg:gap-6 ${isSelected
+												? "border-l-4 border-brand-800 bg-paper shadow-md"
+												: "border-l-4 border-transparent bg-paper/50 hover:bg-paper hover:shadow-sm"
+												}`}
+										>
+											<div
+												className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 lg:h-16 lg:w-16 ${isSelected
+													? "scale-105 bg-brand-800/10"
+													: "bg-cloud group-hover:bg-brand-100"
+													}`}
+											>
+												<ScanHeart
+													className={`h-7 w-7 lg:h-8 lg:w-8 ${isSelected ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}`}
+												/>
+											</div>
+											<div className="min-w-0 flex-1">
+												<div className="flex flex-wrap items-center justify-between gap-2">
+													<h4 className="truncate font-headline text-base font-bold text-brand-900 lg:text-lg">
+														{eco.nombre}
+													</h4>
+													<div className="flex shrink-0 items-center gap-2">
+														<span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-800">
+															20 min
+														</span>
+														<span className="hidden rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-800 sm:inline-block">
+															{eco.slotsCount} disponible{eco.slotsCount !== 1 ? "s" : ""}
+														</span>
+														{isSelected ? (
+															<Check className="h-5 w-5 text-brand-800" strokeWidth={3} />
+														) : (
+															<ArrowRight className="h-4 w-4 text-slate-300 opacity-0 transition-opacity group-hover:opacity-100" />
+														)}
+													</div>
+												</div>
+												<p className="mt-1 line-clamp-2 text-sm leading-snug text-brand-600">
+													{getEcoDescription(eco.nombre)}
+												</p>
+												{isSelected && eco.especialistas.length > 0 && (
+													<p className="mt-2 text-xs text-brand-500">
+														Especialista{eco.especialistas.length > 1 ? "s" : ""}:{" "}
+														{eco.especialistas.join(", ")}
+													</p>
+												)}
+											</div>
+										</button>
+									);
+								})}
+							</div>
+						) : (
+							<div className="py-16 text-center">
+								<ScanHeart className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+								<p className="mb-2 font-headline text-lg font-bold text-brand-900">
+									No hay servicios disponibles
+								</p>
+								<p className="mx-auto max-w-sm text-sm text-brand-600">
+									No hay especialistas con disponibilidad para el día seleccionado. Intenta seleccionar otra fecha en el
+									calendario.
 								</p>
 							</div>
+						)}
+					</div>
+
+					<div className="rounded-2xl border border-brand-200/20 bg-cloud/40 p-6 lg:p-8">
+						<h5 className="mb-6 text-xs font-bold uppercase tracking-widest text-brand-800">
+							Detalles de la cita
+						</h5>
+						{selectedGroup ? (
+							<div className="space-y-5">
+								<div>
+									<span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+										Ecografía seleccionada
+									</span>
+									<p className="mt-0.5 font-headline text-lg font-bold text-brand-900">
+										{selectedGroup.nombre}
+									</p>
+								</div>
+								<div>
+									<span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+										Disponibilidad de especialistas
+									</span>
+									<div className="mt-1 flex items-center gap-2">
+										<div className="h-2 w-2 rounded-full bg-amber-400" />
+										<p className="text-sm font-medium text-brand-900">
+											{selectedGroup.especialistas.length} especialista
+											{selectedGroup.especialistas.length > 1 ? "s" : ""} disponible
+											{selectedGroup.especialistas.length > 1 ? "s" : ""}
+										</p>
+									</div>
+								</div>
+								<div className="border-t border-brand-200/30 pt-4">
+									<p className="mb-6 text-xs leading-relaxed text-brand-600">
+										Al continuar, verás los horarios disponibles para esta ecografía con nuestros especialistas.
+									</p>
+									<button
+										type="button"
+										onClick={handleContinue}
+										className="hidden w-full items-center justify-center gap-2 rounded-xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-800/20 transition-all hover:bg-brand-900 lg:flex"
+									>
+										Continuar al Paso 3
+										<ArrowRight className="h-4 w-4" />
+									</button>
+								</div>
+							</div>
+						) : (
+							<div className="py-6 text-center">
+								<ScanHeart className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+								<p className="text-sm font-medium text-slate-400">
+									{ecoGroups.length > 0
+										? "Selecciona una ecografía para ver los detalles"
+										: "Selecciona una fecha con disponibilidad"}
+								</p>
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Orientación — tercero en móvil */}
+				<div className="order-3 lg:col-span-5 lg:col-start-8 lg:row-start-2">
+					<div className="flex items-start gap-3 rounded-2xl border border-brand-200/20 bg-paper p-5 lg:gap-4">
+						<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 lg:h-10 lg:w-10">
+							<Info className="h-4 w-4 text-brand-600 lg:h-5 lg:w-5" />
+						</div>
+						<div>
+							<h6 className="text-sm font-bold text-brand-900">¿Necesitas orientación?</h6>
+							<p className="mt-1 text-xs leading-relaxed text-brand-600">
+								Si no estás seguro qué tipo de ecografía necesitas, consulta con tu médico tratante antes de agendar.
+							</p>
 						</div>
 					</div>
 				</div>

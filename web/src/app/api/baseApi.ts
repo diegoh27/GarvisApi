@@ -122,6 +122,7 @@ const baseApi = createApi({
 		"Perfil",
 		// Permisos inventario moderador
 		"PermisosInventario",
+		"PermisosMenuModerador",
 		// Auditoría de eventos
 		"Auditoria",
 	],

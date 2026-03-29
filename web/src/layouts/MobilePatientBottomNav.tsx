@@ -14,7 +14,7 @@ type MobilePatientBottomNavProps = {
 
 const MobilePatientBottomNav = ({ tienePagoPendiente = false }: MobilePatientBottomNavProps) => {
 	const items: BottomNavItem[] = [
-		{ label: "Home", to: "/dashboard", icon: LayoutGrid },
+		{ label: "Inicio", to: "/dashboard", icon: LayoutGrid },
 		{
 			label: "Agendar",
 			to: "/agendar-cita",
