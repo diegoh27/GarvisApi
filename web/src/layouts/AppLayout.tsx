@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-	Bell,
 	CalendarCheck,
 	CalendarDays,
 	FileCheck,
@@ -9,7 +8,6 @@ import {
 	Home,
 	Package,
 	Receipt,
-	Settings,
 	ShieldCheck,
 	ShieldAlert,
 	Stethoscope,
@@ -26,7 +24,7 @@ import Sidebar, { type NavItem } from "./Sidebar";
 import Topbar from "./Topbar";
 import MobilePatientTopbar from "./MobilePatientTopbar";
 import MobilePatientBottomNav from "./MobilePatientBottomNav";
-import { DolarInfoBanner } from "../features/dolar";
+import { DolarFloatingWidget } from "../features/dolar";
 
 const navByRole: Record<string, NavItem[]> = {
 	admin: [
@@ -55,10 +53,6 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Ecos", to: "/ecos", icon: FileCheck },
 		// Auditoría
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
-		// Notificaciones (penúltimo)
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		// Configuración (último)
-		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	moderador: [
 		// Navegación principal
@@ -77,10 +71,6 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Finanzas", to: "/finanzas", icon: Wallet },
 		// Auditoría
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
-		// Notificaciones (penúltimo)
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		// Configuración (último)
-		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	especialista: [
 		{ label: "Home", to: "/dashboard", icon: Home },
@@ -88,8 +78,6 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Pacientes", to: "/pacientes-especialista", icon: Users },
 		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
 		{ label: "Informes", to: "/informes", icon: FileText },
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 	paciente: [
 		{ label: "Home", to: "/dashboard", icon: Home },
@@ -97,8 +85,6 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Mis citas", to: "/citas", icon: CalendarCheck },
 		{ label: "Representados", to: "/representados", icon: Users },
 		// { label: "Especialistas", to: "/especialistas", icon: Stethoscope },
-		{ label: "Notificaciones", to: "/notificaciones", icon: Bell },
-		{ label: "Configuración", to: "/configuracion", icon: Settings },
 	],
 };
 
@@ -126,13 +112,7 @@ const AppLayout = () => {
 	});
 	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
 	const unreadCount = notificacionesNoLeidas.length;
-	const navItemsWithBadges = navItems
-		.map((item) =>
-			item.to === "/notificaciones" && unreadCount > 0
-				? { ...item, badge: unreadCount }
-				: item,
-		)
-		.map((item) =>
+	const navItemsWithBadges = navItems.map((item) =>
 			item.to === "/disponibilidad" && role === "paciente" && tienePagoPendiente
 				? {
 						...item,
@@ -182,7 +162,12 @@ const AppLayout = () => {
 			{/* Mobile patient topbar: solo visible en <lg para pacientes */}
 			{isPaciente && (
 				<div className="lg:hidden">
-					<MobilePatientTopbar fullName={fullName} unreadCount={unreadCount} />
+					<MobilePatientTopbar
+						fullName={fullName}
+						unreadCount={unreadCount}
+						role={user?.rol}
+						onLogout={handleLogout}
+					/>
 				</div>
 			)}
 
@@ -213,6 +198,7 @@ const AppLayout = () => {
 								fullName={fullName}
 								role={user?.rol}
 								onLogout={handleLogout}
+								unreadCount={unreadCount}
 							/>
 						</div>
 					) : (
@@ -221,18 +207,21 @@ const AppLayout = () => {
 							fullName={fullName}
 							role={user?.rol}
 							onLogout={handleLogout}
+							unreadCount={unreadCount}
 						/>
 					)}
 
-					<main className={`flex-1 p-4 sm:p-6 min-w-0 ${isPaciente ? "mt-16 pb-24 lg:mt-0 lg:pb-0" : ""}`}>
-						{/* Banner informativo de tasa del dólar */}
-						{(role === "admin" || role === "moderador" || role === "paciente") && (
-							<DolarInfoBanner />
-						)}
+					<main
+						className={`flex-1 p-4 sm:p-6 min-w-0 ${
+							isPaciente ? "mt-16 pb-24 lg:mt-0 lg:pb-0" : "bg-shell"
+						}`}
+					>
 						<Outlet />
 					</main>
 				</div>
 			</div>
+
+			{(role === "admin" || role === "moderador") && <DolarFloatingWidget />}
 
 			{/* Mobile bottom nav: solo visible en <lg para pacientes */}
 			{isPaciente && (

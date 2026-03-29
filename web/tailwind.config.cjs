@@ -24,6 +24,11 @@ module.exports = {
 				cloud: "#D7EAEE",
 				mist: "#DDEFF1",
 				paper: "#FDFDFD",
+				/** Fondo del área principal (alineado con la paleta: mismo tono que `cloud`) */
+				shell: {
+					DEFAULT: "#D7EAEE",
+					muted: "#E2E8F0",
+				},
 			},
 		},
 	},

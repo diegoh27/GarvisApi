@@ -1,1 +1,1 @@
-export { default as DolarInfoBanner } from "./DolarInfoBanner";
+export { default as DolarFloatingWidget } from "./DolarFloatingWidget";

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
+import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { baseApi } from "../../../app/api/baseApi";
 import { useAuth } from "../../../shared";
@@ -36,6 +37,7 @@ const ALL_TABS: { id: TabType; label: string }[] = [
 
 export default function FinanzasPage() {
 	const dispatch = useDispatch();
+	const [searchParams, setSearchParams] = useSearchParams();
 	const { user } = useAuth();
 	const { data: permisos, isLoading: permisosLoading } =
 		useGetPermisosInventarioQuery(undefined, {
@@ -70,6 +72,29 @@ export default function FinanzasPage() {
 		}
 	}, [tabs, activeTab]);
 
+	const tabParam = searchParams.get("tab");
+	useEffect(() => {
+		if (
+			tabParam &&
+			ALL_TABS.some((t) => t.id === tabParam) &&
+			tabs.some((t) => t.id === tabParam)
+		) {
+			setActiveTab(tabParam as TabType);
+		}
+	}, [tabParam, tabs]);
+
+	const setTab = (id: TabType) => {
+		setActiveTab(id);
+		setSearchParams(
+			(prev) => {
+				const n = new URLSearchParams(prev);
+				n.set("tab", id);
+				return n;
+			},
+			{ replace: true },
+		);
+	};
+
 	const handleRefrescar = () => {
 		setIsRefreshing(true);
 		dispatch(baseApi.util.invalidateTags(FINANZAS_TAGS as unknown as string[]));
@@ -87,7 +112,8 @@ export default function FinanzasPage() {
 								{tabs.map((tab) => (
 									<button
 										key={tab.id}
-										onClick={() => setActiveTab(tab.id)}
+										type="button"
+										onClick={() => setTab(tab.id)}
 										className={`px-6 py-4 font-medium text-sm transition-colors ${safeActiveTab === tab.id
 											? "text-teal-600 border-b-2 border-teal-600"
 											: "text-gray-600 hover:text-gray-900"
