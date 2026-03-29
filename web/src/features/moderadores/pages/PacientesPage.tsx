@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import { ChevronLeft, ChevronRight, Search, UserPlus } from "lucide-react";
 import { PageShell, formatFechaLocal } from "../../../shared";
 import {
 	useGetCitasAtendidasConResultadosQuery,
@@ -50,9 +52,76 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 	}
 };
 
+const calcularEdadPaciente = (fechaNacimiento: string | null | undefined): number | null => {
+	if (!fechaNacimiento) return null;
+	const nac = new Date(`${String(fechaNacimiento).slice(0, 10)}T00:00:00`);
+	if (Number.isNaN(nac.getTime())) return null;
+	const hoy = new Date();
+	let edad = hoy.getFullYear() - nac.getFullYear();
+	const m = hoy.getMonth() - nac.getMonth();
+	if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+	return edad;
+};
+
+const getPaginationRange = (current: number, total: number): (number | "ellipsis")[] => {
+	if (total <= 1) return [1];
+	const pages = new Set<number>();
+	pages.add(1);
+	pages.add(total);
+	for (let i = current - 1; i <= current + 1; i++) {
+		if (i >= 1 && i <= total) pages.add(i);
+	}
+	const sorted = [...pages].sort((a, b) => a - b);
+	const out: (number | "ellipsis")[] = [];
+	for (let i = 0; i < sorted.length; i++) {
+		if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push("ellipsis");
+		out.push(sorted[i]);
+	}
+	return out;
+};
+
 type FilterOption = {
 	id: string;
 	label: string;
+};
+
+type EstadoPacienteUi = {
+	label: string;
+	badgeClass: string;
+	dotClass: string;
+};
+
+const getEstadoPacienteUi = (p: {
+	activo: number;
+	totalCitas: number;
+	citasConResultado: number;
+}): EstadoPacienteUi => {
+	if (p.activo === 0) {
+		return {
+			label: "Inactivo",
+			badgeClass: "bg-[#e3e2e2] text-[#3e4948]",
+			dotClass: "bg-slate-300",
+		};
+	}
+	if (p.totalCitas > 0 && p.citasConResultado === 0) {
+		return {
+			label: "Pendiente",
+			badgeClass: "bg-red-100 text-red-900",
+			dotClass: "bg-amber-400",
+		};
+	}
+	if (p.totalCitas === 0) {
+		return {
+			label: "Nuevo",
+			badgeClass: "bg-cyan-100/80 text-cyan-950",
+			dotClass: "bg-sky-400",
+		};
+	}
+	return {
+		label: "Estable",
+		badgeClass: "bg-teal-100 text-teal-900",
+		dotClass: "bg-emerald-500",
+	};
 };
 
 const PacientesPage = () => {
@@ -88,7 +157,7 @@ const PacientesPage = () => {
 	});
 
 	const filterOptions: FilterOption[] = [
-		{ id: "todas", label: "Todas" },
+		{ id: "todas", label: "Todos" },
 		{ id: "sin-resultado", label: "Sin resultado" },
 		{ id: "con-resultado", label: "Con resultado" },
 	];
@@ -138,22 +207,29 @@ const PacientesPage = () => {
 
 	// Combinar todos los pacientes con información de citas
 	const pacientesAgrupados = useMemo(() => {
-		return todosPacientes.map((paciente) => {
-			const pacienteConCitas = pacientesConCitas.get(paciente.id_paciente);
-			return {
-				id_paciente: paciente.id_paciente,
-				nombre: paciente.nombre,
-				apellido: paciente.apellido,
-				cedula: paciente.cedula,
-				correo: paciente.correo,
-				citas: pacienteConCitas?.citas || [],
-			};
-		}).sort((a, b) => {
-			const nombreA = `${a.nombre} ${a.apellido}`.toLowerCase();
-			const nombreB = `${b.nombre} ${b.apellido}`.toLowerCase();
-			return nombreA.localeCompare(nombreB);
-		});
+		return todosPacientes
+			.map((paciente) => {
+				const pacienteConCitas = pacientesConCitas.get(paciente.id_paciente);
+				return {
+					...paciente,
+					citas: pacienteConCitas?.citas || [],
+				};
+			})
+			.sort((a, b) => {
+				const nombreA = `${a.nombre} ${a.apellido}`.toLowerCase();
+				const nombreB = `${b.nombre} ${b.apellido}`.toLowerCase();
+				return nombreA.localeCompare(nombreB);
+			});
 	}, [todosPacientes, pacientesConCitas]);
+
+	const totalPacientesKpi = todosPacientes.length;
+	const sinResultadosKpi = useMemo(
+		() =>
+			pacientesAgrupados.filter((p) =>
+				p.citas.some((cita) => parseResultadoArchivo(cita.resultado_archivo).length === 0),
+			).length,
+		[pacientesAgrupados],
+	);
 
 	// Aplicar búsqueda por nombre, apellido, cédula o correo
 	const pacientesFiltrados = useMemo(() => {
@@ -180,6 +256,11 @@ const PacientesPage = () => {
 		return pacientesFiltrados.slice(startIndex, startIndex + itemsPerPage);
 	}, [pacientesFiltrados, currentPage, itemsPerPage]);
 
+	const paginationItems = useMemo(
+		() => getPaginationRange(currentPage, totalPages),
+		[currentPage, totalPages],
+	);
+
 	// Resetear a página 1 cuando cambian los datos o el filtro
 	useEffect(() => {
 		setCurrentPage(1);
@@ -202,7 +283,7 @@ const PacientesPage = () => {
 				showConfirmButton: false,
 			});
 			setSelectedCita(null);
-			refetch();
+			await refetchCitas();
 		} catch (error: any) {
 			Swal.fire({
 				icon: "error",
@@ -213,148 +294,247 @@ const PacientesPage = () => {
 	};
 
 	return (
-		<PageShell
-			title="Pacientes"
-			description="Subir resultados (ecos) para citas atendidas. Ver y gestionar archivos de resultados."
-		>
-			<div className="space-y-4">
-				{/* Filtros y búsqueda */}
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex flex-wrap gap-2">
-						{filterOptions.map((option) => (
-							<button
-								key={option.id}
-								onClick={() => setFilter(option.id)}
-								className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${filter === option.id
-									? "bg-brand-700 text-paper"
-									: "bg-cloud text-brand-800 hover:bg-brand-100"
-									}`}
-							>
-								{option.label}
-							</button>
-						))}
-					</div>
-					<input
-						type="text"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						placeholder="Buscar por nombre, apellido, cédula o correo..."
-						className="h-10 w-full max-w-xs rounded-lg border border-mist bg-cloud px-3 text-sm text-brand-900 outline-none focus:border-brand-700"
-					/>
-				</div>
-
-				{(loadingPacientes || loadingCitas) ? (
-					<div className="text-center py-8 text-brand-600">
-						Cargando pacientes...
-					</div>
-				) : pacientesAgrupados.length === 0 ? (
-					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
-						<p className="text-brand-600">
-							No hay pacientes {filter !== "todas" ? `con el filtro seleccionado` : ""}.
+		<PageShell title="Pacientes">
+			<div className="relative space-y-8 pb-36">
+				<section className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+					<div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+						<p className="text-sm text-slate-600">
+							<span className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-500">
+								Total pacientes
+							</span>
+							<span className="ml-2 font-headline text-xl font-bold tabular-nums text-[#006965]">
+								{totalPacientesKpi.toLocaleString("es-VE")}
+							</span>
 						</p>
 					</div>
-				) : (
-					<div className="space-y-3">
-						{paginatedPacientes.map((paciente) => {
-							const fullName = `${paciente.nombre} ${paciente.apellido}`;
-							const totalCitas = paciente.citas.length;
-							const citasConResultado = paciente.citas.filter((cita) => {
-								const archivos = parseResultadoArchivo(cita.resultado_archivo);
-								return archivos.length > 0;
-							}).length;
+					<div className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+						<p className="text-sm text-slate-600">
+							<span className="font-sans text-xs font-semibold uppercase tracking-widest text-slate-500">
+								Sin resultados
+							</span>
+							<span className="ml-2 font-headline text-xl font-bold tabular-nums text-[#ae2b30]">
+								{sinResultadosKpi}
+							</span>
+						</p>
+					</div>
+				</section>
 
-							return (
-								<div
-									key={paciente.id_paciente}
-									className="rounded-lg border border-brand-200 bg-paper p-4"
+				<section className="space-y-6 rounded-2xl bg-[#f4f3f3] p-6 md:p-8">
+					<div className="flex flex-col items-center gap-6 md:flex-row">
+						<div className="relative w-full flex-1">
+							<div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+								<Search className="h-5 w-5" aria-hidden />
+							</div>
+							<input
+								id="paciente-search"
+								type="text"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								placeholder="Buscar por nombre, apellido, cédula o correo..."
+								className="w-full rounded-xl border-none bg-white py-4 pl-12 pr-4 text-sm text-brand-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006965]/20"
+							/>
+						</div>
+						<div className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white/50 p-1.5 md:w-auto">
+							{filterOptions.map((option) => (
+								<button
+									key={option.id}
+									type="button"
+									onClick={() => setFilter(option.id)}
+									className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${filter === option.id
+										? "bg-[#006965] text-white shadow-md shadow-[#006965]/20"
+										: "text-slate-600 hover:bg-white/80"
+										}`}
 								>
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
+									{option.label}
+								</button>
+							))}
+						</div>
+					</div>
+				</section>
+
+				<section className="space-y-6">
+					<div className="px-2 sm:flex sm:justify-end">
+						<p className="text-sm text-slate-500">
+							{pacientesFiltrados.length === 0
+								? "Mostrando 0 de 0 registros"
+								: `Mostrando ${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, pacientesFiltrados.length)} de ${pacientesFiltrados.length.toLocaleString("es-VE")} registros`}
+						</p>
+					</div>
+
+					{loadingPacientes || loadingCitas ? (
+						<div className="py-16 text-center text-slate-600">Cargando pacientes...</div>
+					) : todosPacientes.length === 0 ? (
+						<div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+							<p className="text-slate-600">
+								No hay pacientes {filter !== "todas" ? "con el filtro seleccionado" : ""}.
+							</p>
+						</div>
+					) : pacientesFiltrados.length === 0 ? (
+						<div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+							<p className="text-slate-600">No hay resultados para la búsqueda o filtro actual.</p>
+						</div>
+					) : (
+						<div className="grid grid-cols-1 gap-4">
+							{paginatedPacientes.map((paciente) => {
+								const fullName = `${paciente.nombre} ${paciente.apellido}`;
+								const totalCitas = paciente.citas.length;
+								const citasConResultado = paciente.citas.filter((cita) => {
+									const archivos = parseResultadoArchivo(cita.resultado_archivo);
+									return archivos.length > 0;
+								}).length;
+								const edad = calcularEdadPaciente(paciente.fecha_nacimiento);
+								const estadoUi = getEstadoPacienteUi({
+									activo: paciente.activo,
+									totalCitas,
+									citasConResultado,
+								});
+								const { citas: _c, ...pacienteParaModal } = paciente;
+
+								return (
+									<div
+										key={paciente.id_paciente}
+										className="group flex flex-col justify-between rounded-2xl border border-slate-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md md:flex-row md:items-center"
+									>
+										<div className="flex items-center gap-6">
+											<div className="relative">
+												<div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 font-headline text-lg font-bold text-slate-500 grayscale transition-all group-hover:grayscale-0">
+													{(paciente.nombre?.[0] ?? "").toUpperCase()}
+													{(paciente.apellido?.[0] ?? "").toUpperCase()}
+												</div>
+												<div
+													className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-white ${estadoUi.dotClass}`}
+												/>
+											</div>
 											<div>
-												<h3 className="font-semibold text-brand-900">{fullName}</h3>
-												<p className="text-sm text-brand-600 mt-1">
-													{totalCitas} cita{totalCitas !== 1 ? "s" : ""} • {citasConResultado} con resultado{citasConResultado !== 1 ? "s" : ""}
+												<h4 className="font-headline text-lg font-bold text-brand-900 transition-colors group-hover:text-[#006965]">
+													{fullName}
+												</h4>
+												<p className="text-sm text-slate-500">
+													C.I. {paciente.cedula}
+													{edad != null ? ` • ${edad} años` : ""}
+													{paciente.correo ? ` • ${paciente.correo}` : ""}
+												</p>
+												<p className="mt-1 text-xs text-slate-400">
+													{totalCitas} cita{totalCitas !== 1 ? "s" : ""} en historial •{" "}
+													{citasConResultado} con resultado{citasConResultado !== 1 ? "s" : ""}
 												</p>
 											</div>
 										</div>
-										<div className="flex items-center gap-2">
-											<button
-												type="button"
-												onClick={() =>
-													setSelectedPacienteForAsignar({
-														id_paciente: paciente.id_paciente,
-														nombre: paciente.nombre,
-														apellido: paciente.apellido,
-														genero: paciente.genero,
-														cedula: paciente.cedula,
-														correo: paciente.correo,
-														telefono: paciente.telefono,
-														activo: paciente.activo,
-														fecha_nacimiento: paciente.fecha_nacimiento,
-														tipo_sangre: paciente.tipo_sangre,
-														descripcion: paciente.descripcion,
-														direccion: paciente.direccion,
-														contacto_emergencia_nombre: paciente.contacto_emergencia_nombre,
-														contacto_emergencia_telefono: paciente.contacto_emergencia_telefono,
-													})
-												}
-												className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-green-700"
+										<div className="mt-4 flex flex-col gap-6 px-0 md:mt-0 md:flex-row md:items-center md:gap-12 md:px-6">
+											<div className="flex items-center gap-8 md:gap-12">
+												<div className="text-center">
+													<p className="mb-1 font-sans text-[10px] uppercase tracking-widest text-slate-400">
+														Citas
+													</p>
+													<p className="font-headline text-lg font-bold text-slate-700">{totalCitas}</p>
+												</div>
+												<div className="text-center">
+													<p className="mb-1 font-sans text-[10px] uppercase tracking-widest text-slate-400">
+														Resultados
+													</p>
+													<p
+														className={`font-headline text-lg font-bold ${citasConResultado === 0 && totalCitas > 0 ? "text-[#ae2b30]" : "text-slate-700"}`}
+													>
+														{String(citasConResultado).padStart(2, "0")}
+													</p>
+												</div>
+												<div className="hidden h-10 w-px bg-slate-100 lg:block" />
+												<div className="hidden lg:flex lg:flex-col">
+													<span
+														className={`rounded-full px-3 py-1 text-center text-[10px] font-bold uppercase tracking-wider ${estadoUi.badgeClass}`}
+													>
+														{estadoUi.label}
+													</span>
+												</div>
+											</div>
+											<div className="flex w-full gap-3 md:mt-0 md:w-auto md:items-center">
+												<button
+													type="button"
+													onClick={() =>
+														setSelectedPacienteForHistorial({
+															id_paciente: paciente.id_paciente,
+															nombre: paciente.nombre,
+															apellido: paciente.apellido,
+														})
+													}
+													className="flex-1 rounded-xl border border-[#006965]/20 px-6 py-3 text-sm font-semibold text-[#006965] transition-colors hover:bg-teal-50 active:scale-95 md:flex-none"
+												>
+													Ver historial
+												</button>
+												<button
+													type="button"
+													onClick={() => setSelectedPacienteForAsignar(pacienteParaModal)}
+													className="flex-1 rounded-xl bg-[#006965] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/10 transition-all hover:shadow-[#006965]/20 active:scale-95 md:flex-none"
+												>
+													Asignar cita
+												</button>
+											</div>
+										</div>
+										<div className="mt-3 lg:hidden">
+											<span
+												className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${estadoUi.badgeClass}`}
 											>
-												Asignar cita
-											</button>
-											<button
-												type="button"
-												onClick={() =>
-													setSelectedPacienteForHistorial({
-														id_paciente: paciente.id_paciente,
-														nombre: paciente.nombre,
-														apellido: paciente.apellido,
-													})
-												}
-												className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
-											>
-												Ver historial de citas
-											</button>
+												{estadoUi.label}
+											</span>
 										</div>
 									</div>
-								</div>
-							);
-						})}
-					</div>
-				)}
+								);
+							})}
+						</div>
+					)}
 
-				{/* Paginación */}
-				{pacientesFiltrados.length > 0 && (
-					<div className="flex items-center justify-between border-t border-mist pt-4">
-						<div className="text-sm text-brand-800">
-							Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-							{Math.min(currentPage * itemsPerPage, pacientesFiltrados.length)} de{" "}
-							{pacientesFiltrados.length} paciente{pacientesFiltrados.length !== 1 ? "s" : ""}
-						</div>
-						<div className="flex items-center gap-2">
+					{pacientesFiltrados.length > 0 && (
+						<div className="flex flex-wrap items-center justify-center gap-2 pt-4">
 							<button
 								type="button"
-								onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+								onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
 								disabled={currentPage === 1}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+								className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-[#eeeeed] disabled:opacity-40"
+								aria-label="Página anterior"
 							>
-								Anterior
+								<ChevronLeft className="h-5 w-5" />
 							</button>
-							<span className="text-xs text-brand-800">
-								Página {currentPage} de {totalPages}
-							</span>
+							{paginationItems.map((item, idx) =>
+								item === "ellipsis" ? (
+									<span key={`e-${idx}`} className="px-2 text-slate-400">
+										...
+									</span>
+								) : (
+									<button
+										key={item}
+										type="button"
+										onClick={() => setCurrentPage(item)}
+										className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium transition-colors ${currentPage === item
+											? "bg-[#006965] font-bold text-white shadow-md shadow-[#006965]/20"
+											: "text-slate-600 hover:bg-[#eeeeed]"
+											}`}
+									>
+										{item}
+									</button>
+								),
+							)}
 							<button
 								type="button"
-								onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+								onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
 								disabled={currentPage >= totalPages}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+								className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-[#eeeeed] disabled:opacity-40"
+								aria-label="Página siguiente"
 							>
-								Siguiente
+								<ChevronRight className="h-5 w-5" />
 							</button>
 						</div>
-					</div>
-				)}
+					)}
+				</section>
 			</div>
+
+			<Link
+				to="/register"
+				className="fixed bottom-8 right-8 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-[#006965] text-white shadow-2xl shadow-[#006965]/40 transition-all hover:scale-110 active:scale-95"
+				aria-label="Registrar nuevo paciente (registro público)"
+				title="Registrar nuevo paciente"
+			>
+				<UserPlus className="h-8 w-8" aria-hidden />
+			</Link>
 
 			{/* Modal para subir resultados */}
 			{selectedCita && (
@@ -391,9 +571,9 @@ const PacientesPage = () => {
 					onClose={() => setSelectedCitaForResultados(null)}
 					onArchivoDeleted={async () => {
 						// Refrescar los datos del servidor
-						await refetch();
+						await refetchCitas();
 						// Buscar la cita actualizada en los nuevos datos
-						const nuevasCitas = await refetch();
+						const nuevasCitas = await refetchCitas();
 						if (nuevasCitas.data) {
 							const citaActualizada = nuevasCitas.data.find((c) => c.id_cita === selectedCitaForResultados.idCita);
 							if (citaActualizada) {
@@ -435,7 +615,7 @@ const PacientesPage = () => {
 					parseResultadoArchivo={parseResultadoArchivo}
 					onClose={() => setSelectedPacienteForHistorial(null)}
 					onRefetch={async () => {
-						await refetch();
+						await refetchCitas();
 					}}
 				/>
 			)}
