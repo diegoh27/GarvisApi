@@ -64,6 +64,7 @@ export type CitaCompleta = {
 	representado_parentesco: string | null;
 	// Datos del resultado
 	resultado_archivo: string | null;
+	resultado_study_uid: string | null;
 	resultado_estado: number | null;
 	resultado_fecha_publicacion: string | null;
 	// Datos del informe

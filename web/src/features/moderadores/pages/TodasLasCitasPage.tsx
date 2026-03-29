@@ -590,18 +590,6 @@ const TodasLasCitasPage = () => {
 		}
 	};
 
-	const handleViewOrdenMedica = (orden: string | null) => {
-		if (!orden) {
-			Swal.fire({
-				icon: "warning",
-				title: "Sin orden médica",
-				text: "Esta cita no tiene orden médica disponible.",
-			});
-			return;
-		}
-		window.open(orden, "_blank", "noopener,noreferrer");
-	};
-
 	const handleViewInforme = (informePdfUrl: string | null) => {
 		if (!informePdfUrl) {
 			Swal.fire({
@@ -800,25 +788,25 @@ const TodasLasCitasPage = () => {
 					<>
 						<div className="overflow-hidden rounded-3xl bg-white shadow-sm shadow-zinc-200/50">
 							<div className="custom-scrollbar overflow-x-auto">
-								<table className="w-full min-w-[960px] border-collapse text-left">
+								<table className="w-full min-w-[900px] border-collapse text-left">
 									<thead>
 										<tr className="border-b border-zinc-100 bg-zinc-50">
-											<th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Paciente
 											</th>
-											<th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Estudio / Especialista
 											</th>
-											<th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Fecha y Hora
 											</th>
-											<th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Importe
 											</th>
-											<th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Estados
 											</th>
-											<th className="px-6 py-4 text-right text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+											<th className="px-4 py-3 text-right text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
 												Acciones
 											</th>
 										</tr>
@@ -861,7 +849,7 @@ const TodasLasCitasPage = () => {
 										key={cita.id_cita}
 										className={`group transition-colors hover:bg-mist/50 ${rowHighlight}`}
 									>
-										<td className="px-6 py-5 align-top">
+										<td className="px-4 py-4 align-top">
 											<div className="flex items-center gap-3">
 												<div
 													className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${getAvatarToneClass(fullName)}`}
@@ -878,26 +866,26 @@ const TodasLasCitasPage = () => {
 												</div>
 											</div>
 										</td>
-										<td className="px-6 py-5 align-top">
+										<td className="px-4 py-4 align-top">
 											<div className="space-y-0.5">
 												<p className="text-sm font-medium text-zinc-700">{cita.eco_nombre}</p>
 												<p className="text-[11px] font-semibold text-brand-800">{especialistaFullName}</p>
 											</div>
 										</td>
-										<td className="px-6 py-5 align-top">
+										<td className="px-4 py-4 align-top">
 											<div className="space-y-0.5">
 												<p className="text-sm text-zinc-700">{formatFecha(cita.fecha_cita)}</p>
 												<p className="text-xs text-zinc-400">{formatHora(cita.hora_cita)}</p>
 											</div>
 										</td>
-										<td className="px-6 py-5 align-top">
+										<td className="px-4 py-4 align-top">
 											<p className="text-sm font-bold text-zinc-900">
 												{cita.pago_monto != null && cita.pago_monto !== ""
 													? formatMonto(cita.pago_monto)
 													: "—"}
 											</p>
 										</td>
-										<td className="px-6 py-5 align-top">
+										<td className="px-4 py-4 align-top">
 											<div className="flex max-w-[280px] flex-wrap gap-2">
 												<span
 													className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${pagoBadgeClass}`}
@@ -958,7 +946,7 @@ const TodasLasCitasPage = () => {
 												)}
 											</div>
 										</td>
-										<td className="px-6 py-5 text-right align-top">
+										<td className="px-4 py-4 text-right align-top">
 											<div
 												className="relative inline-flex"
 												ref={openAccionesCitaId === cita.id_cita ? accionesDropdownRef : undefined}
@@ -975,7 +963,7 @@ const TodasLasCitasPage = () => {
 													<MoreVertical className="h-5 w-5" />
 												</button>
 												{openAccionesCitaId === cita.id_cita && (
-													<div className="absolute right-0 top-full z-50 mt-1 min-w-[220px] rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+													<div className="absolute right-0 top-full z-50 mt-1 flex min-w-[220px] flex-col items-stretch rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
 														<button
 															type="button"
 															onClick={() => {
@@ -1080,7 +1068,7 @@ const TodasLasCitasPage = () => {
 																Ver informe
 															</button>
 														) : (
-															<div className="px-4 py-2 text-sm text-brand-500">
+															<div className="w-full px-4 py-2 text-left text-sm text-brand-500">
 																Sin informe
 															</div>
 														)}
@@ -1149,7 +1137,7 @@ const TodasLasCitasPage = () => {
 									</tbody>
 								</table>
 							</div>
-							<div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-6 py-4">
+							<div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-4 py-3">
 								<p className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
 									Mostrando{" "}
 									{filteredCitas.length === 0
