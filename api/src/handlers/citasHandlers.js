@@ -9,6 +9,7 @@ const {
 	tienePagoPendienteController,
 	listCitasPendientesPagoController,
 	listCitasConPagosController,
+	countPagosGestionadosHoyController,
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,
@@ -232,7 +233,8 @@ const listCitasByEspecialistaSelfHandler = async (req, res) => {
 const cancelCitaHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const result = await cancelCitaController({ id_cita: id });
+		const cancelado_por = req.user?.id ?? null;
+		const result = await cancelCitaController({ id_cita: id, cancelado_por });
 		return res.status(200).json({
 			ok: true,
 			message: "Cita cancelada",
@@ -330,6 +332,23 @@ const listCitasPendientesPagoHandler = async (req, res) => {
 		return res.status(200).json({
 			ok: true,
 			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+/** KPI: pagos web con fecha_validacion hoy (aprobaciones, rechazos, cancelaciones, posponer con pago, etc.) */
+const getVerificacionPagosKpiHandler = async (req, res) => {
+	try {
+		const verificados_hoy = await countPagosGestionadosHoyController();
+		return res.status(200).json({
+			ok: true,
+			data: { verificados_hoy },
 		});
 	} catch (err) {
 		console.error(err);
@@ -581,12 +600,15 @@ const posponerCitaHandler = async (req, res) => {
 				? `${hora_cita}:00`
 				: hora_cita;
 
+		const gestionado_por = req.user?.id ?? null;
+
 		const data = await posponerCitaController({
 			id_cita: id,
 			fecha_cita,
 			hora_cita: horaNormalizada,
 			id_especialista: id_especialista || null,
 			id_disponibilidad: id_disponibilidad || null,
+			gestionado_por,
 		});
 
 		return res.status(200).json({
@@ -1101,6 +1123,7 @@ module.exports = {
 	markCitaAtendidaHandler,
 	tienePagoPendienteHandler,
 	listCitasPendientesPagoHandler,
+	getVerificacionPagosKpiHandler,
 	listCitasConPagosHandler,
 	updateEstadoPagoHandler,
 	listCitasByFechaHandler,

@@ -170,6 +170,10 @@ const MonthCalendar = ({
 
 	const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
+	/** Vista moderador: calendario más compacto y cabecera de mes con fondo propio. */
+	const compact = showMonthNavigation;
+	const cellMinH = compact ? "min-h-[100px]" : "min-h-[120px]";
+
 	const monthNames = [
 		"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 		"Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
@@ -187,9 +191,11 @@ const MonthCalendar = ({
 
 	const grid = (
 		<>
-			<div className="mb-2 grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
+			<div
+				className={`grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400 sm:text-[11px] ${compact ? "mb-1.5 py-1.5" : "mb-2"}`}
+			>
 				{weekDays.map((d) => (
-					<div key={d} className="py-2">
+					<div key={d} className={compact ? "py-1.5" : "py-2"}>
 						{d}
 					</div>
 				))}
@@ -201,14 +207,27 @@ const MonthCalendar = ({
 					const isSelected = dateKey === selectedDate;
 					const dispBg = isCurrentMonth ? celdaDisponibilidadBg(dayList) : "";
 					const isPast = isCurrentMonth && dateKey < todayKey;
-					const basePad = !isCurrentMonth
-						? "bg-slate-50/30"
-						: dispBg || (isPast ? "bg-slate-50/40" : "bg-white");
+
+					/** Días pasados: gris casi blanco; hoy: fondo/teal suave; disponibilidad conserva sus colores. */
+					let basePad = "";
+					if (!isCurrentMonth) {
+						basePad = "bg-slate-50/30";
+					} else if (isToday) {
+						basePad = dispBg
+							? `${dispBg} shadow-[inset_0_0_0_2px_rgba(28,158,152,0.45)]`
+							: "bg-brand-50 shadow-[inset_0_0_0_1px_rgba(62,174,176,0.5)]";
+					} else if (dispBg) {
+						basePad = dispBg;
+					} else if (isPast) {
+						basePad = "bg-neutral-50";
+					} else {
+						basePad = "bg-white";
+					}
 
 					return (
 						<div
 							key={`${dateKey}-${isCurrentMonth}`}
-							className={`flex min-h-[120px] flex-col border-b border-r border-slate-200/80 p-2 text-left transition-colors ${basePad} ${
+							className={`flex ${cellMinH} flex-col border-b border-r border-slate-200/80 p-2 text-left transition-colors ${basePad} ${
 								isCurrentMonth ? "cursor-pointer hover:brightness-[0.99]" : ""
 							} ${
 								isSelected && isCurrentMonth
@@ -217,14 +236,17 @@ const MonthCalendar = ({
 							}`}
 							onClick={() => isCurrentMonth && onDateClick(dateKey)}
 							role="gridcell"
+							aria-current={isToday && isCurrentMonth ? "date" : undefined}
 						>
 							<span
 								className={`text-xs font-bold ${
 									!isCurrentMonth
 										? "text-slate-300"
 										: isToday
-											? "inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-brand-700 px-1.5 text-paper"
-											: "text-slate-500"
+											? "inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-brand-600 px-1.5 text-paper shadow-sm ring-2 ring-brand-200/80"
+											: isPast
+												? "text-slate-400"
+												: "text-slate-600"
 								}`}
 							>
 								{day}
@@ -290,31 +312,35 @@ const MonthCalendar = ({
 
 	if (showMonthNavigation) {
 		return (
-			<div className="overflow-x-auto">
-				<div className="flex min-w-[560px] items-center justify-between border-b border-mist p-3 sm:p-4">
-					<button
-						type="button"
-						onClick={goToPreviousMonth}
-						className="rounded-lg p-2 hover:bg-brand-50"
-					>
-						<svg className="h-5 w-5 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-						</svg>
-					</button>
-					<h2 className="text-lg font-semibold text-brand-900">
-						{monthNames[month]} {year}
-					</h2>
-					<button
-						type="button"
-						onClick={goToNextMonth}
-						className="rounded-lg p-2 hover:bg-brand-50"
-					>
-						<svg className="h-5 w-5 text-brand-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-						</svg>
-					</button>
+			<div className="mx-auto w-full max-w-4xl overflow-x-auto">
+				<div className="overflow-hidden rounded-2xl border border-mist/80 bg-paper shadow-sm">
+					<div className="flex min-w-[min(100%,42rem)] items-center justify-between gap-2 bg-brand-600 px-3 py-2.5 sm:px-5 sm:py-3.5">
+						<button
+							type="button"
+							onClick={goToPreviousMonth}
+							className="rounded-lg p-1.5 text-paper transition hover:bg-white/15"
+							aria-label="Mes anterior"
+						>
+							<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+							</svg>
+						</button>
+						<h2 className="text-center text-base font-semibold text-paper sm:text-lg">
+							{monthNames[month]} {year}
+						</h2>
+						<button
+							type="button"
+							onClick={goToNextMonth}
+							className="rounded-lg p-1.5 text-paper transition hover:bg-white/15"
+							aria-label="Mes siguiente"
+						>
+							<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+							</svg>
+						</button>
+					</div>
+					<div className="p-3 sm:p-4">{grid}</div>
 				</div>
-				<div className="p-3 sm:p-4">{grid}</div>
 			</div>
 		);
 	}

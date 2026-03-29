@@ -20,6 +20,9 @@ export type CitaPendientePago = {
 	especialista_nombre: string;
 	especialista_apellido: string;
 	eco_nombre: string;
+	/** Desde `pagos` (listado ampliado); puede ser null si aún no hay fila de pago */
+	pago_monto?: number | string | null;
+	pago_metodo?: string | null;
 };
 
 export type CitaCompleta = {
@@ -152,6 +155,12 @@ const citasApi = baseApi.injectEndpoints({
 			query: () => "/citas/pendientes-pago",
 			transformResponse: (response: { ok: boolean; data: CitaPendientePago[] }) =>
 				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
+		getVerificacionPagosKpi: builder.query<{ verificados_hoy: number }, void>({
+			query: () => "/citas/verificacion-pagos-kpi",
+			transformResponse: (response: { ok: boolean; data: { verificados_hoy: number } }) =>
+				response.data ?? { verificados_hoy: 0 },
 			providesTags: ["Citas"],
 		}),
 		getCitasConPagos: builder.query<CitaPendientePago[], void>({
@@ -306,6 +315,7 @@ const citasApi = baseApi.injectEndpoints({
 
 export const {
 	useGetCitasPendientesPagoQuery,
+	useGetVerificacionPagosKpiQuery,
 	useGetCitasConPagosQuery,
 	useGetTienePagoPendienteQuery,
 	useUpdateEstadoPagoMutation,

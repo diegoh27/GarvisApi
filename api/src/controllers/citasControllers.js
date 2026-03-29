@@ -357,7 +357,7 @@ const listCitasByEspecialistaController = async (id_especialista) => {
 	return rows;
 };
 
-const cancelCitaController = async ({ id_cita }) => {
+const cancelCitaController = async ({ id_cita, cancelado_por = null }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -374,15 +374,18 @@ const cancelCitaController = async ({ id_cita }) => {
 			throw err;
 		}
 
+		const validadorCancel = await resolveExistingUsuarioId(conn, cancelado_por);
+
 		await conn.execute(
 			"UPDATE cita SET estado_cita = 2, estado_pago = 2 WHERE id_cita = ?",
 			[id_cita],
 		);
 
-		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita
-		await conn.execute("UPDATE pagos SET estado_pago = 2 WHERE id_cita = ?", [
-			id_cita,
-		]);
+		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita; fecha para KPI "gestionados hoy"
+		await conn.execute(
+			`UPDATE pagos SET estado_pago = 2, fecha_validacion = CURRENT_TIMESTAMP, validado_por = COALESCE(?, validado_por) WHERE id_cita = ?`,
+			[validadorCancel, id_cita],
+		);
 		// Eliminar el ingreso en facturación asociado al pago de esta cita
 		await conn.execute(
 			`DELETE f FROM fac_movimiento f
@@ -555,12 +558,15 @@ const listCitasPendientesPagoController = async () => {
       u_paciente.telefono AS paciente_telefono,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
-      e.nombre AS eco_nombre
+      e.nombre AS eco_nombre,
+      p.monto AS pago_monto,
+      p.metodo AS pago_metodo
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN pagos p ON p.id_cita = c.id_cita
     WHERE c.origen_cita = 'web'
       AND c.estado_pago = 0
       AND c.estado_cita IN (0, 1)
@@ -669,12 +675,22 @@ const updateEstadoPagoController = async ({
 				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
 				[estado_pago, aprobadorValido, id_cita],
 			);
+		} else if (estado_pago === 2) {
+			await conn.execute(
+				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
+				[estado_pago, aprobadorValido, id_cita],
+			);
+			await conn.execute(
+				`DELETE f FROM fac_movimiento f
+				 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
+				 WHERE p.id_cita = ?`,
+				[id_cita],
+			);
 		} else {
 			await conn.execute("UPDATE pagos SET estado_pago = ? WHERE id_cita = ?", [
 				estado_pago,
 				id_cita,
 			]);
-			// Si el pago se revierte (0) o se rechaza (2), eliminar el ingreso en facturación
 			await conn.execute(
 				`DELETE f FROM fac_movimiento f
 				 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
@@ -873,6 +889,7 @@ const posponerCitaController = async ({
 	hora_cita,
 	id_especialista,
 	id_disponibilidad,
+	gestionado_por = null,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -1022,6 +1039,12 @@ const posponerCitaController = async ({
 			],
 		);
 
+		const validadorPosponer = await resolveExistingUsuarioId(conn, gestionado_por);
+		await conn.execute(
+			`UPDATE pagos SET fecha_validacion = CURRENT_TIMESTAMP, validado_por = COALESCE(?, validado_por) WHERE id_cita = ?`,
+			[validadorPosponer, id_cita],
+		);
+
 		await conn.commit();
 		return {
 			id_cita,
@@ -1036,6 +1059,20 @@ const posponerCitaController = async ({
 	} finally {
 		conn.release();
 	}
+};
+
+// Conteo de pagos web con marca de gestión el día calendario actual (aprobación, rechazo, cancelación, posponer, etc.)
+const countPagosGestionadosHoyController = async () => {
+	const sql = `
+    SELECT COUNT(*) AS total
+    FROM pagos p
+    INNER JOIN cita c ON c.id_cita = p.id_cita
+    WHERE c.origen_cita = 'web'
+      AND p.fecha_validacion IS NOT NULL
+      AND DATE(p.fecha_validacion) = CURDATE()
+  `;
+	const [rows] = await pool.execute(sql);
+	return Number(rows[0]?.total ?? 0);
 };
 
 // Obtener una cita por ID con todos los datos relacionados
@@ -1942,6 +1979,7 @@ module.exports = {
 	markCitaAtendidaController,
 	listCitasPendientesPagoController,
 	listCitasConPagosController,
+	countPagosGestionadosHoyController,
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,
