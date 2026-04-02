@@ -16,6 +16,7 @@ import {
 	ListChecks,
 	CreditCard,
 	Wallet,
+	Store,
 } from "lucide-react";
 import { useAuth } from "../shared";
 import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
@@ -53,6 +54,7 @@ const navByRole: Record<string, NavItem[]> = {
 		// Configuración del sistema
 		{ label: "Especialidades", to: "/especialidades", icon: Stethoscope },
 		{ label: "Ecos", to: "/ecos", icon: FileCheck },
+		{ label: "Cita Mostrador", to: "/cita-mostrador", icon: Store },
 		// Auditoría
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
 	],

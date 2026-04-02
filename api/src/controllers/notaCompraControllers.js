@@ -230,7 +230,7 @@ const createNotaCompraController = async ({
 		await conn.execute(
 			`INSERT INTO fac_movimiento
 			 (id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
-			 VALUES (UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'NOTA_COMPRA', ?, ?, NOW())`,
+			 VALUES (UUID(), 'Egreso', ?, ?, ?, ?, ?, ?, ?, 'INV_COMPRA', ?, ?, NOW())`,
 			[
 				fecha_compra,
 				normalized.monto_usd,
@@ -319,7 +319,7 @@ const deleteNotaCompraController = async (id_nota_compra) => {
 
 		// Eliminar movimiento de facturación
 		await conn.execute(
-			"DELETE FROM fac_movimiento WHERE origen_modulo = 'NOTA_COMPRA' AND origen_id = ?",
+			"DELETE FROM fac_movimiento WHERE origen_modulo IN ('INV_COMPRA', 'NOTA_COMPRA', '') AND origen_id = ?",
 			[id_nota_compra],
 		);
 

@@ -79,7 +79,8 @@ INSERT IGNORE INTO moderador_permisos_menu (seccion, permitido) VALUES
   ('registrar_especialista', 1),
   ('registrar_moderador', 1),
   ('especialidades', 1),
-  ('ecos', 1);
+  ('ecos', 1),
+  ('cita_mostrador', 1);
 
 -- =========================
 -- 2) Usuario (tabla base)

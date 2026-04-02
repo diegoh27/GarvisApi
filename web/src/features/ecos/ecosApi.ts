@@ -17,9 +17,15 @@ const ecosApi = baseApi.injectEndpoints({
 			providesTags: ["Ecos"],
 		}),
 		getEcosByEspecialista: builder.query<Eco[], string>({
-			query: (id_especialista) => `/especialista-ecos/${id_especialista}`,
-			transformResponse: (response: { ok: boolean; data: Eco[] }) =>
-				response.data ?? [],
+			query: (id_especialista) =>
+				`/especialista-ecos/${encodeURIComponent(String(id_especialista).trim())}`,
+			transformResponse: (response: { ok: boolean; data: Eco[] }) => {
+				const rows = response.data ?? [];
+				return rows.map((r) => ({
+					...r,
+					id_eco: String(r.id_eco ?? "").trim(),
+				}));
+			},
 			providesTags: ["Ecos"],
 		}),
 		createEco: builder.mutation<

@@ -84,6 +84,7 @@ const SECCIONES_MENU_MODERADOR = [
 	"registrar_moderador",
 	"especialidades",
 	"ecos",
+	"cita_mostrador",
 ];
 
 const ensureTableModeradorPermisosMenu = async () => {

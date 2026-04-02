@@ -3,6 +3,7 @@ import {
 	CalendarCheck,
 	CalendarDays,
 	ClipboardList,
+	Store,
 	FileCheck,
 	FileText,
 	ListChecks,
@@ -117,5 +118,12 @@ export const MODERADOR_MENU_MODULES: ModeradorMenuModuleDef[] = [
 		description: "Configuración de ecografías y precios.",
 		to: "/ecos",
 		icon: ClipboardList,
+	},
+	{
+		key: "cita_mostrador",
+		label: "Cita Mostrador",
+		description: "Registro de citas presenciales en mostrador.",
+		to: "/cita-mostrador",
+		icon: Store,
 	},
 ];

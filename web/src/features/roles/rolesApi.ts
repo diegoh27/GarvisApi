@@ -24,6 +24,7 @@ export type PermisosMenuModerador = {
 	registrar_moderador: boolean;
 	especialidades: boolean;
 	ecos: boolean;
+	cita_mostrador: boolean;
 };
 
 const defaultPermisosMenuModerador = (): PermisosMenuModerador => ({
@@ -40,6 +41,7 @@ const defaultPermisosMenuModerador = (): PermisosMenuModerador => ({
 	registrar_moderador: true,
 	especialidades: true,
 	ecos: true,
+	cita_mostrador: true,
 });
 
 const rolesApi = baseApi.injectEndpoints({

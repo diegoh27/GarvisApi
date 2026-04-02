@@ -43,8 +43,14 @@ const buildMovimientosFilters = ({
 	}
 
 	if (origen_modulo) {
-		where.push("f.origen_modulo = ?");
-		params.push(origen_modulo);
+		if (origen_modulo === "INV_COMPRA") {
+			where.push(
+				"(f.origen_modulo = 'INV_COMPRA' OR f.origen_modulo = 'NOTA_COMPRA' OR (f.origen_modulo = '' AND LOWER(COALESCE(f.descripcion, '')) LIKE 'nota de compra%'))",
+			);
+		} else {
+			where.push("f.origen_modulo = ?");
+			params.push(origen_modulo);
+		}
 	}
 
 	if (fecha_desde) {
@@ -123,7 +129,11 @@ exports.listMovimientosFacturacionController = async ({
 			f.tasa_dia_bcv,
 			f.descripcion,
 			f.referencia,
-			f.origen_modulo,
+			CASE
+				WHEN f.origen_modulo IN ('INV_COMPRA', 'NOTA_COMPRA') THEN 'INV_COMPRA'
+				WHEN f.origen_modulo = '' AND LOWER(COALESCE(f.descripcion, '')) LIKE 'nota de compra%' THEN 'INV_COMPRA'
+				ELSE f.origen_modulo
+			END AS origen_modulo,
 			f.origen_id,
 			c.id_cita,
 			c.fecha_cita,

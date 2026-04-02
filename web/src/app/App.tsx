@@ -28,6 +28,7 @@ import {
 } from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
+import CitaMostradorPage from "../features/inventario/pages/CitaMostradorPage";
 import { FinanzasPage } from "../features/finanzas";
 import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
@@ -221,6 +222,14 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["admin", "moderador"]}>
 								<EcosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="cita-mostrador"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<CitaMostradorPage />
 							</RoleRoute>
 						}
 					/>

@@ -22,7 +22,14 @@ const especialistasApi = baseApi.injectEndpoints({
       transformResponse: (response: {
         ok: boolean;
         data: EspecialistaInventario[];
-      }) => response.data ?? [],
+      }) => {
+        const rows = response.data ?? [];
+        return rows.map((r) => ({
+          ...r,
+          id_especialista: String(r.id_especialista ?? "").trim(),
+          id_especialidad: String(r.id_especialidad ?? "").trim(),
+        }));
+      },
       providesTags: ["Usuarios"],
     }),
   }),
