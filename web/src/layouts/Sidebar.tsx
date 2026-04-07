@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Swal from "sweetalert2";
 
 type NavItem = {
 	label: string;
@@ -47,8 +48,17 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 						item.disabled ? (
 							<span
 								key={item.to}
-								title={item.disabledTitle}
-								className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-brand-500 opacity-60 cursor-not-allowed"
+								onClick={() => {
+									if (item.disabledTitle) {
+										Swal.fire({
+											icon: "warning",
+											title: "Atención",
+											text: item.disabledTitle,
+											confirmButtonColor: "#054542",
+										});
+									}
+								}}
+								className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-brand-500 opacity-60 cursor-pointer hover:bg-cloud"
 							>
 								<item.icon className="h-4 w-4" />
 								<span className="flex-1">{item.label}</span>

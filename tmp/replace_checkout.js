@@ -1,361 +1,9 @@
-import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from "react";
-import {
-	ArrowLeft,
-	ArrowRight,
-	Upload,
-	Calendar,
-	Clock,
-	ScanHeart,
-	User,
-	CheckCircle2,
-	Copy,
-	Loader2,
-	CreditCard,
-} from "lucide-react";
-import { useGetEcosQuery } from "../../ecos/ecosApi";
-import { useGetDolarOficialQuery } from "../../dolar";
-import { useAsignarCitaMutation, useUploadOrdenMedicaMutation } from "../../citas/citasApi";
-import { useGetMetodosPagoDisponiblesQuery } from "../../metodos-pago/metodosPagoApi";
-import { useAuth, getToken } from "../../../shared";
-import { CedulaField } from "../../../shared/components/CedulaField";
-import { TelefonoField, validarNumeroTelefono, MENSAJE_TELEFONO_7_DIGITOS } from "../../../shared/components/TelefonoField";
-import { parseCedulaDisplay } from "../../../shared/utils/cedulaDisplay";
-import { parseTelefonoDisplay } from "../../../shared/utils/telefonoDisplay";
-import { validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared/utils/validation";
+const fs = require('fs');
+const path = 'c:/Users/USER/Desktop/www/GarvisApi/web/src/features/agendar-cita/components/PasoCheckout.tsx';
+let code = fs.readFileSync(path, 'utf8');
 
-type PasoCheckoutProps = {
-	idEco: string;
-	ecoNombre: string;
-	fecha: string;
-	hora: string;
-	idDisponibilidad: string;
-	idEspecialista: string;
-	especialistaNombre: string;
-	idRepresentado?: string;
-	onBack: () => void;
-};
-
-/* ─── Helpers ─── */
-
-const MONTH_NAMES = [
-	"Ene", "Feb", "Mar", "Abr", "May", "Jun",
-	"Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-];
-
-const formatFecha = (fecha: string): string => {
-	const [y, m, d] = fecha.split("-").map(Number);
-	return `${d} ${MONTH_NAMES[(m ?? 1) - 1]} ${y}`;
-};
-
-const formatHora = (hora: string): string => {
-	const parts = hora.split(":").map(Number);
-	const h = parts[0] ?? 0;
-	const mm = String(parts[1] ?? 0).padStart(2, "0");
-	const ampm = h >= 12 ? "PM" : "AM";
-	const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-	return `${String(h12).padStart(2, "0")}:${mm} ${ampm}`;
-};
-
-const copyToClipboard = (text: string) => {
-	navigator.clipboard.writeText(text).catch(() => { /* ignore */ });
-};
-
-const labelTipoPago = (tipo: string): string => {
-	const m: Record<string, string> = {
-		PagoMovil: "Pago Móvil",
-		Transferencia: "Transferencia",
-		EfectivoBs: "Efectivo (Bs.)",
-		EfectivoUSD: "Efectivo ($)",
-		Zelle: "Zelle",
-		Binance: "Binance",
-		PayPal: "PayPal",
-		Otro: "Otro",
-		Efectivo: "Efectivo",
-	};
-	return m[tipo] ?? tipo;
-};
-
-const isCashTipo = (tipo: string) =>
-	tipo === "EfectivoBs" || tipo === "EfectivoUSD" || tipo === "Efectivo";
-
-const needsBanksTipo = (tipo: string) =>
-	tipo === "Transferencia" || tipo === "PagoMovil";
-
-const needsComprobanteTipo = (tipo: string) => !isCashTipo(tipo);
-
-/** Monto en BS (eco USD × tasa) o monto en USD (precio eco) */
-const montoParaMetodo = (
-	tipoPago: string,
-	moneda: string | undefined,
-	precioUSD: number,
-	precioBS: number,
-): number => {
-	if (tipoPago === "EfectivoBs" || moneda === "BS") {
-		return precioBS;
-	}
-	return precioUSD;
-};
-
-const esVistaBs = (tipoPago: string, moneda: string | undefined) =>
-	tipoPago === "EfectivoBs" || moneda === "BS";
-
-/* ─── Component ─── */
-
-const PasoCheckout = ({
-	idEco,
-	ecoNombre,
-	fecha,
-	hora,
-	idDisponibilidad,
-	idEspecialista,
-	especialistaNombre,
-	idRepresentado,
-	onBack,
-}: PasoCheckoutProps) => {
-	const { user } = useAuth();
-
-	// Fetch eco price
-	const { data: ecos = [] } = useGetEcosQuery();
-	const eco = ecos.find((e) => e.id_eco === idEco);
-	const precioUSD = Number(eco?.precio ?? 0);
-
-	// Fetch BCV rate
-	const { data: dolar } = useGetDolarOficialQuery();
-	const tasaBCV = dolar?.promedio ?? 0;
-	const precioBS = tasaBCV > 0 ? precioUSD * tasaBCV : 0;
-
-	// Fetch dynamic payment methods
-	const { data: metodosPago = [] } = useGetMetodosPagoDisponiblesQuery();
-
-	// Mutations
-	const [asignarCita, { isLoading: isSubmitting }] = useAsignarCitaMutation();
-	const [uploadOrden] = useUploadOrdenMedicaMutation();
-
-	// Selected payment method (by id)
-	const [selectedMetodoId, setSelectedMetodoId] = useState<string>("");
-	const selectedMetodo = metodosPago.find((m) => m.id_metodo_pago === selectedMetodoId) ?? null;
-
-	// Auto-select first method when they load
-	useEffect(() => {
-		if (metodosPago.length > 0 && !selectedMetodoId) {
-			setSelectedMetodoId(metodosPago[0].id_metodo_pago);
-		}
-	}, [metodosPago, selectedMetodoId]);
-
-	useEffect(() => {
-		const t = selectedMetodo?.tipo_pago ?? "";
-		if (isCashTipo(t)) setComprobanteFile(null);
-	}, [selectedMetodo?.tipo_pago]);
-
-	// Form state
-	const [bancoOrigen, setBancoOrigen] = useState("");
-	const [referencia, setReferencia] = useState("");
-	const [cedulaPagador, setCedulaPagador] = useState("");
-	const [telefonoPagador, setTelefonoPagador] = useState("");
-
-	// File upload
-	const fileInputRef = useRef<HTMLInputElement>(null);
-	const comprobanteInputRef = useRef<HTMLInputElement>(null);
-	const [ordenFile, setOrdenFile] = useState<File | null>(null);
-	const [comprobanteFile, setComprobanteFile] = useState<File | null>(null);
-	const [dragActive, setDragActive] = useState(false);
-	const [dragComprobanteActive, setDragComprobanteActive] = useState(false);
-
-	// Result
-	const [success, setSuccess] = useState(false);
-	const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-	const handleFileDrop = (e: React.DragEvent) => {
-		e.preventDefault();
-		setDragActive(false);
-		const file = e.dataTransfer.files[0];
-		if (file && file.size <= 5 * 1024 * 1024) {
-			setOrdenFile(file);
-		}
-	};
-
-	const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file && file.size <= 5 * 1024 * 1024) {
-			setOrdenFile(file);
-		}
-	};
-
-	const handleComprobanteDrop = (e: React.DragEvent) => {
-		e.preventDefault();
-		setDragComprobanteActive(false);
-		const file = e.dataTransfer.files[0];
-		if (file && file.size <= 5 * 1024 * 1024) {
-			setComprobanteFile(file);
-		}
-	};
-
-	const handleComprobanteSelect = (e: ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file && file.size <= 5 * 1024 * 1024) {
-			setComprobanteFile(file);
-		}
-	};
-
-	const tipoPagoSel = selectedMetodo?.tipo_pago ?? "";
-	const monedaSel = selectedMetodo?.moneda ?? "";
-	const showBanks = Boolean(selectedMetodo && needsBanksTipo(tipoPagoSel));
-	const showReferencia = Boolean(selectedMetodo && !isCashTipo(tipoPagoSel));
-	const showComprobante = Boolean(selectedMetodo && needsComprobanteTipo(tipoPagoSel));
-	const vistaBs = selectedMetodo ? esVistaBs(tipoPagoSel, monedaSel) : true;
-	const montoEnviar = selectedMetodo
-		? montoParaMetodo(tipoPagoSel, monedaSel, precioUSD, precioBS)
-		: 0;
-
-	const handleSubmit = async (e: FormEvent) => {
-		e.preventDefault();
-		setErrorMsg(null);
-
-		if (!user?.id_usuario) {
-			setErrorMsg("Sesión expirada. Vuelva a iniciar sesión.");
-			return;
-		}
-		if (!selectedMetodo) {
-			setErrorMsg("Seleccione un método de pago.");
-			return;
-		}
-		const metodo = selectedMetodo.tipo_pago;
-		const { numero: cedulaNum } = parseCedulaDisplay(cedulaPagador);
-		if (!cedulaNum || !validarRangoCedula(cedulaNum)) {
-			setErrorMsg(MENSAJE_RANGO_CEDULA);
-			return;
-		}
-		const cedulaApi = cedulaPagador.trim().toUpperCase();
-		const telParsed = parseTelefonoDisplay(telefonoPagador);
-		if (!validarNumeroTelefono(telParsed.number)) {
-			setErrorMsg(MENSAJE_TELEFONO_7_DIGITOS);
-			return;
-		}
-		const telefonoApi = `${telParsed.prefix}${telParsed.number}`;
-
-		if (showReferencia && !referencia.trim()) {
-			setErrorMsg("La referencia de pago es obligatoria.");
-			return;
-		}
-		if (showBanks && !bancoOrigen.trim()) {
-			setErrorMsg("Seleccione el banco origen.");
-			return;
-		}
-		if (showComprobante && !comprobanteFile) {
-			setErrorMsg("Debe adjuntar el comprobante de pago para este método.");
-			return;
-		}
-
-		const bancoDestino = `${selectedMetodo.banco_nombre} (${selectedMetodo.banco_codigo})`;
-		const monto = montoParaMetodo(
-			selectedMetodo.tipo_pago,
-			selectedMetodo.moneda,
-			precioUSD,
-			precioBS,
-		);
-
-		try {
-			let imagenUrl = "";
-			if (showComprobante && comprobanteFile) {
-				const token = getToken();
-				if (!token) {
-					setErrorMsg("Sesión expirada. Vuelva a iniciar sesión.");
-					return;
-				}
-				const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
-				const formData = new FormData();
-				formData.append("comprobante", comprobanteFile);
-				const response = await fetch(`${baseUrl}/pagos/upload-comprobante`, {
-					method: "POST",
-					headers: { Authorization: `Bearer ${token}` },
-					body: formData,
-				});
-				if (!response.ok) {
-					const err = await response.json().catch(() => ({}));
-					setErrorMsg((err as { message?: string }).message || "No se pudo subir el comprobante.");
-					return;
-				}
-				const data = await response.json();
-				imagenUrl = data?.data?.url ?? "";
-				if (!imagenUrl) {
-					setErrorMsg("No se recibió la URL del comprobante.");
-					return;
-				}
-			}
-
-			let ordenUrl: string | undefined;
-			if (ordenFile) {
-				const formData = new FormData();
-				formData.append("orden_medica", ordenFile);
-				const uploadResult = await uploadOrden(formData).unwrap();
-				ordenUrl = uploadResult.url;
-			}
-
-			await asignarCita({
-				id_paciente: user.id_usuario,
-				id_representado: idRepresentado,
-				id_eco: idEco,
-				id_especialista: idEspecialista,
-				id_disponibilidad: idDisponibilidad,
-				orden_medica: ordenUrl,
-				metodo,
-				imagen: imagenUrl || undefined,
-				banco_origen: showBanks ? bancoOrigen : "",
-				banco_destino: bancoDestino,
-				monto,
-				cedula_pagador: cedulaApi,
-				telefono_pagador: telefonoApi,
-				referencia: showReferencia ? referencia.trim() : "",
-			}).unwrap();
-
-			setSuccess(true);
-		} catch (err: unknown) {
-			const msg = (err as { data?: { message?: string } })?.data?.message
-				|| "Error al procesar la cita. Intente de nuevo.";
-			setErrorMsg(msg);
-		}
-	};
-
-	/* ─── Derived display data from selected method ─── */
-	const displayBanco = selectedMetodo
-		? `${selectedMetodo.banco_nombre} (${selectedMetodo.banco_codigo})`
-		: "—";
-	const displayIdentificacion = selectedMetodo?.titular_identificacion || "—";
-	const displayTelefono = selectedMetodo?.telefono || "—";
-	const displayCuenta = selectedMetodo?.numero_cuenta || null;
-	const displayQrUrl = selectedMetodo?.imagen_url || null;
-	const displayTipo = selectedMetodo ? labelTipoPago(selectedMetodo.tipo_pago) : "—";
-
-	/* ─── SUCCESS STATE ─── */
-	if (success) {
-		return (
-			<div className="text-center py-20">
-				<div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-					<CheckCircle2 className="h-10 w-10 text-emerald-600" />
-				</div>
-				<h2 className="font-headline text-3xl font-extrabold text-brand-900 mb-3">
-					¡Cita Agendada Exitosamente!
-				</h2>
-				<p className="text-brand-600 text-base max-w-md mx-auto mb-2">
-					Tu cita para <span className="font-bold">{ecoNombre}</span> ha sido registrada.
-				</p>
-				<p className="text-sm text-slate-400 mb-8">
-					{formatFecha(fecha)} — {formatHora(hora)} con Dr./Dra. {especialistaNombre}
-				</p>
-				<p className="text-xs text-brand-600 bg-brand-100 px-4 py-2 rounded-full inline-block mb-8">
-					Tu pago será verificado por un administrador. Recibirás confirmación por notificación.
-				</p>
-				<a
-					href="/agendar-cita"
-					className="inline-flex items-center gap-2 bg-brand-800 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-brand-900 transition-colors"
-				>
-					Volver al inicio
-				</a>
-			</div>
-		);
-	}
-
-		/* ─── MAIN FORM ─── */
+// The new implementation for the MAIN FORM
+const newMainForm = `	/* ─── MAIN FORM ─── */
 	return (
 		<div>
 			{/* Header */}
@@ -380,11 +28,11 @@ const PasoCheckout = ({
 							Selecciona tu método de pago
 						</h3>
 						
-						<div className="relative mt-4">
+						<div className="space-y-1.5 relative mt-4">
 							<select
 								value={selectedMetodoId}
 								onChange={(e) => setSelectedMetodoId(e.target.value)}
-								className="w-full bg-cloud border border-brand-200/40 rounded-xl py-4 pl-5 pr-12 text-base font-medium focus:ring-2 focus:ring-brand-800/20 appearance-none outline-none cursor-pointer shadow-sm text-brand-900 transition-shadow hover:shadow-md"
+								className="w-full bg-cloud border-none rounded-xl py-4 px-5 text-base font-medium focus:ring-2 focus:ring-brand-800/20 appearance-none outline-none cursor-pointer"
 							>
 								<option value="" disabled>Selecciona un método</option>
 								{metodosPago.length === 0 && (
@@ -396,10 +44,7 @@ const PasoCheckout = ({
 									</option>
 								))}
 							</select>
-							<div className="absolute right-4 top-0 bottom-0 flex items-center pointer-events-none text-brand-600">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
-							</div>
-							<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-800 rounded-full my-3 ml-1.5" />
+							<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-800 rounded-full my-3 ml-2" />
 						</div>
 
 						{vistaBs && selectedMetodoId && (
@@ -418,19 +63,19 @@ const PasoCheckout = ({
 								Realiza el pago con estos datos
 							</h3>
 
-							<div className="flex flex-col gap-6 items-center">
+							<div className="flex flex-col xl:flex-row gap-6 items-start">
 								{/* QR Code */}
 								{displayQrUrl && (
-									<div className="w-full flex justify-center shrink-0">
+									<div className="w-full xl:w-auto flex justify-center shrink-0">
 										<img
 											src={displayQrUrl}
 											alt="Código QR de pago"
-											className="w-48 h-48 rounded-3xl object-contain border-2 border-brand-200/30 bg-white p-3 shadow-sm"
+											className="w-40 h-40 rounded-2xl object-contain border border-brand-200/20 bg-white p-2"
 										/>
 									</div>
 								)}
 
-								<div className="w-full space-y-3 flex-1 mt-2">
+								<div className="w-full space-y-3 flex-1">
 									{/* Banco */}
 									<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 										<div className="min-w-0 flex-1">
@@ -498,8 +143,8 @@ const PasoCheckout = ({
 											<p className="text-[10px] text-brand-800 font-bold uppercase mb-1">Monto Exacto a Enviar</p>
 											<p className="font-black text-brand-900 text-xl font-headline">
 												{vistaBs
-													? `${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`
-													: `$${montoEnviar.toFixed(2)}`}
+													? \`\${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs\`
+													: \`$\${montoEnviar.toFixed(2)}\`}
 											</p>
 										</div>
 									</div>
@@ -565,7 +210,7 @@ const PasoCheckout = ({
 										<CedulaField
 											label="Cédula del pagador*"
 											value={cedulaPagador}
-											onChange={(tipo, numero) => setCedulaPagador(`${tipo}${numero}`)}
+											onChange={(tipo, numero) => setCedulaPagador(\`\${tipo}\${numero}\`)}
 											required
 											inputClassName="bg-cloud border-none rounded-xl"
 											selectClassName="bg-cloud border-none rounded-xl"
@@ -577,7 +222,7 @@ const PasoCheckout = ({
 										<TelefonoField
 											label="Teléfono del pagador*"
 											value={telefonoPagador}
-											onChange={(prefix, number) => setTelefonoPagador(`${prefix}${number}`)}
+											onChange={(prefix, number) => setTelefonoPagador(\`\${prefix}\${number}\`)}
 											required
 											inputClassName="bg-cloud border-none rounded-xl"
 											selectClassName="bg-cloud border-none rounded-xl"
@@ -598,13 +243,13 @@ const PasoCheckout = ({
 												onDragOver={(e) => { e.preventDefault(); setDragComprobanteActive(true); }}
 												onDragLeave={() => setDragComprobanteActive(false)}
 												onDrop={handleComprobanteDrop}
-												className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] ${
+												className={\`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] \${
 													dragComprobanteActive
 														? "border-brand-800 bg-brand-100/30"
 														: comprobanteFile
 															? "border-emerald-500/50 bg-emerald-50/50 text-emerald-800"
 															: "border-slate-200 bg-cloud hover:bg-brand-100/20 hover:border-brand-200"
-												}`}
+												}\`}
 											>
 												<input
 													ref={comprobanteInputRef}
@@ -613,8 +258,8 @@ const PasoCheckout = ({
 													className="hidden"
 													onChange={handleComprobanteSelect}
 												/>
-												<div className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center mb-4 transition-colors ${comprobanteFile ? "bg-emerald-100" : "bg-slate-100 group-hover:bg-brand-100"}`}>
-													<Upload className={`h-6 w-6 ${comprobanteFile ? "text-emerald-700" : "text-slate-400 group-hover:text-brand-600"}`} />
+												<div className={\`w-14 h-14 shrink-0 rounded-full flex items-center justify-center mb-4 transition-colors \${comprobanteFile ? "bg-emerald-100" : "bg-slate-100 group-hover:bg-brand-100"}\`}>
+													<Upload className={\`h-6 w-6 \${comprobanteFile ? "text-emerald-700" : "text-slate-400 group-hover:text-brand-600"}\`} />
 												</div>
 												{comprobanteFile ? (
 													<>
@@ -646,12 +291,12 @@ const PasoCheckout = ({
 											onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
 											onDragLeave={() => setDragActive(false)}
 											onDrop={handleFileDrop}
-											className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] ${dragActive
+											className={\`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] \${dragActive
 												? "border-brand-800 bg-brand-100/30"
 												: ordenFile
 													? "border-brand-800/40 bg-brand-100/40 text-brand-800"
 													: "border-slate-200 bg-cloud hover:bg-brand-100/20 hover:border-brand-200"
-												}`}
+												}\`}
 										>
 											<input
 												ref={fileInputRef}
@@ -660,8 +305,8 @@ const PasoCheckout = ({
 												className="hidden"
 												onChange={handleFileSelect}
 											/>
-											<div className={`w-14 h-14 shrink-0 rounded-full flex items-center justify-center mb-4 transition-colors ${ordenFile ? "bg-brand-100" : "bg-slate-100 group-hover:bg-brand-100"}`}>
-												<Upload className={`h-6 w-6 ${ordenFile ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}`} />
+											<div className={\`w-14 h-14 shrink-0 rounded-full flex items-center justify-center mb-4 transition-colors \${ordenFile ? "bg-brand-100" : "bg-slate-100 group-hover:bg-brand-100"}\`}>
+												<Upload className={\`h-6 w-6 \${ordenFile ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}\`} />
 											</div>
 											{ordenFile ? (
 												<>
@@ -763,7 +408,7 @@ const PasoCheckout = ({
 						<div className="space-y-3 pt-6 border-t border-brand-200/30">
 							<div className="flex justify-between items-center">
 								<span className="text-sm text-slate-400">Precio Ecografía</span>
-								<span className="text-sm font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
+								<span className="text-sm font-semibold text-brand-900">\${precioUSD.toFixed(2)}</span>
 							</div>
 							{vistaBs && selectedMetodoId && (
 								<div className="flex justify-between items-center bg-slate-50 p-2 -mx-2 rounded-lg">
@@ -782,8 +427,8 @@ const PasoCheckout = ({
 								</div>
 								<span className="text-2xl font-black text-brand-900 font-headline">
 									{vistaBs
-										? `${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`
-										: `$${montoEnviar.toFixed(2)}`}
+										? \`\${montoEnviar.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs\`
+										: \`$\${montoEnviar.toFixed(2)}\`}
 								</span>
 							</div>
 						</div>
@@ -807,3 +452,15 @@ const PasoCheckout = ({
 };
 
 export default PasoCheckout;
+`;
+
+const startIndex = code.indexOf('/* ─── MAIN FORM ─── */');
+if (startIndex === -1) {
+    console.error("Could not find start index");
+    process.exit(1);
+}
+
+code = code.substring(0, Math.max(0, startIndex)) + newMainForm;
+
+fs.writeFileSync(path, code);
+console.log("Successfully replaced PasoCheckout.tsx main wrapper block");

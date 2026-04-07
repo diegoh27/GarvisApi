@@ -66,6 +66,10 @@ const MiniCalendar = ({ selectedDate, onSelectDate }: MiniCalendarProps) => {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 
+	const maxDate = new Date(today);
+	maxDate.setDate(today.getDate() + 30);
+	maxDate.setHours(23, 59, 59, 999);
+
 	const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
 	const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
 
@@ -100,6 +104,12 @@ const MiniCalendar = ({ selectedDate, onSelectDate }: MiniCalendarProps) => {
 		return viewYear > nowYear || (viewYear === nowYear && viewMonth > nowMonth);
 	})();
 
+	const canGoNext = (() => {
+		const maxMonth = maxDate.getMonth();
+		const maxYear = maxDate.getFullYear();
+		return viewYear < maxYear || (viewYear === maxYear && viewMonth < maxMonth);
+	})();
+
 	const days: (number | null)[] = [];
 	for (let i = 0; i < firstDay; i++) days.push(null);
 	for (let d = 1; d <= daysInMonth; d++) days.push(d);
@@ -123,7 +133,8 @@ const MiniCalendar = ({ selectedDate, onSelectDate }: MiniCalendarProps) => {
 					<button
 						type="button"
 						onClick={nextMonth}
-						className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-cloud transition-colors"
+						disabled={!canGoNext}
+						className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-cloud transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
 					>
 						<ChevronRight className="h-3.5 w-3.5 text-brand-600" />
 					</button>
@@ -153,10 +164,11 @@ const MiniCalendar = ({ selectedDate, onSelectDate }: MiniCalendarProps) => {
 
 					const date = new Date(viewYear, viewMonth, day);
 					const isPast = date < today;
+					const isFutureLimit = date > maxDate;
 					const isSelected = isSameDay(date, selectedDate);
 					const isToday = isSameDay(date, today);
 
-					if (isPast) {
+					if (isPast || isFutureLimit) {
 						return (
 							<span
 								key={day}
@@ -378,7 +390,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 						)}
 					</div>
 
-					<div className="rounded-2xl border border-brand-200/20 bg-cloud/40 p-6 lg:p-8">
+					<div className="rounded-2xl border border-brand-200/50 bg-slate-50 p-6 lg:p-8 shadow-sm">
 						<h5 className="mb-6 text-xs font-bold uppercase tracking-widest text-brand-800">
 							Detalles de la cita
 						</h5>
@@ -406,17 +418,9 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 									</div>
 								</div>
 								<div className="border-t border-brand-200/30 pt-4">
-									<p className="mb-6 text-xs leading-relaxed text-brand-600">
+									<p className="text-xs leading-relaxed text-brand-600">
 										Al continuar, verás los horarios disponibles para esta ecografía con nuestros especialistas.
 									</p>
-									<button
-										type="button"
-										onClick={handleContinue}
-										className="hidden w-full items-center justify-center gap-2 rounded-xl bg-brand-800 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-800/20 transition-all hover:bg-brand-900 lg:flex"
-									>
-										Continuar al Paso 3
-										<ArrowRight className="h-4 w-4" />
-									</button>
 								</div>
 							</div>
 						) : (
@@ -457,7 +461,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					disabled={!canContinue}
 					className="w-full bg-gradient-to-br from-brand-900 to-brand-800 text-white py-4 rounded-3xl font-headline font-bold text-lg shadow-xl shadow-brand-800/20 active:scale-95 transition-transform duration-200 disabled:opacity-40 disabled:active:scale-100"
 				>
-					Continuar al Paso 3
+					Continuar
 				</button>
 				<button
 					type="button"
@@ -484,7 +488,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					disabled={!canContinue}
 					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
 				>
-					Continuar al Paso 3
+					Continuar
 					<ArrowRight className="h-4 w-4" />
 				</button>
 			</div>

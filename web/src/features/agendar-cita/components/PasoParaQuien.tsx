@@ -496,7 +496,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					disabled={!canContinue}
 					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
 				>
-					Continuar al Paso 2
+					Continuar
 					<ArrowRight className="h-4 w-4" />
 				</button>
 			</div>

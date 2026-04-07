@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { LayoutGrid, CalendarPlus, CalendarCheck, UserCircle } from "lucide-react";
+import Swal from "sweetalert2";
 
 type BottomNavItem = {
 	label: string;
@@ -34,8 +35,15 @@ const MobilePatientBottomNav = ({ tienePagoPendiente = false }: MobilePatientBot
 					return (
 						<span
 							key={item.to}
-							className="flex flex-col items-center justify-center text-slate-300 px-4 py-1.5 cursor-not-allowed"
-							title="Tiene una cita con pago pendiente de verificación"
+							className="flex flex-col items-center justify-center text-slate-300 px-4 py-1.5 cursor-pointer"
+							onClick={() => {
+								Swal.fire({
+									icon: "warning",
+									title: "Atención",
+									text: "Tienes un pago en proceso de verificación. Espera la respuesta del administrador.",
+									confirmButtonColor: "#054542",
+								});
+							}}
 						>
 							<Icon className="h-5 w-5" />
 							<span className="text-[10px] font-semibold uppercase tracking-wider mt-1">

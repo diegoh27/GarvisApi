@@ -129,11 +129,11 @@ const AppLayout = () => {
 	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
 	const unreadCount = notificacionesNoLeidas.length;
 	const navItemsWithBadges = navItems.map((item) =>
-			item.to === "/disponibilidad" && role === "paciente" && tienePagoPendiente
+			item.to === "/agendar-cita" && role === "paciente" && tienePagoPendiente
 				? {
 						...item,
 						disabled: true,
-						disabledTitle: "Tiene una cita con pago pendiente de verificación",
+						disabledTitle: "Tienes un pago en proceso de verificación. Espera la respuesta del administrador.",
 					}
 				: item,
 		);

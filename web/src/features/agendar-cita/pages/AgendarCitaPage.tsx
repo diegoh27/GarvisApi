@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { useGetTienePagoPendienteQuery } from "../../citas/citasApi";
 import StepperProgress from "../components/StepperProgress";
 import PasoParaQuien from "../components/PasoParaQuien";
 import PasoServicio from "../components/PasoServicio";
@@ -28,6 +31,22 @@ const AgendarCitaPage = () => {
 	const [state, setState] = useState<AgendarCitaState>({
 		pacienteType: null,
 	});
+
+	const { data: tienePagoData, isLoading: isLoadingPago } = useGetTienePagoPendienteQuery();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!isLoadingPago && tienePagoData?.tienePagoPendiente) {
+			Swal.fire({
+				icon: "warning",
+				title: "Acceso Denegado",
+				text: "Tienes un pago en proceso de verificación. Espera la respuesta del administrador.",
+				confirmButtonColor: "#054542",
+			}).then(() => {
+				navigate("/dashboard", { replace: true });
+			});
+		}
+	}, [isLoadingPago, tienePagoData, navigate]);
 
 	const handleStep1Next = (data: { tipo: "yo" | "representado"; id_representado?: string }) => {
 		setState((prev) => ({
