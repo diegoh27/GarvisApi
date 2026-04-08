@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react
 import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
-import { FileDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth, formatFechaLocal } from "../../../shared";
 import {
 	type FilterOption,
@@ -1093,21 +1093,7 @@ const CalendarioPage = () => {
 						Gestiona tus jornadas laborales y solicitudes de servicio.
 					</p>
 				</div>
-				<button
-					type="button"
-					className="inline-flex items-center gap-2 self-start rounded-xl bg-cloud px-5 py-2.5 text-sm font-semibold text-brand-800 transition hover:bg-mist sm:self-auto"
-					onClick={() => {
-						void Swal.fire({
-							icon: "info",
-							title: "Exportar",
-							text: "La exportación estará disponible próximamente.",
-							confirmButtonColor: "#1C837F",
-						});
-					}}
-				>
-					<FileDown className="h-4 w-4" />
-					Exportar
-				</button>
+
 			</div>
 
 			<div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-10">

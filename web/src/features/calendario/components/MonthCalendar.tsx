@@ -132,7 +132,10 @@ const MonthCalendar = ({
 	const adjustedStartDay = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 	const daysInMonth = lastDay.getDate();
 
-	const porFecha = useMemo(() => bloquesPorFecha(bloques), [bloques]);
+	const porFecha = useMemo(() => {
+		const soloSolicitados = bloques.filter((b) => Number(b.estado) >= 0);
+		return bloquesPorFecha(soloSolicitados);
+	}, [bloques]);
 
 	const days: Array<{
 		day: number;

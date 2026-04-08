@@ -223,6 +223,22 @@ const DisponibilidadForm = ({
 		return timeOptions.filter((opt) => parseTimeToMinutes(opt.value) > start);
 	}, [timeOptions, horaInicioRango]);
 
+	const maxFecha = useMemo(() => {
+		const d = new Date();
+		d.setDate(d.getDate() + 31);
+		return d.toISOString().split("T")[0];
+	}, []);
+
+	const horaInicioOptions = useMemo(() => {
+		if (!fechaDesde) return timeOptions;
+		const today = new Date().toISOString().split("T")[0];
+		if (fechaDesde !== today) return timeOptions;
+		
+		const now = new Date();
+		const currentMinutes = now.getHours() * 60 + now.getMinutes();
+		return timeOptions.filter((opt) => parseTimeToMinutes(opt.value) > currentMinutes);
+	}, [fechaDesde, timeOptions]);
+
 	const formatShortDate = (iso: string) => {
 		if (!iso) return "";
 		const d = new Date(`${iso}T12:00:00`);
@@ -257,6 +273,7 @@ const DisponibilidadForm = ({
 												type="date"
 												value={fechaDesde}
 												min={minFecha}
+												max={maxFecha}
 												onChange={(e) => onFechaDesdeChange(e.target.value)}
 												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
 											/>
@@ -272,6 +289,7 @@ const DisponibilidadForm = ({
 												type="date"
 												value={fechaHasta}
 												min={minFecha}
+												max={maxFecha}
 												onChange={(e) => onFechaHastaChange(e.target.value)}
 												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
 											/>
@@ -308,7 +326,7 @@ const DisponibilidadForm = ({
 												className="min-w-0 flex-1 border-none bg-transparent p-0 font-semibold outline-none focus:ring-0"
 											>
 												<option value="">Seleccionar</option>
-												{timeOptions.map((opt) => (
+												{horaInicioOptions.map((opt) => (
 													<option key={opt.value} value={opt.value}>
 														{opt.label}
 													</option>

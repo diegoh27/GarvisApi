@@ -4,7 +4,7 @@ import type { DisponibilidadSegmentContext } from "./DisponibilidadBloqueModal";
 import { parseTimeToMinutes } from "../utils/slotUtils";
 import { buildMergedSegments, cellKey } from "../utils/calendarSegmentUtils";
 import { estadoDisponibilidadNum } from "../utils/disponibilidadEstado";
-import { Ban, Check, Clock, Lightbulb, AlertCircle } from "lucide-react";
+import { Ban, Check, Lightbulb, AlertCircle, User } from "lucide-react";
 
 const SLOT_PX = 22;
 
@@ -212,124 +212,127 @@ const CalendarGrid = ({
 		setDragPreview({ minDayIdx, maxDayIdx, minSlot, maxSlot });
 	};
 
-	const renderBlockCard = (b: Disponibilidad, horaStart: string, horaEnd: string) => {
+	const renderBlockCard = (b: Disponibilidad, horaStart: string, horaEnd: string, slots: number) => {
 		const rangeText = `${formatHora(horaStart)} – ${formatHora(horaEnd)}`;
 		const sub = blockSubtitle(b);
 		const est = estadoDisponibilidadNum(b.estado);
 		const isCita = est === 4;
 		const isPreview = est === -2;
-		const isPagoPendiente = isCita && b.estado_pago === 0;
-		const isAtendida = isCita && b.estado_cita === 3;
 
-		if (isPreview) {
-			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-dashed border-slate-300 bg-white p-3 text-left shadow-sm leading-snug">
-					<div className="flex items-start justify-between gap-2">
-						<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
-						<Lightbulb className="h-4 w-4 shrink-0 text-teal-600/70" />
+		const isLarge = slots > 1;
+
+		if (isLarge) {
+			if (isPreview) {
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-dashed border-slate-300 bg-white p-3 text-left shadow-sm leading-snug">
+						<div className="flex items-start justify-between gap-2">
+							<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
+							<Lightbulb className="h-4 w-4 shrink-0 text-teal-600/70" />
+						</div>
+						<p className="mt-2 text-sm font-medium text-slate-700">{b.eco_nombre ?? "Vista previa"}</p>
+						<p className="mt-0.5 text-sm text-slate-500">{sub}</p>
 					</div>
-					<p className="mt-2 text-sm font-medium text-slate-700">{b.eco_nombre ?? "Vista previa"}</p>
-					<p className="mt-0.5 text-sm text-slate-500">{sub}</p>
-				</div>
-			);
+				);
+			}
+
+			if (est === 0) {
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-dashed border-amber-300 bg-amber-50/80 p-3 text-left leading-snug shadow-sm">
+						<div className="flex items-start justify-between gap-2">
+							<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
+							<Lightbulb className="h-4 w-4 shrink-0 text-amber-600" />
+						</div>
+						<p className="mt-2 text-sm font-medium text-slate-800">{b.eco_nombre ?? "Eco"}</p>
+						<p className="mt-0.5 text-sm font-medium text-amber-800">En espera de aprobación</p>
+					</div>
+				);
+			}
+
+			if (est === 1) {
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-teal-700 p-3 text-left shadow-sm leading-snug">
+						<div className="flex items-start justify-between gap-2">
+							<span className="text-sm font-semibold leading-snug text-slate-900">{rangeText}</span>
+							<Check className="h-4 w-4 shrink-0 text-teal-700" strokeWidth={2.5} />
+						</div>
+						<p className="mt-2 text-sm font-medium leading-snug text-slate-600">
+							{b.eco_nombre ?? "Eco"}
+						</p>
+						<p className="mt-1 text-sm font-medium leading-snug text-teal-600">Aprobada</p>
+					</div>
+				);
+			}
+
+			if (isCita) {
+				const pacienteStr = [b.paciente_nombre, b.paciente_apellido].filter(Boolean).join(" ").trim() || "Paciente";
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg bg-[#006965] border border-[#006965] p-3 text-left shadow-sm leading-snug text-white">
+						<div className="flex items-start justify-between gap-2">
+							<span className="text-sm font-bold leading-snug">{rangeText}</span>
+							<User className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2.5} />
+						</div>
+						<p className="mt-2 text-sm font-semibold leading-snug truncate">{pacienteStr}</p>
+						<p className="mt-1 text-sm font-medium text-white/80 truncate">{b.eco_nombre ?? "Cita"}</p>
+					</div>
+				);
+			}
+
+			if (est === 2) {
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-red-50 border-l-[6px] border-l-red-500 p-3 text-left shadow-sm leading-snug">
+						<div className="flex items-start justify-between gap-1">
+							<span className="text-sm font-semibold text-red-900">{rangeText}</span>
+							<AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
+						</div>
+						<p className="mt-1 text-sm font-medium text-red-950">Rechazada</p>
+					</div>
+				);
+			}
+
+			if (est === 3) {
+				return (
+					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-left shadow-sm leading-snug border-l-[6px] border-l-rose-700">
+						<div className="flex items-start justify-between gap-1">
+							<span className="text-sm font-semibold text-rose-950">{rangeText}</span>
+							<Ban className="h-4 w-4 shrink-0 text-rose-800" strokeWidth={2} />
+						</div>
+						<p className="mt-2 text-sm font-medium text-rose-950">Cancelado por especialista</p>
+						{b.eco_nombre ? (
+							<p className="mt-0.5 text-sm text-rose-900/85">{b.eco_nombre}</p>
+						) : null}
+					</div>
+				);
+			}
 		}
 
-		if (est === 0) {
-			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-dashed border-amber-300 bg-amber-50/80 p-3 text-left leading-snug shadow-sm">
-					<div className="flex items-start justify-between gap-2">
-						<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
-						<Lightbulb className="h-4 w-4 shrink-0 text-amber-600" />
-					</div>
-					<p className="mt-2 text-sm font-medium text-slate-800">{b.eco_nombre ?? "Eco"}</p>
-					<p className="mt-0.5 text-sm font-medium text-amber-800">En espera de aprobación</p>
-				</div>
-			);
-		}
+		const genericTitleStr = `${b.eco_nombre ?? "Eco"} (${sub || 'Borrador'})`;
 
-		if (est === 1) {
-			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-teal-700 p-3 text-left shadow-sm leading-snug">
-					<div className="flex items-start justify-between gap-2">
-						<span className="text-sm font-semibold leading-snug text-slate-900">{rangeText}</span>
-						<Check className="h-4 w-4 shrink-0 text-teal-700" strokeWidth={2.5} />
-					</div>
-					<p className="mt-2 text-sm font-medium leading-snug text-slate-600">
-						{b.eco_nombre ?? "Eco"}
-					</p>
-					<p className="mt-1 text-sm font-medium leading-snug text-teal-600">Aprobada</p>
-				</div>
-			);
-		}
-
-		if (isCita) {
-			const shell =
-				isAtendida
-					? "border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-emerald-600"
-					: isPagoPendiente
-						? "border border-slate-200 bg-amber-50 border-l-[6px] border-l-amber-600"
-						: "border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-sky-600";
-			const timeCls = isAtendida
-				? "text-slate-900"
-				: isPagoPendiente
-					? "text-amber-950"
-					: "text-slate-900";
-			const iconCls = isAtendida
-				? "text-teal-700"
-				: isPagoPendiente
-					? "text-amber-700"
-					: "text-sky-600";
-			const subCls = isAtendida
-				? "text-teal-700"
-				: isPagoPendiente
-					? "text-amber-800"
-					: "text-sky-800";
-			return (
-				<div
-					className={`pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg p-3 text-left shadow-sm leading-snug ${shell}`}
-				>
-					<div className="flex items-start justify-between gap-2">
-						<span className={`text-sm font-semibold leading-snug ${timeCls}`}>{rangeText}</span>
-						<Clock className={`h-4 w-4 shrink-0 ${iconCls}`} />
-					</div>
-					<p className="mt-2 text-sm font-medium leading-snug text-slate-700">{b.eco_nombre ?? "Cita"}</p>
-					<p className={`mt-1 text-sm leading-snug ${subCls}`}>{sub}</p>
-				</div>
-			);
-		}
-
-		if (est === 2) {
-			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-slate-200 bg-red-50 border-l-[6px] border-l-red-500 p-3 text-left shadow-sm leading-snug">
-					<div className="flex items-start justify-between gap-1">
-						<span className="text-sm font-semibold text-red-900">{rangeText}</span>
-						<AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
-					</div>
-					<p className="mt-1 text-sm font-medium text-red-950">Rechazada</p>
-				</div>
-			);
-		}
-
-		if (est === 3) {
-			return (
-				<div className="pointer-events-auto flex h-full min-h-[40px] flex-col rounded-lg border border-rose-200 bg-rose-50 p-3 text-left shadow-sm leading-snug border-l-[6px] border-l-rose-700">
-					<div className="flex items-start justify-between gap-1">
-						<span className="text-sm font-semibold text-rose-950">{rangeText}</span>
-						<Ban className="h-4 w-4 shrink-0 text-rose-800" strokeWidth={2} />
-					</div>
-					<p className="mt-2 text-sm font-medium text-rose-950">Cancelado por especialista</p>
-					{b.eco_nombre ? (
-						<p className="mt-0.5 text-sm text-rose-900/85">{b.eco_nombre}</p>
-					) : null}
-				</div>
-			);
-		}
-
-		return (
-			<div className="pointer-events-auto rounded-lg bg-mist/50 px-3 py-2 text-sm text-slate-800">
-				{rangeText}
+		const renderCompact = (bgClass: string, textClass: string, Icon: any, titleStr: string) => (
+			<div
+				title={titleStr}
+				className={`pointer-events-auto flex h-full w-full items-center justify-start overflow-hidden rounded px-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)] ${bgClass} ${textClass}`}
+			>
+				<span className="truncate whitespace-nowrap text-[10px] font-semibold leading-none flex items-center gap-1">
+					<Icon className="h-2.5 w-2.5 shrink-0" strokeWidth={2.5} />
+					{rangeText}
+				</span>
 			</div>
 		);
+
+		if (isCita) {
+			const pacienteStr = [b.paciente_nombre, b.paciente_apellido].filter(Boolean).join(" ").trim() || "Paciente";
+			const ecoStr = b.eco_nombre ?? "Cita";
+			const titleStr = `${pacienteStr} — ${ecoStr} (${sub})`;
+			return renderCompact("bg-[#006965]", "text-white", User, titleStr);
+		}
+
+		if (isPreview) return renderCompact("bg-white border border-dashed border-slate-300", "text-slate-600", Lightbulb, genericTitleStr);
+		if (est === 0) return renderCompact("bg-amber-50 border-l-[3px] border-amber-400", "text-amber-800", Lightbulb, genericTitleStr);
+		if (est === 1) return renderCompact("bg-[#F0F9F9] border-l-[3px] border-teal-600", "text-teal-700", Check, genericTitleStr);
+		if (est === 2) return renderCompact("bg-red-50 border-l-[3px] border-red-500", "text-red-900", AlertCircle, genericTitleStr);
+		if (est === 3) return renderCompact("bg-rose-50 border-l-[3px] border-rose-700", "text-rose-900", Ban, genericTitleStr);
+
+		return renderCompact("bg-mist/50", "text-slate-800", Check, rangeText); // fallback
 	};
 
 	return (
@@ -480,8 +483,8 @@ const CalendarGrid = ({
 											return (
 												<div
 													key={`${dayKey}-${seg.startSlot}-${b.id_disponibilidad}`}
-													className="absolute left-1 right-1 overflow-hidden rounded-lg"
-													style={{ top, height: Math.max(h, 44), zIndex: stackZ }}
+													className="absolute left-1 right-1 overflow-hidden rounded-md"
+													style={{ top, height: h, zIndex: stackZ }}
 												>
 													<button
 														type="button"
@@ -510,7 +513,7 @@ const CalendarGrid = ({
 																Cancelando…
 															</div>
 														) : (
-															renderBlockCard(b, hv0, horaEndStr)
+															renderBlockCard(b, hv0, horaEndStr, seg.endSlot - seg.startSlot + 1)
 														)}
 													</button>
 												</div>

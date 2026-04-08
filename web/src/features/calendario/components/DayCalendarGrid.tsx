@@ -7,8 +7,8 @@ import {
 	Ban,
 	Clock,
 	Lightbulb,
-	User,
 	AlertCircle,
+	User,
 } from "lucide-react";
 import type { DisponibilidadSegmentContext } from "./DisponibilidadBloqueModal";
 
@@ -185,13 +185,6 @@ const DayCalendarGrid = ({
 		[formatHora],
 	);
 
-	const citaTitle = (b: Disponibilidad) => {
-		const name = [b.paciente_nombre, b.paciente_apellido].filter(Boolean).join(" ").trim();
-		const eco = b.eco_nombre ?? "Cita";
-		if (name) return `Cita: ${name} — ${eco}`;
-		return `Cita: ${eco}`;
-	};
-
 	const renderOccupiedRow = (slotIdx: number, b: Disponibilidad) => {
 		const hv = timeOptions[slotIdx].value;
 		const rangeFull = rangeForSlot20(hv);
@@ -217,16 +210,19 @@ const DayCalendarGrid = ({
 		const inner = (() => {
 			if (isCita) {
 				const sub = blockSubtitleCita(b);
+				const pacienteStr = [b.paciente_nombre, b.paciente_apellido].filter(Boolean).join(" ").trim() || "Paciente";
+				const ecoStr = b.eco_nombre ?? "Cita";
+				const titleStr = `${pacienteStr} — ${ecoStr} (${sub})`;
+
 				return (
-					<div className="flex min-h-[52px] flex-1 items-center justify-between gap-2 rounded-xl bg-[#006965] px-4 py-2 text-white shadow-md shadow-[#006965]/25">
-						<div className="flex min-w-0 items-center gap-2">
-							<User className="h-4 w-4 shrink-0 opacity-95" strokeWidth={2} />
-							<span className="truncate text-[11px] font-bold leading-snug">{citaTitle(b)}</span>
-						</div>
-						<div className="flex shrink-0 flex-col items-end gap-0.5">
-							<span className="text-[10px] font-semibold opacity-90">{rangeFull}</span>
-							{sub ? <span className="text-[9px] font-medium text-white/85">{sub}</span> : null}
-						</div>
+					<div 
+						title={titleStr}
+						className="flex h-full w-full min-h-[44px] flex-1 items-center justify-start overflow-hidden rounded bg-[#006965] px-3 text-white shadow-sm"
+					>
+						<span className="truncate whitespace-nowrap text-sm font-semibold leading-none flex items-center gap-2">
+							<User className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+							{rangeFull}
+						</span>
 					</div>
 				);
 			}
