@@ -1090,7 +1090,7 @@ const CalendarioPage = () => {
 						Mi agenda y disponibilidad
 					</h1>
 					<p className="mt-2 font-medium text-slate-500">
-						Gestiona tus jornadas laborales y solicitudes de servicio.
+						Selecciona el horario en el que estarás libre para trabajar.
 					</p>
 				</div>
 

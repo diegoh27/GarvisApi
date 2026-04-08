@@ -66,7 +66,7 @@ const NotificacionesPage = () => {
     isLoading,
     error,
   } = useGetMisNotificacionesQuery(
-    { limit: 100, solo_no_leidas: true },
+    { limit: 100 },
     {
       pollingInterval: 15000,
       refetchOnFocus: true,
