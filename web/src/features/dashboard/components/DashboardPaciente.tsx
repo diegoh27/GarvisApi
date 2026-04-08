@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../shared";
 import { useGetMisCitasCompletasQuery, useGetTienePagoPendienteQuery } from "../../citas/citasApi";
 import { useGetRepresentadosQuery } from "../../representados/representadosApi";
+import type { Representado } from "../../representados/representadosApi";
+import VerRepresentadoModal from "./VerRepresentadoModal";
 import {
 	CalendarDays,
 	CalendarPlus,
@@ -49,6 +52,7 @@ const InitialAvatar = ({ nombre, apellido }: { nombre: string; apellido: string 
 
 const DashboardPaciente = () => {
 	const { user } = useAuth();
+	const [selectedRepresentado, setSelectedRepresentado] = useState<Representado | null>(null);
 	const { data: citas = [], isLoading: loadingCitas } = useGetMisCitasCompletasQuery();
 	const { data: tienePagoData } = useGetTienePagoPendienteQuery();
 	const tienePagoPendiente = tienePagoData?.tienePagoPendiente ?? false;
@@ -306,6 +310,7 @@ const DashboardPaciente = () => {
 								representados.slice(0, 4).map((rep) => (
 									<div
 										key={rep.id_representado}
+										onClick={() => setSelectedRepresentado(rep)}
 										className="bg-white p-3 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer sm:p-4"
 									>
 										<div className="flex items-center gap-3 min-w-0">
@@ -365,6 +370,12 @@ const DashboardPaciente = () => {
 					</div>
 				</Link>
 			)}
+
+			<VerRepresentadoModal
+				isOpen={!!selectedRepresentado}
+				onClose={() => setSelectedRepresentado(null)}
+				representado={selectedRepresentado}
+			/>
 		</div>
 	);
 };

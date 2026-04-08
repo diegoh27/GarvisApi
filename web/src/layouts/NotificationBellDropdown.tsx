@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { useAuth, formatFechaHoraLocal } from "../shared";
-import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
+import { useDispatch } from "react-redux";
+import { baseApi } from "../app/api/baseApi";
+import { useNavigate } from "react-router-dom";
+import { 
+	useGetMisNotificacionesQuery, 
+	useMarkNotificacionLeidaMutation,
+	useMarkTodasNotificacionesLeidasMutation
+} from "../features/notificaciones/notificacionesApi";
+import { getNotificacionMeta } from "../features/notificaciones/pages/NotificacionesPage";
 
 type NotificationBellDropdownProps = {
 	unreadCount: number;
@@ -17,13 +25,17 @@ const NotificationBellDropdown = ({
 	compact = false,
 }: NotificationBellDropdownProps) => {
 	const { token } = useAuth();
+	const navigate = useNavigate();
+	const dispatch = useDispatch();
 	const [open, setOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement>(null);
 
 	const { data: items = [], isLoading } = useGetMisNotificacionesQuery(
-		{ limit: 5 },
+		{ limit: 10, solo_no_leidas: true },
 		{ skip: !token, pollingInterval: 20000, refetchOnFocus: true },
 	);
+	const [markLeida] = useMarkNotificacionLeidaMutation();
+	const [markTodas, { isLoading: markingTodas }] = useMarkTodasNotificacionesLeidasMutation();
 
 	useEffect(() => {
 		if (!open) return;
@@ -60,8 +72,16 @@ const NotificationBellDropdown = ({
 						compact ? "top-full" : ""
 					}`}
 				>
-					<div className="border-b border-mist px-3 py-2">
+					<div className="flex items-center justify-between border-b border-mist px-3 py-2">
 						<p className="text-xs font-semibold text-brand-900">Notificaciones</p>
+						<button
+							type="button"
+							onClick={() => markTodas()}
+							disabled={markingTodas || unreadCount === 0}
+							className="text-[10px] font-medium text-brand-700 hover:text-brand-900 disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							Marcar todas leídas
+						</button>
 					</div>
 					<ul className="max-h-64 overflow-y-auto">
 						{isLoading ? (
@@ -73,25 +93,41 @@ const NotificationBellDropdown = ({
 								No hay notificaciones recientes.
 							</li>
 						) : (
-							items.map((n) => (
-								<li
-									key={n.id_notificacion}
-									className="border-b border-mist/80 last:border-0"
-								>
-									<Link
-										to="/notificaciones"
-										onClick={() => setOpen(false)}
-										className="block px-3 py-2.5 transition-colors hover:bg-cloud"
+							items.map((n) => {
+								const meta = getNotificacionMeta(n);
+								const isClickable = !!meta.link;
+								return (
+									<li
+										key={n.id_notificacion}
+										className={`border-b border-mist/80 last:border-0 ${n.leida ? "bg-white" : "bg-brand-50/50"}`}
 									>
-										<p className="line-clamp-2 text-xs font-medium text-brand-900">
-											{n.titulo}
-										</p>
-										<p className="mt-0.5 text-[10px] text-brand-600">
-											{formatTime(n.fecha_creacion)}
-										</p>
-									</Link>
-								</li>
-							))
+										<div
+											onClick={() => {
+												setOpen(false);
+												if (!n.leida) {
+													markLeida({ id: n.id_notificacion });
+												}
+												if (meta.link?.to) {
+													if (meta.link.to.includes("/citas")) {
+														dispatch(baseApi.util.invalidateTags(["Citas"]));
+													}
+													navigate(meta.link.to);
+												} else {
+													navigate("/notificaciones");
+												}
+											}}
+											className="block px-3 py-2.5 transition-colors hover:bg-cloud cursor-pointer"
+										>
+											<p className="line-clamp-2 text-xs font-medium text-brand-900">
+												{n.titulo}
+											</p>
+											<p className="mt-0.5 text-[10px] text-brand-600">
+												{formatTime(n.fecha_creacion)}
+											</p>
+										</div>
+									</li>
+								);
+							})
 						)}
 					</ul>
 					<div className="sticky bottom-0 border-t border-mist bg-paper px-2 py-2">

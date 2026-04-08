@@ -114,10 +114,12 @@ const createMetodoPagoHandler = async (req, res) => {
 		} = body;
 
 		if (!req.file) {
-			return res.status(400).json({
-				ok: false,
-				message: "La imagen del método de pago es requerida",
-			});
+			if (tipo_pago !== "EfectivoBs" && tipo_pago !== "EfectivoUSD") {
+				return res.status(400).json({
+					ok: false,
+					message: "La imagen del método de pago es requerida",
+				});
+			}
 		}
 
 		if (!nombre || !String(nombre).trim()) {
@@ -204,19 +206,29 @@ const createMetodoPagoHandler = async (req, res) => {
 			tipoPagoValue = tipoBs;
 			correoValue = null;
 
-			if (!titularIdentificacionValue) {
-				return res.status(400).json({
-					ok: false,
-					message: "Para BS debe indicar la identificación del titular",
-				});
-			}
+			if (tipoPagoValue !== "EfectivoBs") {
+				if (!titularIdentificacionValue) {
+					return res.status(400).json({
+						ok: false,
+						message: "Para BS debe indicar la identificación del titular",
+					});
+				}
 
-			const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
-
-			if (tipoPagoValue === "EfectivoBs") {
+				const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
+				if (!regexIdentificacion.test(titularIdentificacionValue)) {
+					return res.status(400).json({
+						ok: false,
+						message:
+							"La identificación debe tener formato V/E/J seguido de números",
+					});
+				}
+			} else {
+				titularIdentificacionValue = null;
 				telefonoValue = null;
 				numeroCuentaValue = null;
-			} else if (tipoPagoValue === "PagoMovil" && !telefonoValue) {
+			}
+
+			if (tipoPagoValue === "PagoMovil" && !telefonoValue) {
 				return res.status(400).json({
 					ok: false,
 					message: "Para PagoMovil debe indicar un teléfono",
@@ -237,14 +249,6 @@ const createMetodoPagoHandler = async (req, res) => {
 				return res.status(400).json({
 					ok: false,
 					message: "Para Transferencia debe indicar un número de cuenta",
-				});
-			}
-
-			if (!regexIdentificacion.test(titularIdentificacionValue)) {
-				return res.status(400).json({
-					ok: false,
-					message:
-						"La identificación debe tener formato V/E/J seguido de números",
 				});
 			}
 
@@ -269,11 +273,15 @@ const createMetodoPagoHandler = async (req, res) => {
 			}
 
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			if (!correoValue || !emailRegex.test(correoValue)) {
-				return res.status(400).json({
-					ok: false,
-					message: "Para USD debe indicar un correo válido",
-				});
+			if (tipoPagoValue !== "EfectivoUSD") {
+				if (!correoValue || !emailRegex.test(correoValue)) {
+					return res.status(400).json({
+						ok: false,
+						message: "Para USD debe indicar un correo válido",
+					});
+				}
+			} else {
+				correoValue = null;
 			}
 
 			titularNombreValue = null;
@@ -282,10 +290,14 @@ const createMetodoPagoHandler = async (req, res) => {
 			numeroCuentaValue = null;
 		}
 
-		const uploadResult = await uploadMulterFileToLocal(
-			req.file,
-			"garbis/metodos-pago",
-		);
+		let imagenUrl = "";
+		if (req.file) {
+			const uploadResult = await uploadMulterFileToLocal(
+				req.file,
+				"garbis/metodos-pago",
+			);
+			imagenUrl = uploadResult.url;
+		}
 
 		let creadoPor = firstNonEmpty(req.user?.id, req.user?.id_usuario);
 		if (creadoPor) {
@@ -327,7 +339,7 @@ const createMetodoPagoHandler = async (req, res) => {
 			correo: correoValue,
 			telefono: telefonoValue,
 			numero_cuenta: numeroCuentaValue,
-			imagen_url: uploadResult.url,
+			imagen_url: imagenUrl,
 			creado_por: creadoPor,
 		});
 
@@ -454,30 +466,33 @@ const updateMetodoPagoHandler = async (req, res) => {
 			tipoPagoValue = tipoBs;
 			correoValue = null;
 
-			if (!titularIdentificacionValue) {
-				return res
-					.status(400)
-					.json({
-						ok: false,
-						message: "Para BS debe indicar la identificación del titular",
-					});
-			}
+			if (tipoPagoValue !== "EfectivoBs") {
+				if (!titularIdentificacionValue) {
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message: "Para BS debe indicar la identificación del titular",
+						});
+				}
 
-			const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
-			if (!regexIdentificacion.test(titularIdentificacionValue)) {
-				return res
-					.status(400)
-					.json({
-						ok: false,
-						message:
-							"La identificación debe tener formato V/E/J seguido de números",
-					});
-			}
-
-			if (tipoPagoValue === "EfectivoBs") {
+				const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
+				if (!regexIdentificacion.test(titularIdentificacionValue)) {
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message:
+								"La identificación debe tener formato V/E/J seguido de números",
+						});
+				}
+			} else {
+				titularIdentificacionValue = null;
 				telefonoValue = null;
 				numeroCuentaValue = null;
-			} else if (tipoPagoValue === "PagoMovil") {
+			}
+
+			if (tipoPagoValue === "PagoMovil") {
 				if (!telefonoValue) {
 					return res
 						.status(400)
@@ -531,20 +546,24 @@ const updateMetodoPagoHandler = async (req, res) => {
 					});
 			}
 			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			if (!correoValue || !emailRegex.test(String(correoValue))) {
-				return res
-					.status(400)
-					.json({
-						ok: false,
-						message: "Para USD debe indicar un correo válido",
-					});
+			if (tipoPagoValue !== "EfectivoUSD") {
+				if (!correoValue || !emailRegex.test(String(correoValue))) {
+					return res
+						.status(400)
+						.json({
+							ok: false,
+							message: "Para USD debe indicar un correo válido",
+						});
+				}
+			} else {
+				correoValue = null;
 			}
 			titularIdentificacionValue = null;
 			telefonoValue = null;
 			numeroCuentaValue = null;
 		}
 
-		let imagenUrl = currentMetodo.imagen_url;
+		let imagenUrl = currentMetodo.imagen_url || "";
 		if (req.file) {
 			const uploadResult = await uploadMulterFileToLocal(
 				req.file,

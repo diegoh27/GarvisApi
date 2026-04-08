@@ -32,7 +32,7 @@ import { useGetPermisosMenuQuery } from "../features/roles/rolesApi";
 const navByRole: Record<string, NavItem[]> = {
 	admin: [
 		// Navegación principal
-		{ label: "Home", to: "/dashboard", icon: Home },
+		{ label: "Inicio", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario-moderador", icon: CalendarDays },
 		{ label: "Todas las citas", to: "/todas-las-citas", icon: ListChecks },
 		{ label: "Verificación de pagos", to: "/pagos", icon: Receipt },
@@ -60,17 +60,17 @@ const navByRole: Record<string, NavItem[]> = {
 	],
 	moderador: [
 		// Placeholder: el menú real se arma en AppLayout con MODERADOR_MENU_MODULES + permisos.
-		{ label: "Home", to: "/dashboard", icon: Home },
+		{ label: "Inicio", to: "/dashboard", icon: Home },
 	],
 	especialista: [
-		{ label: "Home", to: "/dashboard", icon: Home },
+		{ label: "Inicio", to: "/dashboard", icon: Home },
 		{ label: "Calendario", to: "/calendario", icon: CalendarDays },
 		{ label: "Pacientes", to: "/pacientes-especialista", icon: Users },
 		{ label: "Subir resultados", to: "/resultados", icon: FileCheck },
 		{ label: "Informes", to: "/informes", icon: FileText },
 	],
 	paciente: [
-		{ label: "Home", to: "/dashboard", icon: Home },
+		{ label: "Inicio", to: "/dashboard", icon: Home },
 		{ label: "Agendar cita", to: "/agendar-cita", icon: CalendarDays },
 		{ label: "Mis citas", to: "/citas", icon: CalendarCheck },
 		{ label: "Representados", to: "/representados", icon: Users },

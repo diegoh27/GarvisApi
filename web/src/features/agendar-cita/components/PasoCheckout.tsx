@@ -165,6 +165,13 @@ const PasoCheckout = ({
 	const [success, setSuccess] = useState(false);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+	// Validation UI state
+	const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+	const [touchedBanco, setTouchedBanco] = useState(false);
+	const [touchedReferencia, setTouchedReferencia] = useState(false);
+	const [touchedCedula, setTouchedCedula] = useState(false);
+	const [touchedTelefono, setTouchedTelefono] = useState(false);
+
 	const handleFileDrop = (e: React.DragEvent) => {
 		e.preventDefault();
 		setDragActive(false);
@@ -210,6 +217,7 @@ const PasoCheckout = ({
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 		setErrorMsg(null);
+		setAttemptedSubmit(true);
 
 		if (!user?.id_usuario) {
 			setErrorMsg("Sesión expirada. Vuelva a iniciar sesión.");
@@ -220,29 +228,32 @@ const PasoCheckout = ({
 			return;
 		}
 		const metodo = selectedMetodo.tipo_pago;
-		const { numero: cedulaNum } = parseCedulaDisplay(cedulaPagador);
-		if (!cedulaNum || !validarRangoCedula(cedulaNum)) {
-			setErrorMsg(MENSAJE_RANGO_CEDULA);
-			return;
-		}
-		const cedulaApi = cedulaPagador.trim().toUpperCase();
-		const telParsed = parseTelefonoDisplay(telefonoPagador);
-		if (!validarNumeroTelefono(telParsed.number)) {
-			setErrorMsg(MENSAJE_TELEFONO_7_DIGITOS);
-			return;
-		}
-		const telefonoApi = `${telParsed.prefix}${telParsed.number}`;
+		const isCash = isCashTipo(metodo);
+		let cedulaApi = "";
+		let telefonoApi = "";
 
-		if (showReferencia && !referencia.trim()) {
-			setErrorMsg("La referencia de pago es obligatoria.");
+		if (!isCash) {
+			const { numero: cedulaNum } = parseCedulaDisplay(cedulaPagador);
+			if (!cedulaNum || !validarRangoCedula(cedulaNum)) {
+				setErrorMsg(MENSAJE_RANGO_CEDULA);
+				return;
+			}
+			cedulaApi = cedulaPagador.trim().toUpperCase();
+			const telParsed = parseTelefonoDisplay(telefonoPagador);
+			if (!validarNumeroTelefono(telParsed.number)) {
+				setErrorMsg(MENSAJE_TELEFONO_7_DIGITOS);
+				return;
+			}
+			telefonoApi = `${telParsed.prefix}${telParsed.number}`;
+		}
+
+		if (showReferencia && (!referencia.trim() || referencia.trim().length < 4)) {
 			return;
 		}
 		if (showBanks && !bancoOrigen.trim()) {
-			setErrorMsg("Seleccione el banco origen.");
 			return;
 		}
 		if (showComprobante && !comprobanteFile) {
-			setErrorMsg("Debe adjuntar el comprobante de pago para este método.");
 			return;
 		}
 
@@ -346,7 +357,7 @@ const PasoCheckout = ({
 					Tu pago será verificado por un administrador. Recibirás confirmación por notificación.
 				</p>
 				<a
-					href="/agendar-cita"
+					href="/dashboard"
 					className="inline-flex items-center gap-2 bg-brand-800 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-brand-900 transition-colors"
 				>
 					Volver al inicio
@@ -355,7 +366,7 @@ const PasoCheckout = ({
 		);
 	}
 
-		/* ─── MAIN FORM ─── */
+	/* ─── MAIN FORM ─── */
 	return (
 		<div>
 			{/* Header */}
@@ -369,17 +380,17 @@ const PasoCheckout = ({
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-				
+
 				{/* LADO IZQUIERDO: FLUJO PRINCIPAL (Paso A, B y C) */}
 				<div className="order-2 lg:order-1 lg:col-span-7 flex flex-col gap-6">
-					
+
 					{/* PASO A: Selector de Método de Pago */}
 					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
 						<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
 							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">1</span>
 							Selecciona tu método de pago
 						</h3>
-						
+
 						<div className="relative mt-4">
 							<select
 								value={selectedMetodoId}
@@ -397,7 +408,7 @@ const PasoCheckout = ({
 								))}
 							</select>
 							<div className="absolute right-4 top-0 bottom-0 flex items-center pointer-events-none text-brand-600">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6" /></svg>
 							</div>
 							<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-800 rounded-full my-3 ml-1.5" />
 						</div>
@@ -441,21 +452,21 @@ const PasoCheckout = ({
 
 									{/* Identificación / RIF */}
 									{displayIdentificacion !== "—" && (
-									<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
-										<div className="min-w-0 flex-1">
-											<p className="text-[10px] text-slate-400 font-bold uppercase">RIF / Cédula</p>
-											<p className="font-bold text-brand-900 text-sm">{displayIdentificacion}</p>
+										<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
+											<div className="min-w-0 flex-1">
+												<p className="text-[10px] text-slate-400 font-bold uppercase">RIF / Cédula</p>
+												<p className="font-bold text-brand-900 text-sm">{displayIdentificacion}</p>
+											</div>
+											{selectedMetodo?.titular_identificacion && (
+												<button
+													type="button"
+													onClick={() => copyToClipboard(selectedMetodo.titular_identificacion!)}
+													className="p-2 hover:bg-brand-100 text-brand-800 rounded-lg transition-colors flex-shrink-0"
+												>
+													<Copy className="h-4 w-4" />
+												</button>
+											)}
 										</div>
-										{selectedMetodo?.titular_identificacion && (
-											<button
-												type="button"
-												onClick={() => copyToClipboard(selectedMetodo.titular_identificacion!)}
-												className="p-2 hover:bg-brand-100 text-brand-800 rounded-lg transition-colors flex-shrink-0"
-											>
-												<Copy className="h-4 w-4" />
-											</button>
-										)}
-									</div>
 									)}
 
 									{/* Teléfono */}
@@ -514,76 +525,112 @@ const PasoCheckout = ({
 						<div className="bg-paper rounded-3xl p-8 lg:p-10 shadow-sm border border-brand-200/20 transition-all duration-500 ease-in-out opacity-100 animate-in fade-in slide-in-from-top-4">
 							<h3 className="text-xl font-bold text-brand-900 mb-8 flex items-center gap-3 font-headline">
 								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">3</span>
-								Reporta tu pago
+								{isCashTipo(tipoPagoSel) ? "Confirmación y Orden Médica" : "Reporta tu pago"}
 							</h3>
 
 							<form onSubmit={handleSubmit} className="space-y-6">
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-									{showBanks && (
-										<div className="space-y-1.5 relative md:col-span-2">
-											<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-												Banco Origen (Desde donde pagas)*
-											</label>
-											<select
-												value={bancoOrigen}
-												onChange={(e) => setBancoOrigen(e.target.value)}
-												className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none"
-											>
-												<option value="">Seleccionar...</option>
-												<option value="Banesco">Banesco</option>
-												<option value="Banco de Venezuela">Banco de Venezuela</option>
-												<option value="Mercantil">Mercantil</option>
-												<option value="Provincial">Provincial</option>
-												<option value="BNC">BNC</option>
-												<option value="Venezuela">Venezuela</option>
-												<option value="Banco del Tesoro">Banco del Tesoro</option>
-												<option value="Bicentenario">Bicentenario</option>
-												<option value="Otro">Otro</option>
-											</select>
-											<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
-										</div>
+									{showBanks && (() => {
+										const errorBanco = !bancoOrigen.trim() ? "Seleccione un banco origen." : null;
+										const showError = (touchedBanco || attemptedSubmit) && errorBanco;
+										return (
+											<div className="space-y-1.5 relative md:col-span-2">
+												<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+													Banco Origen (Desde donde pagas)*
+												</label>
+												<select
+													value={bancoOrigen}
+													onChange={(e) => setBancoOrigen(e.target.value)}
+													onBlur={() => setTouchedBanco(true)}
+													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
+												>
+													<option value="">Seleccionar...</option>
+													<option value="Banesco">Banesco</option>
+													<option value="Banco de Venezuela">Banco de Venezuela</option>
+													<option value="Mercantil">Mercantil</option>
+													<option value="Provincial">Provincial</option>
+													<option value="BNC">BNC</option>
+													<option value="Venezuela">Venezuela</option>
+													<option value="Banco del Tesoro">Banco del Tesoro</option>
+													<option value="Bicentenario">Bicentenario</option>
+													<option value="Otro">Otro</option>
+												</select>
+												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorBanco}</p>}
+												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+											</div>
+										);
+									})()}
+
+									{showReferencia && (() => {
+										const errorReferencia = !referencia.trim() ? "La referencia es obligatoria." : (referencia.trim().length < 4 ? "Mínimo 4 caracteres requeridos." : null);
+										const showError = (touchedReferencia || attemptedSubmit) && errorReferencia;
+										return (
+											<div className="space-y-1.5 relative md:col-span-2">
+												<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
+													Referencia (Últimos dígitos)*
+												</label>
+												<input
+													type="text"
+													maxLength={16}
+													value={referencia}
+													onChange={(e) => setReferencia(e.target.value)}
+													onBlur={() => setTouchedReferencia(true)}
+													placeholder="Ej: 837462947163"
+													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
+												/>
+												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorReferencia}</p>}
+												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+											</div>
+										);
+									})()}
+
+									{!isCashTipo(tipoPagoSel) && (
+										<>
+											<div className="space-y-1.5 relative md:col-span-2">
+												{(() => {
+													let errorCedula: string | null = null;
+													const { numero } = parseCedulaDisplay(cedulaPagador);
+													if (!numero || !validarRangoCedula(numero)) errorCedula = MENSAJE_RANGO_CEDULA;
+													const showError = (touchedCedula || attemptedSubmit) && errorCedula;
+													return (
+														<CedulaField
+															label="Cédula del pagador*"
+															value={cedulaPagador}
+															onChange={(tipo, num) => setCedulaPagador(`${tipo}${num}`)}
+															onBlur={() => setTouchedCedula(true)}
+															error={showError ? (errorCedula || undefined) : undefined}
+															required
+															inputClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
+															selectClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
+														/>
+													);
+												})()}
+												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+											</div>
+
+											<div className="space-y-1.5 relative md:col-span-2">
+												{(() => {
+													let errorTelefono: string | null = null;
+													const { number } = parseTelefonoDisplay(telefonoPagador);
+													if (!validarNumeroTelefono(number)) errorTelefono = MENSAJE_TELEFONO_7_DIGITOS;
+													const showError = (touchedTelefono || attemptedSubmit) && errorTelefono;
+													return (
+														<TelefonoField
+															label="Teléfono del pagador*"
+															value={telefonoPagador}
+															onChange={(prefix, num) => setTelefonoPagador(`${prefix}${num}`)}
+															onBlur={() => setTouchedTelefono(true)}
+															error={showError ? (errorTelefono || undefined) : undefined}
+															required
+															inputClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
+															selectClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
+														/>
+													);
+												})()}
+												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+											</div>
+										</>
 									)}
-
-									{showReferencia && (
-										<div className="space-y-1.5 relative md:col-span-2">
-											<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-												Referencia (Últimos dígitos)*
-											</label>
-											<input
-												type="text"
-												maxLength={16}
-												value={referencia}
-												onChange={(e) => setReferencia(e.target.value)}
-												placeholder="Ej: 837462947163"
-												className="w-full bg-cloud border-none rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none"
-											/>
-											<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
-										</div>
-									)}
-
-									<div className="space-y-1.5 relative md:col-span-2">
-										<CedulaField
-											label="Cédula del pagador*"
-											value={cedulaPagador}
-											onChange={(tipo, numero) => setCedulaPagador(`${tipo}${numero}`)}
-											required
-											inputClassName="bg-cloud border-none rounded-xl"
-											selectClassName="bg-cloud border-none rounded-xl"
-										/>
-										<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
-									</div>
-
-									<div className="space-y-1.5 relative md:col-span-2">
-										<TelefonoField
-											label="Teléfono del pagador*"
-											value={telefonoPagador}
-											onChange={(prefix, number) => setTelefonoPagador(`${prefix}${number}`)}
-											required
-											inputClassName="bg-cloud border-none rounded-xl"
-											selectClassName="bg-cloud border-none rounded-xl"
-										/>
-										<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
-									</div>
 								</div>
 
 								{/* Dropzones */}
@@ -598,13 +645,12 @@ const PasoCheckout = ({
 												onDragOver={(e) => { e.preventDefault(); setDragComprobanteActive(true); }}
 												onDragLeave={() => setDragComprobanteActive(false)}
 												onDrop={handleComprobanteDrop}
-												className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] ${
-													dragComprobanteActive
-														? "border-brand-800 bg-brand-100/30"
-														: comprobanteFile
-															? "border-emerald-500/50 bg-emerald-50/50 text-emerald-800"
-															: "border-slate-200 bg-cloud hover:bg-brand-100/20 hover:border-brand-200"
-												}`}
+												className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer group h-full min-h-[200px] ${dragComprobanteActive
+													? "border-brand-800 bg-brand-100/30"
+													: comprobanteFile
+														? "border-emerald-500/50 bg-emerald-50/50 text-emerald-800"
+														: attemptedSubmit ? "border-red-500 bg-red-50/50 hover:bg-red-50" : "border-slate-200 bg-cloud hover:bg-brand-100/20 hover:border-brand-200"
+													}`}
 											>
 												<input
 													ref={comprobanteInputRef}
@@ -625,15 +671,18 @@ const PasoCheckout = ({
 													</>
 												) : (
 													<>
-														<p className="text-sm font-bold text-brand-900 text-center leading-snug select-none">
+														<p className={`text-sm font-bold text-center leading-snug select-none ${attemptedSubmit ? "text-red-600" : "text-brand-900"}`}>
 															Adjunta la captura aquí
 														</p>
-														<p className="text-[10px] text-slate-400 mt-2 uppercase font-bold text-center tracking-wider select-none">
+														<p className={`text-[10px] mt-2 uppercase font-bold text-center tracking-wider select-none ${attemptedSubmit ? "text-red-500" : "text-slate-400"}`}>
 															JPG o PNG (Max 5MB)
 														</p>
 													</>
 												)}
 											</div>
+											{attemptedSubmit && !comprobanteFile && (
+												<p className="text-xs text-red-500 font-medium text-center mt-2">Debe adjuntar el comprobante.</p>
+											)}
 										</div>
 									)}
 
@@ -686,8 +735,8 @@ const PasoCheckout = ({
 
 								{/* Error message */}
 								{errorMsg && (
-									<div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 font-medium my-4">
-										{errorMsg}
+									<div className="pt-2 pb-1">
+										<p className="text-sm font-bold text-red-500 text-center">{errorMsg}</p>
 									</div>
 								)}
 
@@ -695,17 +744,7 @@ const PasoCheckout = ({
 								<div className="pt-6">
 									<button
 										type="submit"
-										disabled={
-											isSubmitting || 
-											!selectedMetodo || 
-											(showReferencia && !referencia.trim()) || 
-											(showComprobante && !comprobanteFile) || 
-											!cedulaPagador.trim() || 
-											cedulaPagador.length < 3 ||
-											!telefonoPagador.trim() || 
-											telefonoPagador.length < 13 || 
-											(showBanks && !bancoOrigen.trim())
-										}
+										disabled={isSubmitting || (!selectedMetodo && !attemptedSubmit)}
 										className="w-full bg-gradient-to-br from-brand-900 to-brand-800 text-white py-4 px-6 rounded-2xl font-extrabold text-lg shadow-xl shadow-brand-800/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-40 disabled:hover:scale-100 disabled:active:scale-100 disabled:cursor-not-allowed"
 									>
 										{isSubmitting ? (
@@ -788,7 +827,7 @@ const PasoCheckout = ({
 							</div>
 						</div>
 					</div>
-					
+
 					{/* Back button under the summary block to ensure mobile doesn't skip it */}
 					<div className="flex items-center justify-start mt-6 w-full opacity-70 hover:opacity-100 transition-opacity">
 						<button

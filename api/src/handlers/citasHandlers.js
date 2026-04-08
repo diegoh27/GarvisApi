@@ -170,12 +170,12 @@ const listMisCitasCompletasHandler = async (req, res) => {
 		const data = await listCitasCompletasByPacienteController(id_paciente);
 		const normalized = Array.isArray(data)
 			? data.map((row) => ({
-					...row,
-					fecha_cita: toDateOnly(row.fecha_cita),
-					...(row.representado_fecha_nacimiento != null && {
-						representado_fecha_nacimiento: toDateOnly(row.representado_fecha_nacimiento),
-					}),
-				}))
+				...row,
+				fecha_cita: toDateOnly(row.fecha_cita),
+				...(row.representado_fecha_nacimiento != null && {
+					representado_fecha_nacimiento: toDateOnly(row.representado_fecha_nacimiento),
+				}),
+			}))
 			: data;
 		return res.status(200).json({
 			ok: true,
@@ -683,11 +683,14 @@ const asignarCitaCompletaHandler = async (req, res) => {
 		if (monto === undefined || monto === null || monto === "") {
 			missing.push("monto");
 		}
-		if (!cedula_pagador || !String(cedula_pagador).trim()) {
-			missing.push("cedula_pagador");
-		}
-		if (!telefono_pagador || !String(telefono_pagador).trim()) {
-			missing.push("telefono_pagador");
+		const isCash = isCashPaymentMethodAsignar(metodoStr);
+		if (!isCash) {
+			if (!cedula_pagador || !String(cedula_pagador).trim()) {
+				missing.push("cedula_pagador");
+			}
+			if (!telefono_pagador || !String(telefono_pagador).trim()) {
+				missing.push("telefono_pagador");
+			}
 		}
 
 		if (missing.length) {

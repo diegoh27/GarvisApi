@@ -35,18 +35,24 @@ const AgendarCitaPage = () => {
 	const { data: tienePagoData, isLoading: isLoadingPago } = useGetTienePagoPendienteQuery();
 	const navigate = useNavigate();
 
+	const [initialCheckDone, setInitialCheckDone] = useState(false);
+
 	useEffect(() => {
-		if (!isLoadingPago && tienePagoData?.tienePagoPendiente) {
-			Swal.fire({
-				icon: "warning",
-				title: "Acceso Denegado",
-				text: "Tienes un pago en proceso de verificación. Espera la respuesta del administrador.",
-				confirmButtonColor: "#054542",
-			}).then(() => {
-				navigate("/dashboard", { replace: true });
-			});
+		if (!isLoadingPago) {
+			if (tienePagoData?.tienePagoPendiente && !initialCheckDone) {
+				Swal.fire({
+					icon: "warning",
+					title: "Acceso Denegado",
+					text: "Tienes un pago en proceso de verificación. Espera la respuesta del administrador.",
+					confirmButtonColor: "#054542",
+				}).then(() => {
+					navigate("/dashboard", { replace: true });
+				});
+			} else if (!initialCheckDone) {
+				setInitialCheckDone(true);
+			}
 		}
-	}, [isLoadingPago, tienePagoData, navigate]);
+	}, [isLoadingPago, tienePagoData, navigate, initialCheckDone]);
 
 	const handleStep1Next = (data: { tipo: "yo" | "representado"; id_representado?: string }) => {
 		setState((prev) => ({

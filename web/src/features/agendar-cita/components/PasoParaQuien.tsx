@@ -64,10 +64,55 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 	const [formGenero, setFormGenero] = useState("");
 	const [formParentesco, setFormParentesco] = useState("");
 	const [formError, setFormError] = useState("");
+	const [errors, setErrors] = useState<Record<string, string>>({});
+
+	const now = new Date();
+	const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
+	const minDateStr = (now.getFullYear() - 115) + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
 
 	const canContinue =
 		selectionType === "yo" ||
 		(selectionType === "representado" && selectedRepresentadoId != null);
+
+	const handleFocus = (field: string) => {
+		setErrors((prev) => ({ ...prev, [field]: "" }));
+		setFormError(""); // limpiar error general
+	};
+
+	const handleBlur = (field: string) => {
+		let error = "";
+		switch (field) {
+			case "nombre":
+				if (!formNombre.trim()) error = "El nombre es obligatorio.";
+				break;
+			case "apellido":
+				if (!formApellido.trim()) error = "El apellido es obligatorio.";
+				break;
+			case "fecha_nacimiento":
+				if (!formFechaNacimiento) {
+					error = "La fecha de nacimiento es obligatoria.";
+				} else if (formFechaNacimiento > todayStr) {
+					error = "No puedes agregar una fecha futura";
+				} else if (formFechaNacimiento < minDateStr) {
+					error = "No puedes agregar personas de mas de 115 años";
+				}
+				break;
+			case "cedula":
+				if (formCedula) {
+					const cedulaNumber = parseInt(formCedula.substring(1), 10);
+					if (isNaN(cedulaNumber) || cedulaNumber < 100000 || cedulaNumber > 99999999) {
+						error = "El número de cédula debe estar entre 100.000 y 99.999.999";
+					}
+				}
+				break;
+			case "genero":
+				if (!formGenero) error = "El género es obligatorio.";
+				break;
+		}
+		if (error) {
+			setErrors((prev) => ({ ...prev, [field]: error }));
+		}
+	};
 
 	const handleSelectYo = () => {
 		setSelectionType("yo");
@@ -90,6 +135,31 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 			setFormError("Por favor completa los campos obligatorios: nombre, apellido, fecha de nacimiento y género.");
 			return;
 		}
+
+		let hasErrors = false;
+		const newErrors: Record<string, string> = {};
+
+		if (formFechaNacimiento > todayStr) {
+			newErrors.fecha_nacimiento = "No puedes agregar una fecha futura";
+			hasErrors = true;
+		} else if (formFechaNacimiento < minDateStr) {
+			newErrors.fecha_nacimiento = "No puedes agregar personas de mas de 115 años";
+			hasErrors = true;
+		}
+
+		if (formCedula) {
+			const cedulaNumber = parseInt(formCedula.substring(1), 10);
+			if (isNaN(cedulaNumber) || cedulaNumber < 100000 || cedulaNumber > 99999999) {
+				newErrors.cedula = "El número de cédula debe estar entre 100.000 y 99.999.999";
+				hasErrors = true;
+			}
+		}
+
+		if (hasErrors) {
+			setErrors((prev) => ({ ...prev, ...newErrors }));
+			return;
+		}
+
 		try {
 			const result = await createRepresentado({
 				nombre: formNombre.trim(),
@@ -309,10 +379,13 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												type="text"
 												value={formNombre}
 												onChange={(e) => setFormNombre(e.target.value)}
+												onBlur={() => handleBlur("nombre")}
+												onFocus={() => handleFocus("nombre")}
 												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
 												placeholder="Ej: Maria"
 											/>
 										</div>
+										{errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
 									</div>
 									<div className="flex-1 space-y-1.5">
 										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
@@ -324,15 +397,22 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												type="text"
 												value={formApellido}
 												onChange={(e) => setFormApellido(e.target.value)}
+												onBlur={() => handleBlur("apellido")}
+												onFocus={() => handleFocus("apellido")}
 												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
 												placeholder="Ej: González"
 											/>
 										</div>
+										{errors.apellido && <p className="text-xs text-red-500 mt-1">{errors.apellido}</p>}
 									</div>
 								</div>
 
 								{/* Cédula */}
-								<div className="space-y-1.5">
+								<div 
+									className="space-y-1.5"
+									onBlurCapture={() => handleBlur("cedula")}
+									onFocusCapture={() => handleFocus("cedula")}
+								>
 									<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
 										Cédula
 									</label>
@@ -344,23 +424,29 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										inputClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3 !px-4"
 										selectClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3"
 									/>
+									{errors.cedula && <p className="text-xs text-red-500 mt-1">{errors.cedula}</p>}
 								</div>
 
 								{/* Fecha + Parentesco (side by side on mobile too) */}
 								<div className="flex gap-3 lg:contents">
 									<div className="flex-1 space-y-1.5">
 										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
-											Nacimiento <span className="text-red-400">*</span>
+											Fecha de nacimiento <span className="text-red-400">*</span>
 										</label>
 										<div className="relative">
 											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
 											<input
 												type="date"
 												value={formFechaNacimiento}
+												min={minDateStr}
+												max={todayStr}
 												onChange={(e) => setFormFechaNacimiento(e.target.value)}
+												onBlur={() => handleBlur("fecha_nacimiento")}
+												onFocus={() => handleFocus("fecha_nacimiento")}
 												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 text-brand-600"
 											/>
 										</div>
+										{errors.fecha_nacimiento && <p className="text-xs text-red-500 mt-1">{errors.fecha_nacimiento}</p>}
 									</div>
 									<div className="flex-1 space-y-1.5">
 										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
@@ -368,26 +454,17 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										</label>
 										<div className="relative">
 											<div className="absolute left-0 top-0 w-1 h-full bg-brand-800 rounded-l-sm" />
-											<select
+											<input
+												type="text"
 												value={formParentesco}
 												onChange={(e) => setFormParentesco(e.target.value)}
-												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 text-brand-600 appearance-none"
-											>
-												<option value="">Seleccionar...</option>
-												{parentescos.length > 0 ? (
-													parentescos.map((p) => (
-														<option key={p} value={p}>{p}</option>
-													))
-												) : (
-													<>
-														<option value="Hijo/a">Hijo/a</option>
-														<option value="Padre/Madre">Padre/Madre</option>
-														<option value="Cónyuge">Cónyuge</option>
-														<option value="Otro">Otro</option>
-													</>
-												)}
-											</select>
+												onBlur={() => handleBlur("parentesco")}
+												onFocus={() => handleFocus("parentesco")}
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												placeholder="Ej: Hijo/a"
+											/>
 										</div>
+										{errors.parentesco && <p className="text-xs text-red-500 mt-1">{errors.parentesco}</p>}
 									</div>
 								</div>
 

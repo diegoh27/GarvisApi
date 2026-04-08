@@ -35,10 +35,24 @@ const notificacionesApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["Notificaciones"],
 		}),
+		markTodasNotificacionesLeidas: builder.mutation<
+			{ ok: boolean; message: string },
+			void
+		>({
+			query: () => ({
+				url: `/notificaciones/leer-todas`,
+				method: "PATCH",
+			}),
+			invalidatesTags: ["Notificaciones"],
+		}),
 	}),
 	overrideExisting: false,
 });
 
-export const { useGetMisNotificacionesQuery, useMarkNotificacionLeidaMutation } = notificacionesApi;
+export const { 
+    useGetMisNotificacionesQuery, 
+    useMarkNotificacionLeidaMutation,
+    useMarkTodasNotificacionesLeidasMutation
+} = notificacionesApi;
 export type { Notificacion };
 export { notificacionesApi };

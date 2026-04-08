@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import Swal from "sweetalert2";
+import { Banknote } from "lucide-react";
 import {
   PageShell,
   TelefonoField,
@@ -23,7 +24,7 @@ const MetodosPagoPage = () => {
     nombre: "",
     banco_codigo: "",
     moneda: "BS" as "BS" | "USD",
-    tipo_pago_bs: "Transferencia" as "Transferencia" | "PagoMovil",
+    tipo_pago_bs: "Transferencia" as "Transferencia" | "PagoMovil" | "EfectivoBs",
     tipo_pago_usd: "",
     titular_identificacion_tipo: "V" as "V" | "E" | "J",
     titular_identificacion_numero: "",
@@ -64,11 +65,11 @@ const MetodosPagoPage = () => {
 
   const bsTipoOptions = useMemo(() => {
     if (!selectedBanco) {
-      return ["Transferencia", "PagoMovil"] as Array<"Transferencia" | "PagoMovil">;
+      return ["Transferencia", "PagoMovil", "EfectivoBs"] as Array<"Transferencia" | "PagoMovil" | "EfectivoBs">;
     }
 
     const services = String(selectedBanco.Services || "").toUpperCase();
-    const options: Array<"Transferencia" | "PagoMovil"> = [];
+    const options: Array<"Transferencia" | "PagoMovil" | "EfectivoBs"> = [];
 
     if (services.includes("TRF")) {
       options.push("Transferencia");
@@ -77,7 +78,9 @@ const MetodosPagoPage = () => {
       options.push("PagoMovil");
     }
 
-    return options.length ? options : (["Transferencia", "PagoMovil"] as Array<"Transferencia" | "PagoMovil">);
+    options.push("EfectivoBs");
+
+    return options.length ? options : (["Transferencia", "PagoMovil", "EfectivoBs"] as Array<"Transferencia" | "PagoMovil" | "EfectivoBs">);
   }, [selectedBanco]);
 
   const bancosDisponibles = useMemo(() => {
@@ -174,25 +177,28 @@ const MetodosPagoPage = () => {
 
     const nextErrors: FormErrors = {};
 
+    const tipoPago = isUsd ? form.tipo_pago_usd.trim() : form.tipo_pago_bs;
+    const isEfectivoBs = !isUsd && form.tipo_pago_bs === "EfectivoBs";
+    const bancoCodigo = isUsd || isEfectivoBs ? "N/A" : String(selectedBanco?.Code || "");
+    const bancoNombre = isUsd || isEfectivoBs
+      ? "No aplica"
+      : String(selectedBanco?.Name || "");
+
     if (!form.nombre.trim()) {
       nextErrors.nombre = "El nombre del método es requerido.";
     }
 
-    if (!isUsd && !form.banco_codigo) {
+    if (!isUsd && form.tipo_pago_bs !== "EfectivoBs" && !form.banco_codigo) {
       nextErrors.banco_codigo = "Debe seleccionar un banco.";
-    } else if (!isUsd && !selectedBanco && form.banco_codigo) {
+    } else if (!isUsd && form.tipo_pago_bs !== "EfectivoBs" && !selectedBanco && form.banco_codigo) {
       nextErrors.banco_codigo = "Banco inválido.";
     }
 
     if (!form.imagen && !editingMetodoId && !editingImageUrl) {
-      nextErrors.imagen = "Debe subir una imagen del método.";
+      if (tipoPago !== "EfectivoBs" && tipoPago !== "EfectivoUSD") {
+        nextErrors.imagen = "Debe subir una imagen del método.";
+      }
     }
-
-    const tipoPago = isUsd ? form.tipo_pago_usd.trim() : form.tipo_pago_bs;
-    const bancoCodigo = isUsd ? "USD" : String(selectedBanco?.Code || "");
-    const bancoNombre = isUsd
-      ? "No aplica (USD)"
-      : String(selectedBanco?.Name || "");
 
     if (!tipoPago) {
       if (isUsd) {
@@ -204,38 +210,42 @@ const MetodosPagoPage = () => {
 
     if (isUsd) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!form.correo.trim()) {
-        nextErrors.correo = "El correo es requerido para métodos en USD.";
-      } else if (!emailRegex.test(form.correo.trim())) {
-        nextErrors.correo = "Debe indicar un correo válido.";
+      if (form.tipo_pago_usd !== "EfectivoUSD") {
+        if (!form.correo.trim()) {
+          nextErrors.correo = "El correo es requerido para métodos en USD.";
+        } else if (!emailRegex.test(form.correo.trim())) {
+          nextErrors.correo = "Debe indicar un correo válido.";
+        }
       }
     } else {
-      if (!identificacionNumero) {
-        nextErrors.titular_identificacion_numero = "La identificación del titular es requerida.";
-      } else {
-        const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
-        if (!regexIdentificacion.test(identificacionCompuesta)) {
-          nextErrors.titular_identificacion_numero =
-            "Formato V/E/J seguido de 5 a 12 dígitos.";
-        }
-      }
-
-      if (form.tipo_pago_bs === "PagoMovil") {
-        if (!form.telefono.trim()) {
-          nextErrors.telefono = "Para Pago móvil debe indicar un teléfono.";
+      if (form.tipo_pago_bs !== "EfectivoBs") {
+        if (!identificacionNumero) {
+          nextErrors.titular_identificacion_numero = "La identificación del titular es requerida.";
         } else {
-          const { number } = parseTelefonoDisplay(form.telefono);
-          if (!validarNumeroTelefono(number)) {
-            nextErrors.telefono = MENSAJE_TELEFONO_7_DIGITOS;
+          const regexIdentificacion = /^(V|E|J)\d{5,12}$/i;
+          if (!regexIdentificacion.test(identificacionCompuesta)) {
+            nextErrors.titular_identificacion_numero =
+              "Formato V/E/J seguido de 5 a 12 dígitos.";
           }
         }
-      }
 
-      if (
-        form.tipo_pago_bs === "Transferencia" &&
-        !form.numero_cuenta.trim()
-      ) {
-        nextErrors.numero_cuenta = "Para Transferencia debe indicar el número de cuenta.";
+        if (form.tipo_pago_bs === "PagoMovil") {
+          if (!form.telefono.trim()) {
+            nextErrors.telefono = "Para Pago móvil debe indicar un teléfono.";
+          } else {
+            const { number } = parseTelefonoDisplay(form.telefono);
+            if (!validarNumeroTelefono(number)) {
+              nextErrors.telefono = MENSAJE_TELEFONO_7_DIGITOS;
+            }
+          }
+        }
+
+        if (
+          form.tipo_pago_bs === "Transferencia" &&
+          !form.numero_cuenta.trim()
+        ) {
+          nextErrors.numero_cuenta = "Para Transferencia debe indicar el número de cuenta.";
+        }
       }
     }
 
@@ -409,12 +419,14 @@ const MetodosPagoPage = () => {
                   >
                     {bsTipoOptions.map((option) => (
                       <option key={option} value={option}>
-                        {option === "PagoMovil" ? "Pago móvil" : "Transferencia"}
+                        {option === "PagoMovil" ? "Pago móvil" : option === "Transferencia" ? "Transferencia" : "Efectivo"}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div id="field-banco_codigo">
+                {form.tipo_pago_bs !== "EfectivoBs" && (
+                  <>
+                  <div id="field-banco_codigo">
                   <label className="mb-1 block text-sm font-medium text-brand-700">
                     Banco <span className="text-red-500">*</span>
                   </label>
@@ -540,91 +552,102 @@ const MetodosPagoPage = () => {
                     ) : null}
                   </div>
                 ) : null}
+                </>
+              )}
               </>
             ) : (
               <>
                 <div id="field-tipo_pago_usd">
                   <label className="mb-1 block text-sm font-medium text-brand-700">
-                    Tipo de pago (libre) <span className="text-red-500">*</span>
+                    Tipo de pago <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={form.tipo_pago_usd}
                     onChange={(e) => {
                       setForm((prev) => ({ ...prev, tipo_pago_usd: e.target.value }));
                       clearError("tipo_pago_usd");
                     }}
-                    placeholder="Ej: Zelle, PayPal, Binance..."
                     className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
                       errors.tipo_pago_usd ? "border-red-500" : "border-brand-300"
                     }`}
                     aria-invalid={!!errors.tipo_pago_usd}
                     aria-describedby={errors.tipo_pago_usd ? "error-tipo_pago_usd" : undefined}
-                  />
+                  >
+                    <option value="">Seleccione el tipo de pago</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="Binance">Binance</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="EfectivoUSD">EfectivoUSD</option>
+                    <option value="Otro">Otro</option>
+                  </select>
                   {errors.tipo_pago_usd ? (
                     <p id="error-tipo_pago_usd" className="mt-1 text-xs text-red-600" role="alert">
                       {errors.tipo_pago_usd}
                     </p>
                   ) : null}
                 </div>
-                <div id="field-correo">
-                  <label className="mb-1 block text-sm font-medium text-brand-700">
-                    Correo <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={form.correo}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, correo: e.target.value }));
-                      clearError("correo");
-                    }}
-                    placeholder="correo@ejemplo.com"
-                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
-                      errors.correo ? "border-red-500" : "border-brand-300"
-                    }`}
-                    aria-invalid={!!errors.correo}
-                    aria-describedby={errors.correo ? "error-correo" : undefined}
-                  />
-                  {errors.correo ? (
-                    <p id="error-correo" className="mt-1 text-xs text-red-600" role="alert">
-                      {errors.correo}
-                    </p>
-                  ) : null}
-                </div>
+                {form.tipo_pago_usd !== "EfectivoUSD" && (
+                  <div id="field-correo">
+                    <label className="mb-1 block text-sm font-medium text-brand-700">
+                      Correo <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={form.correo}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, correo: e.target.value }));
+                        clearError("correo");
+                      }}
+                      placeholder="correo@ejemplo.com"
+                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                        errors.correo ? "border-red-500" : "border-brand-300"
+                      }`}
+                      aria-invalid={!!errors.correo}
+                      aria-describedby={errors.correo ? "error-correo" : undefined}
+                    />
+                    {errors.correo ? (
+                      <p id="error-correo" className="mt-1 text-xs text-red-600" role="alert">
+                        {errors.correo}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </>
             )}
 
-            <div id="field-imagen">
-              <label className="mb-1 block text-sm font-medium text-brand-700">
-                Imagen <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
-                onChange={(e) => {
-                  onFileChange(e);
-                  clearError("imagen");
-                }}
-                className="block w-full text-sm text-brand-800 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-900 hover:file:bg-brand-200"
-                aria-invalid={!!errors.imagen}
-                aria-describedby={errors.imagen ? "error-imagen" : undefined}
-              />
-              {errors.imagen ? (
-                <p id="error-imagen" className="mt-1 text-xs text-red-600" role="alert">
-                  {errors.imagen}
-                </p>
-              ) : null}
-              {previewImagenFinal ? (
-                <div className="mt-3 rounded-lg border border-brand-200 p-2">
-                  <p className="mb-2 text-xs text-brand-700">Previsualización</p>
-                  <img
-                    src={previewImagenFinal}
-                    alt="Previsualización método de pago"
-                    className="h-28 w-28 rounded-lg border border-brand-200 object-cover"
-                  />
-                </div>
-              ) : null}
-            </div>
+            {form.tipo_pago_bs !== "EfectivoBs" && form.tipo_pago_usd !== "EfectivoUSD" && (
+              <div id="field-imagen">
+                <label className="mb-1 block text-sm font-medium text-brand-700">
+                  Imagen <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={(e) => {
+                    onFileChange(e);
+                    clearError("imagen");
+                  }}
+                  className="block w-full text-sm text-brand-800 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-900 hover:file:bg-brand-200"
+                  aria-invalid={!!errors.imagen}
+                  aria-describedby={errors.imagen ? "error-imagen" : undefined}
+                />
+                {errors.imagen ? (
+                  <p id="error-imagen" className="mt-1 text-xs text-red-600" role="alert">
+                    {errors.imagen}
+                  </p>
+                ) : null}
+                {previewImagenFinal ? (
+                  <div className="mt-3 rounded-lg border border-brand-200 p-2">
+                    <p className="mb-2 text-xs text-brand-700">Previsualización</p>
+                    <img
+                      src={previewImagenFinal}
+                      alt="Previsualización método de pago"
+                      className="h-28 w-28 rounded-lg border border-brand-200 object-cover"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button
@@ -666,11 +689,17 @@ const MetodosPagoPage = () => {
                   key={metodo.id_metodo_pago}
                   className="flex flex-col gap-3 rounded-xl border border-brand-200 p-3 md:flex-row md:items-center"
                 >
-                  <img
-                    src={metodo.imagen_url}
-                    alt={metodo.nombre}
-                    className="h-16 w-16 rounded-lg border border-brand-200 object-cover"
-                  />
+                  {metodo.imagen_url ? (
+                    <img
+                      src={metodo.imagen_url}
+                      alt={metodo.nombre}
+                      className="h-16 w-16 shrink-0 rounded-lg border border-brand-200 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-700">
+                      <Banknote className="h-8 w-8" />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-brand-900">{metodo.nombre}</p>
                     <p className="text-xs text-brand-700">
@@ -698,12 +727,32 @@ const MetodosPagoPage = () => {
                       type="button"
                       onClick={() => onToggleEstado(metodo.id_metodo_pago, Boolean(metodo.activo))}
                       disabled={isUpdating}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium ${metodo.activo
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-slate-200 text-slate-700"
-                        }`}
+                      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                        metodo.activo ? "bg-emerald-500" : "bg-slate-300"
+                      }`}
+                      role="switch"
+                      aria-checked={Boolean(metodo.activo)}
                     >
-                      {metodo.activo ? "Activo" : "Inactivo"}
+                      <span className="sr-only">Toggle estado</span>
+                      <span
+                        className={`absolute left-2 text-[10px] font-bold text-white transition-opacity duration-200 ${
+                          metodo.activo ? "opacity-100" : "opacity-0"
+                        }`}
+                      >
+                        ON
+                      </span>
+                      <span
+                        className={`absolute right-2 text-[10px] font-bold text-slate-500 transition-opacity duration-200 ${
+                          !metodo.activo ? "opacity-100" : "opacity-0"
+                        }`}
+                      >
+                        OFF
+                      </span>
+                      <span
+                        className={`pointer-events-none z-10 inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                          metodo.activo ? "translate-x-8" : "translate-x-1"
+                        }`}
+                      />
                     </button>
                     <button
                       type="button"

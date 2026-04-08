@@ -1,6 +1,7 @@
 const {
 	listNotificacionesByUsuarioController,
 	markNotificacionLeidaController,
+	markTodasNotificacionesLeidasController,
 } = require("../controllers/notificacionesControllers");
 
 const listMisNotificacionesHandler = async (req, res) => {
@@ -79,7 +80,33 @@ const markNotificacionLeidaHandler = async (req, res) => {
 	}
 };
 
+const markTodasNotificacionesLeidasHandler = async (req, res) => {
+	try {
+		const id_usuario = req.user?.id;
+		if (!id_usuario) {
+			return res.status(401).json({
+				ok: false,
+				message: "Token inválido",
+			});
+		}
+
+		await markTodasNotificacionesLeidasController({ id_usuario });
+
+		return res.status(200).json({
+			ok: true,
+			message: "Todas las notificaciones marcadas como leídas",
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	listMisNotificacionesHandler,
 	markNotificacionLeidaHandler,
+	markTodasNotificacionesLeidasHandler,
 };
