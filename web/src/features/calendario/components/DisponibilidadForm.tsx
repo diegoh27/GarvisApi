@@ -1,11 +1,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { TimeOption } from "../types";
-import {
-	useGetEcosQuery,
-	useGetEcosByEspecialistaQuery,
-} from "../../ecos/ecosApi";
-import { useAuth } from "../../../shared";
+import { useGetEcosQuery } from "../../ecos/ecosApi";
 import Swal from "sweetalert2";
 import { generateSlotsRange, parseTimeToMinutes } from "../utils/slotUtils";
 import { CalendarDays, Clock, Send, X } from "lucide-react";
@@ -166,21 +162,9 @@ const DisponibilidadForm = ({
 		onSubmit(event);
 	};
 
-	const { user } = useAuth();
-	const isEspecialista = user?.rol === "especialista";
-	const idEspecialista = user?.id_usuario || "";
 
-	const { data: ecosEspecialista = [], isLoading: loadingEcosEspecialista } =
-		useGetEcosByEspecialistaQuery(idEspecialista, {
-			skip: !isEspecialista || !idEspecialista,
-		});
-	const { data: ecosTodos = [], isLoading: loadingEcosTodos } = useGetEcosQuery(
-		undefined,
-		{ skip: isEspecialista },
-	);
 
-	const ecos = isEspecialista ? ecosEspecialista : ecosTodos;
-	const loadingEcos = isEspecialista ? loadingEcosEspecialista : loadingEcosTodos;
+	const { data: ecos = [], isLoading: loadingEcos } = useGetEcosQuery();
 
 	const [isEcosDropdownOpen, setIsEcosDropdownOpen] = useState(false);
 	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">(

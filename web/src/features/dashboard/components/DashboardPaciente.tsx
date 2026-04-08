@@ -112,7 +112,7 @@ const DashboardPaciente = () => {
 					{saludo}, {welcomeName || "Paciente"}
 				</h2>
 				<p className="text-brand-600 text-base max-w-2xl sm:text-lg">
-					Bienvenido de nuevo a tu portal de salud integral. Aquí tienes el resumen de tu actividad.
+					Bienvenido de nuevo a tu portal de salud integral.
 				</p>
 			</header>
 
@@ -214,7 +214,7 @@ const DashboardPaciente = () => {
 							<div className="text-center py-6">
 								<CalendarDays className="mx-auto h-12 w-12 text-brand-300" />
 								<p className="mt-3 text-sm font-medium text-brand-800">
-									No tienes citas próximas
+									No tienes citas pendientes
 								</p>
 								<p className="mt-1 text-xs text-brand-600">
 									Agenda una cita cuando lo necesites.

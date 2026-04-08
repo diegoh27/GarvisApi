@@ -346,6 +346,9 @@ IF NOT EXISTS eco
   duracion_min INT NOT NULL DEFAULT 0,
   activo TINYINT
 (1) NOT NULL DEFAULT 1,
+  descripcion TEXT NULL,
+  etiqueta VARCHAR(100) NULL,
+  icono VARCHAR(255) NULL,
   PRIMARY KEY
 (id_eco)
 ) ENGINE=InnoDB;

@@ -254,13 +254,13 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 			{/* ─── HEADER ─── */}
 			<div className="mb-8 lg:mb-10">
 				<span className="text-brand-800 text-[10px] uppercase tracking-[0.3em] font-bold mb-2 block">
-					Citas Médicas
+					HORARIO
 				</span>
 				<h2 className="font-headline text-3xl lg:text-4xl font-extrabold text-brand-900 tracking-tight mb-2">
-					Selección de Fecha y Hora
+					Selecciona la Fecha y Hora
 				</h2>
 				<p className="text-brand-600 text-sm lg:text-base max-w-xl leading-relaxed">
-					Elija el momento óptimo para su ecografía de{" "}
+					Elija la hora adecuada para realizarte el {" "}
 					<span className="font-semibold text-brand-800">{ecoNombre}</span>.
 				</p>
 			</div>

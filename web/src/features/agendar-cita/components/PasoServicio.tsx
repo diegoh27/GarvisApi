@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useGetDisponibilidadPorFechaQuery } from "../../disponibilidad/disponibilidadApi";
 import type { DisponibilidadPublicaPorEcoItem } from "../../disponibilidad/disponibilidadApi";
+import { useGetEcosQuery } from "../../ecos/ecosApi";
+import { PREDEFINED_ICONS } from "../../ecos/components/EcoForm";
 
 type PasoServicioProps = {
 	onNext: (data: { id_eco: string; ecoNombre: string; fecha: string }) => void;
@@ -255,6 +257,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 	const { data: disponibilidad = [], isLoading, isFetching } = useGetDisponibilidadPorFechaQuery(
 		{ fecha: fechaStr },
 	);
+	const { data: allEcos = [] } = useGetEcosQuery();
 
 	// Group by eco
 	const ecoGroups = useMemo(() => groupByEco(disponibilidad), [disponibilidad]);
@@ -287,8 +290,8 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					Tipo de Ecografía
 				</h2>
 				<p className="text-brand-600 text-sm lg:text-base max-w-2xl leading-relaxed">
-					Selecciona una fecha y elige el tipo de ecografía disponible. Solo se muestran
-					servicios con especialistas disponibles para el día seleccionado.
+					Selecciona una fecha y elige el tipo de ecografía que deseas realizarte. Solo se muestran
+					los tipos de ecografías con especialistas disponibles para el día seleccionado.
 				</p>
 			</div>
 
@@ -323,6 +326,19 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 							<div className="space-y-3">
 								{ecoGroups.map((eco) => {
 									const isSelected = selectedEcoId === eco.id_eco;
+									const fullEco = allEcos.find((e) => e.id_eco === eco.id_eco);
+									const desc = fullEco?.descripcion || getEcoDescription(eco.nombre);
+									const iconoOriginal = fullEco?.icono || "Activity";
+
+									let IconComponent = ScanHeart;
+									let isImage = false;
+									if (iconoOriginal.startsWith("http") || iconoOriginal.startsWith("/uploads")) {
+										isImage = true;
+									} else {
+										const f = PREDEFINED_ICONS.find((p) => p.name === iconoOriginal);
+										if (f) IconComponent = f.icon;
+									}
+
 									return (
 										<button
 											key={eco.id_eco}
@@ -334,14 +350,18 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 												}`}
 										>
 											<div
-												className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 lg:h-16 lg:w-16 ${isSelected
+												className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 lg:h-16 lg:w-16 overflow-hidden ${isSelected
 													? "scale-105 bg-brand-800/10"
 													: "bg-cloud group-hover:bg-brand-100"
 													}`}
 											>
-												<ScanHeart
-													className={`h-7 w-7 lg:h-8 lg:w-8 ${isSelected ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}`}
-												/>
+												{isImage ? (
+													<img src={iconoOriginal} alt={eco.nombre} className="h-full w-full object-cover" />
+												) : (
+													<IconComponent
+														className={`h-7 w-7 lg:h-8 lg:w-8 ${isSelected ? "text-brand-800" : "text-slate-400 group-hover:text-brand-600"}`}
+													/>
+												)}
 											</div>
 											<div className="min-w-0 flex-1">
 												<div className="flex flex-wrap items-center justify-between gap-2">
@@ -363,7 +383,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 													</div>
 												</div>
 												<p className="mt-1 line-clamp-2 text-sm leading-snug text-brand-600">
-													{getEcoDescription(eco.nombre)}
+													{desc}
 												</p>
 												{isSelected && eco.especialistas.length > 0 && (
 													<p className="mt-2 text-xs text-brand-500">
@@ -445,7 +465,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 						<div>
 							<h6 className="text-sm font-bold text-brand-900">¿Necesitas orientación?</h6>
 							<p className="mt-1 text-xs leading-relaxed text-brand-600">
-								Si no estás seguro qué tipo de ecografía necesitas, consulta con tu médico tratante antes de agendar.
+								Si no estás seguro qué tipo de ecografía necesitas, consulta con tu médico tratante antes de agendar. También puedes enviarnos un mensaje al +584144774526 si requieres alguna asesoría
 							</p>
 						</div>
 					</div>

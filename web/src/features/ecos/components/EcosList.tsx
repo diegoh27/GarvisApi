@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useGetEcosQuery, useDeleteEcoMutation } from "../ecosApi";
 import type { Eco } from "../ecosApi";
-import EcoForm from "./EcoForm";
+import EcoForm, { PREDEFINED_ICONS } from "./EcoForm";
 
 const formatPrecio = (precio: number) => {
 	return new Intl.NumberFormat("es-VE", {
@@ -24,10 +24,10 @@ const formatPrecio = (precio: number) => {
 
 /** Variaciones suaves dentro de la paleta Garvis (brand / cloud / mist) */
 const ICON_BOXES = [
-	{ Icon: Activity, box: "bg-brand-100 text-brand-800", label: "Ecografía diagnóstica" },
-	{ Icon: Waves, box: "bg-cloud text-brand-800", label: "Evaluación vascular" },
-	{ Icon: HeartPulse, box: "bg-mist text-brand-900", label: "Radiología diagnóstica" },
-	{ Icon: Stethoscope, box: "bg-brand-100 text-brand-700", label: "Medicina preventiva" },
+	{ box: "bg-brand-100 text-brand-800" },
+	{ box: "bg-cloud text-brand-800" },
+	{ box: "bg-mist text-brand-900" },
+	{ box: "bg-brand-100 text-brand-700" },
 ] as const;
 
 /** Misma proporción que la fila de cabeceras: nombre · duración · precio · estado · acciones */
@@ -166,8 +166,21 @@ const EcosList = () => {
 
 						<ul className="flex flex-col gap-3 md:gap-4">
 							{ecos.map((eco, index) => {
-								const { Icon, box, label } = ICON_BOXES[index % ICON_BOXES.length];
+								const { box } = ICON_BOXES[index % ICON_BOXES.length];
 								const activo = eco.activo === 1;
+
+								let IconComponent = Activity;
+								let isImage = false;
+								
+								if (eco.icono && (eco.icono.startsWith("http") || eco.icono.startsWith("/uploads"))) {
+									isImage = true;
+								} else if (eco.icono) {
+									const found = PREDEFINED_ICONS.find(pi => pi.name === eco.icono);
+									if (found) {
+										IconComponent = found.icon;
+									}
+								}
+
 								return (
 									<li
 										key={eco.id_eco}
@@ -177,13 +190,17 @@ const EcosList = () => {
 									>
 										<div className="flex min-w-0 items-center gap-4">
 											<div
-												className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${box}`}
+												className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl overflow-hidden ${box}`}
 											>
-												<Icon className="h-6 w-6" aria-hidden />
+												{isImage ? (
+													<img src={eco.icono} alt={eco.nombre} className="h-full w-full object-cover" />
+												) : (
+													<IconComponent className="h-6 w-6" aria-hidden />
+												)}
 											</div>
 											<div className="min-w-0">
 												<p className="font-bold text-brand-900">{eco.nombre}</p>
-												<p className="text-xs font-medium text-brand-900/50">{label}</p>
+												<p className="text-xs font-medium text-brand-900/50">{eco.etiqueta || "Sin categoría"}</p>
 											</div>
 										</div>
 										<div className="flex items-center gap-2 border-t border-brand-200/50 pt-3 text-brand-800 md:border-0 md:pt-0">

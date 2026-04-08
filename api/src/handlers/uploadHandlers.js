@@ -292,13 +292,85 @@ const uploadOrdenMedicaHandler = async (req, res) => {
 	}
 };
 
+// Middleware para subir icono de eco
+const uploadIconoEco = multer({
+	storage,
+	limits: {
+		fileSize: 2 * 1024 * 1024, // 2MB máximo
+	},
+	fileFilter: (req, file, cb) => {
+		const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/svg+xml"];
+		if (allowedMimes.includes(file.mimetype)) {
+			cb(null, true);
+		} else {
+			cb(
+				new Error(
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP, SVG).",
+				),
+				false,
+			);
+		}
+	},
+}).single("icono");
+
+/**
+ * Handler para subir icono de eco
+ */
+const uploadIconoEcoHandler = async (req, res) => {
+	try {
+		if (!req.file) {
+			return res.status(400).json({
+				ok: false,
+				message: "No se proporcionó ningún archivo",
+			});
+		}
+
+		if (!req.file.mimetype.startsWith("image/")) {
+			return res.status(400).json({
+				ok: false,
+				message: "El archivo debe ser una imagen",
+			});
+		}
+
+		const maxSize = 2 * 1024 * 1024; // 2MB
+		if (req.file.size > maxSize) {
+			return res.status(400).json({
+				ok: false,
+				message: `La imagen es demasiado grande. Tamaño máximo: 2MB. Tamaño actual: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`,
+			});
+		}
+
+		const result = await uploadMulterFileToLocal(
+			req.file,
+			"garbis/ecos/iconos",
+		);
+
+		return res.status(200).json({
+			ok: true,
+			message: "Ícono subido exitosamente",
+			data: {
+				url: result.url,
+				public_id: result.public_id,
+			},
+		});
+	} catch (error) {
+		console.error("Error al subir ícono de eco:", error);
+		return res.status(500).json({
+			ok: false,
+			message: error.message || "Error al subir el ícono de eco",
+		});
+	}
+};
+
 module.exports = {
 	uploadFirma,
 	uploadInformePDF,
 	uploadComprobantePago,
 	uploadOrdenMedica,
+	uploadIconoEco,
 	uploadFirmaHandler,
 	uploadInformePDFHandler,
 	uploadComprobantePagoHandler,
 	uploadOrdenMedicaHandler,
+	uploadIconoEcoHandler,
 };

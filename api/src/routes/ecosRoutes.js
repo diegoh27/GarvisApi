@@ -5,6 +5,10 @@ const {
 	updateEcoHandler,
 	deleteEcoHandler,
 } = require("../handlers/ecosHandlers");
+const {
+	uploadIconoEco,
+	uploadIconoEcoHandler,
+} = require("../handlers/uploadHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
 
@@ -19,6 +23,15 @@ ecosRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin"),
 	createEcoHandler,
+);
+
+// POST /ecos/upload-icono (admin)
+ecosRoutes.post(
+	"/upload-icono",
+	authenticateToken,
+	authorizeRoles("admin"),
+	uploadIconoEco,
+	uploadIconoEcoHandler,
 );
 
 // PUT /ecos/:id (admin)

@@ -131,7 +131,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					¿Para quién es la cita?
 				</h2>
 				<p className="text-brand-600 text-sm lg:text-base">
-					Selecciona el perfil del paciente para continuar con el agendamiento.
+					Selecciona si la cita es para ti u otra persona.
 				</p>
 			</div>
 
@@ -228,7 +228,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					<div>
 						<h3 className="font-headline text-lg font-bold mb-0.5 lg:text-xl lg:mb-1">Para un familiar</h3>
 						<p className={`text-sm ${selectionType === "representado" ? "text-white/70" : "text-brand-600"}`}>
-							Registra los datos de tu dependiente o familiar.
+							Registra los datos de tu representado.
 						</p>
 					</div>
 				</button>

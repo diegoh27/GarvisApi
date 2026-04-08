@@ -23,7 +23,7 @@ const listEcosHandler = async (req, res) => {
 
 const createEcoHandler = async (req, res) => {
 	try {
-		const { nombre, precio, duracion_min } = req.body;
+		const { nombre, precio, duracion_min, descripcion, etiqueta, icono } = req.body;
 
 		const missing = [];
 		if (!nombre) missing.push("nombre");
@@ -48,6 +48,9 @@ const createEcoHandler = async (req, res) => {
 			nombre,
 			precio: Number(precio),
 			duracion_min: duracion_min ? Number(duracion_min) : 0,
+			descripcion: descripcion || null,
+			etiqueta: etiqueta || null,
+			icono: icono || null,
 		});
 
 		return res.status(201).json({
@@ -79,7 +82,7 @@ const createEcoHandler = async (req, res) => {
 const updateEcoHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const { nombre, precio, duracion_min, activo } = req.body;
+		const { nombre, precio, duracion_min, activo, descripcion, etiqueta, icono } = req.body;
 
 		if (precio !== undefined && (typeof precio !== "number" || precio < 0)) {
 			return res.status(400).json({
@@ -94,6 +97,9 @@ const updateEcoHandler = async (req, res) => {
 			precio: precio !== undefined ? Number(precio) : undefined,
 			duracion_min: duracion_min !== undefined ? Number(duracion_min) : undefined,
 			activo: activo !== undefined ? Number(activo) : undefined,
+			descripcion: descripcion !== undefined ? descripcion : undefined,
+			etiqueta: etiqueta !== undefined ? etiqueta : undefined,
+			icono: icono !== undefined ? icono : undefined,
 		});
 
 		if (!result.updated) {

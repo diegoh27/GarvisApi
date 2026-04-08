@@ -415,7 +415,7 @@ const PasoCheckout = ({
 						<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20 transition-all duration-500 ease-in-out opacity-100 animate-in fade-in slide-in-from-top-4">
 							<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
 								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">2</span>
-								Realiza el pago con estos datos
+								Realiza el pago a través de los siguientes datos
 							</h3>
 
 							<div className="flex flex-col gap-6 items-center">
