@@ -25,6 +25,28 @@ const estadoResultadoLabel: Record<number, string> = {
 	2: "Con resultados",
 };
 
+const getEstadoCitaClasses = (estado: number) => {
+	if (estado === 2) return "bg-red-50 text-red-600 border border-red-200"; // Cancelada
+	if (estado === 0) return "bg-amber-50 text-amber-700 border border-amber-200"; // Pendiente
+	return "bg-cloud text-brand-800 border border-brand-200"; // Atendida / Confirmada
+};
+
+const getEstadoPagoClasses = (estado: number) => {
+	if (estado === 2) return "bg-red-50 text-red-600 border border-red-200"; // Negado
+	if (estado === 0) return "bg-amber-50 text-amber-700 border border-amber-200"; // Pendiente
+	return "bg-emerald-50 text-emerald-700 border border-emerald-200"; // Pagado
+};
+
+const getResultadosInfo = (cita: CitaEspecialista, archivosLength: number) => {
+	if (cita.estado_cita === 2 || cita.estado_pago !== 1) {
+		return { label: "N/A", classes: "bg-slate-100 text-slate-500 border border-slate-200" };
+	}
+	if (archivosLength > 0) {
+		return { label: "Subido", classes: "bg-emerald-50 text-emerald-700 border border-emerald-200" };
+	}
+	return { label: "Pendiente", classes: "bg-amber-50 text-amber-700 border border-amber-200" };
+};
+
 const getDateKey = (value: string | Date): string => {
 	if (!value) return "";
 	if (value instanceof Date) {
@@ -284,10 +306,7 @@ const PacientesPage = () => {
 		setCitasPage(1);
 	}, [estado, query, filtroResultado]);
 
-	const pacientesAtendidos = useMemo(() => {
-		const ids = new Set(citas.map((cita) => cita.id_paciente));
-		return ids.size;
-	}, [citas]);
+
 
 	const historialPaciente = useMemo(() => {
 		if (!selectedPaciente) return [];
@@ -315,10 +334,10 @@ const PacientesPage = () => {
 			<div className="grid gap-4 md:grid-cols-3">
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
 					<p className="text-xs font-semibold text-brand-800">
-						Pacientes atendidos
+						Pacientes por atender
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
-						{pacientesAtendidos}
+						{citas.filter((cita) => cita.estado_cita === 0 || cita.estado_cita === 1).length}
 					</p>
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
@@ -329,12 +348,12 @@ const PacientesPage = () => {
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
 					<p className="text-xs font-semibold text-brand-800">
-						Resultados disponibles
+						Resultados pendientes
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
 						{citas.filter((cita) => {
 							const archivos = parseResultadoArchivo(cita.resultado_archivo);
-							return archivos.length > 0;
+							return archivos.length === 0 && cita.estado_cita !== 2 && cita.estado_pago === 1;
 						}).length}
 					</p>
 				</div>
@@ -570,6 +589,7 @@ const PacientesPage = () => {
 											<th className="px-2 py-2 whitespace-nowrap">Hora</th>
 											<th className="px-2 py-2 whitespace-nowrap">Paciente</th>
 											<th className="px-2 py-2 whitespace-nowrap">Eco</th>
+											<th className="px-2 py-2 text-center whitespace-nowrap">Resultados</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Estado</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Pago</th>
 											<th className="px-2 py-2 text-center whitespace-nowrap">Cita</th>
@@ -588,12 +608,17 @@ const PacientesPage = () => {
 														<td className="px-2 py-2 font-medium text-brand-900">{fullName || "—"}</td>
 														<td className="px-2 py-2">{cita.eco_nombre}</td>
 														<td className="px-2 py-2 text-center">
-															<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).classes}`}>
+																{getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).label}
+															</span>
+														</td>
+														<td className="px-2 py-2 text-center">
+															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoCitaClasses(cita.estado_cita)}`}>
 																{getEstadoCitaLabel(cita)}
 															</span>
 														</td>
 														<td className="px-2 py-2 text-center">
-															<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoPagoClasses(cita.estado_pago)}`}>
 																{cita.estado_pago === 1 ? "Pagado" : cita.estado_pago === 0 ? "Pendiente" : "Negado"}
 															</span>
 														</td>
@@ -643,7 +668,7 @@ const PacientesPage = () => {
 											})
 										) : (
 											<tr>
-												<td colSpan={9} className="px-2 py-6 text-center text-sm text-brand-800">
+												<td colSpan={10} className="px-2 py-6 text-center text-sm text-brand-800">
 													No hay citas que coincidan con los filtros.
 												</td>
 											</tr>
