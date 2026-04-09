@@ -22,6 +22,9 @@ export type CitaPendientePago = {
 	eco_nombre: string;
 	/** Desde `pagos` (listado ampliado); puede ser null si aún no hay fila de pago */
 	pago_monto?: number | string | null;
+	pago_monto_usd?: number | string | null;
+	pago_monto_bs?: number | string | null;
+	pago_tasa_dia_bcv?: number | string | null;
 	pago_metodo?: string | null;
 };
 
@@ -80,6 +83,9 @@ export type CitaCompleta = {
 	pago_banco_origen: string | null;
 	pago_banco_destino: string | null;
 	pago_monto: number | string | null;
+	pago_monto_usd: number | string | null;
+	pago_monto_bs: number | string | null;
+	pago_tasa_dia_bcv: number | string | null;
 	pago_cedula_pagador: string | null;
 	pago_telefono_pagador: string | null;
 	pago_referencia: string | null;
@@ -131,6 +137,9 @@ export type CitaPacienteCompleta = {
 	pago_metodo: string | null;
 	pago_imagen: string | null;
 	pago_monto: number | string | null;
+	pago_monto_usd?: number | string | null;
+	pago_monto_bs?: number | string | null;
+	pago_tasa_dia_bcv?: number | string | null;
 	pago_referencia: string | null;
 	pago_estado_pago: number | null;
 };

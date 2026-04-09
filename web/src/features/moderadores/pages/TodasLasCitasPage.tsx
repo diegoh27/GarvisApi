@@ -879,11 +879,26 @@ const TodasLasCitasPage = () => {
 											</div>
 										</td>
 										<td className="px-4 py-4 align-top">
-											<p className="text-sm font-bold text-zinc-900">
-												{cita.pago_monto != null && cita.pago_monto !== ""
-													? formatMonto(cita.pago_monto)
-													: "—"}
-											</p>
+											<div className="flex flex-col gap-0.5">
+												{cita.pago_monto_usd && Number(cita.pago_monto_usd) > 0 ? (
+													<>
+														<p className="text-sm font-bold text-zinc-900">
+															${Number(cita.pago_monto_usd).toFixed(2)}
+														</p>
+														{(cita.pago_monto_bs && Number(cita.pago_monto_bs) > 0) || cita.pago_tasa_dia_bcv ? (
+															<p className="text-[10px] text-zinc-500 font-semibold" title={`Tasa BCV: Bs. ${Number(cita.pago_tasa_dia_bcv).toFixed(4)}`}>
+																Bs. {(Number(cita.pago_monto_bs || (Number(cita.pago_monto_usd) * Number(cita.pago_tasa_dia_bcv)))).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+															</p>
+														) : null}
+													</>
+												) : (
+													<p className="text-sm font-bold text-zinc-900">
+														{cita.pago_monto != null && cita.pago_monto !== ""
+															? formatMonto(cita.pago_monto)
+															: "—"}
+													</p>
+												)}
+											</div>
 										</td>
 										<td className="px-4 py-4 align-top">
 											<div className="flex max-w-[280px] flex-wrap gap-2">

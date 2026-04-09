@@ -297,6 +297,9 @@ const listCitasCompletasByPacienteController = async (id_paciente) => {
       pag.metodo AS pago_metodo,
       pag.imagen AS pago_imagen,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.referencia AS pago_referencia,
       pag.estado_pago AS pago_estado_pago
     FROM cita c
@@ -560,6 +563,9 @@ const listCitasPendientesPagoController = async () => {
       u_especialista.apellido AS especialista_apellido,
       e.nombre AS eco_nombre,
       p.monto AS pago_monto,
+      p.monto_usd AS pago_monto_usd,
+      p.monto_bs AS pago_monto_bs,
+      p.tasa_dia_bcv AS pago_tasa_dia_bcv,
       p.metodo AS pago_metodo
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
@@ -725,6 +731,33 @@ const updateEstadoPagoController = async ({
 					 WHERE c.id_cita = ?`,
 					[aprobado_por || cita.id_paciente, id_cita],
 				);
+			}
+
+			const [pagoRows] = await conn.execute(
+				`SELECT id_pago, monto, monto_usd, monto_bs, tasa_dia_bcv, referencia, metodo FROM pagos WHERE id_cita = ? LIMIT 1`,
+				[id_cita]
+			);
+			if (pagoRows.length) {
+				const pago = pagoRows[0];
+				const [facRows] = await conn.execute(`SELECT id_movimiento FROM fac_movimiento WHERE origen_id = ? AND origen_modulo = 'CITA_PAGO'`, [pago.id_pago]);
+				if (!facRows.length) {
+					await conn.execute(
+						`INSERT INTO fac_movimiento
+							(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+						VALUES
+							(UUID(), 'Ingreso', CURRENT_DATE(), ?, ?, ?, ?, ?, ?, 'CITA_PAGO', ?, ?, NOW())`,
+						[
+							pago.monto,
+							pago.monto_usd,
+							pago.monto_bs,
+							pago.tasa_dia_bcv,
+							`Pago de cita web - ${cita.paciente_nombre || ''}`,
+							pago.referencia || pago.id_pago,
+							pago.id_pago,
+							aprobadorValido || cita.id_paciente,
+						]
+					);
+				}
 			}
 
 			if (cita.paciente_correo) {
@@ -1128,6 +1161,9 @@ const getCitaByIdController = async (id_cita) => {
       pag.banco_origen AS pago_banco_origen,
       pag.banco_destino AS pago_banco_destino,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.cedula_pagador AS pago_cedula_pagador,
       pag.telefono_pagador AS pago_telefono_pagador,
       pag.referencia AS pago_referencia,
@@ -1213,6 +1249,9 @@ const getAllCitasController = async () => {
       pag.banco_origen AS pago_banco_origen,
       pag.banco_destino AS pago_banco_destino,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.cedula_pagador AS pago_cedula_pagador,
       pag.telefono_pagador AS pago_telefono_pagador,
       pag.referencia AS pago_referencia,
