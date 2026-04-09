@@ -1086,10 +1086,10 @@ const CalendarioPage = () => {
 		<div className="min-w-0">
 			<div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
 				<div>
-					<h1 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">
-						Mi agenda y disponibilidad
+					<h1 className="font-headline text-4xl font-bold tracking-tight text-brand-900 sm:text-4xl">
+						Calendario de disponibilidad
 					</h1>
-					<p className="mt-2 font-medium text-slate-500">
+					<p className="mt-2 max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
 						Selecciona el horario en el que estarás libre para trabajar.
 					</p>
 				</div>

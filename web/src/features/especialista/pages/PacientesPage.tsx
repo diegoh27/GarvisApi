@@ -464,8 +464,8 @@ const PacientesPage = () => {
 	return (
 		<div className="space-y-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold text-brand-900">Pacientes</h1>
-				<p className="text-sm text-brand-800">
+				<h1 className="text-4xl font-bold text-brand-900">Pacientes</h1>
+				<p className="max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
 					Historial de pacientes atendidos y acceso a sus órdenes.
 				</p>
 			</div>

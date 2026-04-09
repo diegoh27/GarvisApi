@@ -24,6 +24,7 @@ import { useGetEmpleadosQuery } from "../../inventario/api/nominaApi";
 import { useListComisionesQuery } from "../../inventario/api/comisionesApi";
 import { buildFinanceAlerts } from "../utils/financeAlerts";
 import RechazarPagoModal from "../../moderadores/components/RechazarPagoModal";
+import DashboardCharts from "./DashboardCharts";
 import { getTodayKey, formatHora, buildDateTime } from "../utils/dateUtils";
 import {
 	DollarSign,
@@ -34,7 +35,6 @@ import {
 	Receipt,
 	AlertTriangle,
 	AlertCircle,
-	Calendar,
 } from "lucide-react";
 
 const formatMoneda = (n: number) =>
@@ -331,6 +331,22 @@ const DashboardAdmin = () => {
 						<span className="text-xs font-medium text-slate-400">consultas</span>
 					</div>
 				</div>
+				<div className="flex flex-col justify-between gap-2 rounded-2xl border-l-4 border-rose-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+					<div className="flex justify-between gap-2">
+						<span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
+							Pagos por verificar
+						</span>
+						<span className="shrink-0 rounded-md bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-tight text-rose-800">
+							Requiere validación
+						</span>
+					</div>
+					<div className="flex items-baseline gap-1.5">
+						<span className="font-headline text-2xl font-extrabold tabular-nums text-rose-700 sm:text-3xl">
+							{loadingPagos ? "—" : String(citasPendientesPago.length).padStart(2, "0")}
+						</span>
+						<span className="text-xs font-medium text-slate-400">pendientes</span>
+					</div>
+				</div>
 				<div className="flex flex-col justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md">
 					<div className="flex justify-between gap-2">
 						<span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
@@ -349,36 +365,22 @@ const DashboardAdmin = () => {
 						<span className="shrink-0 text-xs font-medium text-slate-400">USD</span>
 					</div>
 				</div>
-				<div className="flex flex-col justify-between gap-2 rounded-2xl border-l-4 border-rose-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+				<div className="flex flex-col justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md">
 					<div className="flex justify-between gap-2">
 						<span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-							Pagos por verificar
+							Egresos del mes
 						</span>
-						<span className="shrink-0 rounded-md bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-tight text-rose-800">
-							Requiere validación
-						</span>
+						{mensual != null && (
+							<span className="shrink-0 rounded-md bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-800">
+								Balance
+							</span>
+						)}
 					</div>
-					<div className="flex items-baseline gap-1.5">
-						<span className="font-headline text-2xl font-extrabold tabular-nums text-rose-700 sm:text-3xl">
-							{loadingPagos ? "—" : String(citasPendientesPago.length).padStart(2, "0")}
+					<div className="flex min-w-0 items-baseline gap-1.5">
+						<span className="truncate font-headline text-2xl font-extrabold text-brand-900 sm:text-3xl">
+							{loadingFacturacion || !mensual ? "—" : formatMoneda(mensual.egresos)}
 						</span>
-						<span className="text-xs font-medium text-slate-400">pendientes</span>
-					</div>
-				</div>
-				<div className="flex flex-col justify-between gap-2 rounded-2xl bg-white p-4 shadow-sm transition hover:shadow-md">
-					<div className="flex justify-between">
-						<span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-							Disponibilidad
-						</span>
-						<div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-							<Calendar className="h-3.5 w-3.5" />
-						</div>
-					</div>
-					<div className="flex items-baseline gap-1.5">
-						<span className="font-headline text-2xl font-extrabold tabular-nums text-brand-900 sm:text-3xl">
-							{loadingDisp ? "—" : pendientesCount}
-						</span>
-						<span className="text-xs font-medium text-slate-400">pendientes</span>
+						<span className="shrink-0 text-xs font-medium text-slate-400">USD</span>
 					</div>
 				</div>
 			</section>
@@ -544,6 +546,8 @@ const DashboardAdmin = () => {
 							</div>
 						)}
 					</div>
+
+					<DashboardCharts />
 
 					<div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
 						<h3 className="mb-3 font-headline text-base font-bold text-brand-900">Accesos rápidos</h3>

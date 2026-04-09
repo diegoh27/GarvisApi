@@ -325,8 +325,8 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
 };
 
 // Listar todas las citas atendidas con información de resultados (para moderador; incluye mostrador)
-const listCitasAtendidasConResultadosController = async () => {
-	const sql = `
+const listCitasAtendidasConResultadosController = async (id_especialista = null) => {
+	let sql = `
     SELECT
       c.id_cita,
       c.id_paciente,
@@ -354,9 +354,16 @@ const listCitasAtendidasConResultadosController = async () => {
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
     WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
-    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
-	const [rows] = await pool.execute(sql);
+	
+	if (id_especialista) {
+		sql += ` AND c.id_especialista = ?`;
+	}
+
+	sql += ` ORDER BY c.fecha_cita DESC, c.hora_cita DESC`;
+
+	const params = id_especialista ? [id_especialista] : [];
+	const [rows] = await pool.execute(sql, params);
 	return rows;
 };
 

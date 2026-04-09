@@ -8,7 +8,6 @@ import {
 	FileCheck,
 	FileText,
 	Image as ImageIcon,
-	MoreVertical,
 	Receipt,
 	Search,
 	CloudUpload,
@@ -547,8 +546,8 @@ const ResultadosPage = () => {
 					<h2 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 md:text-4xl">
 						Subir resultados
 					</h2>
-					<p className="max-w-2xl text-base leading-relaxed text-slate-600 md:text-lg">
-						Seleccione un paciente en cola para adjuntar de forma segura estudios e informes de diagnóstico.
+					<p className="max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
+						Puede subir los resultados de los ecosonogramas de forma segura aquí.
 					</p>
 				</header>
 
@@ -578,18 +577,6 @@ const ResultadosPage = () => {
 									{filteredCitas.length}
 								</span>
 							</h3>
-							<button
-								type="button"
-								onClick={() =>
-									document.getElementById("historial-resultados")?.scrollIntoView({
-										behavior: "smooth",
-										block: "start",
-									})
-								}
-								className="text-sm font-semibold text-[#006965] hover:underline"
-							>
-								Ver historial
-							</button>
 						</div>
 
 						{isLoading ? (
@@ -828,14 +815,7 @@ const ResultadosPage = () => {
 														>
 															<Eye className="h-5 w-5" />
 														</button>
-														<button
-															type="button"
-															onClick={() => openVerResultadosHistorial(cita)}
-															className="inline-flex p-2 text-slate-400 transition-colors hover:text-[#006965]"
-															aria-label="Más opciones"
-														>
-															<MoreVertical className="h-5 w-5" />
-														</button>
+
 													</td>
 												</tr>
 											);
