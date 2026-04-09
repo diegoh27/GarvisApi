@@ -28,11 +28,12 @@ import {
 } from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
+import CitaMostradorPage from "../features/inventario/pages/CitaMostradorPage";
 import { FinanzasPage } from "../features/finanzas";
 import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
 import { PagosPage } from "../features/pagos";
-
+import { AgendarCitaPage } from "../features/agendar-cita";
 import { RepresentadosPage } from "../features/representados";
 import { ResultadosPage } from "../features/resultados";
 import { RolesPage } from "../features/roles";
@@ -127,7 +128,7 @@ const App = () => {
 					<Route
 						path="admin/registrar-especialista"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<RegistrarEspecialistaPage />
 							</RoleRoute>
 						}
@@ -135,7 +136,7 @@ const App = () => {
 					<Route
 						path="admin/registrar-moderador"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<RegistrarModeradorPage />
 							</RoleRoute>
 						}
@@ -162,6 +163,16 @@ const App = () => {
 							<RoleRoute allowed={["paciente", "admin", "moderador"]}>
 								<DisponibilidadPublicaPage />
 							</RoleRoute>
+						}
+					/>
+					<Route
+						path="agendar-cita"
+						element={
+							<ProtectedRoute>
+								<RoleRoute allowed={["paciente"]}>
+									<AgendarCitaPage />
+								</RoleRoute>
+							</ProtectedRoute>
 						}
 					/>
 					<Route
@@ -201,7 +212,7 @@ const App = () => {
 					<Route
 						path="especialidades"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<EspecialidadesPage />
 							</RoleRoute>
 						}
@@ -209,8 +220,16 @@ const App = () => {
 					<Route
 						path="ecos"
 						element={
-							<RoleRoute allowed={["admin"]}>
+							<RoleRoute allowed={["admin", "moderador"]}>
 								<EcosPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="cita-mostrador"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<CitaMostradorPage />
 							</RoleRoute>
 						}
 					/>

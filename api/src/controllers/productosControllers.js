@@ -15,11 +15,13 @@ const listProductosController = async () => {
 			id_producto,
 			nombre,
 			presentacion,
-			contenido,
-			stock_actual,
-			consumo_actual,
-			unidad_medida,
 			categoria,
+			unidad_compra,
+			unidad_consumo,
+			factor_conversion,
+			stock_base_total,
+			consumo_actual,
+			stock_minimo_base,
 			activo,
 			creado_en,
 			actualizado_en
@@ -36,10 +38,12 @@ const listProductosController = async () => {
 const createProductoController = async ({
 	nombre,
 	presentacion,
-	contenido = 1,
-	unidad_medida,
 	categoria,
-	stock_actual = 0,
+	unidad_compra,
+	unidad_consumo,
+	factor_conversion = 1,
+	stock_base_total = 0,
+	stock_minimo_base = 0,
 	activo = 1,
 }) => {
 	// Validar que no exista otro producto con el mismo nombre
@@ -54,20 +58,23 @@ const createProductoController = async ({
 	}
 
 	const id_producto = crypto.randomUUID();
-	const cantidad = Number(stock_actual) || 0;
-	const contNum = Number(contenido) || 1;
+	const cantidad = Number(stock_base_total) || 0;
+	const fConv = Number(factor_conversion) || 1;
+	const sMin = Number(stock_minimo_base) || 0;
 	const sql = `
-		INSERT INTO inv_producto (id_producto, nombre, presentacion, contenido, unidad_medida, categoria, consumo_actual, stock_actual, activo)
-		VALUES (?, ?, ?, ?, ?, ?, 0.0000, ?, ?)
+		INSERT INTO inv_producto (id_producto, nombre, presentacion, categoria, unidad_compra, unidad_consumo, factor_conversion, stock_base_total, consumo_actual, stock_minimo_base, activo)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.0000, ?, ?)
 	`;
 	await pool.execute(sql, [
 		id_producto,
 		nombre.trim(),
 		presentacion ? presentacion.trim() : null,
-		contNum,
-		unidad_medida ? unidad_medida.trim() : null,
 		categoria ? categoria.trim() : 'General',
+		unidad_compra ? unidad_compra.trim() : null,
+		unidad_consumo ? unidad_consumo.trim() : null,
+		fConv,
 		cantidad,
+		sMin,
 		activo ? 1 : 0,
 	]);
 
@@ -75,11 +82,13 @@ const createProductoController = async ({
 		id_producto,
 		nombre: nombre.trim(),
 		presentacion: presentacion ? presentacion.trim() : null,
-		contenido: contNum,
-		unidad_medida: unidad_medida ? unidad_medida.trim() : null,
 		categoria: categoria ? categoria.trim() : 'General',
-		stock_actual: cantidad,
+		unidad_compra: unidad_compra ? unidad_compra.trim() : null,
+		unidad_consumo: unidad_consumo ? unidad_consumo.trim() : null,
+		factor_conversion: fConv,
+		stock_base_total: cantidad,
 		consumo_actual: 0,
+		stock_minimo_base: sMin,
 		activo: activo ? 1 : 0,
 		creado_en: new Date(),
 		actualizado_en: null,
@@ -105,7 +114,17 @@ const getProductoController = async (id_producto) => {
 /**
  * Actualiza un producto
  */
-const updateProductoController = async ({ id_producto, nombre, presentacion, contenido, unidad_medida, categoria, activo }) => {
+const updateProductoController = async ({ 
+	id_producto, 
+	nombre, 
+	presentacion, 
+	categoria, 
+	unidad_compra, 
+	unidad_consumo, 
+	factor_conversion, 
+	stock_minimo_base, 
+	activo 
+}) => {
 	const [existing] = await pool.execute(
 		"SELECT id_producto FROM inv_producto WHERE id_producto = ? LIMIT 1",
 		[id_producto],
@@ -138,17 +157,25 @@ const updateProductoController = async ({ id_producto, nombre, presentacion, con
 		updates.push("presentacion = ?");
 		values.push(presentacion === "" ? null : presentacion.trim());
 	}
-	if (contenido !== undefined) {
-		updates.push("contenido = ?");
-		values.push(Number(contenido) || 1);
-	}
-	if (unidad_medida !== undefined) {
-		updates.push("unidad_medida = ?");
-		values.push(unidad_medida === "" ? null : unidad_medida.trim());
-	}
 	if (categoria !== undefined) {
 		updates.push("categoria = ?");
 		values.push(categoria === "" ? 'General' : categoria.trim());
+	}
+	if (unidad_compra !== undefined) {
+		updates.push("unidad_compra = ?");
+		values.push(unidad_compra === "" ? null : unidad_compra.trim());
+	}
+	if (unidad_consumo !== undefined) {
+		updates.push("unidad_consumo = ?");
+		values.push(unidad_consumo === "" ? null : unidad_consumo.trim());
+	}
+	if (factor_conversion !== undefined) {
+		updates.push("factor_conversion = ?");
+		values.push(Number(factor_conversion) || 1);
+	}
+	if (stock_minimo_base !== undefined) {
+		updates.push("stock_minimo_base = ?");
+		values.push(Number(stock_minimo_base) || 0);
 	}
 	if (activo !== undefined) {
 		updates.push("activo = ?");
@@ -176,36 +203,60 @@ const updateProductoController = async ({ id_producto, nombre, presentacion, con
 };
 
 /**
- * Elimina (borrado lógico o físico) un producto
+ * Elimina un producto y todos sus registros asociados (compras, ajustes, kardex, recetas, consumos)
+ * Usa transacción para garantizar consistencia
  */
 const deleteProductoController = async (id_producto) => {
-	// Verificar si el producto tiene historial de compras o kardex o recetas. 
-	// Si tiene movimientos, quizás mejor desactivarlo en vez de DELETE físico.
-	// Pero el requerimiento es borrarlo. Hagamos un DELETE físico si se puede, y si falla por foreign key constraints, 
-	// haremos un SOFT DELETE (activo = 0) o simplemente devolver error indicando que está en uso.
-	
-	const [existing] = await pool.execute(
-		"SELECT id_producto, nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
-		[id_producto]
-	);
-
-	if (!existing.length) {
-		const err = new Error("Producto no encontrado");
-		err.code = "PRODUCTO_NOT_FOUND";
-		throw err;
-	}
-
+	const conn = await pool.getConnection();
 	try {
-		await pool.execute("DELETE FROM inv_producto WHERE id_producto = ?", [id_producto]);
-		return existing[0];
-	} catch (error) {
-		// 1451 is MySQL foreign key constraint error
-		if (error.errno === 1451) {
-			const err = new Error("No se puede eliminar el producto porque tiene movimientos, compras o recetas asociadas. Puedes desactivarlo en su lugar.");
-			err.code = "PRODUCTO_EN_USO";
+		await conn.beginTransaction();
+
+		// Verificar que el producto existe
+		const [existing] = await conn.execute(
+			"SELECT id_producto, nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			[id_producto]
+		);
+		if (!existing.length) {
+			const err = new Error("Producto no encontrado");
+			err.code = "PRODUCTO_NOT_FOUND";
 			throw err;
 		}
+
+		// Eliminar registros hijos en orden (tablas que referencian inv_producto)
+		// 1) Kardex
+		await conn.execute("DELETE FROM inv_kardex WHERE id_producto = ?", [id_producto]);
+		// 2) Consumos de citas
+		await conn.execute("DELETE FROM inv_cita_consumo WHERE id_producto = ?", [id_producto]);
+		// 3) Recetas (eco-insumos)
+		await conn.execute("DELETE FROM inv_eco_insumo WHERE id_producto = ?", [id_producto]);
+		// 4) Detalle de notas de compra
+		await conn.execute("DELETE FROM inv_nota_compra_detalle WHERE id_producto = ?", [id_producto]);
+		// 5) Movimientos de facturación ligados a compras de este producto
+		const [compras] = await conn.execute(
+			"SELECT id_compra FROM inv_producto_compra WHERE id_producto = ?",
+			[id_producto]
+		);
+		for (const compra of compras) {
+			await conn.execute(
+				"DELETE FROM fac_movimiento WHERE origen_modulo = 'INV_COMPRA' AND origen_id = ?",
+				[compra.id_compra]
+			);
+		}
+		// 6) Compras
+		await conn.execute("DELETE FROM inv_producto_compra WHERE id_producto = ?", [id_producto]);
+		// 7) Ajustes
+		await conn.execute("DELETE FROM inv_producto_ajuste WHERE id_producto = ?", [id_producto]);
+
+		// Finalmente eliminar el producto
+		await conn.execute("DELETE FROM inv_producto WHERE id_producto = ?", [id_producto]);
+
+		await conn.commit();
+		return existing[0];
+	} catch (error) {
+		await conn.rollback();
 		throw error;
+	} finally {
+		conn.release();
 	}
 };
 
@@ -233,7 +284,7 @@ const registrarCompraProductoController = async ({
 
 		// Validar que el producto exista
 		const [producto] = await conn.execute(
-			"SELECT id_producto, nombre, stock_actual, contenido FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			"SELECT id_producto, nombre, stock_base_total, factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1",
 			[id_producto],
 		);
 		if (!producto.length) {
@@ -243,7 +294,7 @@ const registrarCompraProductoController = async ({
 		}
 
 		const cantidadNum = Number(cantidad);
-		const cantidadIngresadaBase = cantidadNum * (Number(producto[0].contenido) || 1);
+		const cantidadIngresadaBase = cantidadNum * (Number(producto[0].factor_conversion) || 1);
 		const precioUnitario = Number(precio_unitario);
 		// Usar precio_total si viene, sino calcularlo
 		const precioTotal =
@@ -278,9 +329,9 @@ const registrarCompraProductoController = async ({
 			],
 		);
 
-		// Sumar al stock_actual
+		// Sumar al stock_base_total
 		await conn.execute(
-			`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
+			`UPDATE inv_producto SET stock_base_total = stock_base_total + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
 			[cantidadIngresadaBase, id_producto],
 		);
 
@@ -394,7 +445,7 @@ const registrarAjusteStockController = async ({
 
 		// Obtener stock anterior y nombre
 		const [producto] = await conn.execute(
-			"SELECT stock_actual, nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			"SELECT stock_base_total, nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
 			[id_producto],
 		);
 		if (!producto.length) {
@@ -403,7 +454,7 @@ const registrarAjusteStockController = async ({
 			throw err;
 		}
 
-		const stock_anterior = producto[0].stock_actual;
+		const stock_anterior = producto[0].stock_base_total;
 		const stock_nuevoNum = Number(stock_nuevo);
 
 		// Registrar ajuste
@@ -422,9 +473,9 @@ const registrarAjusteStockController = async ({
 			],
 		);
 
-		// Actualizar stock_actual
+		// Actualizar stock_base_total
 		await conn.execute(
-			`UPDATE inv_producto SET stock_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
+			`UPDATE inv_producto SET stock_base_total = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
 			[stock_nuevoNum, id_producto],
 		);
 
@@ -529,10 +580,12 @@ const updateCompraProductoController = async ({
 			cantidad !== undefined ? Number(cantidad) : cantidadAnterior;
 		const diferenciaCantidad = cantidadNueva - cantidadAnterior;
 		const [productoRows] = await conn.execute(
-			"SELECT nombre FROM inv_producto WHERE id_producto = ? LIMIT 1",
+			"SELECT nombre, factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1",
 			[compra.id_producto],
 		);
 		const nombreProducto = productoRows[0]?.nombre || "Producto";
+		const factorConversion = Number(productoRows[0]?.factor_conversion) || 1;
+		const diferenciaCantidadBase = diferenciaCantidad * factorConversion;
 
 		// Construir la actualización de la compra
 		const updates = [];
@@ -575,11 +628,11 @@ const updateCompraProductoController = async ({
 			);
 		}
 
-		// Ajustar stock_actual si cambió la cantidad
-		if (diferenciaCantidad !== 0) {
+		// Ajustar stock_base_total si cambió la cantidad
+		if (diferenciaCantidadBase !== 0) {
 			await conn.execute(
-				`UPDATE inv_producto SET stock_actual = stock_actual + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
-				[diferenciaCantidad, compra.id_producto],
+				`UPDATE inv_producto SET stock_base_total = stock_base_total + ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?`,
+				[diferenciaCantidadBase, compra.id_producto],
 			);
 		}
 
@@ -680,13 +733,17 @@ const deleteCompraProductoController = async (id_compra) => {
 		const { id_producto, cantidad } = compraRows[0];
 		const cantidadNum = Number(cantidad);
 
+		const [prodRows] = await conn.execute("SELECT factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1", [id_producto]);
+		const factorConversion = Number(prodRows[0]?.factor_conversion) || 1;
+		const cantidadBase = cantidadNum * factorConversion;
+
 		await conn.execute(
 			"DELETE FROM fac_movimiento WHERE origen_modulo = 'INV_COMPRA' AND origen_id = ?",
 			[id_compra],
 		);
 		await conn.execute(
-			"UPDATE inv_producto SET stock_actual = stock_actual - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-			[cantidadNum, id_producto],
+			"UPDATE inv_producto SET stock_base_total = stock_base_total - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+			[cantidadBase, id_producto],
 		);
 		await conn.execute("DELETE FROM inv_producto_compra WHERE id_compra = ?", [
 			id_compra,

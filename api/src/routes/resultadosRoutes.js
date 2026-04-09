@@ -23,7 +23,7 @@ resultadosRoutes.get(
 resultadosRoutes.get(
 	"/citas-atendidas",
 	authenticateToken,
-	authorizeRoles("moderador", "admin"),
+	authorizeRoles("moderador", "admin", "especialista"),
 	listCitasAtendidasConResultadosHandler,
 );
 // POST /resultados/upload (moderador/admin/especialista)

@@ -325,8 +325,8 @@ const listCitasSinResultadoController = async (id_especialista = null) => {
 };
 
 // Listar todas las citas atendidas con información de resultados (para moderador; incluye mostrador)
-const listCitasAtendidasConResultadosController = async () => {
-	const sql = `
+const listCitasAtendidasConResultadosController = async (id_especialista = null) => {
+	let sql = `
     SELECT
       c.id_cita,
       c.id_paciente,
@@ -344,7 +344,8 @@ const listCitasAtendidasConResultadosController = async () => {
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
       r.study_uid AS resultado_study_uid,
-      r.estado_resultado AS resultado_estado
+      r.estado_resultado AS resultado_estado,
+      r.fecha_emision AS resultado_fecha_emision
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
@@ -353,9 +354,16 @@ const listCitasAtendidasConResultadosController = async () => {
     LEFT JOIN resultado r ON r.id_cita = c.id_cita
     WHERE (c.origen_cita = 'web' OR c.origen_cita = 'mostrador')
       AND c.estado_cita = 3
-    ORDER BY c.fecha_cita DESC, c.hora_cita DESC
   `;
-	const [rows] = await pool.execute(sql);
+	
+	if (id_especialista) {
+		sql += ` AND c.id_especialista = ?`;
+	}
+
+	sql += ` ORDER BY c.fecha_cita DESC, c.hora_cita DESC`;
+
+	const params = id_especialista ? [id_especialista] : [];
+	const [rows] = await pool.execute(sql, params);
 	return rows;
 };
 
@@ -377,7 +385,8 @@ const listResultadosByPacienteController = async (id_paciente) => {
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
       r.study_uid AS resultado_study_uid,
-      r.estado_resultado AS resultado_estado
+      r.estado_resultado AS resultado_estado,
+      r.fecha_emision AS resultado_fecha_emision
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista

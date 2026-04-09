@@ -5,6 +5,9 @@ const {
 	getPermisosInventarioHandler,
 	getPermisosInventarioModeradorHandler,
 	updatePermisosInventarioModeradorHandler,
+	getPermisosMenuHandler,
+	getPermisosMenuModeradorHandler,
+	updatePermisosMenuModeradorHandler,
 } = require("../handlers/rolesHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -35,6 +38,28 @@ rolesRoutes.put(
 	authenticateToken,
 	authorizeRoles("admin"),
 	updatePermisosInventarioModeradorHandler,
+);
+
+// GET /roles/permisos-menu (solo moderador — sidebar)
+rolesRoutes.get(
+	"/permisos-menu",
+	authenticateToken,
+	authorizeRoles("moderador"),
+	getPermisosMenuHandler,
+);
+// GET /roles/permisos-menu-moderador (solo admin — pantalla de permisos)
+rolesRoutes.get(
+	"/permisos-menu-moderador",
+	authenticateToken,
+	authorizeRoles("admin"),
+	getPermisosMenuModeradorHandler,
+);
+// PUT /roles/permisos-menu-moderador (solo admin)
+rolesRoutes.put(
+	"/permisos-menu-moderador",
+	authenticateToken,
+	authorizeRoles("admin"),
+	updatePermisosMenuModeradorHandler,
 );
 
 module.exports = rolesRoutes;

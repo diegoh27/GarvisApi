@@ -44,7 +44,7 @@ const InformesPage = () => {
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
 	const [selectedCitaForVer, setSelectedCitaForVer] = useState<{
-		cita: CitaEspecialista & { informe?: { informe_pdf_url: string | null }; tieneInforme: boolean };
+		cita: CitaEspecialista & { informe?: any; tieneInforme: boolean };
 		informePdfUrl: string | null;
 		pacienteName: string;
 	} | null>(null);
@@ -172,8 +172,8 @@ const InformesPage = () => {
 		const normalized = query.trim().toLowerCase();
 		if (normalized) {
 			items = items.filter((item) => {
-				const cedula = item.paciente_cedula || "";
-				const haystack = `${item.paciente_nombre} ${item.paciente_apellido} ${cedula} ${item.especialista_nombre} ${item.especialista_apellido} ${item.eco_nombre} ${getDateKey(item.fecha_cita)}`.toLowerCase();
+				const cedula = (item as any).paciente_cedula || "";
+				const haystack = `${item.paciente_nombre} ${item.paciente_apellido} ${cedula} ${(item as any).especialista_nombre || ""} ${(item as any).especialista_apellido || ""} ${item.eco_nombre} ${getDateKey((item as any).fecha_cita)}`.toLowerCase();
 				return haystack.includes(normalized);
 			});
 		}
@@ -289,9 +289,9 @@ const InformesPage = () => {
 															<h3 className="font-semibold text-brand-900">
 																{pacienteFullName}
 															</h3>
-															{item.paciente_cedula && (
+															{(item as any).paciente_cedula && (
 																<span className="text-xs text-brand-600">
-																	({item.paciente_cedula})
+																	({(item as any).paciente_cedula})
 																</span>
 															)}
 															{isCompletado ? (
@@ -405,8 +405,8 @@ const InformesPage = () => {
 	return (
 		<div className="space-y-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold text-brand-900">Informes</h1>
-				<p className="text-sm text-brand-800">
+				<h1 className="text-4xl font-bold text-brand-900">Informes</h1>
+				<p className="max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
 					Genera y gestiona informes médicos. Solo se muestran citas que han sido atendidas.
 				</p>
 			</div>

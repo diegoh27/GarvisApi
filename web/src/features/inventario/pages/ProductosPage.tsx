@@ -119,16 +119,16 @@ export default function ProductosPage() {
 
   // --- KPIs Calculations ---
   const totalItems = productos.length;
-  const lowStockThreshold = 5;
-  const lowStockCount = productos.filter(p => p.stock_actual <= lowStockThreshold && p.activo).length;
-
+  const lowStockCount = productos.filter(p => Number(p.stock_base_total) <= Number(p.stock_minimo_base) && p.activo).length;
+  // KPI: Valor Total del Inventario
+  // Estimated base price per consumption unit
   const latestPrices: Record<string, number> = {};
   historialCompras.forEach(c => {
     if (!latestPrices[c.id_producto]) {
        latestPrices[c.id_producto] = Number(c.precio_unitario) || 0;
     }
   });
-  const totalValue = productos.reduce((sum, p) => sum + (p.stock_actual * (latestPrices[p.id_producto] || 0)), 0);
+  const totalValue = productos.reduce((sum, p) => sum + (Number(p.stock_base_total) * (latestPrices[p.id_producto] || 0) / (Number(p.factor_conversion) || 1)), 0);
 
   const recentStockIn = historialCompras.filter(c => {
      const diffDays = Math.floor((new Date().getTime() - new Date(c.fecha_ingreso).getTime()) / (1000 * 3600 * 24));
@@ -143,7 +143,7 @@ export default function ProductosPage() {
     const query = searchQuery.toLowerCase();
     return productos.filter((producto) => {
       const nombre = producto.nombre?.toLowerCase() || "";
-      const stockActual = producto.stock_actual?.toString() || "";
+      const stockActual = producto.stock_base_total?.toString() || "";
 
       return (
         nombre.includes(query) ||

@@ -20,6 +20,12 @@ export type CitaPendientePago = {
 	especialista_nombre: string;
 	especialista_apellido: string;
 	eco_nombre: string;
+	/** Desde `pagos` (listado ampliado); puede ser null si aún no hay fila de pago */
+	pago_monto?: number | string | null;
+	pago_monto_usd?: number | string | null;
+	pago_monto_bs?: number | string | null;
+	pago_tasa_dia_bcv?: number | string | null;
+	pago_metodo?: string | null;
 };
 
 export type CitaCompleta = {
@@ -61,6 +67,7 @@ export type CitaCompleta = {
 	representado_parentesco: string | null;
 	// Datos del resultado
 	resultado_archivo: string | null;
+	resultado_study_uid: string | null;
 	resultado_estado: number | null;
 	resultado_fecha_publicacion: string | null;
 	// Datos del informe
@@ -76,6 +83,9 @@ export type CitaCompleta = {
 	pago_banco_origen: string | null;
 	pago_banco_destino: string | null;
 	pago_monto: number | string | null;
+	pago_monto_usd: number | string | null;
+	pago_monto_bs: number | string | null;
+	pago_tasa_dia_bcv: number | string | null;
 	pago_cedula_pagador: string | null;
 	pago_telefono_pagador: string | null;
 	pago_referencia: string | null;
@@ -127,6 +137,9 @@ export type CitaPacienteCompleta = {
 	pago_metodo: string | null;
 	pago_imagen: string | null;
 	pago_monto: number | string | null;
+	pago_monto_usd?: number | string | null;
+	pago_monto_bs?: number | string | null;
+	pago_tasa_dia_bcv?: number | string | null;
 	pago_referencia: string | null;
 	pago_estado_pago: number | null;
 };
@@ -152,6 +165,12 @@ const citasApi = baseApi.injectEndpoints({
 			query: () => "/citas/pendientes-pago",
 			transformResponse: (response: { ok: boolean; data: CitaPendientePago[] }) =>
 				response.data ?? [],
+			providesTags: ["Citas"],
+		}),
+		getVerificacionPagosKpi: builder.query<{ verificados_hoy: number }, void>({
+			query: () => "/citas/verificacion-pagos-kpi",
+			transformResponse: (response: { ok: boolean; data: { verificados_hoy: number } }) =>
+				response.data ?? { verificados_hoy: 0 },
 			providesTags: ["Citas"],
 		}),
 		getCitasConPagos: builder.query<CitaPendientePago[], void>({
@@ -253,12 +272,60 @@ const citasApi = baseApi.injectEndpoints({
 			}) => response.data,
 			invalidatesTags: ["Citas"],
 		}),
+		asignarCita: builder.mutation<
+			{ id_cita: string },
+			{
+				id_paciente: string;
+				id_representado?: string;
+				id_eco: string;
+				id_especialista: string;
+				id_disponibilidad: string;
+				orden_medica?: string;
+				metodo:
+					| "Transferencia"
+					| "PagoMovil"
+					| "EfectivoBs"
+					| "EfectivoUSD"
+					| "Zelle"
+					| "Binance"
+					| "PayPal"
+					| "Otro"
+					| "Efectivo";
+				imagen?: string;
+				banco_origen?: string;
+				banco_destino?: string;
+				monto: number;
+				cedula_pagador: string;
+				telefono_pagador: string;
+				referencia?: string;
+			}
+		>({
+			query: (body) => ({
+				url: "/citas/asignar",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Citas", "Disponibilidad"],
+		}),
+		uploadOrdenMedica: builder.mutation<
+			{ url: string },
+			FormData
+		>({
+			query: (formData) => ({
+				url: "/citas/upload-orden-medica",
+				method: "POST",
+				body: formData,
+			}),
+			transformResponse: (response: { ok: boolean; data: { url: string } }) =>
+				response.data,
+		}),
 	}),
 	overrideExisting: false,
 });
 
 export const {
 	useGetCitasPendientesPagoQuery,
+	useGetVerificacionPagosKpiQuery,
 	useGetCitasConPagosQuery,
 	useGetTienePagoPendienteQuery,
 	useUpdateEstadoPagoMutation,
@@ -269,6 +336,8 @@ export const {
 	useMarcarAtendidaMutation,
 	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
 	useVincularCitasMostradorMutation,
+	useAsignarCitaMutation,
+	useUploadOrdenMedicaMutation,
 } = citasApi;
 
 export { citasApi };

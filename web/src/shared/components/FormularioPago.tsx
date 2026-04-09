@@ -52,7 +52,7 @@ type MetodoPagoDisponible = {
 	nombre: string;
 	banco_codigo: string;
 	banco_nombre: string;
-	tipo_pago: "Transferencia" | "PagoMovil";
+	tipo_pago: string;
 	moneda: "BS" | "USD";
 	titular_identificacion?: string | null;
 	telefono?: string | null;
@@ -140,7 +140,7 @@ const FormularioPago = ({
 					: [];
 
 				if (isMounted) {
-					setMetodosDisponibles(list.filter((item) => item.moneda === "BS"));
+					setMetodosDisponibles(list);
 				}
 			} catch (error) {
 				console.error("Error cargando métodos de pago disponibles:", error);

@@ -3,10 +3,7 @@ import { EcosList } from "../components";
 
 const EcosPage = () => {
 	return (
-		<PageShell
-			title="Ecos"
-			description="Gestión de tipos de ecos y sus precios."
-		>
+		<PageShell title="Ecos" hideHeader>
 			<EcosList />
 		</PageShell>
 	);

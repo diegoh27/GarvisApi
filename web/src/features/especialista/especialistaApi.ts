@@ -30,8 +30,17 @@ const especialistaApi = baseApi.injectEndpoints({
 		}),
 		getMisBloques: builder.query<Disponibilidad[], void>({
 			query: () => "/disponibilidad/mis-bloques",
-			transformResponse: (response: ApiResponse<Disponibilidad[]>) =>
-				response.data ?? [],
+			transformResponse: (response: ApiResponse<Disponibilidad[]>) => {
+				const rows = response.data ?? [];
+				return rows.map((b) => ({
+					...b,
+					estado: Number(b.estado),
+					estado_pago:
+						b.estado_pago != null ? Number(b.estado_pago) : b.estado_pago,
+					estado_cita:
+						b.estado_cita != null ? Number(b.estado_cita) : b.estado_cita,
+				})) as Disponibilidad[];
+			},
 			providesTags: ["Disponibilidad"],
 		}),
 		crearDisponibilidad: builder.mutation<void, CrearDisponibilidadPayload>({
@@ -54,10 +63,40 @@ const especialistaApi = baseApi.injectEndpoints({
 			invalidatesTags: ["Disponibilidad"],
 		}),
 		cancelarDisponibilidad: builder.mutation<void, string>({
-			query: (id) => ({
-				url: `/disponibilidad/${id}/cancelar`,
-				method: "PATCH",
+			query: (id) => {
+				const clean = String(id ?? "").trim();
+				return {
+					url: `/disponibilidad/${encodeURIComponent(clean)}/cancelar`,
+					method: "PATCH",
+				};
+			},
+			invalidatesTags: ["Disponibilidad"],
+		}),
+		cancelarDisponibilidadMiLote: builder.mutation<
+			{
+				cancelados: number;
+				ids: string[];
+				reservados: string[];
+				omitidos: string[];
+				no_encontrados: string[];
+			},
+			{ ids: string[] }
+		>({
+			query: (body) => ({
+				url: "/disponibilidad/cancelar-mi-lote",
+				method: "POST",
+				body,
 			}),
+			transformResponse: (response: {
+				ok: boolean;
+				data: {
+					cancelados: number;
+					ids: string[];
+					reservados: string[];
+					omitidos: string[];
+					no_encontrados: string[];
+				};
+			}) => response.data,
 			invalidatesTags: ["Disponibilidad"],
 		}),
 		marcarAtendida: builder.mutation<void, string>({
@@ -81,6 +120,7 @@ const {
 	useCrearDisponibilidadMutation,
 	useCrearDisponibilidadBatchMutation,
 	useCancelarDisponibilidadMutation,
+	useCancelarDisponibilidadMiLoteMutation,
 	useMarcarAtendidaMutation,
 	useGetCitaByIdQuery,
 } = especialistaApi;
@@ -92,6 +132,7 @@ export {
 	useCrearDisponibilidadMutation,
 	useCrearDisponibilidadBatchMutation,
 	useCancelarDisponibilidadMutation,
+	useCancelarDisponibilidadMiLoteMutation,
 	useMarcarAtendidaMutation,
 	useGetCitaByIdQuery,
 };

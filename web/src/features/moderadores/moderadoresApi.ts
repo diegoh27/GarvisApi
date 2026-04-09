@@ -120,8 +120,37 @@ export type EspecialistaData = {
 	especialidad: string;
 };
 
+/** Cuerpo de POST /pacientes (creación por personal autorizado). */
+export type CrearPacientePayload = {
+	nombre: string;
+	apellido: string;
+	genero: "Masculino" | "Femenino" | "Otro";
+	cedula: string;
+	correo: string;
+	telefono: string;
+	contrasena: string;
+	fecha_nacimiento: string;
+	tipo_sangre: string;
+	descripcion: string;
+	direccion?: string;
+	rif?: string;
+	contacto_emergencia_nombre?: string;
+	contacto_emergencia_telefono?: string;
+};
+
 const moderadoresApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
+		createPaciente: builder.mutation<
+			{ ok: boolean; message: string; data: unknown },
+			CrearPacientePayload
+		>({
+			query: (body) => ({
+				url: "/pacientes",
+				method: "POST",
+				body,
+			}),
+			invalidatesTags: ["Pacientes"],
+		}),
 		getAllPacientes: builder.query<PacienteData[], void>({
 			query: () => "/pacientes",
 			transformResponse: (response: { ok: boolean; data: PacienteData[] }) =>
@@ -301,6 +330,7 @@ const moderadoresApi = baseApi.injectEndpoints({
 });
 
 export const {
+	useCreatePacienteMutation,
 	useGetAllPacientesQuery,
 	useGetAllEspecialistasQuery,
 	useAsignarCitaCompletaMutation,

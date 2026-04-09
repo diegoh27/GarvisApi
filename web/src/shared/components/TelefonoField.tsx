@@ -17,6 +17,7 @@ export type TelefonoFieldProps = {
 	placeholder?: string;
 	required?: boolean;
 	disabled?: boolean;
+	onBlur?: () => void;
 	inputClassName?: string;
 	selectClassName?: string;
 };
@@ -31,6 +32,7 @@ export function TelefonoField({
 	placeholder = "1234567",
 	required,
 	disabled,
+	onBlur,
 	inputClassName = "",
 	selectClassName = "",
 }: TelefonoFieldProps) {
@@ -61,6 +63,7 @@ export function TelefonoField({
 				<select
 					value={prefix}
 					onChange={handlePrefixChange}
+					onBlur={onBlur}
 					disabled={disabled}
 					className={`w-20 shrink-0 sm:w-24 ${baseInput} ${errorInput} ${selectClassName}`.trim()}
 					aria-label="Prefijo telefónico"
@@ -76,6 +79,7 @@ export function TelefonoField({
 					inputMode="numeric"
 					value={number}
 					onChange={handleNumberChange}
+					onBlur={onBlur}
 					placeholder={placeholder}
 					required={required}
 					disabled={disabled}

@@ -80,6 +80,7 @@ const baseApi = createApi({
 	baseQuery: baseQueryWithFormData,
 	tagTypes: [
 		"Citas",
+		"Pacientes",
 		"Disponibilidad",
 		"Informes",
 		"Resultados",
@@ -121,6 +122,7 @@ const baseApi = createApi({
 		"Perfil",
 		// Permisos inventario moderador
 		"PermisosInventario",
+		"PermisosMenuModerador",
 		// Auditoría de eventos
 		"Auditoria",
 	],

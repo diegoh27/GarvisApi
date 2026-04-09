@@ -9,6 +9,7 @@ const {
 	tienePagoPendienteController,
 	listCitasPendientesPagoController,
 	listCitasConPagosController,
+	countPagosGestionadosHoyController,
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,
@@ -23,6 +24,27 @@ const {
 	vincularCitasMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
+
+/** Alineado con pagos.metodo ENUM y métodos expuestos en /metodos-pago/disponibles */
+const METODOS_ASIGNAR_CITA = new Set([
+	"Transferencia",
+	"PagoMovil",
+	"EfectivoBs",
+	"EfectivoUSD",
+	"Zelle",
+	"Binance",
+	"PayPal",
+	"Otro",
+	"Efectivo",
+]);
+
+const isCashPaymentMethodAsignar = (m) => {
+	const x = String(m || "");
+	return x === "EfectivoBs" || x === "EfectivoUSD" || x === "Efectivo";
+};
+
+const requiresBankFieldsAsignar = (m) =>
+	m === "Transferencia" || m === "PagoMovil";
 
 const createCitaHandler = async (req, res) => {
 	try {
@@ -148,12 +170,12 @@ const listMisCitasCompletasHandler = async (req, res) => {
 		const data = await listCitasCompletasByPacienteController(id_paciente);
 		const normalized = Array.isArray(data)
 			? data.map((row) => ({
-					...row,
-					fecha_cita: toDateOnly(row.fecha_cita),
-					...(row.representado_fecha_nacimiento != null && {
-						representado_fecha_nacimiento: toDateOnly(row.representado_fecha_nacimiento),
-					}),
-				}))
+				...row,
+				fecha_cita: toDateOnly(row.fecha_cita),
+				...(row.representado_fecha_nacimiento != null && {
+					representado_fecha_nacimiento: toDateOnly(row.representado_fecha_nacimiento),
+				}),
+			}))
 			: data;
 		return res.status(200).json({
 			ok: true,
@@ -211,7 +233,8 @@ const listCitasByEspecialistaSelfHandler = async (req, res) => {
 const cancelCitaHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const result = await cancelCitaController({ id_cita: id });
+		const cancelado_por = req.user?.id ?? null;
+		const result = await cancelCitaController({ id_cita: id, cancelado_por });
 		return res.status(200).json({
 			ok: true,
 			message: "Cita cancelada",
@@ -309,6 +332,23 @@ const listCitasPendientesPagoHandler = async (req, res) => {
 		return res.status(200).json({
 			ok: true,
 			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
+/** KPI: pagos web con fecha_validacion hoy (aprobaciones, rechazos, cancelaciones, posponer con pago, etc.) */
+const getVerificacionPagosKpiHandler = async (req, res) => {
+	try {
+		const verificados_hoy = await countPagosGestionadosHoyController();
+		return res.status(200).json({
+			ok: true,
+			data: { verificados_hoy },
 		});
 	} catch (err) {
 		console.error(err);
@@ -560,12 +600,15 @@ const posponerCitaHandler = async (req, res) => {
 				? `${hora_cita}:00`
 				: hora_cita;
 
+		const gestionado_por = req.user?.id ?? null;
+
 		const data = await posponerCitaController({
 			id_cita: id,
 			fecha_cita,
 			hora_cita: horaNormalizada,
 			id_especialista: id_especialista || null,
 			id_disponibilidad: id_disponibilidad || null,
+			gestionado_por,
 		});
 
 		return res.status(200).json({
@@ -629,18 +672,26 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			referencia,
 		} = req.body;
 
+		const metodoStr = String(metodo || "").trim();
+
 		const missing = [];
 		if (!id_paciente) missing.push("id_paciente");
 		if (!id_eco) missing.push("id_eco");
 		if (!id_especialista) missing.push("id_especialista");
 		if (!id_disponibilidad) missing.push("id_disponibilidad");
-		if (!metodo) missing.push("metodo");
-		if (!banco_origen) missing.push("banco_origen");
-		if (!banco_destino) missing.push("banco_destino");
-		if (!monto) missing.push("monto");
-		if (!cedula_pagador) missing.push("cedula_pagador");
-		if (!telefono_pagador) missing.push("telefono_pagador");
-		if (!referencia) missing.push("referencia");
+		if (!metodoStr) missing.push("metodo");
+		if (monto === undefined || monto === null || monto === "") {
+			missing.push("monto");
+		}
+		const isCash = isCashPaymentMethodAsignar(metodoStr);
+		if (!isCash) {
+			if (!cedula_pagador || !String(cedula_pagador).trim()) {
+				missing.push("cedula_pagador");
+			}
+			if (!telefono_pagador || !String(telefono_pagador).trim()) {
+				missing.push("telefono_pagador");
+			}
+		}
 
 		if (missing.length) {
 			return res.status(400).json({
@@ -649,11 +700,38 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			});
 		}
 
-		if (!["Transferencia", "PagoMovil"].includes(String(metodo))) {
+		if (!METODOS_ASIGNAR_CITA.has(metodoStr)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Método de pago no permitido para este flujo",
+			});
+		}
+
+		if (requiresBankFieldsAsignar(metodoStr)) {
+			const bankMissing = [];
+			if (!banco_origen || !String(banco_origen).trim()) {
+				bankMissing.push("banco_origen");
+			}
+			if (!banco_destino || !String(banco_destino).trim()) {
+				bankMissing.push("banco_destino");
+			}
+			if (!referencia || !String(referencia).trim()) {
+				bankMissing.push("referencia");
+			}
+			if (bankMissing.length) {
+				return res.status(400).json({
+					ok: false,
+					message: `Faltan campos requeridos: ${bankMissing.join(", ")}`,
+				});
+			}
+		}
+
+		const imagenStr = String(imagen || "").trim();
+		if (!isCashPaymentMethodAsignar(metodoStr) && !imagenStr) {
 			return res.status(400).json({
 				ok: false,
 				message:
-					"Para citas online el metodo debe ser Transferencia o PagoMovil",
+					"La imagen del comprobante de pago es obligatoria para este método",
 			});
 		}
 
@@ -674,14 +752,14 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			orden: orden_medica || "", // Usar orden_medica como orden (URL de la orden médica)
 			aprobado_por: req.user.rol === "paciente" ? null : req.user.id, // Paciente no aprueba; admin/moderador sí
 			role: req.user.rol,
-			metodo,
-			imagen,
-			banco_origen,
-			banco_destino,
+			metodo: metodoStr,
+			imagen: imagenStr,
+			banco_origen: banco_origen != null ? String(banco_origen) : "",
+			banco_destino: banco_destino != null ? String(banco_destino) : "",
 			monto,
-			cedula_pagador,
-			telefono_pagador,
-			referencia,
+			cedula_pagador: String(cedula_pagador).trim(),
+			telefono_pagador: String(telefono_pagador).trim(),
+			referencia: referencia != null ? String(referencia) : "",
 		});
 
 		return res.status(201).json({
@@ -1048,6 +1126,7 @@ module.exports = {
 	markCitaAtendidaHandler,
 	tienePagoPendienteHandler,
 	listCitasPendientesPagoHandler,
+	getVerificacionPagosKpiHandler,
 	listCitasConPagosHandler,
 	updateEstadoPagoHandler,
 	listCitasByFechaHandler,

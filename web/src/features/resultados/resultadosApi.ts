@@ -34,6 +34,7 @@ export type CitaAtendidaConResultado = {
 	resultado_archivo: string | null;
 	resultado_study_uid: string | null;
 	resultado_estado: number | null;
+	resultado_fecha_emision: string | null;
 };
 
 const resultadosApi = baseApi.injectEndpoints({

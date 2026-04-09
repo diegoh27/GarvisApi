@@ -366,7 +366,8 @@ const listCitasSinResultadoHandler = async (req, res) => {
 
 const listCitasAtendidasConResultadosHandler = async (req, res) => {
 	try {
-		const data = await listCitasAtendidasConResultadosController();
+		const id_especialista = req.user.rol === "especialista" ? req.user.id : null;
+		const data = await listCitasAtendidasConResultadosController(id_especialista);
 		return res.status(200).json({
 			ok: true,
 			data,

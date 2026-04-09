@@ -34,7 +34,7 @@ export default function InventarioPage() {
 
 	const handleRefrescar = () => {
 		setIsRefreshing(true);
-		dispatch(baseApi.util.invalidateTags(INVENTARIO_TAGS as unknown as string[]));
+		dispatch(baseApi.util.invalidateTags(INVENTARIO_TAGS as any));
 		setTimeout(() => setIsRefreshing(false), 400);
 	};
 

@@ -40,6 +40,7 @@ import "../../features/especialistas/especialistasApi";
 import "../../features/dolar/dolarApi";
 import "../../features/notificaciones/notificacionesApi";
 import "../../features/pagos/pagosApi";
+import "../../features/metodos-pago/metodosPagoApi";
 
 // Configuración
 import "../../features/configuracion/configuracionApi";

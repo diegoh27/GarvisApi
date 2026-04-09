@@ -10,6 +10,7 @@ const {
 	markCitaAtendidaHandler,
 	tienePagoPendienteHandler,
 	listCitasPendientesPagoHandler,
+	getVerificacionPagosKpiHandler,
 	listCitasConPagosHandler,
 	updateEstadoPagoHandler,
 	listCitasByFechaHandler,
@@ -159,6 +160,13 @@ citasRoutes.get(
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
 	listCitasPendientesPagoHandler,
+);
+// GET /citas/verificacion-pagos-kpi (moderador/admin) — conteo del día para tarjeta "Verificados hoy"
+citasRoutes.get(
+	"/verificacion-pagos-kpi",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	getVerificacionPagosKpiHandler,
 );
 // GET /citas/con-pagos (moderador/admin) - Todas las citas con pagos para verificación
 citasRoutes.get(

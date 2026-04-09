@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
 	useGetMisCitasCompletasQuery,
 	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
@@ -35,8 +36,15 @@ const getEstadoPagoLabel = (estado: number) => {
 };
 
 const CitasPage = () => {
-	const [filterEstadoPago, setFilterEstadoPago] = useState<FilterEstadoPago>("todos");
-	const [filterResultados, setFilterResultados] = useState<FilterResultados>("todos");
+	const [searchParams] = useSearchParams();
+	const [filterEstadoPago, setFilterEstadoPago] = useState<FilterEstadoPago>(() => {
+		const param = searchParams.get("pago");
+		return param === "pendiente" || param === "aprobado" || param === "negado" ? param : "todos";
+	});
+	const [filterResultados, setFilterResultados] = useState<FilterResultados>(() => {
+		const param = searchParams.get("resultados");
+		return param === "con_resultados" || param === "sin_resultados" ? param : "todos";
+	});
 	const [page, setPage] = useState(1);
 	const [selectedCita, setSelectedCita] = useState<CitaPacienteCompleta | null>(null);
 

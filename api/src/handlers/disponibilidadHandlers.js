@@ -1,7 +1,13 @@
 const {
 	createDisponibilidadController,
 	createDisponibilidadBatchController,
+	createSolicitudMacroController,
+	createSolicitudMacroManualController,
 	listMisDisponibilidadController,
+	listMisSolicitudesController,
+	cancelSolicitudMacroController,
+	approveSolicitudMacroController,
+	rejectSolicitudMacroController,
 	listPendientesController,
 	listDisponibilidadesAdminController,
 	approveDisponibilidadController,
@@ -11,8 +17,10 @@ const {
 	cancelDisponibilidadController,
 	cancelDisponibilidadAdminController,
 	cancelDisponibilidadBatchController,
+	cancelDisponibilidadBatchEspecialistaController,
 	listPublicaController,
 	listPublicaPorEcoController,
+	listPublicaPorFechaController,
 	closeDisponibilidadDiaController,
 	listDisponibilidadesByFechaController,
 	listDisponibilidadesByEspecialistaController,
@@ -216,11 +224,25 @@ const approveDisponibilidadBatchHandler = async (req, res) => {
 			ids,
 			aprobado_por: req.user?.id ?? null,
 		});
+		const apr = result.aprobados ?? 0;
+		const auto = result.rechazados_automatico ?? 0;
+		let message;
+		if (apr > 0 && auto > 0) {
+			message = `${apr} bloque${apr !== 1 ? "s" : ""} aprobado${
+				apr !== 1 ? "s" : ""
+			}; ${auto} archivado${auto !== 1 ? "s" : ""} por conflicto en el mismo equipo`;
+		} else if (auto > 0 && apr === 0) {
+			message = `${auto} bloque${
+				auto !== 1 ? "s" : ""
+			} archivado${auto !== 1 ? "s" : ""}: el horario ya estaba ocupado por otro especialista en el mismo equipo`;
+		} else {
+			message = `${apr} bloque${apr !== 1 ? "s" : ""} aprobado${
+				apr !== 1 ? "s" : ""
+			}`;
+		}
 		return res.status(200).json({
 			ok: true,
-			message: `${result.aprobados} bloque${
-				result.aprobados !== 1 ? "s" : ""
-			} aprobado${result.aprobados !== 1 ? "s" : ""}`,
+			message,
 			data: result,
 		});
 	} catch (err) {
@@ -265,14 +287,27 @@ const approveDisponibilidadPorCriteriosHandler = async (req, res) => {
 			hora_hasta: hora_hasta || undefined,
 			aprobado_por: req.user?.id ?? null,
 		});
+		const apr = result.aprobados ?? 0;
+		const auto = result.rechazados_automatico ?? 0;
+		let message;
+		if (apr === 0 && auto === 0) {
+			message = "No hay bloques pendientes que coincidan con los criterios";
+		} else if (apr > 0 && auto > 0) {
+			message = `${apr} bloque${apr !== 1 ? "s" : ""} aprobado${
+				apr !== 1 ? "s" : ""
+			}; ${auto} archivado${auto !== 1 ? "s" : ""} por conflicto en el mismo equipo`;
+		} else if (auto > 0 && apr === 0) {
+			message = `${auto} bloque${
+				auto !== 1 ? "s" : ""
+			} archivado${auto !== 1 ? "s" : ""}: el horario ya estaba ocupado por otro especialista en el mismo equipo`;
+		} else {
+			message = `${apr} bloque${apr !== 1 ? "s" : ""} aprobado${
+				apr !== 1 ? "s" : ""
+			}`;
+		}
 		return res.status(200).json({
 			ok: true,
-			message:
-				result.aprobados === 0
-					? "No hay bloques pendientes que coincidan con los criterios"
-					: `${result.aprobados} bloque${
-							result.aprobados !== 1 ? "s" : ""
-						} aprobado${result.aprobados !== 1 ? "s" : ""}`,
+			message,
 			data: result,
 		});
 	} catch (err) {
@@ -355,7 +390,10 @@ const approveDisponibilidadHandler = async (req, res) => {
 		});
 		return res.status(200).json({
 			ok: true,
-			message: "Bloque aprobado",
+			message: result.rechazo_automatico
+				? result.message ||
+					"El horario fue archivado como rechazado por conflicto con otro especialista en el mismo equipo."
+				: "Bloque aprobado",
 			data: result,
 		});
 	} catch (err) {
@@ -422,23 +460,66 @@ const rejectDisponibilidadHandler = async (req, res) => {
 
 const cancelDisponibilidadHandler = async (req, res) => {
 	try {
-		const { id } = req.params;
-		const result = await cancelDisponibilidadController({
-			id_disponibilidad: id,
-			id_especialista: req.user.id,
-		});
-		if (!result.updated) {
-			return res.status(404).json({
+		const id = typeof req.params.id === "string" ? req.params.id.trim() : "";
+		if (!id) {
+			return res.status(400).json({
 				ok: false,
-				message: "Disponibilidad no encontrada o ya cancelada",
+				message: "id de disponibilidad inválido",
 			});
 		}
-		return res.status(200).json({
-			ok: true,
-			message: "Bloque cancelado",
-			data: result,
+		const result = await cancelDisponibilidadController({
+			id_disponibilidad: id,
+			id_especialista: String(req.user.id ?? "").trim(),
+		});
+		if (result.updated) {
+			return res.status(200).json({
+				ok: true,
+				message: "Bloque cancelado",
+				data: result,
+			});
+		}
+		if (result.code === "ALREADY_CANCELLED") {
+			return res.status(409).json({
+				ok: false,
+				message: "Este bloque ya está cancelado",
+			});
+		}
+		if (result.code === "REJECTED") {
+			return res.status(409).json({
+				ok: false,
+				message: "No se puede cancelar un bloque rechazado",
+			});
+		}
+		if (result.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: "Disponibilidad no encontrada",
+			});
+		}
+		if (result.code === "INVALID_STATE") {
+			return res.status(409).json({
+				ok: false,
+				message: "Este bloque no se puede cancelar en su estado actual",
+			});
+		}
+		if (result.code === "UPDATE_FAILED") {
+			return res.status(409).json({
+				ok: false,
+				message:
+					"No se pudo actualizar el bloque. Actualiza la página e inténtalo de nuevo.",
+			});
+		}
+		return res.status(409).json({
+			ok: false,
+			message: "No se pudo cancelar el bloque",
 		});
 	} catch (err) {
+		if (err?.code === "RESERVED") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+			});
+		}
 		console.error(err);
 		return res.status(500).json({
 			ok: false,
@@ -503,6 +584,41 @@ const cancelDisponibilidadBatchHandler = async (req, res) => {
 	}
 };
 
+const cancelDisponibilidadBatchEspecialistaHandler = async (req, res) => {
+	try {
+		const { ids } = req.body;
+		const result = await cancelDisponibilidadBatchEspecialistaController({
+			ids,
+			id_especialista: String(req.user?.id ?? "").trim(),
+		});
+		if (!result.cancelados) {
+			return res.status(409).json({
+				ok: false,
+				message:
+					"No se pudo cancelar ningún bloque. Actualiza la página e inténtalo de nuevo.",
+				data: result,
+			});
+		}
+		return res.status(200).json({
+			ok: true,
+			message: "Cancelación en lote completada",
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "INVALID_INPUT") {
+			return res.status(400).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 const listPublicaHandler = async (req, res) => {
 	try {
 		const { id_especialista, id_eco, fecha } = req.query;
@@ -513,10 +629,18 @@ const listPublicaHandler = async (req, res) => {
 				data,
 			});
 		}
+		// Date-only query: return all ecos with availability for that date
+		if (fecha && !id_especialista) {
+			const data = await listPublicaPorFechaController({ fecha });
+			return res.status(200).json({
+				ok: true,
+				data,
+			});
+		}
 		if (!id_especialista) {
 			return res.status(400).json({
 				ok: false,
-				message: "id_especialista o id_eco es requerido",
+				message: "id_especialista, id_eco o fecha es requerido",
 			});
 		}
 		const data = await listPublicaController({ id_especialista, fecha });
@@ -673,9 +797,193 @@ const deleteDisponibilidadPorCriteriosHandler = async (req, res) => {
 	}
 };
 
+const createSolicitudMacroHandler = async (req, res) => {
+	try {
+		const {
+			fecha_desde,
+			fecha_hasta,
+			hora_inicio,
+			hora_fin,
+			id_eco,
+			id_ecos,
+		} = req.body;
+		if (!fecha_desde || !fecha_hasta || !hora_inicio || !hora_fin) {
+			return res.status(400).json({
+				ok: false,
+				message: "fecha_desde, fecha_hasta, hora_inicio y hora_fin son requeridos",
+			});
+		}
+		const data = await createSolicitudMacroController({
+			id_especialista: req.user.id,
+			fecha_desde,
+			fecha_hasta,
+			hora_inicio,
+			hora_fin,
+			id_eco: id_eco || null,
+			id_ecos: Array.isArray(id_ecos) ? id_ecos : undefined,
+			creado_por: req.user.id,
+			es_manual: false,
+		});
+		return res.status(201).json({
+			ok: true,
+			message: "Solicitud de jornada registrada (pendiente de aprobación)",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "OVERLAP_SOLICITUD" || err?.code === "OVERLAP") {
+			return res.status(409).json({ ok: false, message: err.message });
+		}
+		if (
+			err?.code === "INVALID_INPUT" ||
+			err?.code === "ECO_NOT_FOUND"
+		) {
+			return res.status(400).json({ ok: false, message: err.message });
+		}
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
+const createSolicitudMacroManualHandler = async (req, res) => {
+	try {
+		const {
+			id_especialista,
+			fecha_desde,
+			fecha_hasta,
+			hora_inicio,
+			hora_fin,
+			id_eco,
+			id_ecos,
+		} = req.body;
+		if (
+			!id_especialista ||
+			!fecha_desde ||
+			!fecha_hasta ||
+			!hora_inicio ||
+			!hora_fin
+		) {
+			return res.status(400).json({
+				ok: false,
+				message:
+					"id_especialista, fecha_desde, fecha_hasta, hora_inicio y hora_fin son requeridos",
+			});
+		}
+		const data = await createSolicitudMacroManualController({
+			id_especialista,
+			fecha_desde,
+			fecha_hasta,
+			hora_inicio,
+			hora_fin,
+			id_eco: id_eco || null,
+			id_ecos: Array.isArray(id_ecos) ? id_ecos : undefined,
+			creado_por: req.user.id,
+		});
+		return res.status(201).json({
+			ok: true,
+			message: "Solicitud manual registrada",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "OVERLAP_SOLICITUD") {
+			return res.status(409).json({ ok: false, message: err.message });
+		}
+		if (err?.code === "INVALID_INPUT" || err?.code === "ECO_NOT_FOUND") {
+			return res.status(400).json({ ok: false, message: err.message });
+		}
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
+const listMisSolicitudesHandler = async (req, res) => {
+	try {
+		const { estado } = req.query;
+		const parsedEstado = estado !== undefined ? Number(estado) : undefined;
+		const data = await listMisSolicitudesController({
+			id_especialista: req.user.id,
+			estado: Number.isNaN(parsedEstado) ? undefined : parsedEstado,
+		});
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
+const cancelSolicitudMacroHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const data = await cancelSolicitudMacroController({
+			id_solicitud: id,
+			id_especialista: req.user.id,
+		});
+		return res.status(200).json({ ok: true, message: "Solicitud cancelada", data });
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({ ok: false, message: err.message });
+		}
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
+const approveSolicitudMacroHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const result = await approveSolicitudMacroController({
+			id_solicitud: id,
+			aprobado_por: req.user?.id ?? null,
+		});
+		return res.status(200).json({
+			ok: true,
+			message:
+				result.bloques_creados > 0
+					? `Se generaron ${result.bloques_creados} bloque(s) de 20 min; ${result.bloques_omitidos} omitido(s) por conflicto.`
+					: `No se generaron bloques (${result.bloques_omitidos} tramos ya ocupados en el mismo equipo). La solicitud quedó procesada.`,
+			data: result,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({ ok: false, message: err.message });
+		}
+		if (err?.code === "INVALID_STATE") {
+			return res.status(409).json({ ok: false, message: err.message });
+		}
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
+const rejectSolicitudMacroHandler = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const data = await rejectSolicitudMacroController({
+			id_solicitud: id,
+			aprobado_por: req.user?.id ?? null,
+		});
+		return res.status(200).json({
+			ok: true,
+			message: "Solicitud rechazada",
+			data,
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({ ok: false, message: err.message });
+		}
+		console.error(err);
+		return res.status(500).json({ ok: false, message: "Error interno" });
+	}
+};
+
 module.exports = {
 	createDisponibilidadHandler,
 	createDisponibilidadBatchHandler,
+	createSolicitudMacroHandler,
+	createSolicitudMacroManualHandler,
+	listMisSolicitudesHandler,
+	cancelSolicitudMacroHandler,
+	approveSolicitudMacroHandler,
+	rejectSolicitudMacroHandler,
 	listMisDisponibilidadHandler,
 	listPendientesHandler,
 	listDisponibilidadesAdminHandler,
@@ -686,6 +994,7 @@ module.exports = {
 	cancelDisponibilidadHandler,
 	cancelDisponibilidadAdminHandler,
 	cancelDisponibilidadBatchHandler,
+	cancelDisponibilidadBatchEspecialistaHandler,
 	listPublicaHandler,
 	closeDisponibilidadDiaHandler,
 	listDisponibilidadesByFechaHandler,

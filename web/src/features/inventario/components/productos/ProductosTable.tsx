@@ -39,7 +39,8 @@ export default function ProductosTable({
         <div className="flex flex-col">
           <span className="text-sm font-bold text-gray-800">{row.nombre}</span>
           <span className="text-xs text-gray-400 mt-0.5">
-            {row.presentacion ? `${row.presentacion} (${Number(row.contenido)} ${row.unidad_medida || "uds"})` : "—"}
+            {row.presentacion ? `${row.presentacion} • ` : ""}
+            1 {row.unidad_compra || "Caja"} = {Number(row.factor_conversion) || 1} {row.unidad_consumo || "u"}
           </span>
         </div>
       ),
@@ -60,29 +61,42 @@ export default function ProductosTable({
       header: "STOCK ACTUAL",
       headerClassName: "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
       cellClassName: "px-3 md:px-6 py-5 text-sm text-center font-bold text-gray-800",
-      render: (row: Producto) => Number(row.stock_actual),
+      render: (row: Producto) => (
+        <span>
+          {Math.floor(Number(row.stock_base_total))}{" "}
+          <span className="text-xs text-gray-400 font-normal">
+            {row.unidad_consumo || "u"}
+          </span>
+        </span>
+      ),
     },
     {
       key: "consumo",
       header: "CONSUMO",
-      headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0 min-w-[150px]",
-      cellClassName: "px-3 md:px-6 py-5",
+      headerClassName: "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0 min-w-[150px]",
+      cellClassName: "px-3 md:px-6 py-5 text-center",
       render: (row: Producto) => {
-        const consumoNum = Number(row.consumo_actual) || 0;
-        const contenidoNum = Number(row.contenido) || 1;
-        const percentage = Math.min(Math.round((consumoNum / contenidoNum) * 100), 100);
-        
+        const consumo = Number(row.consumo_actual) || 0;
+        const fConv = Number(row.factor_conversion) || 1;
+        const pct = fConv > 0 ? Math.min(Math.round((consumo / fConv) * 100), 100) : 0;
+        const unidad = row.unidad_consumo || "u";
+        const barColor = pct > 75 ? "bg-red-500" : pct > 40 ? "bg-amber-500" : "bg-teal-600";
+
         return (
-          <div className="flex flex-col w-full min-w-[120px]">
-            <div className="flex justify-between items-center mb-1 text-[10px] font-semibold text-gray-500">
-              <span>{consumoNum}{row.unidad_medida || 'u'} / {contenidoNum}{row.unidad_medida || 'u'}</span>
-              <span>{percentage}%</span>
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="font-medium">
+                {consumo}{unidad} / {fConv}{unidad}
+              </span>
+              <span className={`text-xs font-bold ${pct > 75 ? "text-red-500" : pct > 40 ? "text-amber-500" : "text-gray-400"}`}>
+                {pct}%
+              </span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-              <div 
-                className={`h-1.5 rounded-full ${percentage > 80 ? 'bg-red-400' : 'bg-teal-600'}`} 
-                style={{ width: `${percentage}%` }}
-              ></div>
+            <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${barColor}`}
+                style={{ width: `${pct}%` }}
+              />
             </div>
           </div>
         );
@@ -103,7 +117,7 @@ export default function ProductosTable({
           );
         }
         
-        if (Number(row.stock_actual) <= 5) {
+        if (Number(row.stock_base_total) <= Number(row.stock_minimo_base)) {
            return (
             <div className="flex items-center gap-2 text-red-600">
               <div className="w-1.5 h-1.5 rounded-full bg-red-600"></div>

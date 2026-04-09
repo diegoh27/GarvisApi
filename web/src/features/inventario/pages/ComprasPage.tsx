@@ -15,6 +15,7 @@ import {
 	useCreateNotaCompraMutation,
 	useDeleteNotaCompraMutation,
 } from "../api";
+import { useGetDolarOficialQuery } from "../../dolar";
 
 /* ── Tipos locales ─────────────────────────────────── */
 interface LineaCompra {
@@ -31,6 +32,7 @@ export default function ComprasPage() {
 	const { data: proveedores = [] } = useGetProveedoresQuery();
 	const { data: productos = [] } = useGetProductosQuery();
 	const { data: notasCompra = [], isLoading: loadingNotas } = useGetNotasCompraQuery();
+	const { data: dolarOficial } = useGetDolarOficialQuery();
 	const [createNotaCompra] = useCreateNotaCompraMutation();
 	const [deleteNotaCompra] = useDeleteNotaCompraMutation();
 
@@ -65,12 +67,13 @@ export default function ComprasPage() {
 		);
 	};
 
-	const subtotal = lineas.reduce(
-		(acc, l) => acc + l.cantidad * l.precioUnitario,
-		0,
-	);
+	const tasaBcv = Number(dolarOficial?.promedio) || 0;
+	const subtotal = lineas.reduce((acc, l) => acc + l.cantidad * l.precioUnitario, 0);
 	const impuesto = subtotal * 0.16;
 	const total = subtotal + impuesto;
+	const subtotalBs = subtotal * tasaBcv;
+	const impuestoBs = impuesto * tasaBcv;
+	const totalBs = total * tasaBcv;
 
 	const resetForm = () => {
 		setProveedor("");
@@ -91,7 +94,6 @@ export default function ComprasPage() {
 		if (lineasValidas.length === 0) {
 			return Swal.fire({ icon: "warning", title: "Agregue al menos una línea con producto y cantidad" });
 		}
-
 		setSaving(true);
 		try {
 			await createNotaCompra({
@@ -233,21 +235,22 @@ export default function ComprasPage() {
 				</div>
 
 				<div className="hidden md:grid grid-cols-12 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">
-					<div className="col-span-5">Insumo / Producto</div>
+					<div className="col-span-4">Insumo / Producto</div>
 					<div className="col-span-2">Cantidad</div>
-					<div className="col-span-2">Costo Unitario</div>
+					<div className="col-span-3">Costo Unitario</div>
 					<div className="col-span-2 text-right">Subtotal</div>
 					<div className="col-span-1" />
 				</div>
 
 				{lineas.map((linea) => {
-					const lineSubtotal = linea.cantidad * linea.precioUnitario;
+					const lineSubtotalUsd = linea.cantidad * linea.precioUnitario;
+					const lineSubtotalBs = lineSubtotalUsd * tasaBcv;
 					return (
 						<div
 							key={linea.id}
 							className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center border border-gray-100 rounded-lg p-3 md:p-2 md:border-0"
 						>
-							<div className="col-span-5">
+							<div className="col-span-4">
 								<select
 									value={linea.id_producto}
 									onChange={(e) => updateLinea(linea.id, "id_producto", e.target.value)}
@@ -256,7 +259,7 @@ export default function ComprasPage() {
 									<option value="">Seleccionar producto...</option>
 									{productos.map((p) => (
 										<option key={p.id_producto} value={p.id_producto}>
-											{p.nombre} (Stock: {p.stock_actual})
+											{p.nombre} - {p.unidad_compra || "Caja"} x{Number(p.factor_conversion) || 1} (Stock: {Math.floor(Number(p.stock_base_total || 0) / (Number(p.factor_conversion) || 1))} {p.unidad_compra || "Caja"})
 										</option>
 									))}
 								</select>
@@ -273,25 +276,47 @@ export default function ComprasPage() {
 									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 							</div>
-							<div className="col-span-2">
-								<div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
-									<span className="bg-gray-50 px-2.5 py-2 text-sm text-gray-500 border-r border-gray-200">
-										$
-									</span>
-									<input
-										type="number"
-										step="0.01"
-										min={0}
-										value={linea.precioUnitario}
-										onChange={(e) =>
-											updateLinea(linea.id, "precioUnitario", Number(e.target.value))
-										}
-										className="w-full px-2 py-2 text-sm focus:outline-none"
-									/>
+							<div className="col-span-3">
+								<div className="grid grid-cols-2 gap-2">
+									<div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
+										<span className="bg-gray-50 px-2 py-2 text-xs text-gray-600 border-r border-gray-200">$</span>
+										<input
+											type="number"
+											step="0.01"
+											min={0}
+											value={linea.precioUnitario}
+											onChange={(e) =>
+												updateLinea(linea.id, "precioUnitario", Number(e.target.value))
+											}
+											className="w-full px-2 py-2 text-sm focus:outline-none"
+										/>
+									</div>
+									<div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
+										<span className="bg-gray-50 px-2 py-2 text-xs text-gray-600 border-r border-gray-200">Bs</span>
+										<input
+											type="number"
+											step="0.01"
+											min={0}
+											value={tasaBcv > 0 ? (linea.precioUnitario * tasaBcv).toFixed(2) : ""}
+											onChange={(e) => {
+												const valorBs = Number(e.target.value);
+												if (tasaBcv > 0) {
+													updateLinea(linea.id, "precioUnitario", valorBs / tasaBcv);
+												}
+											}}
+											disabled={tasaBcv <= 0}
+											placeholder={tasaBcv > 0 ? "0.00" : "Sin tasa BCV"}
+											className="w-full px-2 py-2 text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+										/>
+									</div>
 								</div>
 							</div>
 							<div className="col-span-2 text-right font-semibold text-gray-800">
-								${lineSubtotal.toFixed(2)}
+								<div className="flex items-center justify-end gap-2 text-xs md:text-sm">
+									<span>${lineSubtotalUsd.toFixed(2)}</span>
+									<span className="text-gray-400">|</span>
+									<span className="text-gray-600">Bs {lineSubtotalBs.toFixed(2)}</span>
+								</div>
 							</div>
 							<div className="col-span-1 flex justify-center">
 								<button
@@ -307,17 +332,32 @@ export default function ComprasPage() {
 
 				{/* ── Totales ── */}
 				<div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
+					<div className="flex justify-end text-xs text-gray-500">
+						Tasa BCV del día: {tasaBcv > 0 ? `${tasaBcv.toFixed(2)} Bs/USD` : "No disponible"}
+					</div>
 					<div className="flex justify-end gap-8 text-sm text-gray-600">
 						<span>Subtotal</span>
-						<span className="font-medium w-24 text-right">${subtotal.toFixed(2)}</span>
+						<div className="font-medium text-right flex items-center gap-2">
+							<span>${subtotal.toFixed(2)}</span>
+							<span className="text-gray-400">|</span>
+							<span>Bs {subtotalBs.toFixed(2)}</span>
+						</div>
 					</div>
 					<div className="flex justify-end gap-8 text-sm text-gray-600">
 						<span>Impuestos (16%)</span>
-						<span className="font-medium w-24 text-right">${impuesto.toFixed(2)}</span>
+						<div className="font-medium text-right flex items-center gap-2">
+							<span>${impuesto.toFixed(2)}</span>
+							<span className="text-gray-400">|</span>
+							<span>Bs {impuestoBs.toFixed(2)}</span>
+						</div>
 					</div>
 					<div className="flex justify-end gap-8 text-lg font-bold text-gray-900">
 						<span>Total Compra</span>
-						<span className="text-teal-600 w-24 text-right">${total.toFixed(2)}</span>
+						<div className="text-teal-600 text-right flex items-center gap-2">
+							<span>${total.toFixed(2)}</span>
+							<span className="text-teal-300">|</span>
+							<span className="text-sm">Bs {totalBs.toFixed(2)}</span>
+						</div>
 					</div>
 				</div>
 			</div>

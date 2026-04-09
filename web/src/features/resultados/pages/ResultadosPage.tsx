@@ -1,9 +1,24 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
-import { FileText, Receipt, Calendar, FileCheck, Download, Eye, Upload } from "lucide-react";
+import {
+	ArrowRight,
+	Calendar,
+	CheckCircle2,
+	Eye,
+	FileCheck,
+	FileText,
+	Image as ImageIcon,
+	Receipt,
+	Search,
+	CloudUpload,
+} from "lucide-react";
 import { PageShell, useAuth, formatFechaLocal } from "../../../shared";
-import { useGetCitasSinResultadoQuery, useUploadResultadoMutation } from "../resultadosApi";
-import type { CitaSinResultado } from "../resultadosApi";
+import {
+	useGetCitasSinResultadoQuery,
+	useGetCitasAtendidasConResultadosQuery,
+	useUploadResultadoMutation,
+} from "../resultadosApi";
+import type { CitaSinResultado, CitaAtendidaConResultado } from "../resultadosApi";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import { useGetMisCitasCompletasQuery } from "../../citas/citasApi";
 import type { CitaPacienteCompleta } from "../../citas/citasApi";
@@ -48,6 +63,41 @@ const parseResultadoArchivo = (archivo: string | null | undefined): string[] => 
 	}
 };
 
+const fileLabelFromUrl = (url: string): string => {
+	try {
+		const u = url.split("?")[0];
+		const seg = u.split("/").filter(Boolean).pop() || "archivo";
+		return decodeURIComponent(seg);
+	} catch {
+		return "archivo";
+	}
+};
+
+const getResultadoDateMs = (c: any) => {
+	if (c.resultado_fecha_emision) {
+		const ms = new Date(c.resultado_fecha_emision).getTime();
+		if (!Number.isNaN(ms)) return ms;
+	}
+	const t = c.hora_cita && c.hora_cita.length >= 5 ? c.hora_cita.slice(0, 5) : "00:00";
+	const raw = `${c.fecha_cita}T${t}:00`;
+	const ms = new Date(raw).getTime();
+	return Number.isNaN(ms) ? 0 : ms;
+};
+
+const estadoResultadoBadge = (estado: number | null): string => {
+	if (estado === null || estado === undefined) return "Enviado";
+	switch (estado) {
+		case 0:
+			return "Pendiente";
+		case 1:
+			return "En proceso";
+		case 2:
+			return "Verificado";
+		default:
+			return `Estado ${estado}`;
+	}
+};
+
 const ResultadosPage = () => {
 	const { user } = useAuth();
 	const isPaciente = user?.rol === "paciente";
@@ -67,6 +117,14 @@ const ResultadosPage = () => {
 		useGetCitasSinResultadoQuery(undefined, {
 			skip: isPaciente,
 		});
+
+	const {
+		data: citasConResultado = [],
+		isLoading: isLoadingCitasConResultado,
+		refetch: refetchCitasConResultado,
+	} = useGetCitasAtendidasConResultadosQuery(undefined, {
+		skip: isPaciente,
+	});
 
 	const [uploadResultado, { isLoading: isUploading }] =
 		useUploadResultadoMutation();
@@ -108,6 +166,53 @@ const ResultadosPage = () => {
 
 	const isLoading = isPaciente ? isLoadingCitas : isLoadingCitasAdmin;
 	const refetch = isPaciente ? refetchCitas : refetchCitasAdmin;
+	const searchInputRef = useRef<HTMLInputElement>(null);
+
+	const filteredCitas = useMemo(() => {
+		if (isPaciente) return citas;
+		if (!query.trim()) return citas;
+		const searchLower = query.toLowerCase().trim();
+		return citas.filter((cita: CitaSinResultado) => {
+			const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
+			const especialistaFullName =
+				`${cita.especialista_nombre} ${cita.especialista_apellido}`.toLowerCase();
+			return (
+				fullName.includes(searchLower) ||
+				cita.paciente_nombre.toLowerCase().includes(searchLower) ||
+				cita.paciente_apellido.toLowerCase().includes(searchLower) ||
+				especialistaFullName.includes(searchLower) ||
+				cita.especialista_nombre.toLowerCase().includes(searchLower) ||
+				cita.especialista_apellido.toLowerCase().includes(searchLower) ||
+				cita.eco_nombre.toLowerCase().includes(searchLower)
+			);
+		});
+	}, [citas, query, isPaciente]);
+
+	const citasConArchivoOModal = useMemo(() => {
+		if (isPaciente) return [];
+		return citasConResultado.filter((c) => {
+			const arch = parseResultadoArchivo(c.resultado_archivo);
+			return arch.length > 0 || !!c.resultado_study_uid;
+		});
+	}, [citasConResultado, isPaciente]);
+
+	const recentActivity = useMemo(() => {
+		const threeDaysAgo = new Date();
+		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+		threeDaysAgo.setHours(0, 0, 0, 0);
+		const cutoffMs = threeDaysAgo.getTime();
+
+		return [...citasConArchivoOModal]
+			.filter((c) => getResultadoDateMs(c) >= cutoffMs)
+			.sort((a, b) => getResultadoDateMs(b) - getResultadoDateMs(a))
+			.slice(0, 10);
+	}, [citasConArchivoOModal]);
+
+	const historialOrdenado = useMemo(() => {
+		return [...citasConArchivoOModal].sort(
+			(a, b) => getResultadoDateMs(b) - getResultadoDateMs(a)
+		);
+	}, [citasConArchivoOModal]);
 
 	const handleSubirResultado = async (id_cita: string, archivos: File[]) => {
 		try {
@@ -128,6 +233,7 @@ const ResultadosPage = () => {
 			});
 			setSelectedCitaForUpload(null);
 			refetch();
+			void refetchCitasConResultado();
 		} catch (error: unknown) {
 			const msg =
 				error &&
@@ -400,97 +506,328 @@ const ResultadosPage = () => {
 		);
 	}
 
-	// Filtrar citas por búsqueda (solo para moderadores/admin)
-	const filteredCitas = useMemo(() => {
-		if (!query.trim()) return citas;
-		const searchLower = query.toLowerCase().trim();
-		return citas.filter((cita: CitaSinResultado) => {
-			const fullName = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
-			const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`.toLowerCase();
-			return (
-				fullName.includes(searchLower) ||
-				cita.paciente_nombre.toLowerCase().includes(searchLower) ||
-				cita.paciente_apellido.toLowerCase().includes(searchLower) ||
-				especialistaFullName.includes(searchLower) ||
-				cita.especialista_nombre.toLowerCase().includes(searchLower) ||
-				cita.especialista_apellido.toLowerCase().includes(searchLower) ||
-				cita.eco_nombre.toLowerCase().includes(searchLower)
-			);
-		});
-	}, [citas, query]);
-
 	// Vista para moderadores/admin: subir resultados
+	const openVerResultadosHistorial = (cita: CitaAtendidaConResultado) => {
+		const archivos = parseResultadoArchivo(cita.resultado_archivo);
+		setSelectedCitaForResultados({
+			archivos,
+			studyUid: cita.resultado_study_uid,
+			pacienteNombre: `${cita.paciente_nombre} ${cita.paciente_apellido}`,
+			ecoNombre: cita.eco_nombre,
+			idCita: cita.id_cita,
+		});
+	};
+
+	const activityTimeLabel = (cita: CitaAtendidaConResultado) => {
+		const d = new Date(getResultadoDateMs(cita));
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const y = new Date(d);
+		y.setHours(0, 0, 0, 0);
+		const diffDays = Math.round((today.getTime() - y.getTime()) / (24 * 60 * 60 * 1000));
+		if (diffDays === 0) {
+			const hrs = d.getHours();
+			const mins = d.getMinutes().toString().padStart(2, '0');
+			const ampm = hrs >= 12 ? 'PM' : 'AM';
+			const h12 = hrs % 12 || 12;
+			return `${h12}:${mins} ${ampm}`;
+		}
+		if (diffDays === 1) return "Ayer";
+		const day = d.getDate().toString().padStart(2, '0');
+		const month = (d.getMonth() + 1).toString().padStart(2, '0');
+		const year = d.getFullYear();
+		return `${day}/${month}/${year}`;
+	};
+
 	return (
-		<PageShell
-			title="Subir resultados"
-			description="Subir archivos de resultados (ecos) para citas atendidas."
-		>
-			<div className="space-y-4">
-				{/* Barra de búsqueda */}
-				<div className="rounded-lg border border-brand-300 bg-paper p-4">
-					<input
-						type="text"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Buscar por nombre, apellido, especialista o eco..."
-						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
-					/>
+		<PageShell title="Subir resultados" hideHeader>
+			<div className="space-y-8">
+				<header className="space-y-2">
+					<h2 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 md:text-4xl">
+						Subir resultados
+					</h2>
+					<p className="max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
+						Puede subir los resultados de los ecosonogramas de forma segura aquí.
+					</p>
+				</header>
+
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+					{/* Columna izquierda ~65% */}
+					<section className="space-y-4 lg:col-span-8">
+						<div className="relative">
+							<Search
+								className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+								aria-hidden
+							/>
+							<input
+								ref={searchInputRef}
+								id="resultados-busqueda"
+								type="text"
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+								placeholder="Buscar por nombre, apellido, especialista o eco..."
+								className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-brand-900 shadow-sm outline-none ring-[#006965]/20 placeholder:text-slate-400 focus:border-[#006965]/30 focus:ring-2"
+							/>
+						</div>
+
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							<h3 className="font-headline flex flex-wrap items-center gap-2 text-xl font-bold text-brand-900">
+								Pacientes con resultados pendientes
+								<span className="rounded-full bg-[#1c837f] px-2.5 py-0.5 text-xs font-bold text-white">
+									{filteredCitas.length}
+								</span>
+							</h3>
+						</div>
+
+						{isLoading ? (
+							<div className="rounded-2xl border border-slate-100 bg-white py-16 text-center text-slate-600 shadow-sm">
+								Cargando citas sin resultado...
+							</div>
+						) : filteredCitas.length === 0 ? (
+							<div className="rounded-2xl border border-slate-100 bg-white p-10 text-center shadow-sm">
+								<p className="text-slate-600">
+									{query.trim()
+										? "No se encontraron citas con los criterios de búsqueda."
+										: "No hay citas atendidas sin resultado."}
+								</p>
+							</div>
+						) : (
+							<div className="space-y-4">
+								{filteredCitas.map((cita: CitaSinResultado) => {
+									const iniciales =
+										`${(cita.paciente_nombre?.[0] ?? "").toUpperCase()}${(cita.paciente_apellido?.[0] ?? "").toUpperCase()}` ||
+										"?";
+									return (
+										<div
+											key={cita.id_cita}
+											className="group flex flex-col gap-4 rounded-2xl border border-transparent bg-white p-5 shadow-sm transition-all hover:border-[#006965]/15 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+										>
+											<div className="flex min-w-0 flex-1 items-center gap-5">
+												<div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-slate-100 font-headline text-lg font-bold text-slate-500">
+													{iniciales}
+												</div>
+												<div className="min-w-0">
+													<h4 className="truncate font-headline text-lg font-bold text-brand-900">
+														{cita.paciente_nombre} {cita.paciente_apellido}
+													</h4>
+													<div className="mt-1 flex flex-wrap items-center gap-2">
+														<span className="inline-flex rounded bg-teal-100/90 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#006965]">
+															{cita.eco_nombre}
+														</span>
+														<span className="text-[11px] text-slate-400">
+															• Ref: #{cita.id_cita.slice(0, 8)}
+														</span>
+													</div>
+													<p className="mt-1 text-xs text-slate-500">
+														{cita.especialista_nombre} {cita.especialista_apellido} ·{" "}
+														{formatFecha(cita.fecha_cita)} {formatHora(cita.hora_cita)}
+													</p>
+												</div>
+											</div>
+											<button
+												type="button"
+												onClick={() => setSelectedCitaForUpload(cita)}
+												disabled={isUploading}
+												className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1c837f] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/20 transition-all hover:bg-[#006965] active:scale-[0.98] disabled:opacity-50"
+											>
+												<CloudUpload className="h-5 w-5" aria-hidden />
+												Subir resultado
+											</button>
+										</div>
+									);
+								})}
+							</div>
+						)}
+					</section>
+
+					{/* Columna derecha ~35% */}
+					<aside className="lg:col-span-4">
+						<div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+							<div className="mb-6 flex items-center justify-between">
+								<h3 className="font-headline text-lg font-extrabold text-brand-900">
+									Actividad reciente
+								</h3>
+								<span className="h-2 w-2 animate-pulse rounded-full bg-[#006965]" aria-hidden />
+							</div>
+							{isLoadingCitasConResultado ? (
+								<p className="py-6 text-center text-sm text-slate-500">Cargando actividad…</p>
+							) : recentActivity.length === 0 ? (
+								<p className="py-6 text-center text-sm text-slate-500">
+									Aún no hay cargas recientes.
+								</p>
+							) : (
+								<div className="relative space-y-8 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-slate-100">
+									{recentActivity.map((cita) => {
+										const archivos = parseResultadoArchivo(cita.resultado_archivo);
+										const nombreArchivo =
+											archivos.length > 0
+												? fileLabelFromUrl(archivos[0])
+												: cita.resultado_study_uid
+													? "Estudio DICOM"
+													: "Resultado";
+										return (
+											<div key={cita.id_cita} className="relative flex gap-4">
+												<div className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-[#006965]/20 bg-white shadow-sm">
+													<CheckCircle2 className="h-4 w-4 text-[#006965]" aria-hidden />
+												</div>
+												<div className="min-w-0 flex-1 pb-1">
+													<div className="mb-1 flex items-start justify-between gap-2">
+														<p className="truncate text-sm font-bold text-brand-900">{nombreArchivo}</p>
+														<span className="shrink-0 text-[10px] font-medium text-slate-400">
+															{activityTimeLabel(cita)}
+														</span>
+													</div>
+													<p className="mb-2 text-xs text-slate-600">
+														Paciente:{" "}
+														<span className="font-semibold text-brand-900">
+															{cita.paciente_nombre} {cita.paciente_apellido}
+														</span>
+													</p>
+													<span className="inline-flex items-center rounded bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+														Exitoso
+													</span>
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							)}
+							<button
+								type="button"
+								onClick={() =>
+									document.getElementById("historial-resultados")?.scrollIntoView({
+										behavior: "smooth",
+										block: "start",
+									})
+								}
+								className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[#006965]/15 py-3 text-xs font-bold uppercase tracking-widest text-[#006965] transition-all hover:bg-[#006965]/5"
+							>
+								Ver historial completo
+								<ArrowRight className="h-4 w-4" aria-hidden />
+							</button>
+						</div>
+					</aside>
 				</div>
 
-				{isLoading ? (
-					<div className="text-center py-8 text-brand-600">
-						Cargando citas sin resultado...
-					</div>
-				) : filteredCitas.length === 0 ? (
-					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
-						<p className="text-brand-600">
-							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : "No hay citas atendidas sin resultado."}
-						</p>
-					</div>
-				) : (
-					<div className="space-y-3">
-						{filteredCitas.map((cita: CitaSinResultado) => (
-							<div
-								key={cita.id_cita}
-								className="rounded-lg border border-brand-200 bg-paper p-4"
-							>
-								<div className="space-y-4">
-									<div className="flex items-center gap-2">
-										<h3 className="font-semibold text-brand-900">
-											{cita.paciente_nombre} {cita.paciente_apellido}
-										</h3>
-										<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-paper">
-											{cita.eco_nombre}
-										</span>
-									</div>
-									<div className="space-y-1 text-sm text-brand-600">
-										<div>
-											<span className="font-medium">Especialista:</span>{" "}
-											{cita.especialista_nombre} {cita.especialista_apellido}
-										</div>
-										<div>
-											<span className="font-medium">Fecha y hora:</span>{" "}
-											{formatFecha(cita.fecha_cita)} a las{" "}
-											{formatHora(cita.hora_cita)}
-										</div>
-									</div>
-									<button
-										type="button"
-										onClick={() => setSelectedCitaForUpload(cita)}
-										disabled={isUploading}
-										className="flex w-full items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
-									>
-										<Upload className="h-4 w-4" />
-										Subir resultado
-									</button>
-								</div>
+				{/* Historial de resultados */}
+				<section id="historial-resultados" className="scroll-mt-8">
+					<div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:p-8">
+						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+							<h3 className="font-headline text-xl font-extrabold text-brand-900">
+								Historial de resultados
+							</h3>
+							<div className="flex gap-2">
+								<button
+									type="button"
+									onClick={() => searchInputRef.current?.focus()}
+									className="rounded-lg bg-slate-50 p-2 text-slate-500 transition-colors hover:bg-slate-100"
+									title="Filtrar búsqueda"
+									aria-label="Enfocar búsqueda"
+								>
+									<Search className="h-5 w-5" />
+								</button>
 							</div>
-						))}
+						</div>
+						{isLoadingCitasConResultado ? (
+							<p className="py-10 text-center text-slate-500">Cargando historial…</p>
+						) : historialOrdenado.length === 0 ? (
+							<p className="py-10 text-center text-slate-500">
+								No hay resultados registrados en el historial.
+							</p>
+						) : (
+							<div className="overflow-x-auto">
+								<table className="w-full min-w-[640px] text-left">
+									<thead>
+										<tr className="border-b border-slate-100">
+											<th className="pb-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+												Archivo / estudio
+											</th>
+											<th className="pb-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+												Paciente
+											</th>
+											<th className="pb-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+												Fecha de subida
+											</th>
+											<th className="pb-4 text-center text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+												Estado
+											</th>
+											<th className="pb-4 text-right text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+												Acciones
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-slate-50">
+										{historialOrdenado.map((cita) => {
+											const archivos = parseResultadoArchivo(cita.resultado_archivo);
+											const principal = archivos[0];
+											const etiqueta = principal
+												? fileLabelFromUrl(principal)
+												: cita.resultado_study_uid
+													? "Estudio DICOM"
+													: "—";
+											const esPdf =
+												principal?.toLowerCase().includes(".pdf") ?? false;
+											return (
+												<tr key={cita.id_cita} className="group transition-colors hover:bg-slate-50/80">
+													<td className="py-5">
+														<div className="flex items-center gap-3">
+															<div
+																className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${esPdf ? "bg-red-50" : "bg-sky-50"}`}
+															>
+																{esPdf ? (
+																	<FileText className="h-5 w-5 text-red-400" aria-hidden />
+																) : (
+																	<ImageIcon className="h-5 w-5 text-sky-500" aria-hidden />
+																)}
+															</div>
+															<div className="min-w-0">
+																<p className="truncate text-sm font-bold text-brand-900">{etiqueta}</p>
+																<p className="text-[10px] text-slate-400">
+																	{cita.eco_nombre}
+																	{archivos.length > 1 ? ` · +${archivos.length - 1}` : ""}
+																</p>
+															</div>
+														</div>
+													</td>
+													<td className="py-5">
+														<p className="text-sm font-semibold text-brand-900">
+															{cita.paciente_nombre} {cita.paciente_apellido}
+														</p>
+														<p className="text-[10px] text-slate-400">ID: #{cita.id_cita.slice(0, 8)}</p>
+													</td>
+													<td className="py-5">
+														<p className="text-sm text-slate-700">{formatFecha(cita.fecha_cita)}</p>
+														<p className="text-[10px] text-slate-400">{formatHora(cita.hora_cita)}</p>
+													</td>
+													<td className="py-5">
+														<div className="flex justify-center">
+															<span className="rounded-full bg-[#006965]/10 px-3 py-1 text-[10px] font-bold text-[#006965]">
+																{estadoResultadoBadge(cita.resultado_estado)}
+															</span>
+														</div>
+													</td>
+													<td className="py-5 text-right">
+														<button
+															type="button"
+															onClick={() => openVerResultadosHistorial(cita)}
+															className="inline-flex p-2 text-slate-400 transition-colors hover:text-[#006965]"
+															aria-label="Ver resultados"
+														>
+															<Eye className="h-5 w-5" />
+														</button>
+
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
+							</div>
+						)}
 					</div>
-				)}
+				</section>
 			</div>
 
-			{/* Modal para subir resultado (misma lógica que en Todas las citas: DICOM/ZIP/RAR van a Orthanc en un solo envío) */}
 			{selectedCitaForUpload && (
 				<SubirResultadoModal
 					cita={{
@@ -502,8 +839,26 @@ const ResultadosPage = () => {
 					}}
 					onClose={() => setSelectedCitaForUpload(null)}
 					onUpload={handleSubirResultado}
-					onSuccess={refetch}
+					onSuccess={() => {
+						refetch();
+						void refetchCitasConResultado();
+					}}
 					isUploading={isUploading}
+				/>
+			)}
+
+			{selectedCitaForResultados && (
+				<VerResultadosModal
+					archivos={selectedCitaForResultados.archivos}
+					studyUid={selectedCitaForResultados.studyUid}
+					pacienteNombre={selectedCitaForResultados.pacienteNombre}
+					ecoNombre={selectedCitaForResultados.ecoNombre}
+					idCita={selectedCitaForResultados.idCita}
+					onClose={() => setSelectedCitaForResultados(null)}
+					onArchivoDeleted={async () => {
+						await refetch();
+						await refetchCitasConResultado();
+					}}
 				/>
 			)}
 		</PageShell>

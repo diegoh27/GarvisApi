@@ -16,7 +16,15 @@ import VerPagoModal from "../components/VerPagoModal";
 import SubirResultadoModal from "../../especialista/components/SubirResultadoModal";
 import PosponerCitaModal from "../components/PosponerCitaModal";
 import RechazarPagoModal from "../components/RechazarPagoModal";
-import { FileText, Download, Eye, Check, X, ChevronDown } from "lucide-react";
+import {
+	FileText,
+	Check,
+	X,
+	MoreVertical,
+	Search,
+	ChevronLeft,
+	ChevronRight,
+} from "lucide-react";
 import type { CitaPendientePago } from "../../citas/citasApi";
 
 const formatFecha = (value: string) => formatFechaLocal(value);
@@ -40,6 +48,25 @@ const formatMonto = (monto: number | string | null | undefined) => {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})}`;
+};
+
+const getInitials = (fullName: string) => {
+	const parts = fullName.trim().split(/\s+/).filter(Boolean);
+	if (parts.length === 0) return "?";
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+};
+
+const getAvatarToneClass = (seed: string) => {
+	const tones = [
+		"bg-teal-50 text-teal-700",
+		"bg-zinc-100 text-zinc-600",
+		"bg-orange-50 text-orange-700",
+		"bg-emerald-50 text-emerald-700",
+	];
+	let h = 0;
+	for (let i = 0; i < seed.length; i++) h = (h + seed.charCodeAt(i)) % 997;
+	return tones[h % tones.length];
 };
 
 // Función para parsear el archivo (puede ser string simple o JSON array)
@@ -300,6 +327,95 @@ const TodasLasCitasPage = () => {
 		return filteredCitas.slice(startIndex, startIndex + itemsPerPage);
 	}, [filteredCitas, currentPage, itemsPerPage]);
 
+	const activeFilterChips = useMemo(() => {
+		const chips: { key: string; label: string; onRemove: () => void }[] = [];
+		if (filterPago !== "todas") {
+			const opt = filterOptionsPago.find((o) => o.id === filterPago);
+			chips.push({
+				key: "pago",
+				label: opt?.label ?? filterPago,
+				onRemove: () => setFilterPago("todas"),
+			});
+		}
+		if (filterResultado !== "todas") {
+			const opt = filterOptionsResultado.find((o) => o.id === filterResultado);
+			chips.push({
+				key: "res",
+				label: opt?.label ?? filterResultado,
+				onRemove: () => setFilterResultado("todas"),
+			});
+		}
+		if (filterInforme !== "todas") {
+			const opt = filterOptionsInforme.find((o) => o.id === filterInforme);
+			chips.push({
+				key: "inf",
+				label: opt?.label ?? filterInforme,
+				onRemove: () => setFilterInforme("todas"),
+			});
+		}
+		if (filterAtencion !== "todas") {
+			const opt = filterOptionsAtencion.find((o) => o.id === filterAtencion);
+			chips.push({
+				key: "aten",
+				label: opt?.label ?? filterAtencion,
+				onRemove: () => setFilterAtencion("todas"),
+			});
+		}
+		if (filterOrigen !== "todas") {
+			const opt = filterOptionsOrigen.find((o) => o.id === filterOrigen);
+			chips.push({
+				key: "orig",
+				label: opt?.label ?? filterOrigen,
+				onRemove: () => setFilterOrigen("todas"),
+			});
+		}
+		if (ordenFecha !== "reciente") {
+			chips.push({
+				key: "orden",
+				label: "Orden: más antiguas primero",
+				onRemove: () => setOrdenFecha("reciente"),
+			});
+		}
+		if (query.trim()) {
+			chips.push({
+				key: "q",
+				label: `Búsqueda: ${query.trim()}`,
+				onRemove: () => setQuery(""),
+			});
+		}
+		return chips;
+	}, [
+		filterPago,
+		filterResultado,
+		filterInforme,
+		filterAtencion,
+		filterOrigen,
+		ordenFecha,
+		query,
+	]);
+
+	const visiblePages = useMemo(() => {
+		const total = totalPages;
+		const cur = currentPage;
+		const out: number[] = [];
+		const windowSize = 5;
+		let start = Math.max(1, cur - Math.floor(windowSize / 2));
+		let end = Math.min(total, start + windowSize - 1);
+		start = Math.max(1, end - windowSize + 1);
+		for (let i = start; i <= end; i++) out.push(i);
+		return out;
+	}, [currentPage, totalPages]);
+
+	const clearAllFilters = () => {
+		setFilterPago("todas");
+		setFilterResultado("todas");
+		setFilterInforme("todas");
+		setFilterAtencion("todas");
+		setFilterOrigen("todas");
+		setOrdenFecha("reciente");
+		setQuery("");
+	};
+
 	// Resetear a página 1 cuando cambian los datos, los filtros o la búsqueda
 	useEffect(() => {
 		setCurrentPage(1);
@@ -474,18 +590,6 @@ const TodasLasCitasPage = () => {
 		}
 	};
 
-	const handleViewOrdenMedica = (orden: string | null) => {
-		if (!orden) {
-			Swal.fire({
-				icon: "warning",
-				title: "Sin orden médica",
-				text: "Esta cita no tiene orden médica disponible.",
-			});
-			return;
-		}
-		window.open(orden, "_blank", "noopener,noreferrer");
-	};
-
 	const handleViewInforme = (informePdfUrl: string | null) => {
 		if (!informePdfUrl) {
 			Swal.fire({
@@ -511,191 +615,203 @@ const TodasLasCitasPage = () => {
 		}
 	};
 
-	const getEstadoPagoColor = (estado: number) => {
-		switch (estado) {
-			case 0:
-				return "bg-amber-400 text-brand-900";
-			case 1:
-				return "bg-brand-700 text-paper";
-			case 2:
-				return "bg-red-500 text-paper";
-			default:
-				return "bg-cloud text-brand-800";
-		}
-	};
-
-	const getEstadoCitaLabel = (estado: number) => {
-		switch (estado) {
-			case 0:
-				return "Pendiente";
-			case 1:
-				return "Confirmada";
-			case 2:
-				return "Cancelada";
-			case 3:
-				return "Atendida";
-			default:
-				return "Desconocido";
-		}
-	};
-
-	const getEstadoCitaColor = (estado: number) => {
-		switch (estado) {
-			case 0:
-				return "bg-amber-400 text-brand-900";
-			case 1:
-				return "bg-blue-500 text-paper";
-			case 2:
-				return "bg-red-500 text-paper";
-			case 3:
-				return "bg-green-500 text-paper";
-			default:
-				return "bg-cloud text-brand-800";
-		}
-	};
+	const selectFilterClass =
+		"w-full cursor-pointer rounded-lg border-none bg-white py-2 pl-3 pr-8 text-xs text-brand-900 shadow-sm ring-1 ring-brand-200/50 focus:outline-none focus:ring-2 focus:ring-brand-700/25";
 
 	return (
-		<PageShell
-			title="Todas las citas"
-			description="Vista general de todas las citas. Filtrar por estado de pago, resultados e informes."
-		>
-			<div className="space-y-4">
-				{/* Barra de búsqueda */}
-				<div className="rounded-lg border border-brand-300 bg-paper p-4">
-					<input
-						type="text"
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Buscar por nombre, apellido, cédula, correo, teléfono, especialista o eco..."
-						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
-					/>
+		<PageShell title="Todas las citas" hideHeader>
+			<div className="relative font-[Inter,sans-serif]">
+				<div className="mb-8">
+					<span className="mb-2 block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-800">
+						Administración
+					</span>
+					<h2 className="font-headline text-3xl font-extrabold tracking-tight text-zinc-900">
+						Todas las citas
+					</h2>
+					<p className="mt-1 max-w-2xl text-sm text-zinc-500">
+						Gestione el flujo de pacientes, el estado de los informes médicos y el historial de pagos desde un
+						solo panel curado.
+					</p>
 				</div>
 
-				{/* Filtros en grid para ocupar menos altura */}
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Estado de pago</label>
-						<div className="flex flex-wrap gap-1.5">
-							{filterOptionsPago.map((option) => (
-								<button
-									key={option.id}
-									onClick={() => setFilterPago(option.id)}
-									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterPago === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
-										}`}
-								>
-									{option.label}
-								</button>
-							))}
-						</div>
+				<section className="mb-8 flex flex-col gap-6 rounded-2xl border border-brand-200/40 bg-mist/60 p-6 shadow-sm ring-1 ring-brand-100/50">
+					<div className="relative w-full">
+						<Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+						<input
+							type="text"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Buscar pacientes, expedientes o estudios..."
+							className="h-11 w-full rounded-xl border-none bg-white pl-12 pr-4 text-sm text-brand-900 shadow-sm ring-1 ring-brand-200/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-700/25"
+						/>
 					</div>
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Resultados</label>
-						<div className="flex flex-wrap gap-1.5">
-							{filterOptionsResultado.map((option) => (
-								<button
-									key={option.id}
-									onClick={() => setFilterResultado(option.id)}
-									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterResultado === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
-										}`}
-								>
-									{option.label}
-								</button>
-							))}
-						</div>
-					</div>
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Informe</label>
-						<div className="flex flex-wrap gap-1.5">
-							{filterOptionsInforme.map((option) => (
-								<button
-									key={option.id}
-									onClick={() => setFilterInforme(option.id)}
-									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterInforme === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
-										}`}
-								>
-									{option.label}
-								</button>
-							))}
-						</div>
-					</div>
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Atención</label>
-						<div className="flex flex-wrap gap-1.5">
-							{filterOptionsAtencion.map((option) => (
-								<button
-									key={option.id}
-									onClick={() => setFilterAtencion(option.id)}
-									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterAtencion === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
-										}`}
-								>
-									{option.label}
-								</button>
-							))}
-						</div>
-					</div>
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Origen</label>
-						<div className="flex flex-wrap gap-1.5">
-							{filterOptionsOrigen.map((option) => (
-								<button
-									key={option.id}
-									onClick={() => setFilterOrigen(option.id)}
-									className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filterOrigen === option.id
-										? "bg-brand-700 text-paper"
-										: "bg-cloud text-brand-800 hover:bg-mist"
-										}`}
-								>
-									{option.label}
-								</button>
-							))}
-						</div>
-					</div>
-					<div>
-						<label className="mb-1.5 block text-xs font-medium text-brand-700">Orden fecha</label>
-						<div className="flex flex-wrap gap-1.5">
-							<button
-								onClick={() => setOrdenFecha("reciente")}
-								className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${ordenFecha === "reciente"
-									? "bg-brand-700 text-paper"
-									: "bg-cloud text-brand-800 hover:bg-mist"
-									}`}
+
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-6">
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Estado de pago
+							</label>
+							<select
+								value={filterPago}
+								onChange={(e) => setFilterPago(e.target.value)}
+								className={selectFilterClass}
 							>
-								Reciente
-							</button>
-							<button
-								onClick={() => setOrdenFecha("antigua")}
-								className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${ordenFecha === "antigua"
-									? "bg-brand-700 text-paper"
-									: "bg-cloud text-brand-800 hover:bg-mist"
-									}`}
+								{filterOptionsPago.map((option) => (
+									<option key={option.id} value={option.id}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Resultados
+							</label>
+							<select
+								value={filterResultado}
+								onChange={(e) => setFilterResultado(e.target.value)}
+								className={selectFilterClass}
 							>
-								Antigua
-							</button>
+								{filterOptionsResultado.map((option) => (
+									<option key={option.id} value={option.id}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Informe
+							</label>
+							<select
+								value={filterInforme}
+								onChange={(e) => setFilterInforme(e.target.value)}
+								className={selectFilterClass}
+							>
+								{filterOptionsInforme.map((option) => (
+									<option key={option.id} value={option.id}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Asistencia
+							</label>
+							<select
+								value={filterAtencion}
+								onChange={(e) => setFilterAtencion(e.target.value)}
+								className={selectFilterClass}
+							>
+								{filterOptionsAtencion.map((option) => (
+									<option key={option.id} value={option.id}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Fuente
+							</label>
+							<select
+								value={filterOrigen}
+								onChange={(e) => setFilterOrigen(e.target.value)}
+								className={selectFilterClass}
+							>
+								{filterOptionsOrigen.map((option) => (
+									<option key={option.id} value={option.id}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+								Orden por fecha
+							</label>
+							<select
+								value={ordenFecha}
+								onChange={(e) => setOrdenFecha(e.target.value as "reciente" | "antigua")}
+								className={selectFilterClass}
+							>
+								<option value="reciente">Más recientes primero</option>
+								<option value="antigua">Más antiguas primero</option>
+							</select>
 						</div>
 					</div>
-				</div>
+
+					{activeFilterChips.length > 0 ? (
+						<div className="flex flex-wrap items-center gap-2 border-t border-zinc-200/50 pt-2">
+							<span className="mr-2 text-[11px] font-semibold text-zinc-400">Filtros activos:</span>
+							{activeFilterChips.map((chip) => (
+								<span
+									key={chip.key}
+									className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-100/40 px-3 py-1 text-[11px] font-semibold text-brand-800"
+								>
+									{chip.label}
+									<button
+										type="button"
+										onClick={chip.onRemove}
+										className="inline-flex h-4 w-4 items-center justify-center rounded-full hover:bg-brand-200/60"
+										aria-label={`Quitar filtro ${chip.label}`}
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</span>
+							))}
+							<button
+								type="button"
+								onClick={clearAllFilters}
+								className="ml-auto text-[11px] font-bold text-brand-800 hover:underline"
+							>
+								Limpiar filtros
+							</button>
+						</div>
+					) : null}
+				</section>
 
 				{isLoading ? (
-					<div className="text-center py-8 text-brand-600">
+					<div className="rounded-3xl border border-zinc-100 bg-white py-16 text-center text-zinc-500 shadow-sm">
 						Cargando citas...
 					</div>
 				) : filteredCitas.length === 0 ? (
-					<div className="rounded-lg border border-brand-200 bg-paper p-8 text-center">
-						<p className="text-brand-600">
-							{query.trim() ? "No se encontraron citas con los criterios de búsqueda." : `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" || filterAtencion !== "todas" || filterOrigen !== "todas" ? `con los filtros seleccionados` : ""}.`}
+					<div className="rounded-3xl border border-zinc-100 bg-white p-8 text-center shadow-sm">
+						<p className="text-zinc-600">
+							{query.trim()
+								? "No se encontraron citas con los criterios de búsqueda."
+								: `No hay citas ${filterPago !== "todas" || filterResultado !== "todas" || filterInforme !== "todas" || filterAtencion !== "todas" || filterOrigen !== "todas" ? `con los filtros seleccionados` : ""}.`}
 						</p>
 					</div>
 				) : (
 					<>
-						<div className="space-y-3">
+						<div className="overflow-hidden rounded-3xl bg-white shadow-sm shadow-zinc-200/50">
+							<div className="custom-scrollbar overflow-x-auto">
+								<table className="w-full min-w-[900px] border-collapse text-left">
+									<thead>
+										<tr className="border-b border-zinc-100 bg-zinc-50">
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Paciente
+											</th>
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Estudio / Especialista
+											</th>
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Fecha y Hora
+											</th>
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Importe
+											</th>
+											<th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Estados
+											</th>
+											<th className="px-4 py-3 text-right text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">
+												Acciones
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-zinc-50">
 							{paginatedCitas.map((cita) => {
 								const archivos = parseResultadoArchivo(cita.resultado_archivo);
 								const tieneDicom = !!cita.resultado_study_uid;
@@ -706,95 +822,148 @@ const TodasLasCitasPage = () => {
 								const especialistaFullName = `${cita.especialista_nombre} ${cita.especialista_apellido}`;
 								const estadoPago = toNumber(cita.estado_pago);
 								const estadoCita = toNumber(cita.estado_cita);
+								const pagoBadgeClass =
+									estadoPago === 0
+										? "bg-red-50 text-red-700"
+										: estadoPago === 1
+											? "bg-blue-50 text-blue-700"
+											: "bg-red-100 text-red-800";
+								const citaFlujoBadge =
+									estadoCita === 3
+										? { label: "Atendida", cls: "bg-green-50 text-green-700" }
+										: estadoCita === 2
+											? { label: "Cancelada", cls: "bg-zinc-200 text-zinc-700" }
+											: estadoCita === 1
+												? { label: "En espera", cls: "bg-yellow-50 text-yellow-700" }
+												: { label: "Pendiente", cls: "bg-red-50 text-red-700" };
+								const informeBadge = tieneInforme
+									? { label: "Con informe", cls: "bg-zinc-100 text-zinc-600" }
+									: { label: "Sin informe", cls: "bg-orange-50 text-orange-700" };
+								const rowHighlight =
+									estadoPago === 0 && estadoCita !== 2 && estadoCita !== 3
+										? "border-l-4 border-amber-400"
+										: "";
 
 								return (
-									<div
+									<tr
 										key={cita.id_cita}
-										className="rounded-lg border border-brand-200 bg-paper p-4"
+										className={`group transition-colors hover:bg-mist/50 ${rowHighlight}`}
 									>
-										<div className="space-y-4">
-											<div className="flex items-center justify-between flex-wrap gap-2">
-												<div className="flex items-center gap-2 flex-wrap">
-													<h3 className="font-semibold text-brand-900">{fullName}</h3>
-													<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-paper">
-														{cita.eco_nombre}
-													</span>
+										<td className="px-4 py-4 align-top">
+											<div className="flex items-center gap-3">
+												<div
+													className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${getAvatarToneClass(fullName)}`}
+												>
+													{getInitials(fullName)}
+												</div>
+												<div>
+													<p className="text-sm font-semibold text-zinc-900">{fullName}</p>
+													<p className="text-xs text-zinc-400">ID: {cita.paciente_cedula}</p>
+													<p className="text-xs text-zinc-400">Telf: {cita.paciente_telefono}</p>
+													<p className="font-mono text-[10px] text-zinc-400">
+														Ref. cita: {cita.id_cita.slice(0, 8)}…
+													</p>
+												</div>
+											</div>
+										</td>
+										<td className="px-4 py-4 align-top">
+											<div className="space-y-0.5">
+												<p className="text-sm font-medium text-zinc-700">{cita.eco_nombre}</p>
+												<p className="text-[11px] font-semibold text-brand-800">{especialistaFullName}</p>
+											</div>
+										</td>
+										<td className="px-4 py-4 align-top">
+											<div className="space-y-0.5">
+												<p className="text-sm text-zinc-700">{formatFecha(cita.fecha_cita)}</p>
+												<p className="text-xs text-zinc-400">{formatHora(cita.hora_cita)}</p>
+											</div>
+										</td>
+										<td className="px-4 py-4 align-top">
+											<div className="flex flex-col gap-0.5">
+												{cita.pago_monto_usd && Number(cita.pago_monto_usd) > 0 ? (
+													<>
+														<p className="text-sm font-bold text-zinc-900">
+															${Number(cita.pago_monto_usd).toFixed(2)}
+														</p>
+														{(cita.pago_monto_bs && Number(cita.pago_monto_bs) > 0) || cita.pago_tasa_dia_bcv ? (
+															<p className="text-[10px] text-zinc-500 font-semibold" title={`Tasa BCV: Bs. ${Number(cita.pago_tasa_dia_bcv).toFixed(4)}`}>
+																Bs. {(Number(cita.pago_monto_bs || (Number(cita.pago_monto_usd) * Number(cita.pago_tasa_dia_bcv)))).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+															</p>
+														) : null}
+													</>
+												) : (
+													<p className="text-sm font-bold text-zinc-900">
+														{cita.pago_monto != null && cita.pago_monto !== ""
+															? formatMonto(cita.pago_monto)
+															: "—"}
+													</p>
+												)}
+											</div>
+										</td>
+										<td className="px-4 py-4 align-top">
+											<div className="flex max-w-[280px] flex-wrap gap-2">
+												<span
+													className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${pagoBadgeClass}`}
+												>
+													{getEstadoPagoLabel(estadoPago)}
+												</span>
+												<span
+													className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${citaFlujoBadge.cls}`}
+													title={
+														estadoCita === 3
+															? "La cita ya fue atendida por el especialista"
+															: "Estado de la cita en el flujo de atención"
+													}
+												>
+													{citaFlujoBadge.label}
+												</span>
+												<span
+													className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${informeBadge.cls}`}
+												>
+													{informeBadge.label}
+												</span>
+												{estadoCita !== 3 && estadoCita !== 2 ? (
 													<span
-														className={`rounded-full px-2 py-0.5 text-xs font-medium ${cita.origen_cita === "mostrador"
-																? "bg-violet-100 text-violet-700"
-																: "bg-slate-100 text-slate-700"
-															}`}
+														className="inline-flex items-center gap-0.5 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-violet-700 bg-violet-100"
+														title="La cita aún no ha sido atendida por el especialista"
 													>
-														{cita.origen_cita === "mostrador" ? "Mostrador" : "Web"}
+														<X className="h-3 w-3" /> No atendida
 													</span>
-													<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(estadoPago)}`}>
-														{getEstadoPagoLabel(estadoPago)}
-													</span>
-													{estadoCita === 2 && (
-														<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoCitaColor(estadoCita)}`}>
-															{getEstadoCitaLabel(estadoCita)}
-														</span>
-													)}
-													{estadoCita === 3 ? (
-														<span className="inline-flex items-center gap-0.5 rounded-full bg-green-600 px-2 py-0.5 text-xs font-medium text-paper" title="La cita ya fue atendida por el especialista">
-															<Check className="h-3 w-3" /> Atendida
-														</span>
-													) : (
-														<span className="inline-flex items-center gap-0.5 rounded-full bg-violet-500 px-2 py-0.5 text-xs font-medium text-paper" title="La cita aún no ha sido atendida por el especialista">
-															<X className="h-3 w-3" /> No atendida
-														</span>
-													)}
-												{archivos.length > 0 && (
-													<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
+												) : null}
+												<span
+													className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter ${cita.origen_cita === "mostrador" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-700"}`}
+												>
+													{cita.origen_cita === "mostrador" ? "Mostrador" : "Web"}
+												</span>
+												{archivos.length > 0 ? (
+													<span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-emerald-700">
 														{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
 													</span>
-												)}
-												{tieneDicom && (
-													<span className="rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-paper">
+												) : null}
+												{tieneDicom ? (
+													<span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-purple-800">
 														DICOM
 													</span>
-												)}
-													{tieneInforme && (
-														<span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-paper">
-															Con informe
-														</span>
-													)}
-													{cita.id_representado ? (
-														<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Cita para representado">
-															<Check className="h-3 w-3" /> Representado
-														</span>
-													) : (
-														<span className="inline-flex items-center gap-0.5 rounded-full bg-brand-200 px-2 py-0.5 text-xs font-medium text-brand-600" title="Cita para el paciente">
-															<X className="h-3 w-3" /> No representado
-														</span>
-													)}
-												</div>
-												<div className="text-xs text-brand-500 font-mono">
-													ID: {cita.id_cita.slice(0, 8)}...
-												</div>
-											</div>
-											<div className="grid gap-2 text-sm text-brand-600 sm:grid-cols-2 lg:grid-cols-3">
-												<div>
-													<span className="font-medium">Especialista:</span> {especialistaFullName}
-												</div>
-												<div>
-													<span className="font-medium">Fecha y hora:</span> {formatFecha(cita.fecha_cita)} a las{" "}
-													{formatHora(cita.hora_cita)}
-												</div>
-												<div>
-													<span className="font-medium">Cédula:</span> {cita.paciente_cedula}
-												</div>
-												<div>
-													<span className="font-medium">Teléfono:</span> {cita.paciente_telefono}
-												</div>
-												{cita.pago_monto && (
-													<div>
-														<span className="font-medium">Monto:</span> {formatMonto(cita.pago_monto)}
-													</div>
+												) : null}
+												{tieneResultado ? (
+													<span className="rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-emerald-800">
+														Con resultado
+													</span>
+												) : null}
+												{cita.id_representado ? (
+													<span className="inline-flex items-center gap-0.5 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-emerald-700" title="Cita para representado">
+														<Check className="h-3 w-3" /> Representado
+													</span>
+												) : (
+													<span className="inline-flex items-center gap-0.5 rounded bg-brand-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-tighter text-brand-700" title="Cita para el paciente">
+														<X className="h-3 w-3" /> No representado
+													</span>
 												)}
 											</div>
+										</td>
+										<td className="px-4 py-4 text-right align-top">
 											<div
-												className="relative"
+												className="relative inline-flex"
 												ref={openAccionesCitaId === cita.id_cita ? accionesDropdownRef : undefined}
 											>
 												<button
@@ -802,15 +971,14 @@ const TodasLasCitasPage = () => {
 													onClick={() =>
 														setOpenAccionesCitaId((id) => (id === cita.id_cita ? null : cita.id_cita))
 													}
-													className="inline-flex items-center gap-2 rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+													className="rounded-lg p-2 text-zinc-400 transition-all hover:bg-white hover:text-brand-800"
+													aria-label="Acciones"
+													aria-expanded={openAccionesCitaId === cita.id_cita}
 												>
-													Acciones
-													<ChevronDown
-														className={`h-4 w-4 transition-transform ${openAccionesCitaId === cita.id_cita ? "rotate-180" : ""}`}
-													/>
+													<MoreVertical className="h-5 w-5" />
 												</button>
 												{openAccionesCitaId === cita.id_cita && (
-													<div className="absolute left-0 top-full z-50 mt-1 min-w-[200px] rounded-lg border border-mist bg-paper py-1 shadow-lg">
+													<div className="absolute right-0 top-full z-50 mt-1 flex min-w-[220px] flex-col items-stretch rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
 														<button
 															type="button"
 															onClick={() => {
@@ -915,7 +1083,7 @@ const TodasLasCitasPage = () => {
 																Ver informe
 															</button>
 														) : (
-															<div className="px-4 py-2 text-sm text-brand-500">
+															<div className="w-full px-4 py-2 text-left text-sm text-brand-500">
 																Sin informe
 															</div>
 														)}
@@ -977,43 +1145,60 @@ const TodasLasCitasPage = () => {
 													</div>
 												)}
 											</div>
-										</div>
-									</div>
+										</td>
+									</tr>
 								);
 							})}
-						</div>
-
-						{/* Paginación */}
-						{filteredCitas.length > itemsPerPage && (
-							<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
-								<div className="text-sm text-brand-800">
-									Mostrando {paginatedCitas.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
-									{Math.min(currentPage * itemsPerPage, filteredCitas.length)} de{" "}
-									{filteredCitas.length} citas
-								</div>
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-										disabled={currentPage === 1}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										Anterior
-									</button>
-									<span className="text-xs text-brand-800">
-										Página {currentPage} de {totalPages}
-									</span>
-									<button
-										type="button"
-										onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-										disabled={currentPage >= totalPages}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										Siguiente
-									</button>
-								</div>
+									</tbody>
+								</table>
 							</div>
-						)}
+							<div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-4 py-3">
+								<p className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
+									Mostrando{" "}
+									{filteredCitas.length === 0
+										? 0
+										: (currentPage - 1) * itemsPerPage + 1}{" "}
+									- {Math.min(currentPage * itemsPerPage, filteredCitas.length)} de{" "}
+									{filteredCitas.length} registros
+								</p>
+								{totalPages > 1 ? (
+									<div className="flex items-center gap-1">
+										<button
+											type="button"
+											onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+											disabled={currentPage === 1}
+											className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+											aria-label="Página anterior"
+										>
+											<ChevronLeft className="h-4 w-4" />
+										</button>
+										{visiblePages.map((page) => (
+											<button
+												key={page}
+												type="button"
+												onClick={() => setCurrentPage(page)}
+												className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+													currentPage === page
+														? "bg-brand-800 text-white"
+														: "text-zinc-600 hover:bg-zinc-200"
+												}`}
+											>
+												{page}
+											</button>
+										))}
+										<button
+											type="button"
+											onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+											disabled={currentPage >= totalPages}
+											className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"
+											aria-label="Página siguiente"
+										>
+											<ChevronRight className="h-4 w-4" />
+										</button>
+									</div>
+								) : null}
+							</div>
+						</div>
 					</>
 				)}
 			</div>

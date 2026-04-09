@@ -17,6 +17,11 @@ const MOSTRADOR_CORREO = "mostrador@garbis.local";
 const MOSTRADOR_CEDULA = "MOSTRADOR-SYS";
 const MOSTRADOR_RIF = "J0000000000";
 
+const isCashPaymentMethodCita = (m) => {
+	const x = String(m || "");
+	return x === "EfectivoBs" || x === "EfectivoUSD" || x === "Efectivo";
+};
+
 const ensurePacienteVerificado = async (conn, id_paciente) => {
 	const [rows] = await conn.execute(
 		"SELECT email_verificado FROM paciente WHERE id_paciente = ? LIMIT 1",
@@ -292,6 +297,9 @@ const listCitasCompletasByPacienteController = async (id_paciente) => {
       pag.metodo AS pago_metodo,
       pag.imagen AS pago_imagen,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.referencia AS pago_referencia,
       pag.estado_pago AS pago_estado_pago
     FROM cita c
@@ -352,7 +360,7 @@ const listCitasByEspecialistaController = async (id_especialista) => {
 	return rows;
 };
 
-const cancelCitaController = async ({ id_cita }) => {
+const cancelCitaController = async ({ id_cita, cancelado_por = null }) => {
 	const conn = await pool.getConnection();
 	try {
 		await conn.beginTransaction();
@@ -369,15 +377,18 @@ const cancelCitaController = async ({ id_cita }) => {
 			throw err;
 		}
 
+		const validadorCancel = await resolveExistingUsuarioId(conn, cancelado_por);
+
 		await conn.execute(
 			"UPDATE cita SET estado_cita = 2, estado_pago = 2 WHERE id_cita = ?",
 			[id_cita],
 		);
 
-		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita
-		await conn.execute("UPDATE pagos SET estado_pago = 2 WHERE id_cita = ?", [
-			id_cita,
-		]);
+		// Sincronizar tabla pagos: marcar como rechazado (2) al cancelar la cita; fecha para KPI "gestionados hoy"
+		await conn.execute(
+			`UPDATE pagos SET estado_pago = 2, fecha_validacion = CURRENT_TIMESTAMP, validado_por = COALESCE(?, validado_por) WHERE id_cita = ?`,
+			[validadorCancel, id_cita],
+		);
 		// Eliminar el ingreso en facturación asociado al pago de esta cita
 		await conn.execute(
 			`DELETE f FROM fac_movimiento f
@@ -457,7 +468,7 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 		]);
 
 		const [insumos] = await conn.execute(
-			`SELECT ei.id_producto, ei.cantidad, p.stock_actual, p.consumo_actual, p.contenido
+			`SELECT ei.id_producto, ei.cantidad, p.stock_base_total, p.consumo_actual, p.factor_conversion
 			 FROM inv_eco_insumo ei
 			 INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
 			 WHERE ei.id_eco = ?
@@ -467,41 +478,28 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 
 		for (const ins of insumos) {
 			const cantidadDescontar = Number(ins.cantidad);
-			const stockActual = Number(ins.stock_actual);
+			const stockBase = Number(ins.stock_base_total);
 			const consumoActual = Number(ins.consumo_actual || 0);
-			const contenido = Number(ins.contenido > 0 ? ins.contenido : 1);
+			const factorConversion = Number(ins.factor_conversion > 0 ? ins.factor_conversion : 1);
 
-			// Nueva matemática de consumo:
-			// El producto se suma al "consumo_actual".
-			// Si supera el "contenido", se resta una caja entera del stock_actual y el resto vuelve a consumo.
+			// New logic: directly subtract from stock_base_total
 			let nuevoConsumo = consumoActual + cantidadDescontar;
-			let unidadesEnterasARestar = Math.floor(nuevoConsumo / contenido);
-			let consumoRestante = parseFloat((nuevoConsumo % contenido).toFixed(4));
-			
-			let nuevoStock = stockActual - unidadesEnterasARestar;
+			let nuevoStock = stockBase - cantidadDescontar;
 
-			// 1) Actualizar stock y consumo parcial
+			// 1) Actualizar stock base y consumo
 			await conn.execute(
-				"UPDATE inv_producto SET stock_actual = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-				[nuevoStock, consumoRestante, ins.id_producto]
+				"UPDATE inv_producto SET stock_base_total = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+				[nuevoStock, nuevoConsumo, ins.id_producto]
 			);
 
-			// 2) Registrar consumo global (esta tabla puede guardar ml o mg exactos descontados de la sesión)
+			// 2) Registrar consumo global
 			const id_consumo = crypto.randomUUID();
 			await conn.execute(
 				"INSERT INTO inv_cita_consumo (id_consumo, id_cita, id_producto, cantidad) VALUES (?, ?, ?, ?)",
 				[id_consumo, id_cita, ins.id_producto, cantidadDescontar]
 			);
 
-			// 3) Registrar en Kardex. El Kardex representará la merma de Cajas o Unidad global.
-			// Para no romper la semántica visual, si unidadesEnterasARestar > 0 registramos la salida en Cajas, si no registramos Salida 0 (solo consumo interno).
-			// Pero Kardex guarda cantidad decimal. Podemos mantener "Kardex cantidad = cajas decimales (ej: 0.5 cajas)".
-			// El Kardex antes usó 'cantidadDescontar' directamente en unidades (ej. 100ml). Si cambiamos todo el sistema a Cajas,
-			// Quizás aquí guardamos "cantidad descontar en términos de presentación" (ej: 100/500 = 0.2).
-			// Pero la UX indica que la auditoría es solo el decremento natural de transacciones. 
-			// Como Kardex solo se lee visualmente como "Cantidad Movida", vamos a guardar el descuento natural en fracciones de su envase:
-			const fraccionDescontada = parseFloat((cantidadDescontar / contenido).toFixed(4));
-
+			// 3) Registrar en Kardex
 			const id_kardex = crypto.randomUUID();
 			await conn.execute(
 				`INSERT INTO inv_kardex 
@@ -510,12 +508,12 @@ const markCitaAtendidaController = async ({ id_cita, userId, role }) => {
 				[
 					id_kardex,
 					ins.id_producto,
-					fraccionDescontada,
-					stockActual, // esto es en cajas
-					nuevoStock,  // esto es en cajas
+					cantidadDescontar,
+					stockBase,
+					nuevoStock,
 					id_cita,
 					userId,
-					`Consumo: ${cantidadDescontar} unidades. Barra al ${parseFloat((consumoRestante / contenido) * 100).toFixed(0)}%`
+					`Consumo cita: ${cantidadDescontar} unidades base`
 				]
 			);
 		}
@@ -563,12 +561,18 @@ const listCitasPendientesPagoController = async () => {
       u_paciente.telefono AS paciente_telefono,
       u_especialista.nombre AS especialista_nombre,
       u_especialista.apellido AS especialista_apellido,
-      e.nombre AS eco_nombre
+      e.nombre AS eco_nombre,
+      p.monto AS pago_monto,
+      p.monto_usd AS pago_monto_usd,
+      p.monto_bs AS pago_monto_bs,
+      p.tasa_dia_bcv AS pago_tasa_dia_bcv,
+      p.metodo AS pago_metodo
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
 		LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
     INNER JOIN eco e ON e.id_eco = c.id_eco
+    LEFT JOIN pagos p ON p.id_cita = c.id_cita
     WHERE c.origen_cita = 'web'
       AND c.estado_pago = 0
       AND c.estado_cita IN (0, 1)
@@ -677,12 +681,22 @@ const updateEstadoPagoController = async ({
 				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
 				[estado_pago, aprobadorValido, id_cita],
 			);
+		} else if (estado_pago === 2) {
+			await conn.execute(
+				`UPDATE pagos SET estado_pago = ?, fecha_validacion = CURRENT_TIMESTAMP, validado_por = ? WHERE id_cita = ?`,
+				[estado_pago, aprobadorValido, id_cita],
+			);
+			await conn.execute(
+				`DELETE f FROM fac_movimiento f
+				 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
+				 WHERE p.id_cita = ?`,
+				[id_cita],
+			);
 		} else {
 			await conn.execute("UPDATE pagos SET estado_pago = ? WHERE id_cita = ?", [
 				estado_pago,
 				id_cita,
 			]);
-			// Si el pago se revierte (0) o se rechaza (2), eliminar el ingreso en facturación
 			await conn.execute(
 				`DELETE f FROM fac_movimiento f
 				 INNER JOIN pagos p ON p.id_pago = f.origen_id AND f.origen_modulo = 'CITA_PAGO'
@@ -717,6 +731,33 @@ const updateEstadoPagoController = async ({
 					 WHERE c.id_cita = ?`,
 					[aprobado_por || cita.id_paciente, id_cita],
 				);
+			}
+
+			const [pagoRows] = await conn.execute(
+				`SELECT id_pago, monto, monto_usd, monto_bs, tasa_dia_bcv, referencia, metodo FROM pagos WHERE id_cita = ? LIMIT 1`,
+				[id_cita]
+			);
+			if (pagoRows.length) {
+				const pago = pagoRows[0];
+				const [facRows] = await conn.execute(`SELECT id_movimiento FROM fac_movimiento WHERE origen_id = ? AND origen_modulo = 'CITA_PAGO'`, [pago.id_pago]);
+				if (!facRows.length) {
+					await conn.execute(
+						`INSERT INTO fac_movimiento
+							(id_movimiento, tipo, fecha, monto, monto_usd, monto_bs, tasa_dia_bcv, descripcion, referencia, origen_modulo, origen_id, id_usuario, creado_en)
+						VALUES
+							(UUID(), 'Ingreso', CURRENT_DATE(), ?, ?, ?, ?, ?, ?, 'CITA_PAGO', ?, ?, NOW())`,
+						[
+							pago.monto,
+							pago.monto_usd,
+							pago.monto_bs,
+							pago.tasa_dia_bcv,
+							`Pago de cita web - ${cita.paciente_nombre || ''}`,
+							pago.referencia || pago.id_pago,
+							pago.id_pago,
+							aprobadorValido || cita.id_paciente,
+						]
+					);
+				}
 			}
 
 			if (cita.paciente_correo) {
@@ -881,6 +922,7 @@ const posponerCitaController = async ({
 	hora_cita,
 	id_especialista,
 	id_disponibilidad,
+	gestionado_por = null,
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -1030,6 +1072,12 @@ const posponerCitaController = async ({
 			],
 		);
 
+		const validadorPosponer = await resolveExistingUsuarioId(conn, gestionado_por);
+		await conn.execute(
+			`UPDATE pagos SET fecha_validacion = CURRENT_TIMESTAMP, validado_por = COALESCE(?, validado_por) WHERE id_cita = ?`,
+			[validadorPosponer, id_cita],
+		);
+
 		await conn.commit();
 		return {
 			id_cita,
@@ -1044,6 +1092,20 @@ const posponerCitaController = async ({
 	} finally {
 		conn.release();
 	}
+};
+
+// Conteo de pagos web con marca de gestión el día calendario actual (aprobación, rechazo, cancelación, posponer, etc.)
+const countPagosGestionadosHoyController = async () => {
+	const sql = `
+    SELECT COUNT(*) AS total
+    FROM pagos p
+    INNER JOIN cita c ON c.id_cita = p.id_cita
+    WHERE c.origen_cita = 'web'
+      AND p.fecha_validacion IS NOT NULL
+      AND DATE(p.fecha_validacion) = CURDATE()
+  `;
+	const [rows] = await pool.execute(sql);
+	return Number(rows[0]?.total ?? 0);
 };
 
 // Obtener una cita por ID con todos los datos relacionados
@@ -1099,6 +1161,9 @@ const getCitaByIdController = async (id_cita) => {
       pag.banco_origen AS pago_banco_origen,
       pag.banco_destino AS pago_banco_destino,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.cedula_pagador AS pago_cedula_pagador,
       pag.telefono_pagador AS pago_telefono_pagador,
       pag.referencia AS pago_referencia,
@@ -1184,6 +1249,9 @@ const getAllCitasController = async () => {
       pag.banco_origen AS pago_banco_origen,
       pag.banco_destino AS pago_banco_destino,
       pag.monto AS pago_monto,
+      pag.monto_usd AS pago_monto_usd,
+      pag.monto_bs AS pago_monto_bs,
+      pag.tasa_dia_bcv AS pago_tasa_dia_bcv,
       pag.cedula_pagador AS pago_cedula_pagador,
       pag.telefono_pagador AS pago_telefono_pagador,
       pag.referencia AS pago_referencia,
@@ -1872,6 +1940,12 @@ const asignarCitaCompletaController = async ({
       VALUES
         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
     `;
+		const bancoOrigenVal = String(banco_origen ?? "").trim();
+		const bancoDestinoVal = String(banco_destino ?? "").trim();
+		let referenciaVal = String(referencia ?? "").trim();
+		if (isCashPaymentMethodCita(metodo) && !referenciaVal) {
+			referenciaVal = `WEB-${id_cita}`;
+		}
 		const normalizedPago = normalizeCitaAmounts({
 			montoInput: Number(monto),
 			metodo,
@@ -1883,14 +1957,14 @@ const asignarCitaCompletaController = async ({
 			id_paciente,
 			metodo,
 			imagen || "",
-			banco_origen,
-			banco_destino,
+			bancoOrigenVal,
+			bancoDestinoVal,
 			monto,
 			normalizedPago.monto_usd,
 			normalizedPago.monto_bs,
 			cedula_pagador,
 			telefono_pagador,
-			referencia,
+			referenciaVal,
 			normalizedPago.tasa_dia_bcv,
 		]);
 
@@ -1944,6 +2018,7 @@ module.exports = {
 	markCitaAtendidaController,
 	listCitasPendientesPagoController,
 	listCitasConPagosController,
+	countPagosGestionadosHoyController,
 	updateEstadoPagoController,
 	listCitasByFechaController,
 	getCitaByIdController,

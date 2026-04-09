@@ -8,7 +8,10 @@ const listEcosController = async () => {
       nombre,
       precio,
       duracion_min,
-      activo
+      activo,
+      descripcion,
+      etiqueta,
+      icono
     FROM eco
     WHERE activo = 1
     ORDER BY nombre ASC
@@ -17,7 +20,7 @@ const listEcosController = async () => {
 	return rows;
 };
 
-const createEcoController = async ({ nombre, precio, duracion_min }) => {
+const createEcoController = async ({ nombre, precio, duracion_min, descripcion, etiqueta, icono }) => {
 	// Validar que no exista un eco con el mismo nombre (case-insensitive)
 	const [existingRows] = await pool.execute(
 		"SELECT id_eco FROM eco WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) LIMIT 1",
@@ -31,14 +34,14 @@ const createEcoController = async ({ nombre, precio, duracion_min }) => {
 
 	const id_eco = crypto.randomUUID();
 	const sql = `
-    INSERT INTO eco (id_eco, nombre, precio, duracion_min, activo)
-    VALUES (?, ?, ?, ?, 1)
+    INSERT INTO eco (id_eco, nombre, precio, duracion_min, activo, descripcion, etiqueta, icono)
+    VALUES (?, ?, ?, ?, 1, ?, ?, ?)
   `;
-	await pool.execute(sql, [id_eco, nombre, precio, duracion_min || 0]);
-	return { id_eco, nombre, precio, duracion_min: duracion_min || 0 };
+	await pool.execute(sql, [id_eco, nombre, precio, duracion_min || 0, descripcion || null, etiqueta || null, icono || null]);
+	return { id_eco, nombre, precio, duracion_min: duracion_min || 0, descripcion, etiqueta, icono };
 };
 
-const updateEcoController = async ({ id_eco, nombre, precio, duracion_min, activo }) => {
+const updateEcoController = async ({ id_eco, nombre, precio, duracion_min, activo, descripcion, etiqueta, icono }) => {
 	// Si se está actualizando el nombre, validar que no exista otro eco con el mismo nombre
 	if (nombre !== undefined) {
 		const [existingRows] = await pool.execute(
@@ -70,6 +73,18 @@ const updateEcoController = async ({ id_eco, nombre, precio, duracion_min, activ
 	if (activo !== undefined) {
 		updates.push("activo = ?");
 		params.push(activo);
+	}
+	if (descripcion !== undefined) {
+		updates.push("descripcion = ?");
+		params.push(descripcion);
+	}
+	if (etiqueta !== undefined) {
+		updates.push("etiqueta = ?");
+		params.push(etiqueta);
+	}
+	if (icono !== undefined) {
+		updates.push("icono = ?");
+		params.push(icono);
 	}
 
 	if (!updates.length) {

@@ -1,30 +1,47 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth, formatFechaLocal } from "../../../shared";
 import {
 	type FilterOption,
 	type Disponibilidad,
+	type DisponibilidadSegmentContext,
 	type TimeOption,
-	CalendarHeader,
-	CalendarLegend,
 	CalendarGrid,
+	DayCalendarGrid,
+	DisponibilidadBloqueModal,
 	DisponibilidadForm,
 	BloquesList,
+	MonthCalendar,
 } from "../../calendario";
+import type { SlotPreview } from "../../calendario/utils/slotUtils";
+import { generateSlots, generateSlotsRange } from "../../calendario/utils/slotUtils";
+import { mergeDisponibilidadEstado } from "../../calendario/utils/disponibilidadEstado";
 import {
+	bloquesDisponibilidadEnSegmento,
+	normalizeHoraDb,
+} from "../../calendario/utils/segmentBloquesUtils";
+import {
+	especialistaApi,
 	useCancelarDisponibilidadMutation,
+	useCancelarDisponibilidadMiLoteMutation,
 	useCrearDisponibilidadMutation,
-	useCrearDisponibilidadBatchMutation,
 	useGetMisBloquesQuery,
 	useGetMisCitasQuery,
 	useMarcarAtendidaMutation,
 } from "../especialistaApi";
-import type { BloqueBatch } from "../especialistaApi";
+import type { DisponibilidadSolicitudMacro } from "../../disponibilidad/disponibilidadApi";
+import {
+	useCancelarSolicitudMacroMutation,
+	useCrearSolicitudMacroMutation,
+	useGetMisSolicitudesQuery,
+} from "../../disponibilidad/disponibilidadApi";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 
 const estadoLabel: Record<number, string> = {
-	0: "Propuesta",
+	0: "En espera de aprobación",
 	1: "Aprobada",
 	2: "Rechazada",
 	3: "Cancelada",
@@ -60,12 +77,13 @@ const getDateKey = (value: string | Date) => {
 	return value.includes("T") ? value.split("T")[0] : value;
 };
 
-const formatShortDay = (date: Date) => {
+const formatShortDayUpper = (date: Date) => {
 	const weekday = date
 		.toLocaleDateString("es-VE", { weekday: "short" })
-		.replace(".", "");
-	const capitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
-	return `${capitalized} ${date.getDate()}`;
+		.replace(".", "")
+		.toUpperCase();
+	const short = weekday.length > 3 ? weekday.slice(0, 3) : weekday;
+	return `${short} ${date.getDate()}`;
 };
 
 const startOfWeek = (base: Date) => {
@@ -89,13 +107,92 @@ const formatHora = (value: string) => {
 	return `${hour12}:${minuteStr} ${period}`;
 };
 
+function normalizeHoraSolicitud(h: string): string {
+	if (!h) return "00:00:00";
+	const t = h.trim();
+	if (t.length >= 8) return t.slice(0, 8);
+	const [hh, mm = "0"] = t.split(":");
+	return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00`;
+}
+
+/** La tabla `disponibilidad` aún no tiene filas hasta que el moderador aprueba; esto alimenta el calendario. */
+function expandPendienteMacroToBloques(s: DisponibilidadSolicitudMacro): Disponibilidad[] {
+	if (Number(s.estado) !== 0) return [];
+	const fd = getDateKey(s.fecha_desde as string | Date);
+	const fh = getDateKey(s.fecha_hasta as string | Date);
+	if (!fd || !fh) return [];
+	const hi = normalizeHoraSolicitud(s.hora_inicio);
+	const hf = normalizeHoraSolicitud(s.hora_fin);
+	const slots = generateSlotsRange(fd, fh, hi, hf);
+	const eco = (s.eco_nombre ?? "").trim() || "Varios ecos";
+	const sid = String(s.id_solicitud ?? "").trim();
+	if (!sid) return [];
+	return slots.map((slot) => {
+		const hourKey =
+			slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+		const horaFinSlot =
+			slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin;
+		return {
+			id_disponibilidad: `solicitud-${sid}`,
+			fecha: slot.fecha,
+			hora_inicio: hourKey,
+			hora_fin: horaFinSlot,
+			estado: 0,
+			eco_nombre: eco,
+		};
+	});
+}
+
+function parseIdEcosFromSolicitud(s: DisponibilidadSolicitudMacro): string[] {
+	if (s.id_ecos_json != null && s.id_ecos_json !== "") {
+		try {
+			const raw = s.id_ecos_json;
+			const parsed =
+				typeof raw === "string"
+					? JSON.parse(raw)
+					: Array.isArray(raw)
+						? raw
+						: [];
+			return Array.isArray(parsed) ? parsed.filter(Boolean).map(String) : [];
+		} catch {
+			return [];
+		}
+	}
+	if (s.id_eco) return [String(s.id_eco).trim()];
+	return [];
+}
+
+function messageFromApiError(err: unknown, fallback: string): string {
+	if (
+		err &&
+		typeof err === "object" &&
+		"data" in err &&
+		err.data &&
+		typeof err.data === "object" &&
+		"message" in err.data &&
+		typeof (err.data as { message?: string }).message === "string"
+	) {
+		return (err.data as { message: string }).message;
+	}
+	if (err instanceof Error) return err.message;
+	return fallback;
+}
+
 const CalendarioPage = () => {
+	const dispatch = useDispatch();
 	const { user, token } = useAuth();
 	const [fecha, setFecha] = useState("");
 	const [horaInicio, setHoraInicio] = useState("");
 	const [idEcos, setIdEcos] = useState<string[]>([]);
 	const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
-	const [busyCell] = useState<string | null>(null);
+	const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
+	const [monthCursor, setMonthCursor] = useState(() => {
+		const d = new Date();
+		return new Date(d.getFullYear(), d.getMonth(), 1);
+	});
+	/** Día mostrado en vista "Día" (por defecto hoy al cambiar de vista). */
+	const [dayCursor, setDayCursor] = useState(() => new Date());
+	const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [submitStatus, setSubmitStatus] = useState<"idle" | "loading" | "done">(
 		"idle",
@@ -103,7 +200,20 @@ const CalendarioPage = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [filter, setFilter] = useState("todas");
 	const [page, setPage] = useState(1);
-	const [selectedCells, setSelectedCells] = useState<string[]>([]);
+
+	const [fechaDesde, setFechaDesde] = useState("");
+	const [fechaHasta, setFechaHasta] = useState("");
+	const [horaInicioRango, setHoraInicioRango] = useState("");
+	const [horaFinRango, setHoraFinRango] = useState("");
+
+	const [citaPopover, setCitaPopover] = useState<{
+		bloque: Disponibilidad;
+		x: number;
+		y: number;
+	} | null>(null);
+	const [disponibilidadModal, setDisponibilidadModal] =
+		useState<DisponibilidadSegmentContext | null>(null);
+	const [modalDispLoading, setModalDispLoading] = useState(false);
 
 	const isEspecialista = user?.rol === "especialista";
 	const minFecha = useMemo(() => getLocalDateKey(new Date()), []);
@@ -113,35 +223,92 @@ const CalendarioPage = () => {
 		data: bloques = [],
 		isFetching: loadingBloques,
 		error: bloquesError,
-	} = useGetMisBloquesQuery(undefined, { skip: !shouldFetch });
+		refetch: refetchBloques,
+	} = useGetMisBloquesQuery(undefined, {
+		skip: !shouldFetch,
+		refetchOnFocus: true,
+		refetchOnReconnect: true,
+	});
+	const { data: solicitudesMacroPendientes = [] } = useGetMisSolicitudesQuery(
+		{ estado: 0 },
+		{
+			skip: !shouldFetch,
+			refetchOnFocus: true,
+			refetchOnReconnect: true,
+		},
+	);
 	const { data: citas = [], error: citasError } = useGetMisCitasQuery(undefined, {
 		skip: !shouldFetch,
+		refetchOnFocus: true,
+		refetchOnReconnect: true,
 	});
 	const [crearDisponibilidad] = useCrearDisponibilidadMutation();
-	const [crearDisponibilidadBatch] = useCrearDisponibilidadBatchMutation();
+	const [crearSolicitudMacro] = useCrearSolicitudMacroMutation();
+	const [cancelarSolicitudMacro] = useCancelarSolicitudMacroMutation();
+	const [cancelarDisponibilidadMiLote] = useCancelarDisponibilidadMiLoteMutation();
 	const [cancelarDisponibilidad] = useCancelarDisponibilidadMutation();
 	const [marcarAtendida] = useMarcarAtendidaMutation();
 	const { data: ecos = [] } = useGetEcosQuery();
 
-	const timeOptions = useMemo<TimeOption[]>(
-		() => {
-			const options: TimeOption[] = [];
-			// Desde 06:00 hasta 19:40 en intervalos de 20 minutos
-			for (let hour = 6; hour < 20; hour += 1) {
-				for (let minute = 0; minute < 60; minute += 20) {
-					const value = `${String(hour).padStart(2, "0")}:${String(
-						minute,
-					).padStart(2, "0")}:00`;
-					options.push({
-						value,
-						label: buildTimeLabel(hour, minute),
-					});
-				}
+	const previewEcoLabel = useMemo(() => {
+		if (idEcos.length === 0) return "Vista previa";
+		if (idEcos.length === 1) {
+			const n = ecos.find((e) => e.id_eco === idEcos[0])?.nombre;
+			return n ? `Vista previa · ${n}` : "Vista previa";
+		}
+		return `Vista previa · ${idEcos.length} ecos`;
+	}, [idEcos, ecos]);
+
+	const rangeDays = useMemo(() => {
+		if (!fechaDesde || !fechaHasta) return 0;
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return 0;
+		const diffMs = endDate.getTime() - startDate.getTime();
+		return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+	}, [fechaDesde, fechaHasta]);
+
+	const rangeError = useMemo(() => {
+		if (!fechaDesde || !fechaHasta) return null;
+		const startDate = new Date(`${fechaDesde}T00:00:00`);
+		const endDate = new Date(`${fechaHasta}T00:00:00`);
+		if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+			return "Fecha inválida";
+		}
+		if (endDate < startDate) return "La fecha hasta debe ser mayor o igual a la fecha desde";
+		if (rangeDays > 31) return "El rango máximo permitido es de 31 días";
+		return null;
+	}, [fechaDesde, fechaHasta, rangeDays]);
+
+	const previewSlots = useMemo((): SlotPreview[] => {
+		if (!fechaDesde || !fechaHasta || !horaInicioRango || !horaFinRango) return [];
+		if (rangeError) return [];
+		return generateSlotsRange(fechaDesde, fechaHasta, horaInicioRango, horaFinRango);
+	}, [fechaDesde, fechaHasta, horaInicioRango, horaFinRango, rangeError]);
+
+	const highlightSlotKeys = useMemo(() => {
+		const set = new Set<string>();
+		for (const slot of previewSlots) {
+			const hourKey =
+				slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+			set.add(`${slot.fecha}|${hourKey}`);
+		}
+		return set;
+	}, [previewSlots]);
+
+	const timeOptions = useMemo<TimeOption[]>(() => {
+		const options: TimeOption[] = [];
+		for (let hour = 6; hour < 20; hour += 1) {
+			for (let minute = 0; minute < 60; minute += 20) {
+				const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+				options.push({
+					value,
+					label: buildTimeLabel(hour, minute),
+				});
 			}
-			return options;
-		},
-		[],
-	);
+		}
+		return options;
+	}, []);
 
 	const showConflict = async (message: string) => {
 		await Swal.fire({
@@ -161,10 +328,7 @@ const CalendarioPage = () => {
 		const totalMinutes = h * 60 + m + 20;
 		const endHour = Math.floor(totalMinutes / 60);
 		const endMinute = totalMinutes % 60;
-		return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(
-			2,
-			"0",
-		)}:00`;
+		return `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}:00`;
 	};
 
 	const submitDisponibilidad = async (payload: {
@@ -209,11 +373,7 @@ const CalendarioPage = () => {
 
 		if (exitosos.length > 0) {
 			setSubmitStatus("done");
-			setSelectedCells([]);
-
-			const ecosSeleccionados = ecos.filter((eco) =>
-				exitosos.includes(eco.id_eco),
-			);
+			const ecosSeleccionados = ecos.filter((eco) => exitosos.includes(eco.id_eco));
 			const nombresEcos = ecosSeleccionados.map((eco) => eco.nombre);
 			const ecosTexto =
 				nombresEcos.length === 1
@@ -223,9 +383,7 @@ const CalendarioPage = () => {
 			await Swal.fire({
 				icon: "success",
 				title: "Disponibilidad agregada",
-				text: `La disponibilidad para el ${formatFecha(
-					payload.fecha,
-				)} a las ${formatHora(payload.hora_inicio)} ${ecosTexto} ha sido agregada exitosamente.`,
+				text: `La disponibilidad para el ${formatFecha(payload.fecha)} a las ${formatHora(payload.hora_inicio)} ${ecosTexto} ha sido agregada exitosamente.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
@@ -233,14 +391,13 @@ const CalendarioPage = () => {
 		}
 
 		if (lastError) {
-			const err: any = lastError;
+			const err: unknown = lastError;
 			const apiMessage =
-				err?.data?.message ||
-				err?.error ||
+				(err as { data?: { message?: string } })?.data?.message ||
 				(err as Error).message ||
 				"No se pudo enviar una o más disponibilidades";
 
-			if (err?.status === 409) {
+			if ((err as { status?: number }).status === 409) {
 				const conflictMessage =
 					apiMessage ||
 					"Ya solicitaste este eco en ese horario, o ya hay una cita en ese horario.";
@@ -254,45 +411,52 @@ const CalendarioPage = () => {
 		setSubmitStatus("idle");
 	};
 
-	const handleSubmitBatch = async (bloques: BloqueBatch[]) => {
-		if (!bloques.length) {
-			setError("Selecciona al menos un bloque en la vista previa");
-			return;
-		}
+	const clearRango = useCallback(() => {
+		setFechaDesde("");
+		setFechaHasta("");
+		setHoraInicioRango("");
+		setHoraFinRango("");
+	}, []);
+
+	const handleSubmitMacro = async (payload: {
+		fecha_desde: string;
+		fecha_hasta: string;
+		hora_inicio: string;
+		hora_fin: string;
+		id_ecos: string[];
+	}) => {
 		setError(null);
 		setSubmitStatus("loading");
 		try {
-			const result = await crearDisponibilidadBatch({ bloques }).unwrap();
-			const creados = result?.creados ?? 0;
-			const fechasEnviadas = Array.from(
-				new Set(bloques.map((bloque) => bloque.fecha)),
-			).sort();
-			const fechasTexto = fechasEnviadas.length
-				? `Se enviaron solicitudes en los dias: ${fechasEnviadas
-					.map((fechaItem) => formatFecha(fechaItem))
-					.join(", ")}.`
-				: "Se enviaron las solicitudes.";
+			await crearSolicitudMacro({
+				fecha_desde: payload.fecha_desde,
+				fecha_hasta: payload.fecha_hasta,
+				hora_inicio: payload.hora_inicio,
+				hora_fin: payload.hora_fin,
+				id_ecos: payload.id_ecos,
+			}).unwrap();
 			setSubmitStatus("done");
-			setSelectedCells([]);
 			setFecha("");
 			setHoraInicio("");
 			setIdEcos([]);
+			clearRango();
 			await Swal.fire({
 				icon: "success",
-				title: "Disponibilidad agregada",
-				text: fechasTexto,
+				title: "Solicitud enviada",
+				text: `Se registró la jornada del ${formatFecha(payload.fecha_desde)} al ${formatFecha(payload.fecha_hasta)}. Pendiente de aprobación del moderador.`,
 				timer: 3000,
 				showConfirmButton: false,
 				confirmButtonColor: "#1C837F",
 			});
+			setSubmitStatus("idle");
 		} catch (err: unknown) {
 			const e = err as { data?: { message?: string }; status?: number };
 			setSubmitStatus("idle");
 			setError(
 				e?.data?.message ||
-				(e?.status === 409
-					? "Algunos horarios se solapan con bloques o citas existentes."
-					: "No se pudieron crear los bloques.")
+					(e?.status === 409
+						? "Ya existe una solicitud pendiente que se solapa con este rango y equipo."
+						: "No se pudo registrar la solicitud."),
 			);
 			throw err;
 		}
@@ -305,64 +469,6 @@ const CalendarioPage = () => {
 			return;
 		}
 		setError(null);
-
-		if (selectedCells.length > 0) {
-			setSubmitStatus("loading");
-			let creados = 0;
-			let lastError: unknown = null;
-			for (const cellKey of selectedCells) {
-				const [dateKey, hourValue] = cellKey.split("|");
-				if (!dateKey || !hourValue) continue;
-				const hora_fin = computeHoraFin(hourValue);
-				if (!hora_fin) continue;
-				for (const id_eco of idEcos) {
-					try {
-						await crearDisponibilidad({
-							fecha: dateKey,
-							hora_inicio: hourValue,
-							hora_fin,
-							id_eco,
-						}).unwrap();
-						creados += 1;
-					} catch (err) {
-						lastError = err;
-					}
-				}
-			}
-			setSubmitStatus("done");
-			setSelectedCells([]);
-			setIdEcos([]);
-			if (creados > 0) {
-				await Swal.fire({
-					icon: "success",
-					title: "Disponibilidad agregada",
-					text: `Se agregaron ${creados} bloque${creados !== 1 ? "s" : ""} exitosamente.`,
-					timer: 3000,
-					showConfirmButton: false,
-					confirmButtonColor: "#1C837F",
-				});
-			}
-			if (lastError) {
-				const err: any = lastError;
-				const apiMessage =
-					err?.data?.message ||
-					err?.error ||
-					(err as Error).message ||
-					"No se pudo enviar una o más disponibilidades";
-				if (err?.status === 409) {
-					const conflictMessage =
-						apiMessage ||
-						"Ya solicitaste este eco en uno o mas horarios, o ya hay citas en esos horarios.";
-					setError(conflictMessage);
-					await showConflict(conflictMessage);
-				} else {
-					setError(apiMessage);
-				}
-			}
-			setSubmitStatus("idle");
-			return;
-		}
-
 		await submitDisponibilidad({
 			fecha,
 			hora_inicio: horaInicio,
@@ -373,82 +479,136 @@ const CalendarioPage = () => {
 		setIdEcos([]);
 	};
 
+	const onRangeSelectFromGrid = useCallback(
+		(payload: {
+			fechaDesde: string;
+			fechaHasta: string;
+			horaInicio: string;
+			horaFin: string;
+		}) => {
+			setFechaDesde(payload.fechaDesde);
+			setFechaHasta(payload.fechaHasta);
+			setHoraInicioRango(payload.horaInicio);
+			setHoraFinRango(payload.horaFin);
+		},
+		[],
+	);
+
 	const days = useMemo(() => {
+		if (calendarView === "day") {
+			const d = new Date(dayCursor);
+			return [new Date(d.getFullYear(), d.getMonth(), d.getDate())];
+		}
 		return Array.from({ length: 7 }, (_, idx) => {
 			const date = new Date(weekStart);
 			date.setDate(date.getDate() + idx);
 			return date;
 		});
-	}, [weekStart]);
+	}, [calendarView, dayCursor, weekStart]);
 
 	const dayKeys = useMemo(() => days.map(getLocalDateKey), [days]);
 
-	const dayLabels = useMemo(
-		() => days.map((day) => formatShortDay(day)),
-		[days],
-	);
+	const dayLabels = useMemo(() => days.map((day) => formatShortDayUpper(day)), [days]);
 
-	const weekRangeLabel = useMemo(() => {
+	const headerCalendarTitle = useMemo(() => {
+		if (calendarView === "month") {
+			const raw = monthCursor.toLocaleDateString("es-VE", {
+				month: "long",
+				year: "numeric",
+			});
+			return raw.charAt(0).toUpperCase() + raw.slice(1);
+		}
+		if (calendarView === "day") {
+			const d = days[0];
+			if (!d) return "";
+			const raw = d.toLocaleDateString("es-VE", {
+				weekday: "long",
+				day: "2-digit",
+				month: "long",
+				year: "numeric",
+			});
+			return raw.charAt(0).toUpperCase() + raw.slice(1);
+		}
 		const start = days[0];
 		const end = days[6];
 		if (!start || !end) return "";
 		const startLabel = start.toLocaleDateString("es-VE", {
 			day: "2-digit",
-			month: "short",
+			month: "long",
 		});
 		const endLabel = end.toLocaleDateString("es-VE", {
 			day: "2-digit",
-			month: "short",
+			month: "long",
+			year: "numeric",
 		});
-		return `${startLabel} - ${endLabel}`;
-	}, [days]);
+		return `${startLabel} — ${endLabel}`;
+	}, [calendarView, monthCursor, days]);
+
+	const bloquesDesdeSolicitudesPendientes = useMemo(
+		() => solicitudesMacroPendientes.flatMap((s) => expandPendienteMacroToBloques(s)),
+		[solicitudesMacroPendientes],
+	);
 
 	const bloquesMap = useMemo(() => {
 		const map = new Map<string, Disponibilidad>();
 		const counts = new Map<string, number>();
 
-		// Mapear bloques de disponibilidad (propuestas / aprobadas)
-		bloques.forEach((bloque) => {
+		const bloquesFuente = [...bloques, ...bloquesDesdeSolicitudesPendientes];
+		bloquesFuente.forEach((bloque) => {
 			const dateKey = getDateKey(bloque.fecha);
-			const hourKey =
-				bloque.hora_inicio.length === 5
-					? `${bloque.hora_inicio}:00`
-					: bloque.hora_inicio;
-			const cellKey = `${dateKey}|${hourKey}`;
+			const hi =
+				bloque.hora_inicio.length === 5 ? `${bloque.hora_inicio}:00` : bloque.hora_inicio;
+			const hf = bloque.hora_fin.length === 5 ? `${bloque.hora_fin}:00` : bloque.hora_fin;
+			const slotList = generateSlots(dateKey, hi, hf);
 
-			// Convertir al tipo Disponibilidad del calendario (fecha debe ser string)
-			const disponibilidad: Disponibilidad = {
+			const base: Disponibilidad = {
 				...bloque,
+				id_disponibilidad: String(bloque.id_disponibilidad ?? "").trim(),
 				fecha:
 					typeof bloque.fecha === "string"
 						? bloque.fecha
 						: bloque.fecha.toISOString().split("T")[0],
 			};
 
-			const existing = map.get(cellKey);
-			if (!existing) {
-				map.set(cellKey, disponibilidad);
-				counts.set(cellKey, 1);
-			} else {
-				const newCount = (counts.get(cellKey) || 1) + 1;
-				counts.set(cellKey, newCount);
+			for (const slot of slotList) {
+				const hourKey =
+					slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+				const cellKeyStr = `${dateKey}|${hourKey}`;
+				const disponibilidad: Disponibilidad = {
+					...base,
+					hora_inicio: hourKey,
+					hora_fin:
+						slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin,
+				};
 
-				// Si hay más de un eco para este horario, mostrar un label genérico
-				map.set(cellKey, {
-					...existing,
-					eco_nombre: newCount > 1 ? "Varios ecos" : existing.eco_nombre,
-				});
+				const existing = map.get(cellKeyStr);
+				if (!existing) {
+					map.set(cellKeyStr, disponibilidad);
+					counts.set(cellKeyStr, 1);
+				} else {
+					const newCount = (counts.get(cellKeyStr) || 1) + 1;
+					counts.set(cellKeyStr, newCount);
+					/** Rechazada y pendiente deben seguir visibles si comparten celda con otro eco. */
+					const mergedEstado = mergeDisponibilidadEstado(
+						existing.estado,
+						disponibilidad.estado,
+					);
+					map.set(cellKeyStr, {
+						...existing,
+						estado: mergedEstado,
+						eco_nombre: newCount > 1 ? "Varios ecos" : existing.eco_nombre,
+					});
+				}
 			}
 		});
 
-		// Mapear citas (tienen prioridad visual sobre bloques de disponibilidad)
 		citas.forEach((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
 				cita.hora_cita.length === 5 ? `${cita.hora_cita}:00` : cita.hora_cita;
-			const cellKey = `${dateKey}|${hourKey}`;
+			const cellKeyStr = `${dateKey}|${hourKey}`;
 			const horaFin = computeHoraFin(hourKey);
-			map.set(cellKey, {
+			map.set(cellKeyStr, {
 				id_disponibilidad: `cita-${cita.id_cita}`,
 				fecha: dateKey,
 				hora_inicio: hourKey,
@@ -456,105 +616,365 @@ const CalendarioPage = () => {
 				estado: 4,
 				estado_pago: Number(cita.estado_pago),
 				estado_cita: Number(cita.estado_cita),
+				eco_nombre: cita.eco_nombre,
+				paciente_nombre: cita.paciente_nombre,
+				paciente_apellido: cita.paciente_apellido,
 			});
 		});
 
-		return map;
-	}, [bloques, citas]);
-
-	const handleCellClick = async (dateKey: string, hourValue: string) => {
-		if (!isEspecialista) return;
-		const cellKey = `${dateKey}|${hourValue}`;
-		const bloque = bloquesMap.get(cellKey);
-		if (bloque) {
-			const isCita = bloque.id_disponibilidad.startsWith("cita-");
-			if (bloque.estado === 4 && isCita) {
-				if (bloque.estado_pago !== 1) {
-					await Swal.fire({
-						title: "Pago pendiente",
-						text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
-						icon: "info",
-						confirmButtonText: "Entendido",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				if (bloque.estado_cita === 3) {
-					await Swal.fire({
-						title: "Cita ya atendida",
-						icon: "info",
-						confirmButtonText: "Listo",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				const today = new Date().toISOString().slice(0, 10);
-				if (dateKey > today) {
-					await Swal.fire({
-						title: "Aún no puedes marcar esta cita",
-						text: "Solo puedes marcar como atendida cuando llegue el día.",
-						icon: "info",
-						confirmButtonText: "Entendido",
-						confirmButtonColor: "#1C837F",
-					});
-					return;
-				}
-				const confirmResult = await Swal.fire({
-					title: "¿Marcar cita como atendida?",
-					text: "Esta acción confirma que el paciente fue atendido.",
-					icon: "question",
-					showCancelButton: true,
-					confirmButtonText: "Sí, atender",
-					cancelButtonText: "No",
-					confirmButtonColor: "#1C837F",
-					cancelButtonColor: "#9FD8E1",
-				});
-				if (!confirmResult.isConfirmed) return;
-				try {
-					const citaId = bloque.id_disponibilidad.replace("cita-", "");
-					await marcarAtendida(citaId).unwrap();
-				} catch (err) {
-					setError((err as Error).message ?? "No se pudo marcar como atendida");
-				}
-				return;
-			}
-			if (bloque.estado === 4 || bloque.estado === 2 || bloque.estado === 3) return;
-			const confirmResult = await Swal.fire({
-				title: "¿Cancelar disponibilidad?",
-				text: "Este bloque pasará a estado cancelado.",
-				icon: "warning",
-				showCancelButton: true,
-				confirmButtonText: "Sí, cancelar",
-				cancelButtonText: "No",
-				footer:
-					"<span style=\"font-size:12px;color:#3f5b5a;\">Si deseas volver a solicitar la fecha, puedes hacerlo desde el select.</span>",
-				confirmButtonColor: "#1C837F",
-				cancelButtonColor: "#9FD8E1",
+		for (const slot of previewSlots) {
+			if (!dayKeys.includes(slot.fecha)) continue;
+			const hourKey =
+				slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+			const cellKeyStr = `${slot.fecha}|${hourKey}`;
+			if (map.has(cellKeyStr)) continue;
+			const horaFinSlot =
+				slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin;
+			map.set(cellKeyStr, {
+				id_disponibilidad: `preview-${cellKeyStr}`,
+				fecha: slot.fecha,
+				hora_inicio: hourKey,
+				hora_fin: horaFinSlot,
+				estado: -2,
+				eco_nombre: previewEcoLabel,
 			});
-			if (!confirmResult.isConfirmed) {
-				return;
-			}
-			setCancelingId(bloque.id_disponibilidad);
-			try {
-				await cancelarDisponibilidad(bloque.id_disponibilidad).unwrap();
-			} catch (err) {
-				setError((err as Error).message ?? "No se pudo cancelar el bloque");
-			} finally {
-				setCancelingId(null);
-			}
+		}
+
+		return map;
+	}, [bloques, bloquesDesdeSolicitudesPendientes, citas, previewSlots, dayKeys, previewEcoLabel]);
+
+	const handleCitaPopoverOpen = useCallback(
+		(bloque: Disponibilidad, anchor: { x: number; y: number }) => {
+			setCitaPopover({ bloque, x: anchor.x, y: anchor.y });
+		},
+		[],
+	);
+
+	const closeCitaPopover = useCallback(() => setCitaPopover(null), []);
+
+	useEffect(() => {
+		if (!citaPopover) return;
+		const close = () => setCitaPopover(null);
+		const id = window.setTimeout(() => {
+			document.addEventListener("click", close);
+		}, 0);
+		return () => {
+			window.clearTimeout(id);
+			document.removeEventListener("click", close);
+		};
+	}, [citaPopover]);
+
+	const handleMarcarAtendidaFromPopover = async () => {
+		if (!citaPopover) return;
+		const bloque = citaPopover.bloque;
+		const dateKey = getDateKey(bloque.fecha);
+		closeCitaPopover();
+
+		if (bloque.estado_pago !== 1) {
+			await Swal.fire({
+				title: "Pago pendiente",
+				text: "No puedes marcar esta cita hasta que el pago sea aprobado.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
 			return;
 		}
-		if (dateKey < minFecha) return;
-		// Toggle celda vacía en la selección múltiple
-		setSelectedCells((prev) =>
-			prev.includes(cellKey)
-				? prev.filter((k) => k !== cellKey)
-				: [...prev, cellKey],
-		);
+		if (bloque.estado_cita === 3) {
+			await Swal.fire({
+				title: "Cita ya atendida",
+				icon: "info",
+				confirmButtonText: "Listo",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const today = new Date().toISOString().slice(0, 10);
+		if (dateKey > today) {
+			await Swal.fire({
+				title: "Aún no puedes marcar esta cita",
+				text: "Solo puedes marcar como atendida cuando llegue el día.",
+				icon: "info",
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+		const confirmResult = await Swal.fire({
+			title: "¿Marcar cita como atendida?",
+			text: "Esta acción confirma que el paciente fue atendido.",
+			icon: "question",
+			showCancelButton: true,
+			confirmButtonText: "Sí, atender",
+			cancelButtonText: "No",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+		if (!confirmResult.isConfirmed) return;
+		try {
+			const citaId = bloque.id_disponibilidad.replace("cita-", "");
+			await marcarAtendida(citaId).unwrap();
+		} catch (err) {
+			setError((err as Error).message ?? "No se pudo marcar como atendida");
+		}
 	};
 
+	const formatFechaLarga = useCallback((dayKey: string) => {
+		const d = new Date(`${dayKey}T12:00:00`);
+		const raw = d.toLocaleDateString("es-VE", {
+			weekday: "long",
+			day: "numeric",
+			month: "long",
+			year: "numeric",
+		});
+		return raw.charAt(0).toUpperCase() + raw.slice(1);
+	}, []);
+
+	const openDisponibilidadSegmentModal = useCallback((ctx: DisponibilidadSegmentContext) => {
+		setDisponibilidadModal(ctx);
+	}, []);
+
+	const handleCerrarDispModal = useCallback(() => {
+		if (modalDispLoading) return;
+		setDisponibilidadModal(null);
+	}, [modalDispLoading]);
+
+	const handleModalEnviarCambio = useCallback(
+		async (nuevaHi: string, nuevaHfExclusive: string) => {
+			if (!disponibilidadModal) return;
+			const ctx = disponibilidadModal;
+			const rawId = String(ctx.bloque.id_disponibilidad ?? "").trim();
+			const dayKey = ctx.dayKey;
+			setModalDispLoading(true);
+			setCancelingId(rawId);
+			try {
+				if (rawId.startsWith("solicitud-")) {
+					const sid = rawId.slice("solicitud-".length);
+					const sol = solicitudesMacroPendientes.find(
+						(s) => String(s.id_solicitud).trim() === sid,
+					);
+					if (!sol) {
+						throw new Error("No se encontró la solicitud. Actualiza la página.");
+					}
+					const idEcos = parseIdEcosFromSolicitud(sol);
+					if (idEcos.length === 0) {
+						throw new Error("La solicitud no tiene equipos asociados.");
+					}
+					await cancelarSolicitudMacro(sid).unwrap();
+					await crearSolicitudMacro({
+						fecha_desde: getDateKey(sol.fecha_desde as string | Date),
+						fecha_hasta: getDateKey(sol.fecha_hasta as string | Date),
+						hora_inicio: normalizeHoraDb(nuevaHi),
+						hora_fin: normalizeHoraDb(nuevaHfExclusive),
+						id_ecos: idEcos,
+					}).unwrap();
+				} else {
+					const overlapping = bloquesDisponibilidadEnSegmento(
+						bloques as unknown as Disponibilidad[],
+						dayKey,
+						ctx.horaInicio,
+						ctx.horaFin,
+						[0, 1],
+					);
+					const uniqueIds = [
+						...new Set(overlapping.map((x) => String(x.id_disponibilidad).trim())),
+					];
+					if (uniqueIds.length > 0) {
+						await cancelarDisponibilidadMiLote({ ids: uniqueIds }).unwrap();
+					}
+					const ecosIds = [
+						...new Set(overlapping.map((x) => x.id_eco).filter(Boolean) as string[]),
+					];
+					if (ecosIds.length === 0) {
+						throw new Error("No se pudieron determinar los equipos del tramo.");
+					}
+					await crearSolicitudMacro({
+						fecha_desde: dayKey,
+						fecha_hasta: dayKey,
+						hora_inicio: normalizeHoraDb(nuevaHi),
+						hora_fin: normalizeHoraDb(nuevaHfExclusive),
+						id_ecos: ecosIds,
+					}).unwrap();
+				}
+				await Swal.fire({
+					icon: "success",
+					title: "Cambio enviado",
+					text: "La nueva franja quedó pendiente de aprobación del moderador.",
+					timer: 2800,
+					showConfirmButton: false,
+				});
+				setDisponibilidadModal(null);
+				dispatch(especialistaApi.util.invalidateTags(["Disponibilidad"]));
+				await refetchBloques();
+			} catch (err) {
+				const msg = messageFromApiError(err, "No se pudo enviar el cambio");
+				setError(msg);
+				await Swal.fire({
+					icon: "error",
+					title: "No se pudo completar",
+					text: msg,
+					confirmButtonText: "Entendido",
+					confirmButtonColor: "#1C837F",
+				});
+			} finally {
+				setModalDispLoading(false);
+				setCancelingId(null);
+			}
+		},
+		[
+			disponibilidadModal,
+			bloques,
+			solicitudesMacroPendientes,
+			cancelarSolicitudMacro,
+			crearSolicitudMacro,
+			cancelarDisponibilidadMiLote,
+			dispatch,
+			refetchBloques,
+		],
+	);
+
+	const handleModalCancelarDisponibilidad = useCallback(async () => {
+		if (!disponibilidadModal) return;
+		const ctx = disponibilidadModal;
+		const rawId = String(ctx.bloque.id_disponibilidad ?? "").trim();
+		const confirm = await Swal.fire({
+			title: "¿Cancelar esta disponibilidad?",
+			text: "Se anulará el tramo seleccionado (sin afectar citas ya reservadas en otros bloques).",
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonText: "Sí, cancelar",
+			cancelButtonText: "No",
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#9FD8E1",
+		});
+		if (!confirm.isConfirmed) return;
+		setModalDispLoading(true);
+		setCancelingId(rawId);
+		try {
+			if (rawId.startsWith("solicitud-")) {
+				const sid = rawId.slice("solicitud-".length);
+				await cancelarSolicitudMacro(sid).unwrap();
+			} else {
+				const overlapping = bloquesDisponibilidadEnSegmento(
+					bloques as unknown as Disponibilidad[],
+					ctx.dayKey,
+					ctx.horaInicio,
+					ctx.horaFin,
+					[0, 1],
+				);
+				const uniqueIds = [
+					...new Set(overlapping.map((x) => String(x.id_disponibilidad).trim())),
+				];
+				if (uniqueIds.length === 0) {
+					await cancelarDisponibilidad(rawId).unwrap();
+				} else {
+					await cancelarDisponibilidadMiLote({ ids: uniqueIds }).unwrap();
+				}
+			}
+			setDisponibilidadModal(null);
+			dispatch(especialistaApi.util.invalidateTags(["Disponibilidad"]));
+			await refetchBloques();
+			await Swal.fire({
+				icon: "success",
+				title: "Listo",
+				text: "Disponibilidad cancelada.",
+				timer: 2200,
+				showConfirmButton: false,
+			});
+		} catch (err) {
+			const msg = messageFromApiError(err, "No se pudo cancelar");
+			setError(msg);
+			await Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: msg,
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+		} finally {
+			setModalDispLoading(false);
+			setCancelingId(null);
+		}
+	}, [
+		disponibilidadModal,
+		bloques,
+		cancelarSolicitudMacro,
+		cancelarDisponibilidad,
+		dispatch,
+		refetchBloques,
+	]);
+
+	const handleModalVolverASolicitar = useCallback(async () => {
+		if (!disponibilidadModal) return;
+		const ctx = disponibilidadModal;
+		setModalDispLoading(true);
+		setCancelingId(String(ctx.bloque.id_disponibilidad ?? ""));
+		try {
+			const enTramo = bloquesDisponibilidadEnSegmento(
+				bloques as unknown as Disponibilidad[],
+				ctx.dayKey,
+				ctx.horaInicio,
+				ctx.horaFin,
+				[0, 1, 3],
+			);
+			const ecosIds = [
+				...new Set(enTramo.map((x) => x.id_eco).filter(Boolean) as string[]),
+			];
+			if (ecosIds.length === 0) {
+				throw new Error("No se encontraron equipos para volver a solicitar.");
+			}
+			/** Quitar pendientes/aprobados del tramo para no chocar con el INSERT (el 3 no bloquea). */
+			const idsActivos = [
+				...new Set(
+					enTramo
+						.filter((b) => b.estado === 0 || b.estado === 1)
+						.map((b) => String(b.id_disponibilidad).trim()),
+				),
+			];
+			if (idsActivos.length > 0) {
+				await cancelarDisponibilidadMiLote({ ids: idsActivos }).unwrap();
+			}
+			await crearSolicitudMacro({
+				fecha_desde: ctx.dayKey,
+				fecha_hasta: ctx.dayKey,
+				hora_inicio: normalizeHoraDb(ctx.horaInicio),
+				hora_fin: normalizeHoraDb(ctx.horaFin),
+				id_ecos: ecosIds,
+			}).unwrap();
+			await Swal.fire({
+				icon: "success",
+				title: "Solicitud registrada",
+				text: "Pendiente de aprobación del moderador.",
+				timer: 2800,
+				showConfirmButton: false,
+			});
+			setDisponibilidadModal(null);
+			dispatch(especialistaApi.util.invalidateTags(["Disponibilidad"]));
+			await refetchBloques();
+		} catch (err) {
+			const msg = messageFromApiError(err, "No se pudo registrar la solicitud");
+			setError(msg);
+			await Swal.fire({
+				icon: "error",
+				title: "Error",
+				text: msg,
+				confirmButtonText: "Entendido",
+				confirmButtonColor: "#1C837F",
+			});
+		} finally {
+			setModalDispLoading(false);
+			setCancelingId(null);
+		}
+	}, [
+		disponibilidadModal,
+		bloques,
+		cancelarDisponibilidadMiLote,
+		crearSolicitudMacro,
+		dispatch,
+		refetchBloques,
+	]);
+
 	const mergedBloques = useMemo(() => {
-		// Normalizar bloques de disponibilidad (asegurar que fecha sea string)
 		const normalizedBloques: Disponibilidad[] = bloques.map((bloque) => ({
 			...bloque,
 			fecha:
@@ -563,7 +983,6 @@ const CalendarioPage = () => {
 					: bloque.fecha.toISOString().split("T")[0],
 		}));
 
-		// Convertir citas a elementos tipo Disponibilidad independientes
 		const citaBloques: Disponibilidad[] = citas.map((cita) => {
 			const dateKey = getDateKey(cita.fecha_cita);
 			const hourKey =
@@ -577,13 +996,46 @@ const CalendarioPage = () => {
 				estado: 4,
 				estado_pago: Number(cita.estado_pago),
 				estado_cita: Number(cita.estado_cita),
+				eco_nombre: cita.eco_nombre,
+				paciente_nombre: cita.paciente_nombre,
+				paciente_apellido: cita.paciente_apellido,
 			} as Disponibilidad;
 		});
 
-		// Para el listado de "Mis bloques" queremos ver cada bloque individual,
-		// por eso NO colapsamos por celda como en el calendario visual.
 		return [...normalizedBloques, ...citaBloques];
 	}, [bloques, citas]);
+
+	const previewBloquesList = useMemo((): Disponibilidad[] => {
+		return previewSlots.map((slot) => {
+			const hourKey =
+				slot.hora_inicio.length === 5 ? `${slot.hora_inicio}:00` : slot.hora_inicio;
+			const horaFinSlot =
+				slot.hora_fin.length === 5 ? `${slot.hora_fin}:00` : slot.hora_fin;
+			return {
+				id_disponibilidad: `preview-${slot.fecha}|${hourKey}`,
+				fecha: slot.fecha,
+				hora_inicio: hourKey,
+				hora_fin: horaFinSlot,
+				estado: -2,
+				eco_nombre: previewEcoLabel,
+			} as Disponibilidad;
+		});
+	}, [previewSlots, previewEcoLabel]);
+
+	const bloquesParaVistaMes = useMemo(
+		() => [...mergedBloques, ...previewBloquesList, ...bloquesDesdeSolicitudesPendientes],
+		[mergedBloques, previewBloquesList, bloquesDesdeSolicitudesPendientes],
+	);
+
+	/** Datos del mes mostrado en la vista mensual (plan: lista filtrada al mes visible). */
+	const bloquesMesVisible = useMemo(() => {
+		const y = monthCursor.getFullYear();
+		const m = monthCursor.getMonth();
+		const monthPrefix = `${y}-${String(m + 1).padStart(2, "0")}`;
+		return bloquesParaVistaMes.filter((b) =>
+			getDateKey(b.fecha).startsWith(monthPrefix),
+		);
+	}, [bloquesParaVistaMes, monthCursor]);
 
 	const filteredBloques = useMemo(() => {
 		const normalized = [...mergedBloques].sort((a, b) => {
@@ -625,126 +1077,359 @@ const CalendarioPage = () => {
 		setPage(1);
 	}, [filter]);
 
+	const popoverPaciente =
+		citaPopover?.bloque.paciente_nombre || citaPopover?.bloque.paciente_apellido
+			? `${citaPopover.bloque.paciente_nombre ?? ""} ${citaPopover.bloque.paciente_apellido ?? ""}`.trim()
+			: "Paciente";
+
 	return (
-		<div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-			<section className="space-y-6 min-w-0">
-				<div className="space-y-1">
-					<h1 className="text-2xl font-semibold text-brand-900">Calendario</h1>
-					<p className="text-sm text-brand-800">
-						Agenda semanal y gestión de disponibilidades.
+		<div className="min-w-0">
+			<div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+				<div>
+					<h1 className="font-headline text-4xl font-bold tracking-tight text-brand-900 sm:text-4xl">
+						Calendario de disponibilidad
+					</h1>
+					<p className="mt-2 max-w-2xl text-base leading-relaxed text-brand-800 md:text-lg">
+						Selecciona el horario en el que estarás libre para trabajar.
 					</p>
 				</div>
 
-				<div className="rounded-2xl bg-paper p-4 shadow-sm max-h-[60vh] overflow-y-auto">
-					<CalendarHeader
-						weekRangeLabel={weekRangeLabel}
-						onPrevWeek={() => {
-							const prev = new Date(weekStart);
-							prev.setDate(prev.getDate() - 7);
-							setWeekStart(prev);
-						}}
-						onNextWeek={() => {
-							const next = new Date(weekStart);
-							next.setDate(next.getDate() + 7);
-							setWeekStart(next);
-						}}
-					/>
-					<CalendarLegend
-						items={[
-							{ label: "Aprobada", colorClass: "bg-brand-700" },
-							{ label: "Pendiente", colorClass: "bg-accent" },
-							{ label: "Cita", colorClass: "bg-sky-500" },
-							{ label: "Pago pendiente", colorClass: "bg-amber-400" },
-							{ label: "Atendida", colorClass: "bg-emerald-500" },
-							{ label: "Cancelada", colorClass: "bg-brand-900" },
-							{ label: "Rechazada", colorClass: "bg-red-500" },
-							...(selectedCells.length > 0
-								? [{ label: "Seleccionada (clic para quitar)", colorClass: "bg-brand-200" }]
-								: []),
-						]}
-					/>
-					<CalendarGrid
-						dayLabels={dayLabels}
-						dayKeys={dayKeys}
-						timeOptions={timeOptions}
-						bloquesMap={bloquesMap}
-						isEspecialista={isEspecialista}
-						minFecha={minFecha}
-						busyCell={busyCell}
-						cancelingId={cancelingId}
-						selectedCells={selectedCells}
-						estadoColor={estadoColor}
-						estadoLabel={estadoLabel}
-						formatHora={formatHora}
-						formatFecha={formatFecha}
-						onCellClick={handleCellClick}
-					/>
-				</div>
-			</section>
+			</div>
 
-			<aside className="space-y-4 min-w-0">
-				{isEspecialista ? (
-					<DisponibilidadForm
-						fecha={fecha}
-						horaInicio={horaInicio}
-						idEcos={idEcos}
-						minFecha={minFecha}
-						timeOptions={timeOptions}
-						selectedCellsCount={selectedCells.length}
-						onClearSelection={() => setSelectedCells([])}
-						onSubmitBatch={handleSubmitBatch}
-						error={
-							error ??
-							(bloquesError as Error | undefined)?.message ??
-							(citasError as Error | undefined)?.message ??
-							null
-						}
-						submitStatus={submitStatus}
-						onFechaChange={setFecha}
-						onHoraInicioChange={setHoraInicio}
-						onIdEcosChange={setIdEcos}
-						onSubmit={handleSubmitDisponibilidad}
-						onCancel={
-							fecha || horaInicio || idEcos.length || selectedCells.length > 0
-								? () => {
-									setFecha("");
-									setHoraInicio("");
-									setIdEcos([]);
-									setSelectedCells([]);
-								}
-								: undefined
-						}
-					/>
-				) : (
-					<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">
-						Este calendario es interactivo solo para especialistas.
+			<div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-10">
+				<section className="min-w-0 space-y-4 xl:col-span-7">
+					<div className="rounded-3xl border border-mist/80 bg-paper p-6 shadow-sm">
+						<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+							<div className="flex flex-wrap items-center gap-3">
+								<h2 className="font-headline text-lg font-bold capitalize text-brand-900 sm:text-xl">
+									{headerCalendarTitle}
+								</h2>
+								<div className="flex rounded-lg bg-cloud p-1">
+									{calendarView === "week" ? (
+										<>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													const prev = new Date(weekStart);
+													prev.setDate(prev.getDate() - 7);
+													setWeekStart(prev);
+												}}
+												aria-label="Semana anterior"
+											>
+												<ChevronLeft className="h-5 w-5 text-slate-600" />
+											</button>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													const next = new Date(weekStart);
+													next.setDate(next.getDate() + 7);
+													setWeekStart(next);
+												}}
+												aria-label="Semana siguiente"
+											>
+												<ChevronRight className="h-5 w-5 text-slate-600" />
+											</button>
+										</>
+									) : calendarView === "day" ? (
+										<>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													const prev = new Date(dayCursor);
+													prev.setDate(prev.getDate() - 1);
+													setDayCursor(prev);
+												}}
+												aria-label="Día anterior"
+											>
+												<ChevronLeft className="h-5 w-5 text-slate-600" />
+											</button>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													const next = new Date(dayCursor);
+													next.setDate(next.getDate() + 1);
+													setDayCursor(next);
+												}}
+												aria-label="Día siguiente"
+											>
+												<ChevronRight className="h-5 w-5 text-slate-600" />
+											</button>
+										</>
+									) : (
+										<>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													setMonthCursor(
+														new Date(
+															monthCursor.getFullYear(),
+															monthCursor.getMonth() - 1,
+															1,
+														),
+													);
+												}}
+												aria-label="Mes anterior"
+											>
+												<ChevronLeft className="h-5 w-5 text-slate-600" />
+											</button>
+											<button
+												type="button"
+												className="rounded p-1 transition hover:bg-paper hover:shadow-sm"
+												onClick={() => {
+													setMonthCursor(
+														new Date(
+															monthCursor.getFullYear(),
+															monthCursor.getMonth() + 1,
+															1,
+														),
+													);
+												}}
+												aria-label="Mes siguiente"
+											>
+												<ChevronRight className="h-5 w-5 text-slate-600" />
+											</button>
+										</>
+									)}
+								</div>
+							</div>
+							<div className="flex rounded-xl bg-cloud p-1 text-sm font-semibold">
+								<button
+									type="button"
+									className={
+										calendarView === "day"
+											? "rounded-lg bg-paper px-4 py-1.5 text-brand-800 shadow-sm"
+											: "rounded-lg px-4 py-1.5 text-slate-500 transition hover:bg-paper/80"
+									}
+									onClick={() => {
+										const hoy = new Date();
+										setCalendarView("day");
+										setDayCursor(hoy);
+									}}
+								>
+									Día
+								</button>
+								<button
+									type="button"
+									className={
+										calendarView === "week"
+											? "rounded-lg bg-paper px-4 py-1.5 text-brand-800 shadow-sm"
+											: "rounded-lg px-4 py-1.5 text-slate-500 transition hover:bg-paper/80"
+									}
+									onClick={() => {
+										const hoy = new Date();
+										setCalendarView("week");
+										setWeekStart(startOfWeek(hoy));
+									}}
+								>
+									Semana
+								</button>
+								<button
+									type="button"
+									className={
+										calendarView === "month"
+											? "rounded-lg bg-paper px-4 py-1.5 text-brand-800 shadow-sm"
+											: "rounded-lg px-4 py-1.5 text-slate-500 transition hover:bg-paper/80"
+									}
+									onClick={() => {
+										const hoy = new Date();
+										setCalendarView("month");
+										setMonthCursor(
+											new Date(hoy.getFullYear(), hoy.getMonth(), 1),
+										);
+										setSelectedCalendarDate(getLocalDateKey(hoy));
+									}}
+								>
+									Mes
+								</button>
+							</div>
+						</div>
+
+						{calendarView === "week" ? (
+							<CalendarGrid
+								dayLabels={dayLabels}
+								dayKeys={dayKeys}
+								timeOptions={timeOptions}
+								bloquesMap={bloquesMap}
+								isEspecialista={isEspecialista}
+								minFecha={minFecha}
+								cancelingId={cancelingId}
+								highlightSlotKeys={highlightSlotKeys}
+								formatHora={formatHora}
+								onCitaClick={handleCitaPopoverOpen}
+								onDisponibilidadSegmentClick={openDisponibilidadSegmentModal}
+								onRangeSelect={onRangeSelectFromGrid}
+							/>
+						) : calendarView === "day" && dayKeys[0] ? (
+							<DayCalendarGrid
+								dayKey={dayKeys[0]}
+								timeOptions={timeOptions}
+								bloquesMap={bloquesMap}
+								isEspecialista={isEspecialista}
+								minFecha={minFecha}
+								cancelingId={cancelingId}
+								highlightSlotKeys={highlightSlotKeys}
+								formatHora={formatHora}
+								onCitaClick={handleCitaPopoverOpen}
+								onDisponibilidadSegmentClick={openDisponibilidadSegmentModal}
+								onRangeSelect={onRangeSelectFromGrid}
+							/>
+						) : (
+							<MonthCalendar
+								currentMonth={monthCursor}
+								selectedDate={selectedCalendarDate}
+								bloques={bloquesMesVisible}
+								onDateClick={(dk) => setSelectedCalendarDate(dk)}
+								onMonthChange={setMonthCursor}
+								formatHora={formatHora}
+								onCitaClick={handleCitaPopoverOpen}
+								showMonthNavigation={false}
+							/>
+						)}
 					</div>
-				)}
 
-				<BloquesList
-					bloques={pagedBloques}
-					loading={loadingBloques}
-					filter={filter}
-					filterOptions={
-						[
-							{ id: "todas", label: "Todas" },
-							{ id: "pendientes", label: "Pendientes" },
-							{ id: "citas", label: "Citas" },
-							{ id: "aprobadas", label: "Aprobadas" },
-							{ id: "rechazadas", label: "Rechazadas" },
-							{ id: "canceladas", label: "Canceladas" },
-						] as FilterOption[]
-					}
-					currentPage={currentPage}
-					totalPages={totalPages}
-					onFilterChange={setFilter}
-					onPageChange={setPage}
-					formatFecha={formatFecha}
-					formatHora={formatHora}
-					estadoLabel={estadoLabel}
-					estadoColor={estadoColor}
-				/>
-			</aside>
+					{isEspecialista ? (
+						<DisponibilidadBloqueModal
+							open={!!disponibilidadModal}
+							context={disponibilidadModal}
+							timeOptions={timeOptions}
+							formatHora={formatHora}
+							formatFechaLarga={formatFechaLarga}
+							loading={modalDispLoading}
+							onClose={handleCerrarDispModal}
+							onEnviarCambio={handleModalEnviarCambio}
+							onCancelarDisponibilidad={handleModalCancelarDisponibilidad}
+							onVolverASolicitar={handleModalVolverASolicitar}
+						/>
+					) : null}
+
+					<div className="rounded-2xl border border-mist/60 bg-paper p-4">
+						<BloquesList
+							bloques={pagedBloques}
+							loading={loadingBloques}
+							filter={filter}
+							filterOptions={
+								[
+									{ id: "todas", label: "Todas" },
+									{ id: "pendientes", label: "Pendientes" },
+									{ id: "citas", label: "Citas" },
+									{ id: "aprobadas", label: "Aprobadas" },
+									{ id: "rechazadas", label: "Rechazadas" },
+									{ id: "canceladas", label: "Canceladas" },
+								] as FilterOption[]
+							}
+							currentPage={currentPage}
+							totalPages={totalPages}
+							onFilterChange={setFilter}
+							onPageChange={setPage}
+							formatFecha={formatFecha}
+							formatHora={formatHora}
+							estadoLabel={estadoLabel}
+							estadoColor={estadoColor}
+						/>
+					</div>
+				</section>
+
+				<aside className="min-w-0 space-y-6 xl:col-span-3">
+					{citaPopover ? (
+						<div
+							className="fixed z-[200] w-[min(92vw,280px)] rounded-2xl border border-mist bg-paper p-4 shadow-2xl"
+							style={{
+								left: Math.min(
+									typeof window !== "undefined" ? window.innerWidth - 300 : 0,
+									citaPopover.x + 8,
+								),
+								top: citaPopover.y + 8,
+							}}
+							onClick={(e) => e.stopPropagation()}
+							role="dialog"
+							aria-label="Detalle de cita"
+						>
+							<p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+								Cita
+							</p>
+							<p className="mt-1 font-headline text-base font-bold text-brand-900">
+								{popoverPaciente}
+							</p>
+							<p className="mt-2 text-sm text-slate-600">
+								<span className="font-semibold text-slate-700">Hora: </span>
+								{formatHora(citaPopover.bloque.hora_inicio)}
+							</p>
+							<p className="mt-1 text-sm text-slate-600">
+								<span className="font-semibold text-slate-700">Tipo de eco: </span>
+								{citaPopover.bloque.eco_nombre ?? "—"}
+							</p>
+							{citaPopover.bloque.estado_pago === 1 &&
+								citaPopover.bloque.estado_cita !== 3 &&
+								getDateKey(citaPopover.bloque.fecha) <=
+									new Date().toISOString().slice(0, 10) && (
+									<button
+										type="button"
+										className="mt-4 w-full rounded-xl bg-brand-800 py-2.5 text-sm font-semibold text-paper"
+										onClick={() => void handleMarcarAtendidaFromPopover()}
+									>
+										Marcar como atendida
+									</button>
+								)}
+						</div>
+					) : null}
+
+					{isEspecialista ? (
+						<DisponibilidadForm
+							fecha={fecha}
+							horaInicio={horaInicio}
+							idEcos={idEcos}
+							minFecha={minFecha}
+							timeOptions={timeOptions}
+							fechaDesde={fechaDesde}
+							fechaHasta={fechaHasta}
+							horaInicioRango={horaInicioRango}
+							horaFinRango={horaFinRango}
+							onFechaDesdeChange={setFechaDesde}
+							onFechaHastaChange={setFechaHasta}
+							onHoraInicioRangoChange={setHoraInicioRango}
+							onHoraFinRangoChange={setHoraFinRango}
+							onClearSelection={clearRango}
+							onSubmitMacro={handleSubmitMacro}
+							error={
+								error ??
+								(bloquesError as Error | undefined)?.message ??
+								(citasError as Error | undefined)?.message ??
+								null
+							}
+							submitStatus={submitStatus}
+							onFechaChange={setFecha}
+							onHoraInicioChange={setHoraInicio}
+							onIdEcosChange={setIdEcos}
+							onSubmit={handleSubmitDisponibilidad}
+							onCancel={
+								fecha ||
+								horaInicio ||
+								idEcos.length ||
+								fechaDesde ||
+								fechaHasta ||
+								horaInicioRango ||
+								horaFinRango
+									? () => {
+											setFecha("");
+											setHoraInicio("");
+											setIdEcos([]);
+											clearRango();
+										}
+									: undefined
+							}
+						/>
+					) : (
+						<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">
+							Este calendario es interactivo solo para especialistas.
+						</div>
+					)}
+				</aside>
+			</div>
 		</div>
 	);
 };

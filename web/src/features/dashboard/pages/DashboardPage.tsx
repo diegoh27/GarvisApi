@@ -20,7 +20,7 @@ const DashboardPage = () => {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4">
 			<EmailVerificationBanner />
 			{content}
 		</div>

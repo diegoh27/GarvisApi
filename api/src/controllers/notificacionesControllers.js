@@ -40,6 +40,16 @@ const markNotificacionLeidaController = async ({
 	return result.affectedRows > 0;
 };
 
+const markTodasNotificacionesLeidasController = async ({
+	id_usuario,
+}) => {
+	const [result] = await pool.execute(
+		`UPDATE notificacion SET leida = 1 WHERE id_usuario = ? AND leida = 0`,
+		[id_usuario],
+	);
+	return result.affectedRows >= 0;
+};
+
 const createNotificacionController = async ({
 	id_usuario,
 	titulo,
@@ -58,5 +68,6 @@ const createNotificacionController = async ({
 module.exports = {
 	listNotificacionesByUsuarioController,
 	markNotificacionLeidaController,
+	markTodasNotificacionesLeidasController,
 	createNotificacionController,
 };

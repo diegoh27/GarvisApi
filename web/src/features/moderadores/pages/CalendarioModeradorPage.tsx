@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { PageShell } from "../../../shared";
 import { MonthCalendar } from "../../calendario";
+import { formatHora } from "../../disponibilidad/utils/dateUtils";
 import { useGetDisponibilidadesByFechaQuery } from "../moderadoresApi";
 import { useGetCitasByFechaQuery } from "../moderadoresApi";
 import DiaItemsList from "../components/DiaItemsList";
@@ -40,16 +41,21 @@ const CalendarioModeradorPage = () => {
 	};
 
 	return (
-		<PageShell title="Calendario" subtitle="Vista mensual y gestión de disponibilidades y citas">
-			<div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-				{/* Calendario mensual */}
-				<div className="min-w-0">
+		<PageShell
+			title="Calendario"
+			description="Vista mensual y gestión de disponibilidades y citas"
+		>
+			<div className="grid gap-6 lg:grid-cols-[minmax(0,56rem)_minmax(280px,1fr)] lg:items-start">
+				{/* Calendario: hasta ~56rem; lista del día usa el resto */}
+				<div className="min-w-0 w-full lg:max-w-[56rem]">
 					<MonthCalendar
 						currentMonth={currentMonth}
 						selectedDate={selectedDate}
-						disponibilidades={disponibilidadesParaCalendario}
+						bloques={disponibilidadesParaCalendario}
 						onDateClick={handleDateClick}
 						onMonthChange={handleMonthChange}
+						formatHora={formatHora}
+						showMonthNavigation
 					/>
 				</div>
 

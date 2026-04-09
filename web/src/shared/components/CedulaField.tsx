@@ -11,6 +11,7 @@ export type CedulaFieldProps = {
   placeholder?: string;
   required?: boolean;
   disabled?: boolean;
+  onBlur?: () => void;
   /** Clase del contenedor del flex (select + input) */
   inputClassName?: string;
   selectClassName?: string;
@@ -26,6 +27,7 @@ export function CedulaField({
   placeholder = "Número de cédula",
   required,
   disabled,
+  onBlur,
   inputClassName = "",
   selectClassName = "",
   maxLength = 8,
@@ -57,6 +59,7 @@ export function CedulaField({
         <select
           value={tipo}
           onChange={handleTipoChange}
+          onBlur={onBlur}
           disabled={disabled}
           className={`w-20 ${baseInput} ${errorInput} ${selectClassName}`.trim()}
           aria-label="Tipo de cédula"
@@ -72,6 +75,7 @@ export function CedulaField({
           inputMode="numeric"
           value={numero}
           onChange={handleNumeroChange}
+          onBlur={onBlur}
           placeholder={placeholder}
           required={required}
           disabled={disabled}

@@ -50,6 +50,20 @@ IF NOT EXISTS moderador_permisos_inventario
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 1.2) Permisos menú lateral moderador
+-- =========================
+CREATE TABLE
+IF NOT EXISTS moderador_permisos_menu
+(
+  seccion VARCHAR
+(64) NOT NULL,
+  permitido TINYINT
+(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY
+(seccion)
+) ENGINE=InnoDB;
+
+-- =========================
 -- 2) Usuario (tabla base)
 -- =========================
 CREATE TABLE
@@ -357,6 +371,80 @@ UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 8b) Solicitud macro de jornada (rango)
+-- =========================
+CREATE TABLE
+IF NOT EXISTS disponibilidad_solicitud
+(
+  id_solicitud CHAR
+(36) NOT NULL,
+  id_especialista CHAR
+(36) NOT NULL,
+  fecha_desde DATE NOT NULL,
+  fecha_hasta DATE NOT NULL,
+  hora_inicio TIME NOT NULL,
+  hora_fin TIME NOT NULL,
+  id_eco CHAR
+(36) NULL,
+  id_ecos_json JSON NULL,
+  es_manual TINYINT
+(1) NOT NULL DEFAULT 0,
+  estado TINYINT NOT NULL DEFAULT 0,
+  creado_por CHAR
+(36) NOT NULL,
+  aprobado_por CHAR
+(36) NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NULL DEFAULT NULL ON
+UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY
+(id_solicitud),
+  KEY idx_ds_esp_estado
+(id_especialista, estado),
+  KEY idx_ds_fechas
+(fecha_desde, fecha_hasta),
+  CONSTRAINT fk_ds_especialista FOREIGN KEY
+(id_especialista) REFERENCES especialista
+(id_especialista)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+  CONSTRAINT fk_ds_creado_por FOREIGN KEY
+(creado_por) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON
+DELETE RESTRICT,
+  CONSTRAINT fk_ds_aprobado_por FOREIGN KEY
+(aprobado_por) REFERENCES usuario
+(id_usuario)
+    ON
+UPDATE CASCADE
+    ON DELETE SET NULL,
+  CONSTRAINT fk_ds_eco FOREIGN KEY
+(id_eco) REFERENCES eco
+(id_eco)
+    ON
+UPDATE CASCADE
+    ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+ALTER TABLE disponibilidad
+ADD COLUMN id_solicitud CHAR
+(36) NULL AFTER id_eco,
+ADD KEY idx_disp_solicitud
+(id_solicitud),
+ADD CONSTRAINT fk_disp_solicitud FOREIGN KEY
+(id_solicitud) REFERENCES disponibilidad_solicitud
+(id_solicitud)
+    ON
+DELETE SET NULL
+    ON
+UPDATE CASCADE;
+
+-- =========================
 -- 9) Cita
 -- =========================
 CREATE TABLE
@@ -606,7 +694,7 @@ IF NOT EXISTS pagos
   id_paciente CHAR
 (36) NOT NULL,
   metodo ENUM
-('Transferencia','PagoMovil','Efectivo','Zelle','Otro') NOT NULL,
+('Transferencia','PagoMovil','Efectivo','Zelle','Otro','Binance','PayPal','EfectivoBs','EfectivoUSD') NOT NULL,
   imagen VARCHAR
 (255) NOT NULL,
   banco_origen VARCHAR

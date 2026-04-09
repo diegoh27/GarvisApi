@@ -43,8 +43,14 @@ const buildMovimientosFilters = ({
 	}
 
 	if (origen_modulo) {
-		where.push("f.origen_modulo = ?");
-		params.push(origen_modulo);
+		if (origen_modulo === "INV_COMPRA") {
+			where.push(
+				"(f.origen_modulo = 'INV_COMPRA' OR f.origen_modulo = 'NOTA_COMPRA' OR (f.origen_modulo = '' AND LOWER(COALESCE(f.descripcion, '')) LIKE 'nota de compra%'))",
+			);
+		} else {
+			where.push("f.origen_modulo = ?");
+			params.push(origen_modulo);
+		}
 	}
 
 	if (fecha_desde) {
@@ -123,7 +129,11 @@ exports.listMovimientosFacturacionController = async ({
 			f.tasa_dia_bcv,
 			f.descripcion,
 			f.referencia,
-			f.origen_modulo,
+			CASE
+				WHEN f.origen_modulo IN ('INV_COMPRA', 'NOTA_COMPRA') THEN 'INV_COMPRA'
+				WHEN f.origen_modulo = '' AND LOWER(COALESCE(f.descripcion, '')) LIKE 'nota de compra%' THEN 'INV_COMPRA'
+				ELSE f.origen_modulo
+			END AS origen_modulo,
 			f.origen_id,
 			c.id_cita,
 			c.fecha_cita,
@@ -265,9 +275,12 @@ exports.deleteMovimientoFacturacionController = async (id_movimiento) => {
 					if (compraRows.length) {
 						const { id_producto, cantidad } = compraRows[0];
 						const cantidadNum = Number(cantidad);
+						const [prodRows] = await conn.execute("SELECT factor_conversion FROM inv_producto WHERE id_producto = ? LIMIT 1", [id_producto]);
+						const factorConversion = Number(prodRows[0]?.factor_conversion) || 1;
+						const cantidadBase = cantidadNum * factorConversion;
 						await conn.execute(
-							"UPDATE inv_producto SET stock_actual = stock_actual - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
-							[cantidadNum, id_producto],
+							"UPDATE inv_producto SET stock_base_total = stock_base_total - ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+							[cantidadBase, id_producto],
 						);
 						await conn.execute("DELETE FROM inv_producto_compra WHERE id_compra = ?", [origen_id]);
 					}

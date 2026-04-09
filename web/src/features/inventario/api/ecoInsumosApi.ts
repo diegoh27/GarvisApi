@@ -20,7 +20,7 @@ export type EcoInsumo = {
 	id_producto: string;
 	producto_nombre: string;
 	cantidad: number;
-	stock_actual: number;
+	stock_base_total: number;
 	creado_en: string;
 };
 
@@ -30,7 +30,7 @@ export type StockValidation = {
 		id_producto: string;
 		producto_nombre: string;
 		cantidad_requerida: number;
-		stock_actual: number;
+		stock_base_total: number;
 	}[];
 	faltantes: {
 		producto: string;

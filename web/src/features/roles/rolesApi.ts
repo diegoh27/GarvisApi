@@ -9,6 +9,41 @@ export type PermisosInventario = {
 	facturacion: boolean;
 };
 
+/** Visibilidad de ítems del menú lateral para el rol moderador (el Home no forma parte de este objeto). */
+export type PermisosMenuModerador = {
+	calendario: boolean;
+	todas_las_citas: boolean;
+	verificacion_pagos: boolean;
+	disponibilidad_pendientes: boolean;
+	pacientes: boolean;
+	subir_resultados: boolean;
+	informes: boolean;
+	inventario: boolean;
+	finanzas: boolean;
+	registrar_especialista: boolean;
+	registrar_moderador: boolean;
+	especialidades: boolean;
+	ecos: boolean;
+	cita_mostrador: boolean;
+};
+
+const defaultPermisosMenuModerador = (): PermisosMenuModerador => ({
+	calendario: true,
+	todas_las_citas: true,
+	verificacion_pagos: true,
+	disponibilidad_pendientes: true,
+	pacientes: true,
+	subir_resultados: true,
+	informes: true,
+	inventario: true,
+	finanzas: true,
+	registrar_especialista: true,
+	registrar_moderador: true,
+	especialidades: true,
+	ecos: true,
+	cita_mostrador: true,
+});
+
 const rolesApi = baseApi.injectEndpoints({
 	endpoints: (builder) => ({
 		getPermisosInventario: builder.query<PermisosInventario, void>({
@@ -36,6 +71,31 @@ const rolesApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: PermisosInventario }) =>
 				response.data,
 		}),
+		getPermisosMenu: builder.query<PermisosMenuModerador, void>({
+			query: () => "/roles/permisos-menu",
+			providesTags: ["PermisosMenuModerador"],
+			transformResponse: (response: { ok: boolean; data: PermisosMenuModerador }) =>
+				response.data,
+		}),
+		getPermisosMenuModerador: builder.query<PermisosMenuModerador, void>({
+			query: () => "/roles/permisos-menu-moderador",
+			providesTags: ["PermisosMenuModerador"],
+			transformResponse: (response: { ok: boolean; data: PermisosMenuModerador }) =>
+				response.data,
+		}),
+		updatePermisosMenuModerador: builder.mutation<
+			PermisosMenuModerador,
+			PermisosMenuModerador
+		>({
+			query: (body) => ({
+				url: "/roles/permisos-menu-moderador",
+				method: "PUT",
+				body,
+			}),
+			invalidatesTags: ["PermisosMenuModerador"],
+			transformResponse: (response: { ok: boolean; data: PermisosMenuModerador }) =>
+				response.data,
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -44,5 +104,8 @@ export const {
 	useGetPermisosInventarioQuery,
 	useGetPermisosInventarioModeradorQuery,
 	useUpdatePermisosInventarioModeradorMutation,
+	useGetPermisosMenuQuery,
+	useGetPermisosMenuModeradorQuery,
+	useUpdatePermisosMenuModeradorMutation,
 } = rolesApi;
-export { rolesApi };
+export { rolesApi, defaultPermisosMenuModerador };

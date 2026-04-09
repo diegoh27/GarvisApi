@@ -10,4 +10,13 @@ export {
 	useCancelarDisponibilidadAdminMutation,
 	useCancelarDisponibilidadLoteMutation,
 } from "./disponibilidadApi";
-export type { DisponibilidadState, DisponibilidadPendiente } from "./disponibilidadApi";
+export type { DisponibilidadState } from "./types";
+export type {
+	DisponibilidadPendiente,
+	DisponibilidadSolicitudMacro,
+	DisponibilidadGestionAdmin,
+	DisponibilidadApiEnvelope,
+	AprobarDisponibilidadData,
+	AprobarDisponibilidadLoteData,
+	AprobarSolicitudMacroData,
+} from "./disponibilidadApi";
