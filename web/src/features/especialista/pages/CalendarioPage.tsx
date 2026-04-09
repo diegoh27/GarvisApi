@@ -770,7 +770,7 @@ const CalendarioPage = () => {
 					}).unwrap();
 				} else {
 					const overlapping = bloquesDisponibilidadEnSegmento(
-						bloques,
+						bloques as unknown as Disponibilidad[],
 						dayKey,
 						ctx.horaInicio,
 						ctx.horaFin,
@@ -856,7 +856,7 @@ const CalendarioPage = () => {
 				await cancelarSolicitudMacro(sid).unwrap();
 			} else {
 				const overlapping = bloquesDisponibilidadEnSegmento(
-					bloques,
+					bloques as unknown as Disponibilidad[],
 					ctx.dayKey,
 					ctx.horaInicio,
 					ctx.horaFin,
@@ -911,7 +911,7 @@ const CalendarioPage = () => {
 		setCancelingId(String(ctx.bloque.id_disponibilidad ?? ""));
 		try {
 			const enTramo = bloquesDisponibilidadEnSegmento(
-				bloques,
+				bloques as unknown as Disponibilidad[],
 				ctx.dayKey,
 				ctx.horaInicio,
 				ctx.horaFin,

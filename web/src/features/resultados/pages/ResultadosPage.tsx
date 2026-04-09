@@ -74,7 +74,11 @@ const fileLabelFromUrl = (url: string): string => {
 	}
 };
 
-const citaResultadoDateMs = (c: { fecha_cita: string; hora_cita: string }) => {
+const getResultadoDateMs = (c: any) => {
+	if (c.resultado_fecha_emision) {
+		const ms = new Date(c.resultado_fecha_emision).getTime();
+		if (!Number.isNaN(ms)) return ms;
+	}
 	const t = c.hora_cita && c.hora_cita.length >= 5 ? c.hora_cita.slice(0, 5) : "00:00";
 	const raw = `${c.fecha_cita}T${t}:00`;
 	const ms = new Date(raw).getTime();
@@ -194,14 +198,20 @@ const ResultadosPage = () => {
 	}, [citasConResultado, isPaciente]);
 
 	const recentActivity = useMemo(() => {
+		const threeDaysAgo = new Date();
+		threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+		threeDaysAgo.setHours(0, 0, 0, 0);
+		const cutoffMs = threeDaysAgo.getTime();
+
 		return [...citasConArchivoOModal]
-			.sort((a, b) => citaResultadoDateMs(b) - citaResultadoDateMs(a))
-			.slice(0, 5);
+			.filter((c) => getResultadoDateMs(c) >= cutoffMs)
+			.sort((a, b) => getResultadoDateMs(b) - getResultadoDateMs(a))
+			.slice(0, 10);
 	}, [citasConArchivoOModal]);
 
 	const historialOrdenado = useMemo(() => {
 		return [...citasConArchivoOModal].sort(
-			(a, b) => citaResultadoDateMs(b) - citaResultadoDateMs(a),
+			(a, b) => getResultadoDateMs(b) - getResultadoDateMs(a)
 		);
 	}, [citasConArchivoOModal]);
 
@@ -510,15 +520,24 @@ const ResultadosPage = () => {
 	};
 
 	const activityTimeLabel = (cita: CitaAtendidaConResultado) => {
-		const d = new Date(`${cita.fecha_cita}T00:00:00`);
+		const d = new Date(getResultadoDateMs(cita));
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
 		const y = new Date(d);
 		y.setHours(0, 0, 0, 0);
 		const diffDays = Math.round((today.getTime() - y.getTime()) / (24 * 60 * 60 * 1000));
-		if (diffDays === 0) return formatHora(cita.hora_cita);
+		if (diffDays === 0) {
+			const hrs = d.getHours();
+			const mins = d.getMinutes().toString().padStart(2, '0');
+			const ampm = hrs >= 12 ? 'PM' : 'AM';
+			const h12 = hrs % 12 || 12;
+			return `${h12}:${mins} ${ampm}`;
+		}
 		if (diffDays === 1) return "Ayer";
-		return formatFecha(cita.fecha_cita);
+		const day = d.getDate().toString().padStart(2, '0');
+		const month = (d.getMonth() + 1).toString().padStart(2, '0');
+		const year = d.getFullYear();
+		return `${day}/${month}/${year}`;
 	};
 
 	return (

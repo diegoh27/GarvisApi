@@ -79,6 +79,7 @@ const PacientesPage = () => {
 	const [filtroResultado, setFiltroResultado] = useState("todos"); // "todos", "sin-resultado", "con-resultado"
 	const [currentPage, setCurrentPage] = useState(1);
 	const [citasPage, setCitasPage] = useState(1);
+	const [citasHistorialPage, setCitasHistorialPage] = useState(1);
 	const [selectedPaciente, setSelectedPaciente] = useState<{
 		id: string;
 		name: string;
@@ -294,16 +295,17 @@ const PacientesPage = () => {
 		return pacientesAgrupados.slice(startIndex, startIndex + itemsPerPage);
 	}, [pacientesAgrupados, currentPage, itemsPerPage]);
 
-	// Derecha: lista de citas filtrada; paginación
-	const itemsPerPageCitas = 10;
-	const totalPagesCitas = Math.max(1, Math.ceil(filteredCitas.length / itemsPerPageCitas));
-	const paginatedCitas = useMemo(() => {
-		const start = (citasPage - 1) * itemsPerPageCitas;
-		return filteredCitas.slice(start, start + itemsPerPageCitas);
-	}, [filteredCitas, citasPage, itemsPerPageCitas]);
+	const citasPorAtenderArr = useMemo(() => {
+		return filteredCitas.filter(c => (c.estado_cita === 0 || c.estado_cita === 1) && c.estado_pago !== 2);
+	}, [filteredCitas]);
+
+	const citasHistorialArr = useMemo(() => {
+		return filteredCitas.filter(c => c.estado_cita === 2 || c.estado_cita === 3 || c.estado_pago === 2);
+	}, [filteredCitas]);
 
 	useEffect(() => {
 		setCitasPage(1);
+		setCitasHistorialPage(1);
 	}, [estado, query, filtroResultado]);
 
 
@@ -312,6 +314,143 @@ const PacientesPage = () => {
 		if (!selectedPaciente) return [];
 		return citas.filter((cita) => cita.id_paciente === selectedPaciente.id);
 	}, [citas, selectedPaciente]);
+
+	const renderCitasTable = (listaCitas: CitaEspecialista[], pageState: number, setPageState: (val: number | ((prev: number) => number)) => void) => {
+		const itemsPerPage = 10;
+		const totalPages = Math.max(1, Math.ceil(listaCitas.length / itemsPerPage));
+		const paginated = listaCitas.slice((pageState - 1) * itemsPerPage, pageState * itemsPerPage);
+
+		return (
+			<div className="mt-4 flex flex-col flex-1 min-h-0">
+				<div className="overflow-auto flex-1 min-h-0">
+					<table className="w-full text-left text-xs text-brand-800">
+						<thead>
+							<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
+								<th className="px-2 py-2 whitespace-nowrap">Fecha</th>
+								<th className="px-2 py-2 whitespace-nowrap">Hora</th>
+								<th className="px-2 py-2 whitespace-nowrap">Paciente</th>
+								<th className="px-2 py-2 whitespace-nowrap">Eco</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Resultados</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Estado</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Pago</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Cita</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Atender</th>
+								<th className="px-2 py-2 text-center whitespace-nowrap">Historial</th>
+							</tr>
+						</thead>
+						<tbody>
+							{paginated.length > 0 ? (
+								paginated.map((cita) => {
+									const fullName = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim();
+									return (
+										<tr key={cita.id_cita} className="border-b border-mist/70">
+											<td className="px-2 py-2 whitespace-nowrap">{formatFecha(cita.fecha_cita)}</td>
+											<td className="px-2 py-2 whitespace-nowrap">{formatHora(cita.hora_cita)}</td>
+											<td className="px-2 py-2 font-medium text-brand-900">{fullName || "—"}</td>
+											<td className="px-2 py-2">{cita.eco_nombre}</td>
+											<td className="px-2 py-2 text-center">
+												<span className={`rounded-full px-2 py-0.5 text-[11px] ${getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).classes}`}>
+													{getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).label}
+												</span>
+											</td>
+											<td className="px-2 py-2 text-center">
+												<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoCitaClasses(cita.estado_cita)}`}>
+													{getEstadoCitaLabel(cita)}
+												</span>
+											</td>
+											<td className="px-2 py-2 text-center">
+												<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoPagoClasses(cita.estado_pago)}`}>
+													{cita.estado_pago === 1 ? "Pagado" : cita.estado_pago === 0 ? "Pendiente" : "Negado"}
+												</span>
+											</td>
+											<td className="px-2 py-2 text-center">
+												<button
+													type="button"
+													onClick={() =>
+														setSelectedCitaParaVer({
+															cita,
+															informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
+														})
+													}
+													className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+												>
+													Ver
+												</button>
+											</td>
+											<td className="px-2 py-2 text-center">
+												{cita.estado_cita === 3 ? (
+													<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
+														Atendida
+													</span>
+												) : (
+													<button
+														type="button"
+														disabled={cita.estado_cita === 2 || cita.estado_pago === 2}
+														onClick={() => handleAtenderCita(cita)}
+														className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:border-slate-200 disabled:hover:bg-slate-100"
+													>
+														Atender
+													</button>
+												)}
+											</td>
+											<td className="px-2 py-2 text-center">
+												<button
+													type="button"
+													onClick={() => {
+														setSelectedPaciente({ id: cita.id_paciente, name: fullName || "Paciente" });
+														setCitaParaMarcarAtendida(cita);
+													}}
+													className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
+												>
+													Ver historial
+												</button>
+											</td>
+										</tr>
+									);
+								})
+							) : (
+								<tr>
+									<td colSpan={10} className="px-2 py-6 text-center text-sm text-brand-800">
+										No hay citas que coincidan con los filtros.
+									</td>
+								</tr>
+							)}
+						</tbody>
+					</table>
+				</div>
+				{listaCitas.length > 0 && (
+					<div className="mt-4 shrink-0 flex items-center justify-between border-t border-mist pt-4">
+						<div className="text-xs text-brand-800">
+							Mostrando {(pageState - 1) * itemsPerPage + 1} -{" "}
+							{Math.min(pageState * itemsPerPage, listaCitas.length)} de{" "}
+							{listaCitas.length} citas
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setPageState((p) => Math.max(1, p - 1))}
+								disabled={pageState === 1}
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Anterior
+							</button>
+							<span className="text-xs text-brand-800">
+								Página {pageState} de {totalPages}
+							</span>
+							<button
+								type="button"
+								onClick={() => setPageState((p) => Math.min(totalPages, p + 1))}
+								disabled={pageState === totalPages}
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Siguiente
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
 
 	if (!isEspecialista) {
 		return (
@@ -538,11 +677,11 @@ const PacientesPage = () => {
 					)}
 				</div>
 
-				{/* Columna derecha: Todas las citas (con búsqueda y filtros) — misma altura fija que la izquierda */}
+				{/* Columna derecha: Citas por atender (con búsqueda y filtros) */}
 				<div className="rounded-2xl bg-paper p-6 shadow-sm flex flex-col min-w-0 lg:h-[32rem] lg:min-h-[32rem] lg:max-h-[32rem] lg:overflow-hidden">
 					<div className="shrink-0">
 						<h2 className="text-base font-semibold text-brand-900">
-							Todas las citas
+							Citas por atender
 						</h2>
 						<p className="text-xs text-brand-800 mt-0.5">
 							Busca por nombre, eco o fecha. Filtra por estado y resultados.
@@ -561,10 +700,8 @@ const PacientesPage = () => {
 							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
 						>
 							<option value="todos">Todos</option>
-							<option value="atendidas">Atendidas</option>
 							<option value="confirmadas">Confirmadas (por atender)</option>
 							<option value="pendientes">Pendientes</option>
-							<option value="canceladas">Canceladas</option>
 						</select>
 						<select
 							value={filtroResultado}
@@ -580,135 +717,26 @@ const PacientesPage = () => {
 					{loading ? (
 						<p className="mt-4 text-sm text-brand-800">Cargando citas...</p>
 					) : (
-						<>
-							<div className="mt-4 overflow-auto flex-1 min-h-0">
-								<table className="w-full text-left text-xs text-brand-800">
-									<thead>
-										<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
-											<th className="px-2 py-2 whitespace-nowrap">Fecha</th>
-											<th className="px-2 py-2 whitespace-nowrap">Hora</th>
-											<th className="px-2 py-2 whitespace-nowrap">Paciente</th>
-											<th className="px-2 py-2 whitespace-nowrap">Eco</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Resultados</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Estado</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Pago</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Cita</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Atender</th>
-											<th className="px-2 py-2 text-center whitespace-nowrap">Historial</th>
-										</tr>
-									</thead>
-									<tbody>
-										{paginatedCitas.length > 0 ? (
-											paginatedCitas.map((cita) => {
-												const fullName = `${cita.paciente_nombre ?? ""} ${cita.paciente_apellido ?? ""}`.trim();
-												return (
-													<tr key={cita.id_cita} className="border-b border-mist/70">
-														<td className="px-2 py-2 whitespace-nowrap">{formatFecha(cita.fecha_cita)}</td>
-														<td className="px-2 py-2 whitespace-nowrap">{formatHora(cita.hora_cita)}</td>
-														<td className="px-2 py-2 font-medium text-brand-900">{fullName || "—"}</td>
-														<td className="px-2 py-2">{cita.eco_nombre}</td>
-														<td className="px-2 py-2 text-center">
-															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).classes}`}>
-																{getResultadosInfo(cita, parseResultadoArchivo(cita.resultado_archivo).length).label}
-															</span>
-														</td>
-														<td className="px-2 py-2 text-center">
-															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoCitaClasses(cita.estado_cita)}`}>
-																{getEstadoCitaLabel(cita)}
-															</span>
-														</td>
-														<td className="px-2 py-2 text-center">
-															<span className={`rounded-full px-2 py-0.5 text-[11px] ${getEstadoPagoClasses(cita.estado_pago)}`}>
-																{cita.estado_pago === 1 ? "Pagado" : cita.estado_pago === 0 ? "Pendiente" : "Negado"}
-															</span>
-														</td>
-														<td className="px-2 py-2 text-center">
-															<button
-																type="button"
-																onClick={() =>
-																	setSelectedCitaParaVer({
-																		cita,
-																		informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
-																	})
-																}
-																className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
-															>
-																Ver
-															</button>
-														</td>
-														<td className="px-2 py-2 text-center">
-															{cita.estado_cita === 3 ? (
-																<span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-800">
-																	Atendida
-																</span>
-															) : (
-																<button
-																	type="button"
-																	onClick={() => handleAtenderCita(cita)}
-																	className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
-																>
-																	Atender
-																</button>
-															)}
-														</td>
-														<td className="px-2 py-2 text-center">
-															<button
-																type="button"
-																onClick={() => {
-																	setSelectedPaciente({ id: cita.id_paciente, name: fullName || "Paciente" });
-																	setCitaParaMarcarAtendida(cita);
-																}}
-																className="rounded-full border border-mint px-2 py-0.5 text-[11px] text-brand-800 hover:bg-cloud"
-															>
-																Ver historial
-															</button>
-														</td>
-													</tr>
-												);
-											})
-										) : (
-											<tr>
-												<td colSpan={10} className="px-2 py-6 text-center text-sm text-brand-800">
-													No hay citas que coincidan con los filtros.
-												</td>
-											</tr>
-										)}
-									</tbody>
-								</table>
-							</div>
-							{filteredCitas.length > 0 && (
-								<div className="mt-4 flex items-center justify-between border-t border-mist pt-4">
-									<div className="text-xs text-brand-800">
-										Mostrando {(citasPage - 1) * itemsPerPageCitas + 1} -{" "}
-										{Math.min(citasPage * itemsPerPageCitas, filteredCitas.length)} de{" "}
-										{filteredCitas.length} citas
-									</div>
-									<div className="flex items-center gap-2">
-										<button
-											type="button"
-											onClick={() => setCitasPage((p) => Math.max(1, p - 1))}
-											disabled={citasPage === 1}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											Anterior
-										</button>
-										<span className="text-xs text-brand-800">
-											Página {citasPage} de {totalPagesCitas}
-										</span>
-										<button
-											type="button"
-											onClick={() => setCitasPage((p) => Math.min(totalPagesCitas, p + 1))}
-											disabled={citasPage === totalPagesCitas}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											Siguiente
-										</button>
-									</div>
-								</div>
-							)}
-						</>
+						renderCitasTable(citasPorAtenderArr, citasPage, setCitasPage)
 					)}
 				</div>
+			</div>
+
+			{/* Nueva sección: Historial de citas (Atendidas, Canceladas, Negadas) */}
+			<div className="rounded-2xl bg-paper p-6 shadow-sm flex flex-col min-w-0 h-[32rem] min-h-[32rem] max-h-[32rem] overflow-hidden">
+				<div className="shrink-0">
+					<h2 className="text-base font-semibold text-brand-900">
+						Historial de citas
+					</h2>
+					<p className="text-xs text-brand-800 mt-0.5">
+						Registro de citas que ya fueron atendidas o que han sido canceladas/negadas.
+					</p>
+				</div>
+				{loading ? (
+					<p className="mt-4 text-sm text-brand-800">Cargando historial...</p>
+				) : (
+					renderCitasTable(citasHistorialArr, citasHistorialPage, setCitasHistorialPage)
+				)}
 			</div>
 
 			{selectedPaciente ? (

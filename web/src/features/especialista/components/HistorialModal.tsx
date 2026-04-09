@@ -184,7 +184,7 @@ const HistorialModal = ({
 
 	return (
 		<div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4 py-8">
-			<div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-paper shadow-xl">
+			<div className="w-full max-w-6xl overflow-hidden rounded-2xl bg-paper shadow-xl">
 				<div className="flex items-center justify-between border-b border-mist px-6 py-4">
 					<div>
 						<h3 className="text-base font-semibold text-brand-900">
@@ -197,53 +197,57 @@ const HistorialModal = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded-full border border-mist px-3 py-1 text-xs text-brand-800"
+						className="rounded-full border border-mist px-3 py-1 text-xs text-brand-800 transition-colors hover:bg-cloud"
 					>
 						Cerrar
 					</button>
 				</div>
-				<div className="max-h-[60vh] overflow-y-auto p-6">
+				<div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6">
 					{citas.length ? (
-						<table className="w-full text-left text-xs text-brand-800">
-							<thead>
-								<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
-									<th className="px-3 py-2">Fecha</th>
-									<th className="px-3 py-2">Hora</th>
-									<th className="px-3 py-2">Eco</th>
-									<th className="px-3 py-2 text-center">Representado</th>
-									<th className="px-3 py-2 text-center">Estado</th>
-									<th className="px-3 py-2 text-center">Resultado</th>
-									<th className="px-3 py-2 text-center">Orden Médica</th>
-									<th className="px-3 py-2 text-center">Informe</th>
-									<th className="px-3 py-2 text-center">Ver cita</th>
-								</tr>
-							</thead>
+						<div className="overflow-x-auto">
+							<table className="w-full text-left text-xs text-brand-800 min-w-max">
+								<thead>
+									<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
+										<th className="px-3 py-2 whitespace-nowrap">Fecha y Hora</th>
+										<th className="px-3 py-2 whitespace-nowrap">Eco</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Representado</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Estado</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Resultado</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Orden Médica</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Informe</th>
+										<th className="px-3 py-2 text-center whitespace-nowrap">Acciones</th>
+									</tr>
+								</thead>
 							<tbody>
 								{citas.map((cita) => (
 									<tr key={cita.id_cita} className="border-b border-mist/70">
-										<td className="px-3 py-3">
-											{formatFecha(
-												cita.fecha_cita instanceof Date
-													? cita.fecha_cita.toISOString()
-													: cita.fecha_cita
-											)}
+										<td className="px-3 py-3 whitespace-nowrap">
+											<div className="font-semibold text-brand-900">
+												{formatFecha(
+													cita.fecha_cita instanceof Date
+														? cita.fecha_cita.toISOString()
+														: cita.fecha_cita
+												)}
+											</div>
+											<div className="mt-0.5 text-[11px] text-brand-600">
+												{formatHora(cita.hora_cita)}
+											</div>
 										</td>
-										<td className="px-3 py-3">{formatHora(cita.hora_cita)}</td>
-										<td className="px-3 py-3">{cita.eco_nombre}</td>
-										<td className="px-3 py-3 text-center">
+										<td className="px-3 py-3 font-medium text-brand-900 whitespace-nowrap">{cita.eco_nombre}</td>
+										<td className="px-3 py-3 text-center whitespace-nowrap">
 											{cita.id_representado ? (
 												<span className="inline-flex items-center justify-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-800" title="Representado">
-													<Check className="h-3.5 w-3.5" />
+													<Check className="h-3 w-3" /> Rep.
 												</span>
 											) : (
 												<span className="inline-flex items-center justify-center gap-0.5 rounded-full bg-cloud px-2 py-0.5 text-[11px] text-brand-700" title="No representado">
-													<X className="h-3.5 w-3.5" />
+													<X className="h-3 w-3" /> No rep.
 												</span>
 											)}
 										</td>
-										<td className="px-3 py-3 text-center">
-											<div className="flex flex-col items-center gap-1">
-												<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+										<td className="px-3 py-3 text-center whitespace-nowrap">
+											<div className="flex flex-col items-center gap-1.5">
+												<span className="rounded-full bg-cloud px-2.5 py-0.5 text-[11px] text-brand-800">
 													{getEstadoLabel(cita)}
 												</span>
 												{cita.estado_cita === 1 &&
@@ -252,14 +256,14 @@ const HistorialModal = ({
 														<button
 															type="button"
 															onClick={() => handleMarcarAtendida(cita)}
-															className="rounded-full border border-mint px-2 py-0.5 text-[10px] text-brand-800 hover:bg-cloud"
+															className="rounded-full border border-mint px-2 py-0.5 text-[10px] text-brand-800 hover:bg-cloud whitespace-nowrap"
 														>
 															Marcar atendida
 														</button>
 													)}
 											</div>
 										</td>
-										<td className="px-3 py-3 text-center">
+										<td className="px-3 py-3 text-center whitespace-nowrap">
 										{(() => {
 											const archivos = parseResultadoArchivo(cita.resultado_archivo);
 											const tieneDicom = !!cita.resultado_study_uid;
@@ -277,7 +281,7 @@ const HistorialModal = ({
 																idCita: cita.id_cita,
 															});
 														}}
-														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+														className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800 whitespace-nowrap"
 													>
 														{total === 1 ? "Ver resultado" : `Ver ${total} resultados`}
 													</button>
@@ -290,7 +294,7 @@ const HistorialModal = ({
 											);
 										})()}
 										</td>
-										<td className="px-3 py-3 text-center">
+										<td className="px-3 py-3 text-center whitespace-nowrap">
 											<button
 												type="button"
 												disabled={!cita.orden}
@@ -299,12 +303,12 @@ const HistorialModal = ({
 														window.open(cita.orden, "_blank", "noopener,noreferrer");
 													}
 												}}
-												className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper disabled:opacity-50"
+												className="rounded-full border border-mist bg-paper px-3 py-1 text-[11px] text-brand-800 hover:bg-cloud disabled:opacity-50"
 											>
 												Ver
 											</button>
 										</td>
-										<td className="px-3 py-3 text-center">
+										<td className="px-3 py-3 text-center whitespace-nowrap">
 											{(() => {
 												const informe = informesMap.get(cita.id_cita);
 												const isAtendida = cita.estado_cita === 3;
@@ -312,14 +316,14 @@ const HistorialModal = ({
 													<button
 														type="button"
 														onClick={() => setSelectedCitaParaSubirResultado(cita)}
-														className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+														className="rounded-full border border-mint px-3 py-1 text-[11px] text-brand-800 hover:bg-cloud whitespace-nowrap"
 													>
 														Subir resultado
 													</button>
 												) : null;
 												if (informe?.informe_pdf_url) {
 													return (
-														<div className="flex flex-wrap items-center justify-center gap-1">
+														<div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[130px]">
 															<button
 																type="button"
 																onClick={() =>
@@ -328,7 +332,7 @@ const HistorialModal = ({
 																		`Informe-${paciente.name}-${cita.fecha_cita}.pdf`.replace(/\s+/g, "-")
 																	)
 																}
-																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800 whitespace-nowrap"
 															>
 																Ver PDF
 															</button>
@@ -338,11 +342,11 @@ const HistorialModal = ({
 												}
 												if (isAtendida) {
 													return (
-														<div className="flex flex-wrap items-center justify-center gap-1">
+														<div className="flex flex-wrap items-center justify-center gap-1.5 min-w-[130px]">
 															<button
 																type="button"
 																onClick={() => setSelectedCitaParaInforme(cita)}
-																className="rounded-full border border-brand-700 bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+																className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800 whitespace-nowrap"
 															>
 																Llenar
 															</button>
@@ -351,13 +355,13 @@ const HistorialModal = ({
 													);
 												}
 												return (
-													<span className="rounded-full bg-cloud px-3 py-1 text-[11px] text-brand-800">
+													<span className="rounded-full bg-cloud px-2.5 py-0.5 text-[11px] text-brand-800">
 														Pendiente
 													</span>
 												);
 											})()}
 										</td>
-										<td className="px-3 py-3 text-center">
+										<td className="px-3 py-3 text-center whitespace-nowrap">
 											<button
 												type="button"
 												onClick={() =>
@@ -366,7 +370,7 @@ const HistorialModal = ({
 														informePdfUrl: informesMap.get(cita.id_cita)?.informe_pdf_url ?? null,
 													})
 												}
-												className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800"
+												className="rounded-full bg-brand-700 px-3 py-1 text-[11px] text-paper hover:bg-brand-800 whitespace-nowrap"
 											>
 												Ver cita
 											</button>
@@ -375,6 +379,7 @@ const HistorialModal = ({
 								))}
 							</tbody>
 						</table>
+						</div>
 					) : (
 						<p className="text-sm text-brand-800">
 							No hay historial para este paciente.

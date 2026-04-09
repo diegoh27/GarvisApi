@@ -344,7 +344,8 @@ const listCitasAtendidasConResultadosController = async () => {
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
       r.study_uid AS resultado_study_uid,
-      r.estado_resultado AS resultado_estado
+      r.estado_resultado AS resultado_estado,
+      r.fecha_emision AS resultado_fecha_emision
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     LEFT JOIN cita_mostrador cm ON cm.id_cita = c.id_cita
@@ -377,7 +378,8 @@ const listResultadosByPacienteController = async (id_paciente) => {
       e.nombre AS eco_nombre,
       r.archivo AS resultado_archivo,
       r.study_uid AS resultado_study_uid,
-      r.estado_resultado AS resultado_estado
+      r.estado_resultado AS resultado_estado,
+      r.fecha_emision AS resultado_fecha_emision
     FROM cita c
     INNER JOIN usuario u_paciente ON u_paciente.id_usuario = c.id_paciente
     INNER JOIN usuario u_especialista ON u_especialista.id_usuario = c.id_especialista
