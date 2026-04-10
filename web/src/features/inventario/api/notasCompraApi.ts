@@ -31,6 +31,7 @@ export type NotaCompra = {
 	id_usuario: string;
 	creado_en: string;
 	total_lineas?: number;
+	descripcion_productos?: string;
 	lineas?: NotaCompraLinea[];
 };
 

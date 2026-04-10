@@ -1,4 +1,4 @@
-import { Edit2, History, Pencil, ShoppingCart, Trash2 } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 import type { Producto } from "../../api";
 import GenericTable from "../GenericTable";
 
@@ -6,9 +6,6 @@ type ProductosTableProps = {
   productos: Producto[];
   startIndex: number;
   onEditar: (id: string) => void;
-  onComprar: (id: string) => void;
-  onCambiarCantidad: (id: string) => void;
-  onVerHistorial: (id: string) => void;
   onEliminar: (id: string, nombre: string) => void;
 };
 
@@ -16,9 +13,6 @@ export default function ProductosTable({
   productos,
   startIndex,
   onEditar,
-  onComprar,
-  onCambiarCantidad,
-  onVerHistorial,
   onEliminar,
 }: ProductosTableProps) {
   const columns = [
@@ -143,38 +137,17 @@ export default function ProductosTable({
         <div className="flex gap-1 md:gap-2 justify-center">
           <button
             onClick={() => onEditar(row.id_producto)}
-            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-teal-50 text-teal-500 hover:text-teal-700 transition-colors"
             title="Editar producto"
           >
-            <Pencil size={15} />
-          </button>
-          <button
-            onClick={() => onComprar(row.id_producto)}
-            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-colors"
-            title="Comprar"
-          >
-            <ShoppingCart size={15} />
-          </button>
-          <button
-            onClick={() => onCambiarCantidad(row.id_producto)}
-            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-teal-50 text-teal-400 hover:text-teal-600 transition-colors"
-            title="Ajuste Manual"
-          >
-            <Edit2 size={15} />
-          </button>
-          <button
-            onClick={() => onVerHistorial(row.id_producto)}
-            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-purple-50 text-purple-400 hover:text-purple-600 transition-colors"
-            title="Historial de transacciones"
-          >
-            <History size={15} />
+            <Edit2 size={16} />
           </button>
           <button
             onClick={() => onEliminar(row.id_producto, row.nombre)}
-            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-red-50 text-red-500 hover:text-red-700 transition-colors"
             title="Eliminar producto"
           >
-            <Trash2 size={15} />
+            <Trash2 size={16} />
           </button>
         </div>
       ),

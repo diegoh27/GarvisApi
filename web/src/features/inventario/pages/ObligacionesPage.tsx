@@ -11,7 +11,6 @@ import HistorialObligacionModal from "../components/obligaciones/HistorialObliga
 import EditarPagoEnteModal from "../components/entes-legales/EditarPagoEnteModal";
 import EntesLegalesTableSimple from "../components/entes-legales/EntesLegalesTableSimple.tsx";
 import HistorialPagosTable from "../components/HistorialPagosTable";
-import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 import type { Obligacion, EnteLegal, HistorialEnteLegal, CompraProducto } from "../api";
 import {
@@ -254,19 +253,19 @@ export default function EntesLegalesPage() {
         onEliminar={handleEliminarObligacion}
         onGenerarPago={handleGenerarPago}
         onVerHistorial={handleVerHistorialObligacion}
+        paginationInfo={
+          filteredObligaciones.length > 0
+            ? {
+                currentPage,
+                totalPages,
+                totalItems: filteredObligaciones.length,
+                itemsPerPage,
+                label: "obligaciones",
+                onPageChange: setCurrentPage,
+              }
+            : undefined
+        }
       />
-
-      {/* Pagination */}
-      {filteredObligaciones.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredObligaciones.length}
-          itemsPerPage={itemsPerPage}
-          label="obligaciones"
-          onPageChange={setCurrentPage}
-        />
-      )}
 
       {/* ==========================================
 			 ENTES MANAGEMENT SECTION (Hidden by default)
@@ -290,44 +289,48 @@ export default function EntesLegalesPage() {
             startIndex={startIndexEntes}
             onEditar={handleEditarEnte}
             onEliminar={handleEliminarEnte}
+            paginationInfo={
+              entes.length > 0
+                ? {
+                    currentPage: currentPageEntes,
+                    totalPages: totalPagesEntes,
+                    totalItems: entes.length,
+                    itemsPerPage,
+                    label: "entes",
+                    onPageChange: setCurrentPageEntes,
+                  }
+                : undefined
+            }
           />
-
-          {/* Pagination */}
-          {entes.length > 0 && (
-            <Pagination
-              currentPage={currentPageEntes}
-              totalPages={totalPagesEntes}
-              totalItems={entes.length}
-              itemsPerPage={itemsPerPage}
-              label="entes"
-              onPageChange={setCurrentPageEntes}
-            />
-          )}
         </div>
       )}
 
       {/* ==========================================
 			 HISTORIAL DE PAGOS SECTION
 			================================================ */}
-      <HistorialPagosTable
-        historial={currentHistorial}
-        isLoading={historialLoading}
-        variant="pagos"
-        title="Historial de Pagos"
-        emptyMessage="No hay pagos registrados"
-        onEditar={(row) => handleEditarPago(row as CompraProducto | HistorialEnteLegal)}
-        onEliminar={handleEliminarPago}
-      />
-      {!historialLoading && historialData.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialData.length}
-          itemsPerPage={itemsPerPage}
-          label="pagos"
-          onPageChange={setCurrentPageHistorial}
+      <div className="mt-10">
+        <HistorialPagosTable
+          historial={currentHistorial}
+          isLoading={historialLoading}
+          variant="pagos"
+          title="Historial de Pagos"
+          emptyMessage="No hay pagos registrados"
+          onEditar={(row) => handleEditarPago(row as CompraProducto | HistorialEnteLegal)}
+          onEliminar={handleEliminarPago}
+          paginationInfo={
+            !historialLoading && historialData.length > 0
+              ? {
+                  currentPage: currentPageHistorial,
+                  totalPages: totalPagesHistorial,
+                  totalItems: historialData.length,
+                  itemsPerPage,
+                  label: "pagos",
+                  onPageChange: setCurrentPageHistorial,
+                }
+              : undefined
+          }
         />
-      )}
+      </div>
 
       {/* ==========================================
 			 MODALS

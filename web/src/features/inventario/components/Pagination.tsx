@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 type PaginationProps = {
   currentPage: number;
   totalPages: number;
@@ -18,30 +20,52 @@ export default function Pagination({
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
+  // Generate an array of page numbers to display
+  // Show up to 5 pages around the current page to prevent massive lists
+  const pageNumbers = [];
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, startPage + 4);
+  
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-4 md:px-6 py-4 border-t bg-gray-50">
-      <div className="text-xs md:text-sm text-gray-600 text-center md:text-left">
-        Mostrando {startItem} - {endItem} de {totalItems} {label}
-      </div>
-      <div className="flex items-center gap-2 md:gap-4 flex-wrap justify-center">
-        <button
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className="px-3 md:px-4 py-2 rounded-md bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm font-medium text-gray-700"
-        >
-          Anterior
-        </button>
-        <span className="text-xs md:text-sm text-gray-700 min-w-[100px] md:min-w-[120px] text-center">
-          Pagina {currentPage} de {totalPages}
-        </span>
-        <button
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-          className="px-3 md:px-4 py-2 rounded-md bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs md:text-sm font-medium text-gray-700"
-        >
-          Siguiente
-        </button>
-      </div>
+    <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+      <span>
+        Mostrando {totalItems === 0 ? "0 de 0" : `${startItem} a ${endItem} de ${totalItems}`} {label}
+      </span>
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1">
+          <button
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-40 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          {pageNumbers.map((page) => (
+            <button
+              key={page}
+              onClick={() => onPageChange(page)}
+              className={`px-2.5 py-1 rounded font-medium transition-colors ${
+                page === currentPage
+                  ? "bg-teal-600 text-white"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-40 transition-colors"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

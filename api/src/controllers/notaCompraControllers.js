@@ -27,7 +27,13 @@ const listNotasCompraController = async ({ limit = 200 } = {}) => {
 			nc.observaciones,
 			nc.id_usuario,
 			nc.creado_en,
-			(SELECT COUNT(*) FROM inv_nota_compra_detalle d WHERE d.id_nota_compra = nc.id_nota_compra) AS total_lineas
+			(SELECT COUNT(*) FROM inv_nota_compra_detalle d WHERE d.id_nota_compra = nc.id_nota_compra) AS total_lineas,
+			(
+				SELECT GROUP_CONCAT(prod.nombre SEPARATOR ', ')
+				FROM inv_nota_compra_detalle d
+				INNER JOIN inv_producto prod ON prod.id_producto = d.id_producto
+				WHERE d.id_nota_compra = nc.id_nota_compra
+			) AS descripcion_productos
 		FROM inv_nota_compra nc
 		INNER JOIN inv_proveedor p ON p.id_proveedor = nc.id_proveedor
 		ORDER BY nc.fecha_compra DESC, nc.creado_en DESC

@@ -1,5 +1,6 @@
 import { DollarSign, Pencil, Trash2 } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import { formatFechaLocal } from "../../../../shared";
 import type { AlquilerContrato } from "../../api/alquilerApi";
 
@@ -9,6 +10,14 @@ interface ContratosTableProps {
   onEditar: (id: string) => void;
   onEliminar: (id: string) => void;
   onRegistrarPago: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function ContratosTable({
@@ -17,6 +26,7 @@ export default function ContratosTable({
   onEditar,
   onEliminar,
   onRegistrarPago,
+  paginationInfo,
 }: ContratosTableProps) {
   const getEstadoBadge = (estado: AlquilerContrato["estado"]) => {
     if (estado === "Pagado") {
@@ -142,6 +152,7 @@ export default function ContratosTable({
           emptyState="No hay contratos registrados"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

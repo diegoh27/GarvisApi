@@ -1,5 +1,6 @@
 import { Pencil, Trash2, DollarSign, History } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import type { Obligacion } from "../../api";
 
 interface ObligacionesTableProps {
@@ -9,6 +10,14 @@ interface ObligacionesTableProps {
   onEliminar: (id: string) => void;
   onGenerarPago?: (id: string) => void;
   onVerHistorial?: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function ObligacionesTable({
@@ -18,6 +27,7 @@ export default function ObligacionesTable({
   onEliminar,
   onGenerarPago,
   onVerHistorial,
+  paginationInfo,
 }: ObligacionesTableProps) {
   const getEstadoBadge = (estado: string) => {
     const estadoLower = estado.toLowerCase();
@@ -147,6 +157,7 @@ export default function ObligacionesTable({
           emptyState="No hay obligaciones registradas"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

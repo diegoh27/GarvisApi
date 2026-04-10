@@ -1,14 +1,16 @@
-import type { CompraProducto } from "../api/productosApi";
+import type { CompraProducto, ConsumoProducto } from "../api/productosApi";
 import type { HistorialEnteLegal } from "../api/entesLegalesApi";
 import type { AlquilerPago } from "../api/alquilerApi";
 import type { NominaPago } from "../api/nominaApi";
 import GenericTable from "./GenericTable";
 import { formatFechaLocal, formatFechaCortaLocal, formatFechaHoraLocal } from "../../../shared";
-import { Edit, Trash2, FileDown } from "lucide-react";
+import { Edit, Trash2, FileDown, Plus } from "lucide-react";
 import { generateTableReport } from "../../../utils/generateTableReport";
+import Pagination from "./Pagination";
 
 type HistorialRow =
   | CompraProducto
+  | ConsumoProducto
   | HistorialEnteLegal
   | NominaPago
   | AlquilerPago;
@@ -16,11 +18,20 @@ type HistorialRow =
 type HistorialPagosTableProps = {
   historial: HistorialRow[];
   isLoading: boolean;
-  variant?: "compras" | "pagos" | "nomina" | "alquiler";
+  variant?: "compras" | "consumos" | "pagos" | "nomina" | "alquiler";
   title?: string;
   emptyMessage?: string;
   onEditar?: (row: HistorialRow) => void;
   onEliminar?: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
+  onRegistrarConsumo?: () => void;
 };
 
 export default function HistorialPagosTable({
@@ -31,8 +42,11 @@ export default function HistorialPagosTable({
   emptyMessage,
   onEditar,
   onEliminar,
+  paginationInfo,
+  onRegistrarConsumo,
 }: HistorialPagosTableProps) {
   const isCompras = variant === "compras";
+  const isConsumos = variant === "consumos";
   const isNomina = variant === "nomina";
   const isAlquiler = variant === "alquiler";
 
@@ -131,7 +145,65 @@ export default function HistorialPagosTable({
         ]
         : []),
     ]
-    : isNomina
+    : isConsumos
+      ? [
+        {
+          key: "id",
+          header: "ID",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
+          render: (row: HistorialRow) => {
+            const consumo = row as ConsumoProducto;
+            return `${consumo.id_consumo.slice(0, 6)}...`;
+          },
+        },
+        {
+          key: "numero_cita",
+          header: "Nº Cita",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-800 whitespace-nowrap",
+          render: (row: HistorialRow) => {
+            const consumo = row as ConsumoProducto;
+            return consumo.numero_cita ? `Cita_${String(consumo.numero_cita).padStart(3, '0')}` : "-";
+          },
+        },
+        {
+          key: "fecha",
+          header: "Fecha Cita",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
+          render: (row: HistorialRow) =>
+            formatFechaCortaLocal((row as ConsumoProducto).fecha_consumo),
+        },
+        {
+          key: "paciente",
+          header: "Paciente",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm font-bold text-gray-800 whitespace-nowrap",
+          render: (row: HistorialRow) => {
+            const consumo = row as ConsumoProducto;
+            return `${consumo.paciente_nombre} ${consumo.paciente_apellido}`;
+          },
+        },
+        {
+          key: "especialista",
+          header: "Especialista",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-700 whitespace-nowrap",
+          render: (row: HistorialRow) => {
+            const consumo = row as ConsumoProducto;
+            return consumo.especialista_nombre ? `Dr(a). ${consumo.especialista_nombre} ${consumo.especialista_apellido}` : "N/A";
+          },
+        },
+        {
+          key: "productos",
+          header: "Productos usados",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-sm text-teal-600 font-medium",
+          render: (row: HistorialRow) => (row as ConsumoProducto).nombre_producto,
+        },
+      ]
+      : isNomina
       ? [
         {
           key: "id_pago",
@@ -414,10 +486,10 @@ export default function HistorialPagosTable({
         ];
 
   const tableTitle =
-    title || (isCompras ? "Historial de Compras" : "Historial de Pagos");
+    title || (isCompras ? "Historial de compras" : isConsumos ? "Registro de consumo por cita" : "Historial de Pagos");
   const tableEmptyMessage =
     emptyMessage ||
-    (isCompras ? "No hay compras registradas" : "No hay pagos registrados");
+    (isCompras ? "No hay registros de compras" : isConsumos ? "No hay registros de consumo" : "No hay pagos registrados");
 
   const handleDownloadReport = () => {
     const validColumns = columns.filter((c) => c.key !== "actions");
@@ -460,13 +532,24 @@ export default function HistorialPagosTable({
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
         <h2 className="text-lg font-semibold text-gray-800">{tableTitle}</h2>
         {historial.length > 0 && (
-          <button
-            onClick={handleDownloadReport}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 max-h-10"
-          >
-            <FileDown size={18} />
-            Descargar Reporte
-          </button>
+          <div className="flex items-center gap-2">
+            {onRegistrarConsumo && (
+              <button
+                onClick={onRegistrarConsumo}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 max-h-10"
+              >
+                <Plus size={18} />
+                Registrar consumo manual
+              </button>
+            )}
+            <button
+              onClick={handleDownloadReport}
+              className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 max-h-10"
+            >
+              <FileDown size={18} />
+              Descargar Reporte
+            </button>
+          </div>
         )}
       </div>
       <div className="overflow-x-auto max-w-full text-nowrap">
@@ -488,6 +571,7 @@ export default function HistorialPagosTable({
           emptyState={tableEmptyMessage}
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
 	useDeleteNotaCompraMutation,
 } from "../api";
 import { useGetDolarOficialQuery } from "../../dolar";
+import NotaCompraDetalleModal from "../components/NotaCompraDetalleModal";
 
 /* ── Tipos locales ─────────────────────────────────── */
 interface LineaCompra {
@@ -49,6 +50,10 @@ export default function ComprasPage() {
 	// Paginación historial
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 5;
+
+	// Modal Detalle
+	const [selectedNotaCompraId, setSelectedNotaCompraId] = useState<string | null>(null);
+	const [showDetalleModal, setShowDetalleModal] = useState(false);
 
 	const addLinea = () => {
 		setLineas((prev) => [
@@ -269,10 +274,11 @@ export default function ComprasPage() {
 									type="number"
 									min={0}
 									step="any"
-									value={linea.cantidad}
+									value={linea.cantidad === 0 ? "" : linea.cantidad}
 									onChange={(e) =>
 										updateLinea(linea.id, "cantidad", Number(e.target.value))
 									}
+									onFocus={(e) => e.target.select()}
 									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 							</div>
@@ -284,10 +290,11 @@ export default function ComprasPage() {
 											type="number"
 											step="0.01"
 											min={0}
-											value={linea.precioUnitario}
+											value={linea.precioUnitario === 0 ? "" : linea.precioUnitario}
 											onChange={(e) =>
 												updateLinea(linea.id, "precioUnitario", Number(e.target.value))
 											}
+											onFocus={(e) => e.target.select()}
 											className="w-full px-2 py-2 text-sm focus:outline-none"
 										/>
 									</div>
@@ -297,13 +304,14 @@ export default function ComprasPage() {
 											type="number"
 											step="0.01"
 											min={0}
-											value={tasaBcv > 0 ? (linea.precioUnitario * tasaBcv).toFixed(2) : ""}
+											value={tasaBcv > 0 && linea.precioUnitario > 0 ? Number((linea.precioUnitario * tasaBcv).toFixed(4)) : ""}
 											onChange={(e) => {
 												const valorBs = Number(e.target.value);
 												if (tasaBcv > 0) {
 													updateLinea(linea.id, "precioUnitario", valorBs / tasaBcv);
 												}
 											}}
+											onFocus={(e) => e.target.select()}
 											disabled={tasaBcv <= 0}
 											placeholder={tasaBcv > 0 ? "0.00" : "Sin tasa BCV"}
 											className="w-full px-2 py-2 text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
@@ -383,12 +391,12 @@ export default function ComprasPage() {
 			{/* ── Historial de Notas de Compra ── */}
 			<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 				<div className="px-6 py-4 border-b border-gray-200">
-					<h2 className="text-lg font-bold text-gray-900">Historial de Compras</h2>
+					<h2 className="text-lg font-bold text-gray-900">Historial de compras</h2>
 				</div>
 				{loadingNotas ? (
 					<div className="p-6 text-center text-gray-400">Cargando...</div>
 				) : notasCompra.length === 0 ? (
-					<div className="p-6 text-center text-gray-400">No hay notas de compra registradas</div>
+					<div className="p-6 text-center text-gray-400">No hay registros de compras</div>
 				) : (
 					<>
 						<div className="overflow-x-auto">
@@ -398,6 +406,7 @@ export default function ComprasPage() {
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Fecha</th>
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Proveedor</th>
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Nº Factura</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Descripción</th>
 										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Total</th>
 										<th className="text-center px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Líneas</th>
 										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Acciones</th>
@@ -412,8 +421,19 @@ export default function ComprasPage() {
 											<td className="px-6 py-4 font-medium text-gray-900">
 												{nc.proveedor_nombre || "—"}
 											</td>
-											<td className="px-6 py-4 text-gray-700">
-												{nc.numero_factura || "S/N"}
+											<td className="px-6 py-4 text-teal-600 font-medium">
+												<button
+													onClick={() => {
+														setSelectedNotaCompraId(nc.id_nota_compra);
+														setShowDetalleModal(true);
+													}}
+													className="hover:underline text-left outline-none"
+												>
+													{nc.numero_factura || "S/N"}
+												</button>
+											</td>
+											<td className="px-6 py-4 text-gray-600 text-xs">
+												{nc.descripcion_productos || nc.observaciones || "S/D"}
 											</td>
 											<td className="px-6 py-4 text-right font-bold text-teal-600">
 												${Number(nc.total).toFixed(2)}
@@ -472,6 +492,16 @@ export default function ComprasPage() {
 					</>
 				)}
 			</div>
+
+			{/* Modal Detalle Factura */}
+			<NotaCompraDetalleModal
+				isOpen={showDetalleModal}
+				onClose={() => {
+					setShowDetalleModal(false);
+					setSelectedNotaCompraId(null);
+				}}
+				idNotaCompra={selectedNotaCompraId}
+			/>
 		</div>
 	);
 }

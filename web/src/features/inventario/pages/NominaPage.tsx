@@ -381,38 +381,40 @@ export default function NominaPage() {
             emptyState="No hay empleados registrados"
           />
         </div>
+        {filteredEmpleados.length > 0 && (
+          <Pagination
+            currentPage={currentPageEmpleados}
+            totalPages={totalPagesEmpleados}
+            totalItems={filteredEmpleados.length}
+            itemsPerPage={itemsPerPage}
+            label="empleados"
+            onPageChange={setCurrentPageEmpleados}
+          />
+        )}
       </div>
 
-      {filteredEmpleados.length > 0 && (
-        <Pagination
-          currentPage={currentPageEmpleados}
-          totalPages={totalPagesEmpleados}
-          totalItems={filteredEmpleados.length}
-          itemsPerPage={itemsPerPage}
-          label="empleados"
-          onPageChange={setCurrentPageEmpleados}
-        />
-      )}
-
       {/* Historial de Pagos */}
-      <HistorialPagosTable
-        historial={currentHistorial}
-        isLoading={historialLoading}
-        variant="nomina"
-        onEditar={(row) => handleEditarPago(row as NominaPago)}
-        onEliminar={handleEliminarPago}
-      />
-
-      {!historialLoading && historialRows.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialRows.length}
-          itemsPerPage={itemsPerPage}
-          label="pagos"
-          onPageChange={setCurrentPageHistorial}
+      <div className="mt-10">
+        <HistorialPagosTable
+          historial={currentHistorial}
+          isLoading={historialLoading}
+          variant="nomina"
+          onEditar={(row) => handleEditarPago(row as NominaPago)}
+          onEliminar={handleEliminarPago}
+          paginationInfo={
+            !historialLoading && historialRows.length > 0
+              ? {
+                  currentPage: currentPageHistorial,
+                  totalPages: totalPagesHistorial,
+                  totalItems: historialRows.length,
+                  itemsPerPage,
+                  label: "pagos",
+                  onPageChange: setCurrentPageHistorial,
+                }
+              : undefined
+          }
         />
-      )}
+      </div>
 
       {/* Modales */}
       <CrearEmpleadoModal

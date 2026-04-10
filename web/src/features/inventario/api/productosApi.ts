@@ -58,6 +58,20 @@ export type CreateProductoPayload = {
 	activo?: number;
 };
 
+export type ConsumoProducto = {
+	id_consumo: string; // Used as the key
+	id_cita: string;
+	numero_cita?: number;
+	id_producto?: string; // no longer specific per product in the list view
+	nombre_producto: string; // now this is the aggregated string of products used
+	cantidad: number; // total items
+	fecha_consumo: string;
+	paciente_nombre: string;
+	paciente_apellido: string;
+	especialista_nombre?: string;
+	especialista_apellido?: string;
+};
+
 export type UpdateProductoPayload = {
 	nombre?: string;
 	presentacion?: string;
@@ -278,6 +292,22 @@ const productosApi = baseApi.injectEndpoints({
 				response.data,
 			providesTags: ["HistorialAjustes"],
 		}),
+
+		// ==========================================
+		// CONSUMOS
+		// ==========================================
+
+		// GET /productos/consumos/historial - historial de todos los consumos
+		getHistorialConsumos: builder.query<ConsumoProducto[], void>({
+			query: () => ({
+				url: "/productos/consumos/historial",
+				method: "GET",
+			}),
+			transformResponse: (response: { ok: boolean; data: ConsumoProducto[] }) =>
+				response.data,
+			// Using the general Productos tag since there's no specific consumos tag set
+			providesTags: ["Productos"], 
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -296,6 +326,7 @@ export const {
 	useRegistrarAjusteMutation,
 	useGetAjustesProductoQuery,
 	useGetHistorialAjustesQuery,
+	useGetHistorialConsumosQuery,
 } = productosApi;
 
 export { productosApi };

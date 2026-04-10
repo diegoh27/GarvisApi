@@ -12,6 +12,7 @@ const {
 	registrarAjusteStockController,
 	listAjustesProductoController,
 	listHistorialAjustesController,
+	listHistorialConsumosController,
 } = require("../controllers/productosControllers");
 const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
@@ -458,6 +459,23 @@ const listHistorialAjustesHandler = async (req, res) => {
 	}
 };
 
+const listHistorialConsumosHandler = async (req, res) => {
+	try {
+		const limit = req.query.limit ? Number(req.query.limit) : 200;
+		const data = await listHistorialConsumosController({ limit });
+		return res.status(200).json({
+			ok: true,
+			data,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error al listar el historial de consumos",
+		});
+	}
+};
+
 module.exports = {
 	// Productos
 	listProductosHandler,
@@ -475,4 +493,6 @@ module.exports = {
 	registrarAjusteStockHandler,
 	listAjustesProductoHandler,
 	listHistorialAjustesHandler,
+	// Consumos
+	listHistorialConsumosHandler,
 };

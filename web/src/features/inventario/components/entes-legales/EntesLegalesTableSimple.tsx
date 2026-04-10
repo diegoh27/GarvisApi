@@ -1,5 +1,6 @@
 import { Pencil, Trash2 } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import type { EnteLegal } from "../../api";
 
 interface EntesLegalesTableSimpleProps {
@@ -7,6 +8,14 @@ interface EntesLegalesTableSimpleProps {
   startIndex: number;
   onEditar: (id: string) => void;
   onEliminar: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function EntesLegalesTableSimple({
@@ -14,6 +23,7 @@ export default function EntesLegalesTableSimple({
   startIndex,
   onEditar,
   onEliminar,
+  paginationInfo,
 }: EntesLegalesTableSimpleProps) {
   const columns = [
     {
@@ -98,6 +108,7 @@ export default function EntesLegalesTableSimple({
           emptyState="No hay entes legales registrados"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

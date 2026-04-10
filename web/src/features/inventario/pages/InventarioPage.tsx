@@ -24,7 +24,7 @@ const ALL_TABS: { id: TabType; label: string }[] = [
 	{ id: "proveedores", label: "Proveedores" },
 	{ id: "compras", label: "Compras" },
 	{ id: "recetas", label: "Recetas" },
-	{ id: "kardex", label: "Kardex" },
+	{ id: "kardex", label: "Movimientos de inventario" },
 ];
 
 export default function InventarioPage() {
