@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Check, X } from "lucide-react";
+import Swal from "sweetalert2";
 import { useAuth, formatFechaLocal } from "../../../shared";
 import { useLocation } from "react-router-dom";
 import { useGetMisCitasQuery } from "../especialistaApi";
@@ -7,6 +8,7 @@ import { useGetMisInformesQuery } from "../informesApi";
 import {
 	useGetAllInformesQuery,
 	useGetCitasAtendidasSinInformeQuery,
+	useRecordarEspecialistaMutation,
 } from "../../moderadores/moderadoresApi";
 import InformeFormModal from "../components/InformeFormModal";
 import PDFViewerModal from "../components/PDFViewerModal";
@@ -39,7 +41,8 @@ const InformesPage = () => {
 	const [selectedCitaId, setSelectedCitaId] = useState<string | null>(null);
 	const [query, setQuery] = useState("");
 	const [filtroEstado, setFiltroEstado] = useState<"todos" | "completado" | "pendiente">("todos");
-	const [currentPageModerador, setCurrentPageModerador] = useState(1);
+	const [currentPageModPendientes, setCurrentPageModPendientes] = useState(1);
+	const [currentPageModCompletados, setCurrentPageModCompletados] = useState(1);
 	const [currentPageEspecialista, setCurrentPageEspecialista] = useState(1);
 	const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null);
 	const [pdfFileName, setPdfFileName] = useState<string | null>(null);
@@ -83,6 +86,8 @@ const InformesPage = () => {
 		useGetCitasAtendidasSinInformeQuery(undefined, {
 			skip: !isModerador,
 		});
+
+	const [recordarEspecialista, { isLoading: isRecording }] = useRecordarEspecialistaMutation();
 
 	// Crear un mapa de informes por id_cita para búsqueda rápida
 	const informesMap = useMemo(() => {
@@ -142,33 +147,10 @@ const InformesPage = () => {
 		}
 	}, [filtroEstado, query, isEspecialista]);
 
-	// Combinar informes completados y citas pendientes (para moderadores)
-	const todosLosItems = useMemo(() => {
+	// Listas separadas para Moderador
+	const filteredModPendientes = useMemo(() => {
 		if (!isModerador) return [];
-		const completados = allInformes.map((informe) => ({
-			...informe,
-			tipo: "completado" as const,
-		}));
-		const pendientes = citasPendientes.map((cita) => ({
-			...cita,
-			tipo: "pendiente" as const,
-		}));
-		return [...completados, ...pendientes];
-	}, [allInformes, citasPendientes, isModerador]);
-
-	// Filtrar por estado y búsqueda (para moderadores)
-	const filteredItems = useMemo(() => {
-		if (!isModerador) return [];
-		let items = todosLosItems;
-
-		// Filtrar por estado
-		if (filtroEstado === "completado") {
-			items = items.filter((item) => item.tipo === "completado");
-		} else if (filtroEstado === "pendiente") {
-			items = items.filter((item) => item.tipo === "pendiente");
-		}
-
-		// Filtrar por búsqueda (incluyendo cédula)
+		let items = citasPendientes;
 		const normalized = query.trim().toLowerCase();
 		if (normalized) {
 			items = items.filter((item) => {
@@ -177,24 +159,44 @@ const InformesPage = () => {
 				return haystack.includes(normalized);
 			});
 		}
-
 		return items;
-	}, [todosLosItems, filtroEstado, query, isModerador]);
+	}, [citasPendientes, query, isModerador]);
 
-	// Paginación para moderadores
-	const totalPagesModerador = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
-	const paginatedItems = useMemo(() => {
+	const filteredModCompletados = useMemo(() => {
 		if (!isModerador) return [];
-		const startIndex = (currentPageModerador - 1) * itemsPerPage;
-		return filteredItems.slice(startIndex, startIndex + itemsPerPage);
-	}, [filteredItems, currentPageModerador, itemsPerPage, isModerador]);
+		let items = allInformes;
+		const normalized = query.trim().toLowerCase();
+		if (normalized) {
+			items = items.filter((item) => {
+				const cedula = (item as any).paciente_cedula || "";
+				const haystack = `${item.paciente_nombre} ${item.paciente_apellido} ${cedula} ${(item as any).especialista_nombre || ""} ${(item as any).especialista_apellido || ""} ${item.eco_nombre} ${getDateKey((item as any).fecha_cita)}`.toLowerCase();
+				return haystack.includes(normalized);
+			});
+		}
+		return items;
+	}, [allInformes, query, isModerador]);
 
-	// Resetear página cuando cambian los filtros (moderador)
+	// Paginación para moderadores (pendientes)
+	const totalPagesModPendientes = Math.max(1, Math.ceil(filteredModPendientes.length / itemsPerPage));
+	const paginatedModPendientes = useMemo(() => {
+		const startIndex = (currentPageModPendientes - 1) * itemsPerPage;
+		return filteredModPendientes.slice(startIndex, startIndex + itemsPerPage);
+	}, [filteredModPendientes, currentPageModPendientes, itemsPerPage]);
+
+	// Paginación para moderadores (completados)
+	const totalPagesModCompletados = Math.max(1, Math.ceil(filteredModCompletados.length / itemsPerPage));
+	const paginatedModCompletados = useMemo(() => {
+		const startIndex = (currentPageModCompletados - 1) * itemsPerPage;
+		return filteredModCompletados.slice(startIndex, startIndex + itemsPerPage);
+	}, [filteredModCompletados, currentPageModCompletados, itemsPerPage]);
+
+	// Resetear página cuando cambia la búsqueda (moderador)
 	useEffect(() => {
 		if (isModerador) {
-			setCurrentPageModerador(1);
+			setCurrentPageModPendientes(1);
+			setCurrentPageModCompletados(1);
 		}
-	}, [filtroEstado, query, isModerador]);
+	}, [query, isModerador]);
 
 	// Si es moderador, mostrar todos los informes completados
 	if (isModerador) {
@@ -236,56 +238,40 @@ const InformesPage = () => {
 					</div>
 				</div>
 
-				{/* Lista de informes */}
-				<div className="rounded-2xl bg-paper p-6 shadow-sm">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<h2 className="text-base font-semibold text-brand-900">
-								Informes y citas atendidas
-							</h2>
-							<p className="text-xs text-brand-800">
-								Busca por nombre, cédula, especialista, eco o fecha.
-							</p>
-						</div>
-						<div className="flex flex-col gap-2 sm:flex-row">
-							<select
-								value={filtroEstado}
-								onChange={(e) => setFiltroEstado(e.target.value as "todos" | "completado" | "pendiente")}
-								className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
-							>
-								<option value="todos">Todos</option>
-								<option value="completado">Completados</option>
-								<option value="pendiente">Pendientes</option>
-							</select>
-							<input
-								value={query}
-								onChange={(event) => setQuery(event.target.value)}
-								placeholder="Buscar por nombre, cédula, especialista..."
-								className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
-							/>
-						</div>
-					</div>
+				{/* Buscador general */}
+				<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+					<input
+						value={query}
+						onChange={(event) => setQuery(event.target.value)}
+						placeholder="Buscar por nombre, cédula, especialista..."
+						className="h-10 w-full rounded-full border border-mist bg-paper px-4 text-xs text-brand-900 outline-none focus:border-brand-700 shadow-sm sm:max-w-xs"
+					/>
+				</div>
 
-					{loadingAllInformes || loadingCitasPendientes ? (
-						<p className="mt-4 text-sm text-brand-800">Cargando informes...</p>
+				{/* Lista de citas pendientes */}
+				<div className="rounded-2xl bg-paper p-6 shadow-sm">
+					<h2 className="text-lg font-semibold text-brand-900 mb-4">
+						Citas pendientes de informe
+					</h2>
+
+					{loadingCitasPendientes ? (
+						<p className="mt-4 text-sm text-brand-800">Cargando citas pendientes...</p>
 					) : (
 						<>
-							<div className="mt-4 space-y-3">
-								{paginatedItems.length ? (
-									paginatedItems.map((item) => {
+							<div className="space-y-3">
+								{paginatedModPendientes.length ? (
+									paginatedModPendientes.map((item) => {
 										const pacienteFullName = `${item.paciente_nombre} ${item.paciente_apellido}`;
-										const especialistaFullName = `${item.especialista_nombre} ${item.especialista_apellido}`;
-										const isCompletado = item.tipo === "completado";
-										const informe = isCompletado ? item as typeof allInformes[0] : null;
+										const especialistaFullName = `${(item as any).especialista_nombre} ${(item as any).especialista_apellido}`;
 
 										return (
 											<div
-												key={isCompletado ? informe!.id_informe : item.id_cita}
-												className="rounded-lg border border-mist bg-cloud p-4"
+												key={item.id_cita}
+												className="rounded-lg border border-paper-200 bg-paper p-4"
 											>
-												<div className="flex items-center justify-between">
-													<div className="flex-1">
-														<div className="flex items-center gap-2">
+												<div className="flex flex-col gap-4 md:grid md:grid-cols-5 md:items-center">
+													<div className="flex flex-col">
+														<div className="flex items-center gap-2 flex-wrap">
 															<h3 className="font-semibold text-brand-900">
 																{pacienteFullName}
 															</h3>
@@ -294,26 +280,155 @@ const InformesPage = () => {
 																	({(item as any).paciente_cedula})
 																</span>
 															)}
-															{isCompletado ? (
-																<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
-																	Informe completo
-																</span>
-															) : (
-																<span className="rounded-full bg-yellow-500 px-2 py-1 text-[10px] text-paper">
-																	Pendiente
+														</div>
+													</div>
+													<div className="flex flex-col">
+														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Especialista</span>
+														<p className="mt-1 text-sm text-brand-900">
+															{especialistaFullName}
+														</p>
+													</div>
+													<div className="flex flex-col">
+														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Estudio y Fecha</span>
+														<p className="mt-1 text-sm text-brand-900">
+															{item.eco_nombre} <br />
+															<span className="text-xs text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
+														</p>
+													</div>
+													<div className="flex md:justify-center">
+														<span className="inline-block rounded-full bg-yellow-500 px-2 py-1 text-[10px] text-paper">
+															Pendiente
+														</span>
+													</div>
+													<div className="flex justify-end lg:justify-start">
+														<button
+															type="button"
+															disabled={isRecording}
+															onClick={async () => {
+																try {
+																	await recordarEspecialista({ id_cita: item.id_cita }).unwrap();
+																	Swal.fire({
+																		title: "¡Recordatorio enviado!",
+																		text: "El especialista ha recibido una notificación recordando que debe subir el informe.",
+																		icon: "success",
+																		confirmButtonColor: "#1C837F",
+																	});
+																} catch (err: any) {
+																	Swal.fire({
+																		title: "Error",
+																		text: err?.data?.message || "No se pudo enviar el recordatorio",
+																		icon: "error",
+																		confirmButtonColor: "#1C837F",
+																	});
+																}
+															}}
+															className="rounded-full bg-brand-700 px-4 py-2 text-[10px] font-medium uppercase tracking-wider text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+														>
+															Recordar especialista
+														</button>
+													</div>
+												</div>
+											</div>
+										);
+									})
+								) : (
+									<p className="py-6 text-center text-sm text-brand-800">
+										{query.trim()
+											? "No se encontraron citas pendientes con ese criterio."
+											: "No hay citas pendientes de informe."}
+									</p>
+								)}
+							</div>
+
+							{filteredModPendientes.length > itemsPerPage && (
+								<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
+									<p className="text-xs text-brand-800">
+										Mostrando {paginatedModPendientes.length > 0 ? (currentPageModPendientes - 1) * itemsPerPage + 1 : 0} -{" "}
+										{Math.min(currentPageModPendientes * itemsPerPage, filteredModPendientes.length)} de{" "}
+										{filteredModPendientes.length}
+									</p>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={() => setCurrentPageModPendientes((prev) => Math.max(1, prev - 1))}
+											disabled={currentPageModPendientes === 1}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Anterior
+										</button>
+										<span className="text-xs text-brand-800">
+											Página {currentPageModPendientes} de {totalPagesModPendientes}
+										</span>
+										<button
+											type="button"
+											onClick={() => setCurrentPageModPendientes((prev) => Math.min(totalPagesModPendientes, prev + 1))}
+											disabled={currentPageModPendientes >= totalPagesModPendientes}
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Siguiente
+										</button>
+									</div>
+								</div>
+							)}
+						</>
+					)}
+				</div>
+
+				{/* Historial de informes completados */}
+				<div className="rounded-2xl bg-paper p-6 shadow-sm">
+					<h2 className="text-lg font-semibold text-brand-900 mb-4">
+						Historial de informes
+					</h2>
+
+					{loadingAllInformes ? (
+						<p className="mt-4 text-sm text-brand-800">Cargando informes completados...</p>
+					) : (
+						<>
+							<div className="space-y-3">
+								{paginatedModCompletados.length ? (
+									paginatedModCompletados.map((item) => {
+										const pacienteFullName = `${item.paciente_nombre} ${item.paciente_apellido}`;
+										const especialistaFullName = `${(item as any).especialista_nombre} ${(item as any).especialista_apellido}`;
+										const informe = item as typeof allInformes[0];
+
+										return (
+											<div
+												key={informe.id_informe}
+												className="rounded-lg border border-brand-200 bg-brand-50/30 p-4"
+											>
+												<div className="flex flex-col gap-4 md:grid md:grid-cols-5 md:items-center">
+													<div className="flex flex-col">
+														<div className="flex items-center gap-2 flex-wrap">
+															<h3 className="font-semibold text-brand-900">
+																{pacienteFullName}
+															</h3>
+															{(item as any).paciente_cedula && (
+																<span className="text-xs text-brand-600">
+																	({(item as any).paciente_cedula})
 																</span>
 															)}
 														</div>
-														<p className="mt-1 text-xs text-brand-800">
-															<strong>Especialista:</strong> {especialistaFullName}
-														</p>
-														<p className="mt-1 text-xs text-brand-800">
-															{item.eco_nombre} · {formatFecha(item.fecha_cita)} ·{" "}
-															{formatHora(item.hora_cita)}
+													</div>
+													<div className="flex flex-col">
+														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Especialista</span>
+														<p className="mt-1 text-sm text-brand-900">
+															{especialistaFullName}
 														</p>
 													</div>
-													<div className="ml-4 flex gap-2">
-														{isCompletado && informe?.informe_pdf_url ? (
+													<div className="flex flex-col">
+														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Estudio y Fecha</span>
+														<p className="mt-1 text-sm text-brand-900">
+															{item.eco_nombre} <br />
+															<span className="text-xs text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
+														</p>
+													</div>
+													<div className="flex md:justify-center">
+														<span className="inline-block rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
+															Informe completo
+														</span>
+													</div>
+													<div className="flex md:justify-end">
+														{informe.informe_pdf_url ? (
 															<button
 																type="button"
 																onClick={() => {
@@ -321,7 +436,7 @@ const InformesPage = () => {
 																	setPdfFileName(fileName);
 																	setPdfViewerUrl(informe.informe_pdf_url!);
 																}}
-																className="rounded-full bg-brand-700 px-4 py-2 text-xs font-medium text-paper transition-colors hover:bg-brand-800"
+																className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50"
 															>
 																Ver PDF
 															</button>
@@ -333,37 +448,36 @@ const InformesPage = () => {
 									})
 								) : (
 									<p className="py-6 text-center text-sm text-brand-800">
-										{query.trim() || filtroEstado !== "todos"
-											? "No se encontraron resultados con ese criterio."
-											: "No hay informes o citas para mostrar."}
+										{query.trim()
+											? "No se encontraron informes completados con ese criterio."
+											: "No hay informes completados."}
 									</p>
 								)}
 							</div>
 
-							{/* Paginación */}
-							{filteredItems.length > itemsPerPage && (
+							{filteredModCompletados.length > itemsPerPage && (
 								<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
 									<p className="text-xs text-brand-800">
-										Mostrando {paginatedItems.length > 0 ? (currentPageModerador - 1) * itemsPerPage + 1 : 0} -{" "}
-										{Math.min(currentPageModerador * itemsPerPage, filteredItems.length)} de{" "}
-										{filteredItems.length} items
+										Mostrando {paginatedModCompletados.length > 0 ? (currentPageModCompletados - 1) * itemsPerPage + 1 : 0} -{" "}
+										{Math.min(currentPageModCompletados * itemsPerPage, filteredModCompletados.length)} de{" "}
+										{filteredModCompletados.length}
 									</p>
 									<div className="flex items-center gap-2">
 										<button
 											type="button"
-											onClick={() => setCurrentPageModerador((prev) => Math.max(1, prev - 1))}
-											disabled={currentPageModerador === 1}
+											onClick={() => setCurrentPageModCompletados((prev) => Math.max(1, prev - 1))}
+											disabled={currentPageModCompletados === 1}
 											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Anterior
 										</button>
 										<span className="text-xs text-brand-800">
-											Página {currentPageModerador} de {totalPagesModerador}
+											Página {currentPageModCompletados} de {totalPagesModCompletados}
 										</span>
 										<button
 											type="button"
-											onClick={() => setCurrentPageModerador((prev) => Math.min(totalPagesModerador, prev + 1))}
-											disabled={currentPageModerador >= totalPagesModerador}
+											onClick={() => setCurrentPageModCompletados((prev) => Math.min(totalPagesModCompletados, prev + 1))}
+											disabled={currentPageModCompletados >= totalPagesModCompletados}
 											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Siguiente

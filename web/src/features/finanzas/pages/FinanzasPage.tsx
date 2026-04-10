@@ -97,16 +97,16 @@ export default function FinanzasPage() {
 
 	const handleRefrescar = () => {
 		setIsRefreshing(true);
-		dispatch(baseApi.util.invalidateTags(FINANZAS_TAGS as unknown as string[]));
+		dispatch(baseApi.util.invalidateTags(FINANZAS_TAGS as any));
 		setTimeout(() => setIsRefreshing(false), 400);
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-100">
+		<div className="w-full bg-transparent">
 			{/* Tab Navigation */}
-			<div className="bg-white border-b border-gray-200">
-				<div className="max-w-7xl mx-auto w-full">
-					<div className="flex items-center justify-between gap-3 px-2 sm:px-0">
+			<div className="mb-5 bg-white border-b border-gray-200 rounded-t-2xl sm:rounded-2xl shadow-sm">
+				<div className="w-full">
+					<div className="flex items-center justify-between gap-3 px-4 sm:px-6">
 						<div className="overflow-x-auto flex-1 min-w-0">
 							<div className="flex flex-nowrap gap-0 min-w-max">
 								{tabs.map((tab) => (
@@ -143,7 +143,7 @@ export default function FinanzasPage() {
 			</div>
 
 			{/* Tab Content */}
-			<div className="max-w-7xl mx-auto px-2 sm:px-0 pb-8">
+			<div className="w-full pb-8">
 				{safeActiveTab === "entes" && <ObligacionesPage />}
 				{safeActiveTab === "nomina" && <NominaPage />}
 				{safeActiveTab === "alquiler" && <AlquilerPage />}

@@ -173,8 +173,8 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 mb-16 bg-slate-50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="mb-16">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Inventario</h1>
           <p className="text-sm text-gray-500 mt-1">Estado en tiempo real de insumos clínicos y equipo médico.</p>

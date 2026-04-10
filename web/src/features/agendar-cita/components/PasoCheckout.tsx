@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, type ChangeEvent, type FormEvent } from "react";
 import {
 	ArrowLeft,
-	ArrowRight,
 	Upload,
 	Calendar,
 	Clock,
@@ -10,7 +9,6 @@ import {
 	CheckCircle2,
 	Copy,
 	Loader2,
-	CreditCard,
 } from "lucide-react";
 import { useGetEcosQuery } from "../../ecos/ecosApi";
 import { useGetDolarOficialQuery } from "../../dolar";
@@ -335,7 +333,6 @@ const PasoCheckout = ({
 	const displayTelefono = selectedMetodo?.telefono || "—";
 	const displayCuenta = selectedMetodo?.numero_cuenta || null;
 	const displayQrUrl = selectedMetodo?.imagen_url || null;
-	const displayTipo = selectedMetodo ? labelTipoPago(selectedMetodo.tipo_pago) : "—";
 
 	/* ─── SUCCESS STATE ─── */
 	if (success) {

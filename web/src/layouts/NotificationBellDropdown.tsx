@@ -95,7 +95,6 @@ const NotificationBellDropdown = ({
 						) : (
 							items.map((n) => {
 								const meta = getNotificacionMeta(n);
-								const isClickable = !!meta.link;
 								return (
 									<li
 										key={n.id_notificacion}

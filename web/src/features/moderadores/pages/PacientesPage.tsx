@@ -110,13 +110,6 @@ const getEstadoPacienteUi = (p: {
 			dotClass: "bg-slate-300",
 		};
 	}
-	if (p.totalCitas > 0 && p.citasConResultado === 0) {
-		return {
-			label: "Pendiente",
-			badgeClass: "bg-red-100 text-red-900",
-			dotClass: "bg-amber-400",
-		};
-	}
 	if (p.totalCitas === 0) {
 		return {
 			label: "Nuevo",
@@ -124,8 +117,15 @@ const getEstadoPacienteUi = (p: {
 			dotClass: "bg-sky-400",
 		};
 	}
+	if (p.citasConResultado < p.totalCitas) {
+		return {
+			label: "Pendiente",
+			badgeClass: "bg-red-100 text-red-900",
+			dotClass: "bg-amber-400",
+		};
+	}
 	return {
-		label: "Estable",
+		label: "Al día",
 		badgeClass: "bg-teal-100 text-teal-900",
 		dotClass: "bg-emerald-500",
 	};
@@ -415,8 +415,8 @@ const PacientesPage = () => {
 										key={paciente.id_paciente}
 										className="group flex flex-col justify-between rounded-2xl border border-slate-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:bg-white hover:shadow-md md:flex-row md:items-center"
 									>
-										<div className="flex items-center gap-6">
-											<div className="relative">
+										<div className="flex flex-1 min-w-0 items-center gap-6 md:pr-4">
+											<div className="relative shrink-0">
 												<div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 font-headline text-lg font-bold text-slate-500 grayscale transition-all group-hover:grayscale-0">
 													{(paciente.nombre?.[0] ?? "").toUpperCase()}
 													{(paciente.apellido?.[0] ?? "").toUpperCase()}
@@ -425,30 +425,30 @@ const PacientesPage = () => {
 													className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-white ${estadoUi.dotClass}`}
 												/>
 											</div>
-											<div>
-												<h4 className="font-headline text-lg font-bold text-brand-900 transition-colors group-hover:text-[#006965]">
+											<div className="min-w-0">
+												<h4 className="font-headline text-lg font-bold text-brand-900 transition-colors group-hover:text-[#006965] truncate">
 													{fullName}
 												</h4>
-												<p className="text-sm text-slate-500">
+												<p className="text-sm text-slate-500 truncate">
 													C.I. {paciente.cedula}
 													{edad != null ? ` • ${edad} años` : ""}
 													{paciente.correo ? ` • ${paciente.correo}` : ""}
 												</p>
-												<p className="mt-1 text-xs text-slate-400">
+												<p className="mt-1 text-xs text-slate-400 truncate">
 													{totalCitas} cita{totalCitas !== 1 ? "s" : ""} en historial •{" "}
 													{citasConResultado} con resultado{citasConResultado !== 1 ? "s" : ""}
 												</p>
 											</div>
 										</div>
-										<div className="mt-4 flex flex-col gap-6 px-0 md:mt-0 md:flex-row md:items-center md:gap-12 md:px-6">
-											<div className="flex items-center gap-8 md:gap-12">
-												<div className="text-center">
+										<div className="mt-4 flex shrink-0 flex-col gap-6 px-0 md:mt-0 md:flex-row md:items-center md:gap-8 md:px-4 lg:gap-12">
+											<div className="flex items-center gap-8 md:gap-10">
+												<div className="w-12 text-center shrink-0">
 													<p className="mb-1 font-sans text-[10px] uppercase tracking-widest text-slate-400">
 														Citas
 													</p>
 													<p className="font-headline text-lg font-bold text-slate-700">{totalCitas}</p>
 												</div>
-												<div className="text-center">
+												<div className="w-20 text-center shrink-0">
 													<p className="mb-1 font-sans text-[10px] uppercase tracking-widest text-slate-400">
 														Resultados
 													</p>
@@ -458,16 +458,16 @@ const PacientesPage = () => {
 														{String(citasConResultado).padStart(2, "0")}
 													</p>
 												</div>
-												<div className="hidden h-10 w-px bg-slate-100 lg:block" />
-												<div className="hidden lg:flex lg:flex-col">
+												<div className="hidden h-10 w-px bg-slate-100 lg:block shrink-0" />
+												<div className="hidden lg:flex xl:w-24 shrink-0 text-center justify-center">
 													<span
-														className={`rounded-full px-3 py-1 text-center text-[10px] font-bold uppercase tracking-wider ${estadoUi.badgeClass}`}
+														className={`rounded-full px-3 py-1 w-full text-center text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${estadoUi.badgeClass}`}
 													>
 														{estadoUi.label}
 													</span>
 												</div>
 											</div>
-											<div className="flex w-full gap-3 md:mt-0 md:w-auto md:items-center">
+											<div className="flex w-full gap-3 md:mt-0 md:w-[260px] md:items-center shrink-0">
 												<button
 													type="button"
 													onClick={() =>
@@ -477,14 +477,14 @@ const PacientesPage = () => {
 															apellido: paciente.apellido,
 														})
 													}
-													className="flex-1 rounded-xl border border-[#006965]/20 px-6 py-3 text-sm font-semibold text-[#006965] transition-colors hover:bg-teal-50 active:scale-95 md:flex-none"
+													className="flex-1 rounded-xl border border-[#006965]/20 px-4 py-3 text-sm font-semibold text-[#006965] transition-colors hover:bg-teal-50 active:scale-95 md:flex-none text-center whitespace-nowrap"
 												>
 													Ver historial
 												</button>
 												<button
 													type="button"
 													onClick={() => setSelectedPacienteForAsignar(pacienteParaModal)}
-													className="flex-1 rounded-xl bg-[#006965] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/10 transition-all hover:shadow-[#006965]/20 active:scale-95 md:flex-none"
+													className="flex-1 rounded-xl bg-[#006965] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/10 transition-all hover:shadow-[#006965]/20 active:scale-95 md:flex-none text-center whitespace-nowrap"
 												>
 													Asignar cita
 												</button>

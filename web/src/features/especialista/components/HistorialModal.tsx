@@ -24,7 +24,6 @@ type HistorialModalProps = {
 	getEstadoLabel: (cita: CitaEspecialista) => string;
 	getResultadoLabel: (cita: CitaEspecialista) => string;
 	onVerPdf?: (url: string, fileName: string) => void;
-	onDownload?: (contenido: string, label: string) => void;
 	onClose: () => void;
 };
 
@@ -69,7 +68,6 @@ const HistorialModal = ({
 	getEstadoLabel,
 	getResultadoLabel,
 	onVerPdf,
-	onDownload,
 	onClose,
 }: HistorialModalProps) => {
 	const [selectedCitaForResultados, setSelectedCitaForResultados] = useState<{

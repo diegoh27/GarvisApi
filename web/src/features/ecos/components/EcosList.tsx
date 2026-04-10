@@ -3,12 +3,9 @@ import Swal from "sweetalert2";
 import {
 	Activity,
 	Clock,
-	HeartPulse,
 	Pencil,
 	PlusCircle,
-	Stethoscope,
 	Trash2,
-	Waves,
 	X,
 } from "lucide-react";
 import { useGetEcosQuery, useDeleteEcoMutation } from "../ecosApi";
