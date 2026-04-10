@@ -5,6 +5,7 @@ import { useGetProductosQuery, useGetHistorialConsumosQuery, useGetHistorialComp
 import EditarCompraModal from "../components/productos/EditarCompraModal.tsx";
 import CrearProductoModal from "../components/productos/CrearProductoModal.tsx";
 import EditarProductoModal from "../components/productos/EditarProductoModal.tsx";
+import ConsumoManualModal from "../components/productos/ConsumoManualModal.tsx";
 import ProductosTable from "../components/productos/ProductosTable";
 import HistorialPagosTable from "../components/HistorialPagosTable";
 import Pagination from "../components/Pagination.tsx";
@@ -20,6 +21,7 @@ export default function ProductosPage() {
   const [showEditarCompraModal, setShowEditarCompraModal] = useState(false);
   const [showCrearModal, setShowCrearModal] = useState(false);
   const [showEditarModal, setShowEditarModal] = useState(false);
+  const [showConsumoModal, setShowConsumoModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPageProductos, setCurrentPageProductos] = useState(1);
   const [currentPageHistorial, setCurrentPageHistorial] = useState(1);
@@ -28,6 +30,11 @@ export default function ProductosPage() {
   const handleEditar = (id: string) => {
     setSelectedProducto(id);
     setShowEditarModal(true);
+  };
+
+  const handleConsumoManual = (id: string) => {
+    setSelectedProducto(id);
+    setShowConsumoModal(true);
   };
 
 
@@ -211,6 +218,7 @@ export default function ProductosPage() {
         <ProductosTable
           productos={currentProductos}
           startIndex={startIndexProductos}
+          onConsumoManual={handleConsumoManual}
           onEditar={handleEditar}
           onEliminar={handleEliminarProducto}
         />
@@ -270,6 +278,12 @@ export default function ProductosPage() {
             isOpen={showEditarModal}
             onClose={() => setShowEditarModal(false)}
             idProducto={selectedProducto}
+          />
+          <ConsumoManualModal
+            isOpen={showConsumoModal}
+            onClose={() => setShowConsumoModal(false)}
+            idProducto={selectedProducto}
+            onSuccess={() => refetch()}
           />
 
         </>

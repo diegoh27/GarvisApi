@@ -1,4 +1,4 @@
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, MinusCircle } from "lucide-react";
 import type { Producto } from "../../api";
 import GenericTable from "../GenericTable";
 
@@ -6,6 +6,7 @@ type ProductosTableProps = {
   productos: Producto[];
   startIndex: number;
   onEditar: (id: string) => void;
+  onConsumoManual: (id: string) => void;
   onEliminar: (id: string, nombre: string) => void;
 };
 
@@ -13,6 +14,7 @@ export default function ProductosTable({
   productos,
   startIndex,
   onEditar,
+  onConsumoManual,
   onEliminar,
 }: ProductosTableProps) {
   const columns = [
@@ -135,6 +137,13 @@ export default function ProductosTable({
       cellClassName: "px-3 md:px-6 py-5 text-center",
       render: (row: Producto) => (
         <div className="flex gap-1 md:gap-2 justify-center">
+          <button
+            onClick={() => onConsumoManual(row.id_producto)}
+            className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-orange-50 text-orange-400 hover:text-orange-600 transition-colors"
+            title="Consumo Manual"
+          >
+            <MinusCircle size={16} />
+          </button>
           <button
             onClick={() => onEditar(row.id_producto)}
             className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md p-0 hover:bg-teal-50 text-teal-500 hover:text-teal-700 transition-colors"
