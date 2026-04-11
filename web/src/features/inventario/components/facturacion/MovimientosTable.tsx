@@ -221,21 +221,17 @@ export default function MovimientosTable({
   ];
 
   const handleDownloadReport = () => {
-    const validColumns = colsDef.filter(c => c.key !== "actions");
+    const excludedPrintCols = ["actions", "id", "codigo_item", "tasa_dia", "descripcion"];
+    const validColumns = colsDef.filter(c => !excludedPrintCols.includes(c.key));
     const headers = validColumns.map(c => c.header);
     
-    // Convert to strict text because cell's render can return spans.
-    const tableData = movimientos.map((row, index) => {
+    const tableData = movimientos.map((row) => {
       return [
-        String(startIndex + index + 1).padStart(3, "0"),
         formatDate(row.fecha),
-        buildItemCode(row),
         row.tipo,
         formatUsd(row.monto_total_dol || row.monto || 0),
         formatBs(row.monto_total_bs || row.monto_bs || 0),
-        Number(row.tasa_dia || row.tasa_dia_bcv || 0).toLocaleString("es-VE", { minimumFractionDigits: 2 }),
         origenLabelMap[row.origen_modulo] || row.origen_modulo,
-        buildDetailedDescription(row),
         row.referencia || "-",
       ];
     });

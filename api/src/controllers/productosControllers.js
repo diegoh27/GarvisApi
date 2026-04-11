@@ -479,6 +479,28 @@ const registrarAjusteStockController = async ({
 			[stock_nuevoNum, id_producto],
 		);
 
+		// Registrar en el Kardex
+		const id_kardex = crypto.randomUUID();
+		const tipoMovimiento = stock_nuevoNum > stock_anterior ? 'ENTRADA' : 'SALIDA';
+		const cantidadAjuste = Math.abs(stock_nuevoNum - stock_anterior);
+		
+		await conn.execute(
+			`INSERT INTO inv_kardex 
+			(id_kardex, id_producto, tipo_movimiento, cantidad, stock_anterior, stock_posterior, referencia_tipo, referencia_id, id_usuario, observaciones)
+			VALUES (?, ?, ?, ?, ?, ?, 'AJUSTE', ?, ?, ?)`,
+			[
+				id_kardex,
+				id_producto,
+				tipoMovimiento,
+				cantidadAjuste,
+				stock_anterior,
+				stock_nuevoNum,
+				id_ajuste,
+				id_usuario,
+				motivo ? `Ajuste manual: ${motivo}` : `Ajuste manual`
+			]
+		);
+
 		await conn.commit();
 
 		return {
@@ -786,7 +808,9 @@ const listHistorialConsumosController = async ({ limit = 200 } = {}) => {
 			ue.nombre AS especialista_nombre,
 			ue.apellido AS especialista_apellido,
 			GROUP_CONCAT(CONCAT(p.nombre, ' (', cc.cantidad, ')') SEPARATOR ', ') AS nombre_producto,
-			SUM(cc.cantidad) AS cantidad
+			SUM(cc.cantidad) AS cantidad,
+			'cita' AS origen,
+			NULL AS descripcion
 		FROM CitasNumeradas c
 		INNER JOIN inv_cita_consumo cc ON c.id_cita = cc.id_cita
 		INNER JOIN inv_producto p ON cc.id_producto = p.id_producto
@@ -804,8 +828,27 @@ const listHistorialConsumosController = async ({ limit = 200 } = {}) => {
 			cm.apellido, 
 			ue.nombre, 
 			ue.apellido
-		ORDER BY c.fecha_cita DESC, c.hora_cita DESC
-		LIMIT ${limitNum}
+
+		UNION ALL
+
+		SELECT 
+			a.id_ajuste AS id_consumo,
+			NULL AS id_cita,
+			NULL AS numero_cita,
+			a.fecha AS fecha_consumo,
+			NULL AS paciente_nombre,
+			NULL AS paciente_apellido,
+			NULL AS especialista_nombre,
+			NULL AS especialista_apellido,
+			CONCAT(p.nombre, ' (', (a.stock_anterior - a.stock_nuevo), ')') AS nombre_producto,
+			(a.stock_anterior - a.stock_nuevo) AS cantidad,
+			'manual' AS origen,
+			a.motivo AS descripcion
+		FROM inv_producto_ajuste a
+		INNER JOIN inv_producto p ON a.id_producto = p.id_producto
+		WHERE a.stock_nuevo < a.stock_anterior
+		
+		ORDER BY fecha_consumo DESC LIMIT ${limitNum}
 	`;
 	const [rows] = await pool.execute(sql);
 	return rows;

@@ -70,6 +70,8 @@ export type ConsumoProducto = {
 	paciente_apellido: string;
 	especialista_nombre?: string;
 	especialista_apellido?: string;
+	origen?: string;
+	descripcion?: string;
 };
 
 export type UpdateProductoPayload = {

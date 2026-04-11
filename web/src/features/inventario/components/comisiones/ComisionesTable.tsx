@@ -1,5 +1,6 @@
 import { DollarSign, Pencil } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import { formatFechaLocal } from "../../../../shared";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 
@@ -8,6 +9,14 @@ interface ComisionesTableProps {
   onPagar: (comision: EspecialistaComision) => void;
   onEditar: (comision: EspecialistaComision) => void;
   startIndex?: number;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function ComisionesTable({
@@ -15,6 +24,7 @@ export default function ComisionesTable({
   onPagar,
   onEditar,
   startIndex = 0,
+  paginationInfo,
 }: ComisionesTableProps) {
   const getEstadoBadge = (estado: EspecialistaComision["estado"]) => {
     if (estado === "Pagada") {
@@ -149,16 +159,19 @@ export default function ComisionesTable({
   ];
 
   return (
-    <GenericTable<EspecialistaComision>
-      columns={columns}
-      rows={comisiones}
-      rowKey={(row) => row.id_comision}
-      tableClassName="w-full min-w-full text-sm"
-      theadClassName="bg-teal-500 text-white"
-      getRowClassName={(_row, index) =>
-        index % 2 === 0 ? "bg-gray-50" : "bg-white"
-      }
-      emptyState="No hay citas pendientes de pago"
-    />
+    <>
+      <GenericTable<EspecialistaComision>
+        columns={columns}
+        rows={comisiones}
+        rowKey={(row) => row.id_comision}
+        tableClassName="w-full min-w-full text-sm"
+        theadClassName="bg-teal-500 text-white"
+        getRowClassName={(_row, index) =>
+          index % 2 === 0 ? "bg-gray-50" : "bg-white"
+        }
+        emptyState="No hay citas pendientes de pago"
+      />
+      {paginationInfo && <Pagination {...paginationInfo} />}
+    </>
   );
 }

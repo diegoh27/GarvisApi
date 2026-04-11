@@ -451,11 +451,10 @@ export default function ComisionesEspecialistasPage() {
                 onClick={() => {
                   import("../../../utils/generateTableReport").then(({ generateTableReport }) => {
                     const tableHeaders = [
-                      "ID", "Especialista", "Paciente", "Cédula", "RIF", "Eco", "Monto", "%", "Fecha", "Estado"
+                      "Especialista", "Paciente", "Cédula", "RIF", "Eco", "Monto", "%", "Fecha", "Estado"
                     ];
                     
-                    const tableData = filteredComisiones.map((c, i) => [
-                      String(i + 1).padStart(3, "0"),
+                    const tableData = filteredComisiones.map((c) => [
                       `${c.especialista_nombre} ${c.especialista_apellido || ""}`.trim(),
                       c.paciente_nombre || "-",
                       c.paciente_cedula || "-",
