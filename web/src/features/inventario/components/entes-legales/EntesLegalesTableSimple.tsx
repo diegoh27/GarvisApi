@@ -60,9 +60,9 @@ export default function EntesLegalesTableSimple({
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
       render: (row: EnteLegal) => (
         <span
-          className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${row.activo
-            ? "bg-green-100 text-green-800"
-            : "bg-gray-100 text-gray-800"
+          className={`text-xs font-medium ${row.activo
+            ? "text-emerald-600"
+            : "text-gray-500"
             }`}
         >
           {row.activo ? "Activo" : "Inactivo"}

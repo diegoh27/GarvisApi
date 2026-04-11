@@ -37,6 +37,17 @@ function userInitials(nombre: string, apellido: string) {
 	return `${a}${b}`.toUpperCase() || "?";
 }
 
+function getRolColor(rol: string) {
+	switch (rol.toLowerCase()) {
+		case "admin":
+		case "administrador": return "text-rose-500";
+		case "especialista": return "text-violet-500";
+		case "moderador": return "text-amber-500";
+		case "paciente": return "text-slate-500";
+		default: return "text-brand-500";
+	}
+}
+
 const UsuariosPage = () => {
 	const [filtroRol, setFiltroRol] = useState<string>("todos");
 	const [filtroEstado, setFiltroEstado] = useState<string>("todos");
@@ -226,7 +237,7 @@ const UsuariosPage = () => {
 
 				{/* Pestañas por rol */}
 				<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-					<div className="flex w-full gap-1 rounded-2xl border border-mist bg-cloud/80 p-1 sm:w-fit">
+					<div className="flex w-full gap-1 rounded-2xl border-color-brand-900 border-2 bg-brand-700 p-1 sm:w-fit">
 						{ROLE_TABS.map((tab) => {
 							const active = filtroRol === tab.value;
 							return (
@@ -236,7 +247,7 @@ const UsuariosPage = () => {
 									onClick={() => setFiltroRol(tab.value)}
 									className={`flex-1 rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition-all sm:flex-none sm:px-6 sm:text-sm ${active
 										? "bg-paper text-brand-800 shadow-sm"
-										: "text-brand-800/75 hover:bg-paper/60 hover:text-brand-900"
+										: "text-white/75 hover:bg-paper/60 hover:text-brand-900"
 										}`}
 								>
 									{tab.label}
@@ -248,7 +259,7 @@ const UsuariosPage = () => {
 						<button
 							type="button"
 							onClick={() => setFiltroRol("todos")}
-							className="text-sm font-semibold text-brand-800 underline-offset-2 hover:text-brand-900 hover:underline"
+							className="text-sm font-semibold text-white underline-offset-2 hover:text-white hover:underline bg-brand-700 px-4 py-2 rounded-xl"
 						>
 							Ver todos los roles
 						</button>
@@ -318,19 +329,19 @@ const UsuariosPage = () => {
 													{usuario.correo}
 												</div>
 												<div className="col-span-1">
-													<span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-900">
+													<span className={`text-xs font-bold ${getRolColor(usuario.rol)}`}>
 														{rolLabel}
 													</span>
 												</div>
 												<div className="col-span-1 flex justify-center">
 													{usuario.activo === 1 ? (
-														<span className="flex items-center gap-1.5 rounded-full bg-brand-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-900">
-															<span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
+														<span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+															<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
 															Activo
 														</span>
 													) : (
-														<span className="flex items-center gap-1.5 rounded-full bg-cloud px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800/80">
-															<span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+														<span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-red-600">
+															<span className="h-1.5 w-1.5 rounded-full bg-red-500" />
 															Desactivado
 														</span>
 													)}
@@ -377,17 +388,17 @@ const UsuariosPage = () => {
 														<p className="text-xs text-brand-800/80">Cédula: {usuario.cedula}</p>
 														<p className="break-all text-xs text-brand-800">{usuario.correo}</p>
 														<div className="mt-2 flex flex-wrap items-center gap-2">
-															<span className="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-900">
+															<span className={`text-[11px] font-bold ${getRolColor(usuario.rol)}`}>
 																{rolLabel}
 															</span>
 															{usuario.activo === 1 ? (
-																<span className="flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-semibold text-brand-900">
-																	<span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
+																<span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-emerald-600">
+																	<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
 																	Activo
 																</span>
 															) : (
-																<span className="flex items-center gap-1 rounded-full bg-cloud px-2 py-0.5 text-[11px] font-semibold text-brand-800/80">
-																	<span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+																<span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-red-600">
+																	<span className="h-1.5 w-1.5 rounded-full bg-red-500" />
 																	Desactivado
 																</span>
 															)}
@@ -523,7 +534,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 	const [dropdownPosition, setDropdownPosition] = useState<"bottom" | "top">("bottom");
 	const ecosDropdownRef = useRef<HTMLDivElement>(null);
 	const ecosButtonRef = useRef<HTMLButtonElement>(null);
-	const [fieldErrors, setFieldErrors] = useState<{ fecha_nacimiento?: string; porcentaje?: string }>({});
+	const [fieldErrors, setFieldErrors] = useState<{ fecha_nacimiento?: string; porcentaje?: string; cedula?: string; telefono?: string }>({});
 
 	const validateFechaNacimiento = (value: string): string => {
 		if (!value || !value.trim()) return "La fecha de nacimiento es requerida";
@@ -662,11 +673,19 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		const errors: { fecha_nacimiento?: string; porcentaje?: string; cedula?: string; telefono?: string } = {};
+
 		const errFecha = validateFechaNacimiento(form.fecha_nacimiento);
-		if (errFecha) {
-			setFieldErrors((prev) => ({ ...prev, fecha_nacimiento: errFecha }));
-			return;
+		if (errFecha) errors.fecha_nacimiento = errFecha;
+
+		if (!form.cedula || form.cedula.length < 7 || form.cedula.length > 8) {
+			errors.cedula = "La cédula debe tener 7 u 8 dígitos";
 		}
+
+		if (!form.telefono || form.telefono.replace(/\D/g, "").length !== 11) {
+			errors.telefono = "El teléfono debe tener 11 dígitos";
+		}
+
 		if (isEspecialista) {
 			const porcentajeValue = Number(form.porcentaje);
 			if (
@@ -675,15 +694,20 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 				porcentajeValue < 0 ||
 				porcentajeValue > 100
 			) {
-				setFieldErrors((prev) => ({
-					...prev,
-					porcentaje: "El porcentaje es requerido y debe estar entre 0 y 100.",
-				}));
-				return;
+				errors.porcentaje = "El porcentaje es requerido y debe estar entre 0 y 100.";
 			}
-			setFieldErrors((prev) => ({ ...prev, porcentaje: undefined }));
+		}
+
+		if (Object.keys(errors).length > 0) {
+			setFieldErrors(errors);
+			return;
+		}
+
+		setFieldErrors({});
+
+		if (isEspecialista) {
 			const { tipo_cedula, rif, porcentaje, ...rest } = form;
-			const payload = { ...rest, cedula: `${form.tipo_cedula}${form.cedula}`, porcentaje: porcentajeValue };
+			const payload = { ...rest, cedula: `${form.tipo_cedula}${form.cedula}`, porcentaje: Number(form.porcentaje) };
 			onSave(payload);
 			return;
 		}
@@ -752,9 +776,12 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 									}));
 								}}
 								required
-								inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
-								selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+								inputClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
+								selectClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
 							/>
+							{fieldErrors.cedula && (
+								<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
+							)}
 						</div>
 						<div>
 							<label className="mb-1 block text-sm font-medium text-brand-700">
@@ -798,9 +825,12 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 									setForm((f) => ({ ...f, telefono: prefijo + numero }))
 								}
 								required
-								inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
-								selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+								inputClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
+								selectClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
 							/>
+							{fieldErrors.telefono && (
+								<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono}</p>
+							)}
 						</div>
 					</div>
 					{isPaciente && (

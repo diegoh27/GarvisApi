@@ -51,6 +51,8 @@ export default function HistorialPagosTable({
   const isNomina = variant === "nomina";
   const isAlquiler = variant === "alquiler";
 
+  const startIndex = paginationInfo ? (paginationInfo.currentPage - 1) * paginationInfo.itemsPerPage : 0;
+
   const [dateFilter, setDateFilter] = useState("all");
 
   const filteredHistorial = useMemo(() => {
@@ -108,9 +110,8 @@ export default function HistorialPagosTable({
         header: "ID",
         headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
         cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
-        render: (row: HistorialRow) => {
-          const compra = row as CompraProducto;
-          return `${compra.id_compra.slice(0, 6)}...`;
+        render: (_row: HistorialRow, index: number) => {
+          return String(startIndex + index + 1).padStart(3, "0");
         },
       },
       {
@@ -203,9 +204,8 @@ export default function HistorialPagosTable({
           header: "ID",
           headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
           cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
-          render: (row: HistorialRow) => {
-            const consumo = row as ConsumoProducto;
-            return `${consumo.id_consumo.slice(0, 6)}...`;
+          render: (_row: HistorialRow, index: number) => {
+            return String(startIndex + index + 1).padStart(3, "0");
           },
         },
         {
@@ -275,9 +275,8 @@ export default function HistorialPagosTable({
           header: "ID",
           headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
           cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-          render: (row: HistorialRow) => {
-            const pago = row as NominaPago;
-            return pago.id_pago ? `${pago.id_pago.slice(0, 8)}...` : "-";
+          render: (_row: HistorialRow, index: number) => {
+            return String(startIndex + index + 1).padStart(3, "0");
           },
         },
         {
@@ -374,9 +373,8 @@ export default function HistorialPagosTable({
             headerClassName:
               "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-            render: (row: HistorialRow) => {
-              const pago = row as AlquilerPago;
-              return pago.id_pago ? `${pago.id_pago.slice(0, 8)}...` : "-";
+            render: (_row: HistorialRow, index: number) => {
+              return String(startIndex + index + 1).padStart(3, "0");
             },
           },
           {
@@ -470,9 +468,8 @@ export default function HistorialPagosTable({
             header: "ID",
             headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
-            render: (row: HistorialRow) => {
-              const pago = row as HistorialEnteLegal;
-              return pago.id_historial ? `${pago.id_historial.slice(0, 6)}...` : "-";
+            render: (_row: HistorialRow, index: number) => {
+              return String(startIndex + index + 1).padStart(3, "0");
             },
           },
           {
@@ -560,9 +557,9 @@ export default function HistorialPagosTable({
     const validColumns = columns.filter((c) => c.key !== "actions" && c.header.toUpperCase() !== "ID");
     const tableHeaders = validColumns.map((c) => c.header);
 
-    const tableData = filteredHistorial.map((row) => {
+    const tableData = filteredHistorial.map((row, index) => {
       return validColumns.map((c) => {
-        const val = c.render(row);
+        const val = c.render(row, index);
         return typeof val === "string" || typeof val === "number" ? val : "-";
       });
     });
@@ -595,9 +592,9 @@ export default function HistorialPagosTable({
   const handlePrint = () => {
     const validColumns = columns.filter((c) => c.key !== "actions" && c.header.toUpperCase() !== "ID");
     const headers = validColumns.map((c) => c.header);
-    const rows = filteredHistorial.map((row) =>
+    const rows = filteredHistorial.map((row, index) =>
       validColumns.map((c) => {
-        const val = c.render(row);
+        const val = c.render(row, index);
         return typeof val === "string" || typeof val === "number" ? String(val) : "-";
       })
     );

@@ -123,7 +123,7 @@ const updateObligacionHandler = async (req, res) => {
 		}
 
 		const obligacion = await updateObligacionController(id, updates);
-		logInventarioReq(req, "entes", `Modificó obligación (ID: ${id})`, {
+		logInventarioReq(req, "entes", `Modificó obligación "${obligacion.concepto}"`, {
 			entidad_tipo: "obligacion",
 			entidad_id: id,
 		}).catch((e) => console.error(e));
@@ -150,8 +150,9 @@ const updateObligacionHandler = async (req, res) => {
 const deleteObligacionHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
+		const obligacion = await getObligacionController(id);
 		const result = await deleteObligacionController(id);
-		logInventarioReq(req, "entes", `Eliminó obligación (ID: ${id})`, {
+		logInventarioReq(req, "entes", `Eliminó obligación "${obligacion.concepto}"`, {
 			entidad_tipo: "obligacion",
 			entidad_id: id,
 		}).catch((e) => console.error(e));
@@ -206,7 +207,8 @@ const registrarPagoObligacionHandler = async (req, res) => {
 			referencia,
 			id_usuario,
 		});
-		logInventarioReq(req, "entes", `Registró pago de obligación $${monto} (ID obligación: ${id})`, {
+		const obligacion = await getObligacionController(id);
+		logInventarioReq(req, "entes", `Registró pago de obligación $${Number(monto).toFixed(2)} ("${obligacion.concepto}")`, {
 			entidad_tipo: "pago_obligacion",
 			entidad_id: pago?.id_pago,
 			detalles: { monto: Number(monto) },
@@ -240,7 +242,8 @@ const updatePagoObligacionHandler = async (req, res) => {
 			metodo,
 			referencia,
 		});
-		logInventarioReq(req, "entes", `Actualizó pago de obligación (ID: ${idPago})`, {
+		const obligacion = await getObligacionController(pago.id_obligacion);
+		logInventarioReq(req, "entes", `Actualizó pago de obligación "${obligacion.concepto}"`, {
 			entidad_tipo: "pago_obligacion",
 			entidad_id: idPago,
 		}).catch((e) => console.error(e));

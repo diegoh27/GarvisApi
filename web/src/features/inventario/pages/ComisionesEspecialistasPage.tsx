@@ -24,7 +24,7 @@ import { useUpdateEspecialistaMutation } from "../../usuarios/usuariosApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 
 export default function ComisionesEspecialistasPage() {
-  const [filtroEstado, setFiltroEstado] = useState<"Todas" | "Pendiente" | "Pagada">("Todas");
+  const [filtroEstado, setFiltroEstado] = useState<"Pendiente" | "Pagada" | "Todas">("Pendiente");
   const { data: queryData, isLoading, error } = useListComisionesQuery({
     estado: filtroEstado === "Todas" ? undefined : filtroEstado,
   });
@@ -408,19 +408,6 @@ export default function ComisionesEspecialistasPage() {
             <button
               type="button"
               onClick={() => {
-                setFiltroEstado("Todas");
-                setCurrentPageComisiones(1);
-              }}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
-                ? "bg-teal-500 text-white"
-                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
-                }`}
-            >
-              Todas
-            </button>
-            <button
-              type="button"
-              onClick={() => {
                 setFiltroEstado("Pendiente");
                 setCurrentPageComisiones(1);
               }}
@@ -443,6 +430,19 @@ export default function ComisionesEspecialistasPage() {
                 }`}
             >
               Pagadas
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroEstado("Todas");
+                setCurrentPageComisiones(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
+                ? "bg-teal-500 text-white"
+                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                }`}
+            >
+              Todas
             </button>
             
             {filteredComisiones.length > 0 && (

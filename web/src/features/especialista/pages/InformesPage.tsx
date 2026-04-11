@@ -296,7 +296,7 @@ const InformesPage = () => {
 														</p>
 													</div>
 													<div className="flex md:justify-center">
-														<span className="inline-block rounded-full bg-yellow-500 px-2 py-1 text-[10px] text-paper">
+														<span className="text-[11px] font-bold uppercase tracking-wider text-amber-600">
 															Pendiente
 														</span>
 													</div>
@@ -423,8 +423,8 @@ const InformesPage = () => {
 														</p>
 													</div>
 													<div className="flex md:justify-center">
-														<span className="inline-block rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
-															Informe completo
+														<span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+															Completado
 														</span>
 													</div>
 													<div className="flex md:justify-end">
@@ -614,11 +614,11 @@ const InformesPage = () => {
 															</span>
 														)}
 														{tieneInforme ? (
-															<span className="rounded-full bg-brand-700 px-2 py-1 text-[10px] text-paper">
+															<span className="text-[10px] font-bold uppercase tracking-wider text-brand-700">
 																Con informe
 															</span>
 														) : (
-															<span className="rounded-full bg-cloud px-2 py-1 text-[10px] text-brand-800">
+															<span className="text-[10px] font-bold uppercase tracking-wider text-brand-600/60">
 																Sin informe
 															</span>
 														)}

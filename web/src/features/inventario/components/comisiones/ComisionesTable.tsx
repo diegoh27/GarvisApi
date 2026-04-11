@@ -29,13 +29,13 @@ export default function ComisionesTable({
   const getEstadoBadge = (estado: EspecialistaComision["estado"]) => {
     if (estado === "Pagada") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        <span className="text-xs font-medium text-emerald-600">
           Pagada
         </span>
       );
     }
     return (
-      <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+      <span className="text-xs font-medium text-amber-500">
         Pendiente
       </span>
     );

@@ -212,13 +212,13 @@ const EcosList = () => {
 										</div>
 										<div className="border-t border-brand-200/50 pt-2 md:border-0 md:pt-0">
 											{activo ? (
-												<span className="inline-flex items-center gap-1.5 rounded-full bg-brand-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800">
-													<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-700" />
+												<span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+													<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
 													Activo
 												</span>
 											) : (
-												<span className="inline-flex items-center gap-1.5 rounded-full bg-shell-muted/80 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-900/55">
-													<span className="h-1.5 w-1.5 rounded-full bg-brand-900/35" />
+												<span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-red-600">
+													<span className="h-1.5 w-1.5 rounded-full bg-red-500" />
 													Inactivo
 												</span>
 											)}

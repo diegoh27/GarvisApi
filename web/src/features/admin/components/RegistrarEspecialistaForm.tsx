@@ -84,26 +84,33 @@ const RegistrarEspecialistaForm = () => {
 		setIsEcosDropdownOpen(!isEcosDropdownOpen);
 	};
 
-	const validateField = (field: keyof typeof form, value: string): string => {
+	const validateField = (field: keyof typeof form, value: string | string[]): string => {
 		switch (field) {
-			case "nombre":
-				if (!value.trim()) return "El nombre es requerido";
-				if (value.length > 30) return "El nombre no puede exceder 30 caracteres";
-				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El nombre solo puede contener letras";
+			case "nombre": {
+				const val = value as string;
+				if (!val.trim()) return "El nombre es requerido";
+				if (val.length > 30) return "El nombre no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) return "El nombre solo puede contener letras";
 				return "";
-			case "apellido":
-				if (!value.trim()) return "El apellido es requerido";
-				if (value.length > 30) return "El apellido no puede exceder 30 caracteres";
-				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return "El apellido solo puede contener letras";
+			}
+			case "apellido": {
+				const val = value as string;
+				if (!val.trim()) return "El apellido es requerido";
+				if (val.length > 30) return "El apellido no puede exceder 30 caracteres";
+				if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val)) return "El apellido solo puede contener letras";
 				return "";
-			case "cedula":
-				if (!value.trim()) return "La cédula es requerida";
-				if (!/^\d+$/.test(value)) return "La cédula solo puede contener números";
-				if (!validarRangoCedula(value)) return MENSAJE_RANGO_CEDULA;
+			}
+			case "cedula": {
+				const val = value as string;
+				if (!val.trim()) return "La cédula es requerida";
+				if (!/^\d+$/.test(val)) return "La cédula solo puede contener números";
+				if (!validarRangoCedula(val)) return MENSAJE_RANGO_CEDULA;
 				return "";
+			}
 			case "fecha_nacimiento": {
-				if (!value.trim()) return "La fecha de nacimiento es requerida";
-				const birth = new Date(value);
+				const val = value as string;
+				if (!val.trim()) return "La fecha de nacimiento es requerida";
+				const birth = new Date(val);
 				const today = new Date();
 				today.setHours(23, 59, 59, 999);
 				if (birth.getTime() > today.getTime()) return "La fecha de nacimiento no puede ser futura";
@@ -118,30 +125,39 @@ const RegistrarEspecialistaForm = () => {
 				if (age < 18) return "El especialista debe ser mayor de edad (18 años o más)";
 				return "";
 			}
-			case "telefono_numero":
-				if (!value.trim()) return "El número de teléfono es requerido";
-				if (!validarNumeroTelefono(value)) return MENSAJE_TELEFONO_7_DIGITOS;
+			case "telefono_numero": {
+				const val = value as string;
+				if (!val.trim()) return "El número de teléfono es requerido";
+				if (!validarNumeroTelefono(val)) return MENSAJE_TELEFONO_7_DIGITOS;
 				return "";
-			case "correo":
-				if (!value.trim()) return "El correo es requerido";
+			}
+			case "correo": {
+				const val = value as string;
+				if (!val.trim()) return "El correo es requerido";
 				const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-				if (!emailRegex.test(value)) return "Correo electrónico inválido";
+				if (!emailRegex.test(val)) return "Correo electrónico inválido";
 				return "";
-			case "contrasena":
-				if (!value) return "La contraseña es requerida";
-				if (value.length < 6) return "La contraseña debe tener al menos 6 caracteres";
-				if (value.length > 20) return "La contraseña no puede exceder 20 caracteres";
-				if (!/[A-Z]/.test(value)) return "La contraseña debe contener al menos una mayúscula";
-				if (!/[0-9]/.test(value)) return "La contraseña debe contener al menos un número";
-				if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) return "La contraseña debe contener al menos un carácter especial";
+			}
+			case "contrasena": {
+				const val = value as string;
+				if (!val) return "La contraseña es requerida";
+				if (val.length < 6) return "La contraseña debe tener al menos 6 caracteres";
+				if (val.length > 20) return "La contraseña no puede exceder 20 caracteres";
+				if (!/[A-Z]/.test(val)) return "La contraseña debe contener al menos una mayúscula";
+				if (!/[0-9]/.test(val)) return "La contraseña debe contener al menos un número";
+				if (!/[!@#$%^&*(),.?":{}|<>]/.test(val)) return "La contraseña debe contener al menos un carácter especial";
 				return "";
-			case "confirmar_contrasena":
-				if (!value) return "Confirma tu contraseña";
-				if (value !== form.contrasena) return "Las contraseñas no coinciden";
+			}
+			case "confirmar_contrasena": {
+				const val = value as string;
+				if (!val) return "Confirma tu contraseña";
+				if (val !== form.contrasena) return "Las contraseñas no coinciden";
 				return "";
+			}
 			case "porcentaje": {
-				if (!value.trim()) return "El porcentaje es requerido";
-				const parsed = Number(value);
+				const val = value as string;
+				if (!val.trim()) return "El porcentaje es requerido";
+				const parsed = Number(val);
 				if (Number.isNaN(parsed)) return "Porcentaje inválido";
 				if (parsed < 1 || parsed > 100) return "El porcentaje debe estar entre 1 y 100";
 				return "";
@@ -161,7 +177,7 @@ const RegistrarEspecialistaForm = () => {
 		setError("");
 
 		// Validar el campo
-		const fieldError = validateField(field, value as string);
+		const fieldError = validateField(field, value);
 		setFieldErrors((prev) => ({ ...prev, [field]: fieldError }));
 
 		// Validar telefono_numero cuando cambia telefono_prefijo
@@ -188,7 +204,7 @@ const RegistrarEspecialistaForm = () => {
 
 			const fieldValue = form[field as keyof typeof form];
 			if (Array.isArray(fieldValue)) return;
-			const fieldError = validateField(field as keyof typeof form, fieldValue as string);
+			const fieldError = validateField(field as keyof typeof form, fieldValue);
 			if (fieldError) {
 				errors[field] = fieldError;
 			}
@@ -328,7 +344,8 @@ const RegistrarEspecialistaForm = () => {
 							value={`${form.tipo_cedula}${form.cedula}`}
 							onChange={(tipo, numero) => {
 								setForm((f: any) => ({ ...f, tipo_cedula: tipo, cedula: numero }));
-								setFieldErrors((prev) => (prev.cedula ? { ...prev, cedula: "" } : prev));
+								const error = validateField("cedula", numero);
+								setFieldErrors((prev) => ({ ...prev, cedula: error }));
 							}}
 							error={fieldErrors.cedula}
 							required
@@ -404,7 +421,8 @@ const RegistrarEspecialistaForm = () => {
 							value={`${form.telefono_prefijo}${form.telefono_numero}`}
 							onChange={(prefijo, numero) => {
 								setForm((f) => ({ ...f, telefono_prefijo: prefijo, telefono_numero: numero }));
-								setFieldErrors((prev) => (prev.telefono_numero ? { ...prev, telefono_numero: "" } : prev));
+								const error = validateField("telefono_numero", numero);
+								setFieldErrors((prev) => ({ ...prev, telefono_numero: error }));
 							}}
 							error={fieldErrors.telefono_numero}
 							required
