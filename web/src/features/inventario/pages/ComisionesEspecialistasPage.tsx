@@ -19,13 +19,12 @@ import EspecialistasTable from "../components/comisiones/EspecialistasTable";
 import PagarComisionModal from "../components/comisiones/PagarComisionModal";
 import EditarEspecialistaModal from "../components/comisiones/EditarEspecialistaModal";
 import RegistrarCitaMostradorModal from "../components/comisiones/RegistrarCitaMostradorModal";
-import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 import { useUpdateEspecialistaMutation } from "../../usuarios/usuariosApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 
 export default function ComisionesEspecialistasPage() {
-  const [filtroEstado, setFiltroEstado] = useState<"Todas" | "Pendiente" | "Pagada">("Todas");
+  const [filtroEstado, setFiltroEstado] = useState<"Pendiente" | "Pagada" | "Todas">("Pendiente");
   const { data: queryData, isLoading, error } = useListComisionesQuery({
     estado: filtroEstado === "Todas" ? undefined : filtroEstado,
   });
@@ -384,20 +383,21 @@ export default function ComisionesEspecialistasPage() {
               isLoading={especialistasLoading}
               startIndex={startIndexEspecialistas}
               onEditar={handleEditarEspecialista}
+              paginationInfo={
+                filteredEspecialistas.length > 0
+                  ? {
+                      currentPage: currentPageEspecialistas,
+                      totalPages: totalPagesEspecialistas,
+                      totalItems: filteredEspecialistas.length,
+                      itemsPerPage,
+                      label: "especialistas",
+                      onPageChange: setCurrentPageEspecialistas,
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
-
-        {filteredEspecialistas.length > 0 && (
-          <Pagination
-            currentPage={currentPageEspecialistas}
-            totalPages={totalPagesEspecialistas}
-            totalItems={filteredEspecialistas.length}
-            itemsPerPage={itemsPerPage}
-            label="especialistas"
-            onPageChange={setCurrentPageEspecialistas}
-          />
-        )}
       </div>
 
       {/* Tabla de citas con estado de pago */}
@@ -405,19 +405,6 @@ export default function ComisionesEspecialistasPage() {
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg font-semibold">Citas</h2>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setFiltroEstado("Todas");
-                setCurrentPageComisiones(1);
-              }}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
-                ? "bg-teal-500 text-white"
-                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
-                }`}
-            >
-              Todas
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -444,6 +431,19 @@ export default function ComisionesEspecialistasPage() {
             >
               Pagadas
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFiltroEstado("Todas");
+                setCurrentPageComisiones(1);
+              }}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
+                ? "bg-teal-500 text-white"
+                : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
+                }`}
+            >
+              Todas
+            </button>
             
             {filteredComisiones.length > 0 && (
               <button
@@ -451,11 +451,10 @@ export default function ComisionesEspecialistasPage() {
                 onClick={() => {
                   import("../../../utils/generateTableReport").then(({ generateTableReport }) => {
                     const tableHeaders = [
-                      "ID", "Especialista", "Paciente", "Cédula", "RIF", "Eco", "Monto", "%", "Fecha", "Estado"
+                      "Especialista", "Paciente", "Cédula", "RIF", "Eco", "Monto", "%", "Fecha", "Estado"
                     ];
                     
-                    const tableData = filteredComisiones.map((c, i) => [
-                      String(i + 1).padStart(3, "0"),
+                    const tableData = filteredComisiones.map((c) => [
                       `${c.especialista_nombre} ${c.especialista_apellido || ""}`.trim(),
                       c.paciente_nombre || "-",
                       c.paciente_cedula || "-",
@@ -497,20 +496,21 @@ export default function ComisionesEspecialistasPage() {
               onPagar={handlePagarComision}
               onEditar={handleEditarPago}
               startIndex={startIndex}
+              paginationInfo={
+                filteredComisiones.length > 0
+                  ? {
+                      currentPage: currentPageComisiones,
+                      totalPages,
+                      totalItems: filteredComisiones.length,
+                      itemsPerPage,
+                      label: "comisiones",
+                      onPageChange: setCurrentPageComisiones,
+                    }
+                  : undefined
+              }
             />
           </div>
         </div>
-
-        {filteredComisiones.length > 0 && (
-          <Pagination
-            currentPage={currentPageComisiones}
-            totalPages={totalPages}
-            totalItems={filteredComisiones.length}
-            itemsPerPage={itemsPerPage}
-            label="comisiones"
-            onPageChange={setCurrentPageComisiones}
-          />
-        )}
       </div>
 
       {/* Historial de pagos */}
@@ -518,18 +518,19 @@ export default function ComisionesEspecialistasPage() {
         comisiones={currentHistorial}
         isLoading={historialLoading}
         onEliminar={handleEliminarPago}
+        paginationInfo={
+          !historialLoading && historialData.length > 0
+            ? {
+                currentPage: currentPageHistorial,
+                totalPages: totalPagesHistorial,
+                totalItems: historialData.length,
+                itemsPerPage,
+                label: "pagos",
+                onPageChange: setCurrentPageHistorial,
+              }
+            : undefined
+        }
       />
-
-      {!historialLoading && historialData.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialData.length}
-          itemsPerPage={itemsPerPage}
-          label="pagos"
-          onPageChange={setCurrentPageHistorial}
-        />
-      )}
 
       {/* Modal para pagar comisión */}
       {selectedComision && showPagarModal && (

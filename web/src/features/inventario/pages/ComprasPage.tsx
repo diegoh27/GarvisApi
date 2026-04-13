@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
 	FileText,
 	Plus,
@@ -6,6 +6,7 @@ import {
 	X,
 	ChevronLeft,
 	ChevronRight,
+	FileDown,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import {
@@ -16,6 +17,8 @@ import {
 	useDeleteNotaCompraMutation,
 } from "../api";
 import { useGetDolarOficialQuery } from "../../dolar";
+import NotaCompraDetalleModal from "../components/NotaCompraDetalleModal";
+import { generateTableReport } from "../../../utils/generateTableReport";
 
 /* ── Tipos locales ─────────────────────────────────── */
 interface LineaCompra {
@@ -49,6 +52,24 @@ export default function ComprasPage() {
 	// Paginación historial
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 5;
+
+	// Filtro de fechas
+	const [dateFilter, setDateFilter] = useState("all");
+
+	const DATE_FILTERS = [
+		{ key: "all", label: "Todo" },
+		{ key: "hoy", label: "Hoy" },
+		{ key: "ayer", label: "Ayer" },
+		{ key: "semana", label: "Esta semana" },
+		{ key: "semana_pasada", label: "Semana pasada" },
+		{ key: "mensual", label: "Este mes" },
+		{ key: "trimestral", label: "Último trimestre" },
+		{ key: "anual", label: "Este año" },
+	];
+
+	// Modal Detalle
+	const [selectedNotaCompraId, setSelectedNotaCompraId] = useState<string | null>(null);
+	const [showDetalleModal, setShowDetalleModal] = useState(false);
 
 	const addLinea = () => {
 		setLineas((prev) => [
@@ -147,9 +168,66 @@ export default function ComprasPage() {
 		}
 	};
 
+	// Filtrado de historial por fecha
+	const filteredNotas = useMemo(() => {
+		if (dateFilter === "all") return notasCompra;
+		return notasCompra.filter((nc) => {
+			const dateStr = nc.fecha_compra;
+			if (!dateStr) return true;
+			const rowDate = new Date(dateStr);
+			const today = new Date();
+			rowDate.setHours(0, 0, 0, 0);
+			today.setHours(0, 0, 0, 0);
+			const diffDays = Math.floor((today.getTime() - rowDate.getTime()) / (1000 * 60 * 60 * 24));
+			switch (dateFilter) {
+				case "hoy": return diffDays === 0;
+				case "ayer": return diffDays === 1;
+				case "semana": return diffDays >= 0 && diffDays <= 6;
+				case "semana_pasada": return diffDays >= 7 && diffDays <= 13;
+				case "mensual": return rowDate.getMonth() === today.getMonth() && rowDate.getFullYear() === today.getFullYear();
+				case "trimestral": {
+					const mDiff = (today.getFullYear() - rowDate.getFullYear()) * 12 + (today.getMonth() - rowDate.getMonth());
+					return mDiff >= 0 && mDiff <= 3;
+				}
+				case "anual": return rowDate.getFullYear() === today.getFullYear();
+				default: return true;
+			}
+		});
+	}, [notasCompra, dateFilter]);
+
+	const handleDownloadReport = () => {
+		const tableHeaders = ["Fecha", "Proveedor", "Nº Factura", "Descripción", "Total", "Líneas"];
+		const tableData = filteredNotas.map((nc) => [
+			new Date(nc.fecha_compra).toLocaleDateString("es-VE"),
+			nc.proveedor_nombre || "—",
+			nc.numero_factura || "S/N",
+			nc.descripcion_productos || nc.observaciones || "S/D",
+			`$${Number(nc.total).toFixed(2)}`,
+			(nc.total_lineas || 0).toString(),
+		]);
+
+		const totalSuma = filteredNotas.reduce((acc, current) => acc + Number(current.total), 0);
+		const totalGenerado = `$${totalSuma.toFixed(2)}`;
+
+		const filterObj = DATE_FILTERS.find((f) => f.key === dateFilter);
+		const currentFilterName = filterObj ? filterObj.label : "Todo";
+
+		generateTableReport({
+			title: "Historial de compras registradas",
+			subtitle: `Reporte de compras: ${new Date().toLocaleDateString("es-VE")}${dateFilter !== "all" ? ` (Filtro: ${currentFilterName})` : ""}`,
+			reportInfo: [
+				{ label: "Total Registros", value: filteredNotas.length.toString() },
+			],
+			tableHeaders,
+			tableData,
+			total: totalGenerado,
+			filename: `Registro_Compras_${new Date().getTime()}.pdf`,
+		});
+	};
+
 	// Paginación historial
-	const totalPages = Math.ceil(notasCompra.length / itemsPerPage);
-	const currentNotas = notasCompra.slice(
+	const totalPages = Math.ceil(filteredNotas.length / itemsPerPage);
+	const currentNotas = filteredNotas.slice(
 		(currentPage - 1) * itemsPerPage,
 		currentPage * itemsPerPage,
 	);
@@ -269,10 +347,11 @@ export default function ComprasPage() {
 									type="number"
 									min={0}
 									step="any"
-									value={linea.cantidad}
+									value={linea.cantidad === 0 ? "" : linea.cantidad}
 									onChange={(e) =>
 										updateLinea(linea.id, "cantidad", Number(e.target.value))
 									}
+									onFocus={(e) => e.target.select()}
 									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 							</div>
@@ -284,10 +363,11 @@ export default function ComprasPage() {
 											type="number"
 											step="0.01"
 											min={0}
-											value={linea.precioUnitario}
+											value={linea.precioUnitario === 0 ? "" : linea.precioUnitario}
 											onChange={(e) =>
 												updateLinea(linea.id, "precioUnitario", Number(e.target.value))
 											}
+											onFocus={(e) => e.target.select()}
 											className="w-full px-2 py-2 text-sm focus:outline-none"
 										/>
 									</div>
@@ -297,13 +377,14 @@ export default function ComprasPage() {
 											type="number"
 											step="0.01"
 											min={0}
-											value={tasaBcv > 0 ? (linea.precioUnitario * tasaBcv).toFixed(2) : ""}
+											value={tasaBcv > 0 && linea.precioUnitario > 0 ? Number((linea.precioUnitario * tasaBcv).toFixed(4)) : ""}
 											onChange={(e) => {
 												const valorBs = Number(e.target.value);
 												if (tasaBcv > 0) {
 													updateLinea(linea.id, "precioUnitario", valorBs / tasaBcv);
 												}
 											}}
+											onFocus={(e) => e.target.select()}
 											disabled={tasaBcv <= 0}
 											placeholder={tasaBcv > 0 ? "0.00" : "Sin tasa BCV"}
 											className="w-full px-2 py-2 text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
@@ -382,13 +463,40 @@ export default function ComprasPage() {
 
 			{/* ── Historial de Notas de Compra ── */}
 			<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-				<div className="px-6 py-4 border-b border-gray-200">
-					<h2 className="text-lg font-bold text-gray-900">Historial de Compras</h2>
+				<div className="px-6 py-4 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+					<div className="flex flex-col sm:flex-row sm:items-center gap-3">
+						<h2 className="text-lg font-bold text-gray-900">Historial de compras</h2>
+						{filteredNotas.length > 0 && (
+							<button
+								onClick={handleDownloadReport}
+								className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-teal-700 md:w-auto"
+							>
+								<FileDown size={14} />
+								Descargar Reporte
+							</button>
+						)}
+					</div>
+					{/* Filtro de período */}
+					<div className="flex flex-wrap gap-1.5">
+						{DATE_FILTERS.map((f) => (
+							<button
+								key={f.key}
+								onClick={() => { setDateFilter(f.key); setCurrentPage(1); }}
+								className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+									dateFilter === f.key
+										? "bg-teal-600 text-white shadow-sm"
+										: "bg-gray-100 text-gray-600 hover:bg-gray-200"
+								}`}
+							>
+								{f.label}
+							</button>
+						))}
+					</div>
 				</div>
 				{loadingNotas ? (
 					<div className="p-6 text-center text-gray-400">Cargando...</div>
 				) : notasCompra.length === 0 ? (
-					<div className="p-6 text-center text-gray-400">No hay notas de compra registradas</div>
+					<div className="p-6 text-center text-gray-400">No hay registros de compras</div>
 				) : (
 					<>
 						<div className="overflow-x-auto">
@@ -398,6 +506,7 @@ export default function ComprasPage() {
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Fecha</th>
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Proveedor</th>
 										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Nº Factura</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Descripción</th>
 										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Total</th>
 										<th className="text-center px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Líneas</th>
 										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Acciones</th>
@@ -412,8 +521,19 @@ export default function ComprasPage() {
 											<td className="px-6 py-4 font-medium text-gray-900">
 												{nc.proveedor_nombre || "—"}
 											</td>
-											<td className="px-6 py-4 text-gray-700">
-												{nc.numero_factura || "S/N"}
+											<td className="px-6 py-4 text-teal-600 font-medium">
+												<button
+													onClick={() => {
+														setSelectedNotaCompraId(nc.id_nota_compra);
+														setShowDetalleModal(true);
+													}}
+													className="hover:underline text-left outline-none"
+												>
+													{nc.numero_factura || "S/N"}
+												</button>
+											</td>
+											<td className="px-6 py-4 text-gray-600 text-xs">
+												{nc.descripcion_productos || nc.observaciones || "S/D"}
 											</td>
 											<td className="px-6 py-4 text-right font-bold text-teal-600">
 												${Number(nc.total).toFixed(2)}
@@ -441,7 +561,7 @@ export default function ComprasPage() {
 						</div>
 						{totalPages > 1 && (
 							<div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
-								<span>Mostrando {currentNotas.length} de {notasCompra.length} notas</span>
+								<span>Mostrando {currentNotas.length} de {filteredNotas.length} notas{dateFilter !== "all" ? ` (filtradas)` : ""}</span>
 								<div className="flex items-center gap-1">
 									<button
 										disabled={currentPage <= 1}
@@ -472,6 +592,16 @@ export default function ComprasPage() {
 					</>
 				)}
 			</div>
+
+			{/* Modal Detalle Factura */}
+			<NotaCompraDetalleModal
+				isOpen={showDetalleModal}
+				onClose={() => {
+					setShowDetalleModal(false);
+					setSelectedNotaCompraId(null);
+				}}
+				idNotaCompra={selectedNotaCompraId}
+			/>
 		</div>
 	);
 }

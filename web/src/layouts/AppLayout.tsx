@@ -232,7 +232,9 @@ const AppLayout = () => {
 							isPaciente ? "mt-16 pb-24 lg:mt-0 lg:pb-0" : "bg-shell"
 						}`}
 					>
-						<Outlet />
+						<div className="mx-auto max-w-[1600px]">
+							<Outlet />
+						</div>
 					</main>
 				</div>
 			</div>

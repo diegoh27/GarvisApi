@@ -4,6 +4,7 @@ const {
 	createOrUpdateInformeController,
 	listAllInformesController,
 	listCitasAtendidasSinInformeController,
+	recordarEspecialistaController,
 } = require("../controllers/informesControllers");
 
 const listInformesHandler = async (req, res) => {
@@ -147,10 +148,34 @@ const listCitasAtendidasSinInformeHandler = async (req, res) => {
 	}
 };
 
+const recordarEspecialistaHandler = async (req, res) => {
+	try {
+		const { id_cita } = req.params;
+		await recordarEspecialistaController(id_cita);
+		return res.status(200).json({
+			ok: true,
+			message: "¡Recordatorio enviado con éxito al especialista!",
+		});
+	} catch (err) {
+		if (err?.code === "NOT_FOUND") {
+			return res.status(404).json({
+				ok: false,
+				message: err.message,
+			});
+		}
+		console.error("Error en recordarEspecialistaHandler:", err);
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno",
+		});
+	}
+};
+
 module.exports = {
 	listInformesHandler,
 	getInformeByCitaHandler,
 	createOrUpdateInformeHandler,
 	listAllInformesHandler,
 	listCitasAtendidasSinInformeHandler,
+	recordarEspecialistaHandler,
 };

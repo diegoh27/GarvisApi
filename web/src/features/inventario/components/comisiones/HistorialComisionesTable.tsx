@@ -3,17 +3,27 @@ import { formatFechaCortaLocal } from "../../../../shared";
 import { Trash2, FileDown } from "lucide-react";
 import type { EspecialistaComision } from "../../api/comisionesApi";
 import { generateTableReport } from "../../../../utils/generateTableReport";
+import Pagination from "../Pagination";
 
 interface HistorialComisionesTableProps {
   comisiones: EspecialistaComision[];
   isLoading: boolean;
   onEliminar?: (idComision: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function HistorialComisionesTable({
   comisiones,
   isLoading,
   onEliminar,
+  paginationInfo,
 }: HistorialComisionesTableProps) {
   const columns = [
     {
@@ -169,6 +179,7 @@ export default function HistorialComisionesTable({
           emptyState="No hay pagos registrados"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

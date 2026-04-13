@@ -753,7 +753,6 @@ const PacientesPage = () => {
 						setPdfFileName(fileName);
 						setPdfViewerUrl(url);
 					}}
-					onDownload={() => { }}
 					onClose={() => {
 						setSelectedPaciente(null);
 						setCitaParaMarcarAtendida(null);

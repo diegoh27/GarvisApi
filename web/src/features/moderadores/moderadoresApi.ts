@@ -161,7 +161,7 @@ const moderadoresApi = baseApi.injectEndpoints({
 			query: () => "/medicos",
 			transformResponse: (response: { ok: boolean; data: EspecialistaData[] }) =>
 				response.data ?? [],
-			providesTags: ["Especialistas"],
+			providesTags: ["Usuarios"],
 		}),
 		asignarCitaCompleta: builder.mutation<
 			{
@@ -325,6 +325,15 @@ const moderadoresApi = baseApi.injectEndpoints({
 			}) => response.data ?? [],
 			providesTags: ["Informes"],
 		}),
+		recordarEspecialista: builder.mutation<
+			{ ok: boolean; message: string },
+			{ id_cita: string }
+		>({
+			query: ({ id_cita }) => ({
+				url: `/informes/pendientes/${id_cita}/recordar`,
+				method: "POST",
+			}),
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -341,6 +350,7 @@ export const {
 	useGetCitaByIdQuery,
 	useGetAllInformesQuery,
 	useGetCitasAtendidasSinInformeQuery,
+	useRecordarEspecialistaMutation,
 } = moderadoresApi;
 
 export { moderadoresApi };

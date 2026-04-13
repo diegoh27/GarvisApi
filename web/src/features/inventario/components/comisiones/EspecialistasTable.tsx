@@ -1,4 +1,5 @@
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import type { EspecialistaInventario } from "../../api/especialistasApi";
 import { Edit } from "lucide-react";
 
@@ -7,6 +8,14 @@ interface EspecialistasTableProps {
   isLoading: boolean;
   startIndex: number;
   onEditar: (especialista: EspecialistaInventario) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function EspecialistasTable({
@@ -14,6 +23,7 @@ export default function EspecialistasTable({
   isLoading,
   startIndex,
   onEditar,
+  paginationInfo,
 }: EspecialistasTableProps) {
   const columns = [
     {

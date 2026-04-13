@@ -309,17 +309,12 @@ const DisponibilidadPendientesPage = () => {
 	}, [unifiedItems, currentPage]);
 
 	const { desde: semDesde, hasta: semHasta } = rangoSemanaActual();
-	const solicitudesSemanaPendientes = useMemo(() => {
-		const macrosPend = solicitudesAll.filter(
-			(s) =>
-				s.estado === 0 &&
-				!(s.fecha_hasta < semDesde || s.fecha_desde > semHasta),
-		);
+	const totalSolicitudesPendientes = useMemo(() => {
+		const macrosPend = solicitudesAll.filter((s) => s.estado === 0);
 		const pendBloques = disponibilidades.filter((d) => d.estado === 0);
 		const seg = groupDisponibilidadSegmentos(pendBloques);
-		const segSem = seg.filter((s) => s.fecha >= semDesde && s.fecha <= semHasta);
-		return macrosPend.length + segSem.length;
-	}, [solicitudesAll, disponibilidades, semDesde, semHasta]);
+		return macrosPend.length + seg.length;
+	}, [solicitudesAll, disponibilidades]);
 
 	const ratioAprobacionSemana = useMemo(() => {
 		const enSem = disponibilidades.filter(
@@ -649,40 +644,42 @@ const DisponibilidadPendientesPage = () => {
 
 				{isLoading ? (
 					<div className="py-16 text-center text-zinc-500">Cargando solicitudes…</div>
-				) : unifiedItems.length === 0 ? (
-					<div className="rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-sm">
-						<p className="text-zinc-600">
-							{filtros.query.trim() ||
-							filtros.fechaDesde ||
-							filtros.fechaHasta ||
-							idEspecialistaFiltro ||
-							filtros.ecoId
-								? "No hay resultados con los filtros aplicados."
-								: filtros.estado === "pendientes"
-									? "No hay solicitudes pendientes."
-									: "No hay datos para mostrar."}
-						</p>
-					</div>
 				) : (
 					<section className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-						{paginatedItems.map((item) =>
-							item.kind === "macro" ? (
-								<SolicitudMacroCard
-									key={item.id}
-									solicitud={item.solicitud}
-									onAprobar={handleAprobarMacro}
-									onArchivar={handleArchivarMacro}
-									disabled={busy || busySegment === item.id}
-								/>
-							) : (
-								<JornadaSolicitudCard
-									key={item.id}
-									segmento={item.segmento}
-									onAprobar={handleAprobarSegmento}
-									onArchivar={handleArchivarSegmento}
-									disabled={busy || busySegment === item.segmento.ids.join(",")}
-								/>
-							),
+						{unifiedItems.length === 0 ? (
+							<div className="col-span-1 flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-sm">
+								<p className="text-sm font-medium text-zinc-600">
+									{filtros.query.trim() ||
+									filtros.fechaDesde ||
+									filtros.fechaHasta ||
+									idEspecialistaFiltro ||
+									filtros.ecoId
+										? "No hay resultados con los filtros aplicados."
+										: filtros.estado === "pendientes"
+											? "No hay solicitudes pendientes."
+											: "No hay datos para mostrar."}
+								</p>
+							</div>
+						) : (
+							paginatedItems.map((item) =>
+								item.kind === "macro" ? (
+									<SolicitudMacroCard
+										key={item.id}
+										solicitud={item.solicitud}
+										onAprobar={handleAprobarMacro}
+										onArchivar={handleArchivarMacro}
+										disabled={busy || busySegment === item.id}
+									/>
+								) : (
+									<JornadaSolicitudCard
+										key={item.id}
+										segmento={item.segmento}
+										onAprobar={handleAprobarSegmento}
+										onArchivar={handleArchivarSegmento}
+										disabled={busy || busySegment === item.segmento.ids.join(",")}
+									/>
+								),
+							)
 						)}
 
 						{filtros.estado === "pendientes" && (
@@ -709,10 +706,10 @@ const DisponibilidadPendientesPage = () => {
 							</div>
 							<div className="relative z-[1]">
 								<span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-200">
-									Resumen semanal
+									Resumen global
 								</span>
-								<h4 className="mt-4 font-headline text-3xl font-bold">{solicitudesSemanaPendientes}</h4>
-								<p className="mt-1 text-sm text-emerald-100/80">Solicitudes por procesar (esta semana)</p>
+								<h4 className="mt-4 font-headline text-3xl font-bold">{totalSolicitudesPendientes}</h4>
+								<p className="mt-1 text-sm text-emerald-100/80">Solicitudes pendientes por procesar</p>
 							</div>
 							<div className="relative z-[1] mt-8 flex items-end justify-between">
 								<div className="space-y-1">

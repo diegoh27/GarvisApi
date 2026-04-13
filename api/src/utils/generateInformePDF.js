@@ -30,11 +30,11 @@ try {
 }
 
 // ─── Constantes ─────────────────────────────────────────────────────────
-const BRAND    = "#115e59";
-const TEXT     = "#1f2937";
+const BRAND = "#115e59";
+const TEXT = "#1f2937";
 const SUB_TEXT = "#4b5563";
-const WHITE    = "#ffffff";
-const SIDEBAR_W = 170;
+const WHITE = "#ffffff";
+const SIDEBAR_W = 130;
 
 // ─── Utilidad para limpiar texto ────────────────────────────────────────
 function sanitize(txt) {
@@ -50,7 +50,7 @@ const generateInformePDF = async (datos) => {
 	const esRep = !!datos.representado;
 	const nombrePaciente = esRep
 		? [datos.representado.nombre, datos.representado.apellido]
-				.filter(Boolean).join(" ")
+			.filter(Boolean).join(" ")
 		: `${datos.paciente.nombre} ${datos.paciente.apellido}`;
 	const cedulaPaciente = esRep
 		? datos.representado.cedula
@@ -62,32 +62,67 @@ const generateInformePDF = async (datos) => {
 	// ─── Contenido principal ────────────────────────────────────────
 	const content = [];
 
-	// Título
+	// ── MEMBRETE INSTITUCIONAL ──────────────────────────────────────
+	// Columna izquierda: logo + nombre corporativo + separador
+	const membreteLeft = {
+		width: "*",
+		columns: [
+			// Logo (si está disponible)
+			...(logoDataUri
+				? [{ image: logoDataUri, width: 64, margin: [0, -15, 100, 0] }]
+				: []),
+			{
+				stack: [
+					{ text: "ULTRASONIDO INTEGRAL GARBIS", fontSize: 16, bold: true, color: BRAND, font: "Helvetica", margin: [20, 0, 0, 0], },
+					{
+						columns: [
+							{ text: "CENTRO MÉDICO ESPECIALIZADO", fontSize: 8, bold: true, color: TEXT, width: "auto", margin: [20, 0, 0, 0] },
+							{ text: "", width: "auto", margin: [20, 0, 0, 0] },
+						],
+						margin: [0, 3, 0, 0],
+					},
+					{ text: "  Rif: V-15890040-0", fontSize: 8, color: SUB_TEXT, width: "auto", margin: [20, 0, 0, 0] },
+				],
+				margin: [0, 4, 0, 0],
+			},
+		],
+	};
+
+	content.push({
+		columns: [membreteLeft],
+		margin: [0, 0, 0, 4],
+	});
+
+	// Línea verde gruesa del membrete
+	content.push({
+		canvas: [{ type: "line", x1: 0, y1: 0, x2: 412, y2: 0, lineWidth: 3, lineColor: BRAND }],
+		margin: [0, 0, 0, 14],
+	});
+
+	// Título del reporte
 	content.push({
 		columns: [
-			{ width: "*", text: "" },
 			{
-				width: "auto",
+				width: "*",
 				stack: [
-					{ text: "INFORME", fontSize: 26, bold: true, color: TEXT, alignment: "right" },
-					{ text: "MÉDICO", fontSize: 26, bold: true, color: BRAND, alignment: "right" },
+					{ text: "INFORME MÉDICO", fontSize: 18, bold: true, color: BRAND, alignment: "center" },
 				],
 			},
 		],
-		margin: [0, 10, 0, 10],
+		margin: [0, 0, 0, 10],
 	});
 
-	// Línea divisoria superior
+	// Línea divisoria bajo el título
 	content.push({
-		canvas: [{ type: "line", x1: 0, y1: 0, x2: 362, y2: 0, lineWidth: 2, lineColor: BRAND }],
+		canvas: [{ type: "line", x1: 0, y1: 0, x2: 412, y2: 0, lineWidth: 1, lineColor: "#e5e7eb" }],
 		margin: [0, 0, 0, 15],
 	});
 
 	// Bloque paciente + datos cita
 	const patientStack = [
-		{ text: "PACIENTE", fontSize: 10, bold: true, color: SUB_TEXT },
-		{ text: nombrePaciente || "N/A", fontSize: 16, bold: true, color: TEXT },
-		{ text: `C.I: ${cedulaPaciente || "N/A"}`, fontSize: 10, color: SUB_TEXT },
+		{ text: "PACIENTE:", fontSize: 10, bold: true, color: SUB_TEXT, margin: [0, 0, 0, 5] },
+		{ text: nombrePaciente || "N/A", fontSize: 16, bold: true, color: TEXT, margin: [0, 0, 0, 5] },
+		{ text: `C.I: ${cedulaPaciente || "N/A"}`, fontSize: 10, color: SUB_TEXT, margin: [0, 0, 0, 5] },
 	];
 	if (esRep && datos.representado.fecha_nacimiento) {
 		patientStack.push({ text: `Nac: ${datos.representado.fecha_nacimiento}`, fontSize: 10, color: SUB_TEXT });
@@ -97,13 +132,13 @@ const generateInformePDF = async (datos) => {
 
 	const citaFields = [
 		["Fecha:", datos.cita.fecha_cita || ""],
-		["Hora:",  datos.cita.hora_cita  || ""],
+		["Hora:", datos.cita.hora_cita || ""],
 		["Estudio:", datos.cita.eco_nombre || ""],
 	];
 	const citaStack = citaFields.map(([label, value]) => ({
 		columns: [
-			{ text: label, width: 50, fontSize: 9, bold: true, color: SUB_TEXT },
-			{ text: value, width: "*", fontSize: 9, bold: true, color: TEXT },
+			{ text: label, width: 50, fontSize: 12, bold: true, color: SUB_TEXT, margin: [0, 0, 0, 5] },
+			{ text: value, width: "*", fontSize: 12, bold: true, color: TEXT, margin: [0, 0, 0, 5] },
 		],
 	}));
 
@@ -117,10 +152,12 @@ const generateInformePDF = async (datos) => {
 
 	// ── HALLAZGOS CLÍNICOS ──
 	content.push({
-		table: { widths: ["*"], body: [[{
-			text: "HALLAZGOS CLÍNICOS", fontSize: 10, bold: true,
-			color: WHITE, fillColor: BRAND, margin: [8, 4, 0, 4],
-		}]] },
+		table: {
+			widths: ["*"], body: [[{
+				text: "HALLAZGOS CLÍNICOS", fontSize: 10, bold: true,
+				color: WHITE, fillColor: BRAND, margin: [8, 4, 0, 4],
+			}]]
+		},
 		layout: "noBorders",
 		margin: [0, 0, 0, 8],
 	});
@@ -133,10 +170,12 @@ const generateInformePDF = async (datos) => {
 	// ── RECOMENDACIONES ──
 	if (recomendaciones) {
 		content.push({
-			table: { widths: ["*"], body: [[{
-				text: "RECOMENDACIONES", fontSize: 10, bold: true,
-				color: WHITE, fillColor: BRAND, margin: [8, 4, 0, 4],
-			}]] },
+			table: {
+				widths: ["*"], body: [[{
+					text: "RECOMENDACIONES", fontSize: 10, bold: true,
+					color: WHITE, fillColor: BRAND, margin: [8, 4, 0, 4],
+				}]]
+			},
 			layout: "noBorders",
 			margin: [0, 0, 0, 8],
 		});
@@ -151,13 +190,15 @@ const generateInformePDF = async (datos) => {
 	if (datos.ecoUrl && typeof datos.ecoUrl === "string" && datos.ecoUrl.trim().startsWith("http")) {
 		const url = datos.ecoUrl.trim();
 		content.push({
-			table: { widths: ["*"], body: [[{
-				columns: [
-					{ text: "Archivo Adjunto: ", fontSize: 9, bold: true, color: SUB_TEXT, width: "auto" },
-					{ text: "Haz clic aquí para visualizar las imágenes ecográficas", fontSize: 9, color: "#2563eb", link: url, decoration: "underline", width: "*" },
-				],
-				fillColor: "#f3f4f6", margin: [8, 6, 8, 6],
-			}]] },
+			table: {
+				widths: ["*"], body: [[{
+					columns: [
+						{ text: "Archivo Adjunto: ", fontSize: 9, bold: true, color: SUB_TEXT, width: "auto" },
+						{ text: "Haz clic aquí para visualizar las imágenes ecográficas", fontSize: 9, color: "#2563eb", link: url, decoration: "underline", width: "*" },
+					],
+					fillColor: "#f3f4f6", margin: [8, 6, 8, 6],
+				}]]
+			},
 			layout: "noBorders",
 			margin: [0, 5, 0, 20],
 		});
@@ -165,7 +206,7 @@ const generateInformePDF = async (datos) => {
 
 	// ── FIRMA / AUTENTICIDAD ──
 	content.push({
-		canvas: [{ type: "line", x1: 0, y1: 0, x2: 362, y2: 0, lineWidth: 1, lineColor: "#e5e7eb" }],
+		canvas: [{ type: "line", x1: 0, y1: 0, x2: 412, y2: 0, lineWidth: 1, lineColor: "#e5e7eb" }],
 		margin: [0, 20, 0, 10],
 	});
 
@@ -185,10 +226,12 @@ const generateInformePDF = async (datos) => {
 					{ canvas: [{ type: "line", x1: 10, y1: 0, x2: 150, y2: 0, lineWidth: 1, lineColor: SUB_TEXT }], margin: [0, 0, 0, 3] },
 					{ text: `${datos.especialista.nombre} ${datos.especialista.apellido}`, fontSize: 11, bold: true, color: TEXT, alignment: "center" },
 					{
-						table: { widths: [100], body: [[{
-							text: "MÉDICO TRATANTE", fontSize: 7, bold: true,
-							color: WHITE, fillColor: SUB_TEXT, alignment: "center", margin: [0, 1, 0, 1],
-						}]] },
+						table: {
+							widths: [100], body: [[{
+								text: "MÉDICO TRATANTE", fontSize: 7, bold: true,
+								color: WHITE, fillColor: SUB_TEXT, alignment: "center", margin: [0, 1, 0, 1],
+							}]]
+						},
 						layout: "noBorders", alignment: "center", margin: [30, 3, 30, 0],
 					},
 				],
@@ -202,10 +245,6 @@ const generateInformePDF = async (datos) => {
 			{ canvas: [{ type: "rect", x: 0, y: 0, w: SIDEBAR_W, h: pageSize.height, color: BRAND }] },
 		];
 
-		if (logoDataUri) {
-			items.push({ image: logoDataUri, width: 60, absolutePosition: { x: 55, y: 40 } });
-		}
-
 		items.push({ text: "ULTRASONIDO", fontSize: 14, bold: true, color: WHITE, alignment: "center", absolutePosition: { x: 20, y: 110 }, width: 130 });
 		items.push({ text: "GARBIS", fontSize: 14, bold: true, color: WHITE, alignment: "center", absolutePosition: { x: 20, y: 128 }, width: 130 });
 		items.push({ text: "Centro Médico Especializado", fontSize: 9, color: WHITE, alignment: "center", absolutePosition: { x: 20, y: 148 }, width: 130 });
@@ -213,10 +252,10 @@ const generateInformePDF = async (datos) => {
 		items.push({
 			stack: [
 				{ text: "CONTACTO", fontSize: 10, bold: true, color: WHITE },
-				{ text: "Tel: (0414) XXXXXXX", fontSize: 9, color: WHITE, margin: [0, 8, 0, 0] },
-				{ text: "contacto@garbis.com", fontSize: 9, color: WHITE },
-				{ text: "Maracay, Estado Aragua", fontSize: 9, color: WHITE },
-				{ text: "RIF: J-XXXXXXXX-X", fontSize: 9, color: WHITE },
+				{ text: "Tlf: 0416-543-91-72", fontSize: 9, color: WHITE, margin: [0, 8, 0, 3] },
+				{ text: "Av. 02 Casa Nro 06 Urb. ", fontSize: 9, color: WHITE, margin: [0, 0, 0, 3] },
+				{ text: "Caña de Azúcar, Aragua, ", fontSize: 9, color: WHITE, margin: [0, 0, 0, 3] },
+				{ text: "Código postal: 2105", fontSize: 9, color: WHITE, margin: [0, 0, 0, 3] },
 			],
 			absolutePosition: { x: 20, y: pageSize.height - 110 },
 		});
@@ -228,8 +267,7 @@ const generateInformePDF = async (datos) => {
 	function buildFooter() {
 		return {
 			columns: [
-				{ text: "www.garbis.com", fontSize: 8, color: SUB_TEXT },
-				{ text: "Este documento sirve como resultado final de evaluación médica.", fontSize: 8, color: SUB_TEXT, alignment: "right" },
+				{ text: "www.garbis.online", fontSize: 8, color: SUB_TEXT, alignment: "center" },
 			],
 			margin: [SIDEBAR_W + 40, 0, 40, 0],
 		};
@@ -238,7 +276,7 @@ const generateInformePDF = async (datos) => {
 	// ─── DEFINICIÓN DEL DOCUMENTO ───────────────────────────────────
 	const docDefinition = {
 		pageSize: "LETTER",
-		pageMargins: [SIDEBAR_W + 40, 50, 40, 50],
+		pageMargins: [SIDEBAR_W + 40, 30, 40, 50],
 		defaultStyle: { font: "Helvetica" },
 		background: buildBackground,
 		footer: buildFooter,

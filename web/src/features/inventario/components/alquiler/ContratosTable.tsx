@@ -1,5 +1,6 @@
 import { DollarSign, Pencil, Trash2 } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import { formatFechaLocal } from "../../../../shared";
 import type { AlquilerContrato } from "../../api/alquilerApi";
 
@@ -9,6 +10,14 @@ interface ContratosTableProps {
   onEditar: (id: string) => void;
   onEliminar: (id: string) => void;
   onRegistrarPago: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function ContratosTable({
@@ -17,24 +26,25 @@ export default function ContratosTable({
   onEditar,
   onEliminar,
   onRegistrarPago,
+  paginationInfo,
 }: ContratosTableProps) {
   const getEstadoBadge = (estado: AlquilerContrato["estado"]) => {
     if (estado === "Pagado") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        <span className="text-xs font-medium text-emerald-600">
           Pagado
         </span>
       );
     }
     if (estado === "Vencido") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+        <span className="text-xs font-medium text-red-600">
           Vencido
         </span>
       );
     }
     return (
-      <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+      <span className="text-xs font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -142,6 +152,7 @@ export default function ContratosTable({
           emptyState="No hay contratos registrados"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

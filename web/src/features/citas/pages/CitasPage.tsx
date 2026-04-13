@@ -54,7 +54,7 @@ const CitasPage = () => {
 	const [mensajeVinculacion, setMensajeVinculacion] = useState<string | null>(null);
 
 	const { data: citas = [], isLoading, isError } = useGetMisCitasCompletasQuery();
-	const [buscarDisponibles, { data: citasDisponibles = [], isFetching: buscandoDisponibles }] =
+	const [buscarDisponibles, { isFetching: buscandoDisponibles }] =
 		useLazyGetCitasMostradorDisponiblesParaVincularQuery();
 	const [vincular, { isLoading: vinculando }] = useVincularCitasMostradorMutation();
 

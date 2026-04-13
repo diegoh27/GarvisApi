@@ -14,7 +14,6 @@ import EditarContratoModal from "../components/alquiler/EditarContratoModal";
 import RegistrarPagoAlquilerModal from "../components/alquiler/RegistrarPagoAlquilerModal";
 import EditarPagoAlquilerModal from "../components/alquiler/EditarPagoAlquilerModal";
 import HistorialPagosTable from "../components/HistorialPagosTable";
-import Pagination from "../components/Pagination";
 import SearchBar from "../components/SearchBar";
 
 export default function AlquilerPage() {
@@ -203,37 +202,41 @@ export default function AlquilerPage() {
         onEditar={handleEditar}
         onEliminar={handleEliminarContrato}
         onRegistrarPago={handleRegistrarPago}
+        paginationInfo={
+          filteredContratos.length > 0
+            ? {
+                currentPage: currentPageContratos,
+                totalPages: totalPagesContratos,
+                totalItems: filteredContratos.length,
+                itemsPerPage,
+                label: "contratos",
+                onPageChange: setCurrentPageContratos,
+              }
+            : undefined
+        }
       />
 
-      {filteredContratos.length > 0 && (
-        <Pagination
-          currentPage={currentPageContratos}
-          totalPages={totalPagesContratos}
-          totalItems={filteredContratos.length}
-          itemsPerPage={itemsPerPage}
-          label="contratos"
-          onPageChange={setCurrentPageContratos}
+      <div className="mt-10">
+        <HistorialPagosTable
+          historial={currentHistorial}
+          isLoading={historialLoading}
+          variant="alquiler"
+          onEditar={(row) => handleEditarPago(row as AlquilerPago)}
+          onEliminar={handleEliminarPago}
+          paginationInfo={
+            !historialLoading && historialRows.length > 0
+              ? {
+                  currentPage: currentPageHistorial,
+                  totalPages: totalPagesHistorial,
+                  totalItems: historialRows.length,
+                  itemsPerPage,
+                  label: "pagos",
+                  onPageChange: setCurrentPageHistorial,
+                }
+              : undefined
+          }
         />
-      )}
-
-      <HistorialPagosTable
-        historial={currentHistorial}
-        isLoading={historialLoading}
-        variant="alquiler"
-        onEditar={(row) => handleEditarPago(row as AlquilerPago)}
-        onEliminar={handleEliminarPago}
-      />
-
-      {!historialLoading && historialRows.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialRows.length}
-          itemsPerPage={itemsPerPage}
-          label="pagos"
-          onPageChange={setCurrentPageHistorial}
-        />
-      )}
+      </div>
 
       <CrearContratoModal
         isOpen={showCrearModal}

@@ -13,6 +13,7 @@ const {
 	registrarAjusteStockHandler,
 	listAjustesProductoHandler,
 	listHistorialAjustesHandler,
+	listHistorialConsumosHandler,
 } = require("../handlers/productosHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -133,6 +134,18 @@ productosRoutes.get(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	listHistorialAjustesHandler,
+);
+
+// ==========================================
+// CONSUMOS
+// ==========================================
+
+// GET /productos/consumos/historial - historial de consumos
+productosRoutes.get(
+	"/consumos/historial",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	listHistorialConsumosHandler,
 );
 
 module.exports = productosRoutes;

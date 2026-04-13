@@ -98,7 +98,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		fecha_nacimiento: "",
 		genero: "" as "" | "Masculino" | "Femenino",
 		parentesco: "",
-		tipo_cedula_rep: "V" as const,
+		tipo_cedula_rep: "V" as "V" | "E" | "J" | "P" | "G",
 		cedula_rep: "",
 	});
 	const [repFormErrors, setRepFormErrors] = useState<Record<string, string>>({});

@@ -1,17 +1,18 @@
 import { useState, useMemo } from "react";
 import { Plus, Search, Building2, TrendingUp, Package, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import Swal from "sweetalert2";
-import { useGetProveedoresQuery, useCreateProveedorMutation, useUpdateProveedorMutation, useDeleteProveedorMutation } from "../api";
-import type { Proveedor, CreateProveedorPayload } from "../api";
+import { useGetProveedoresQuery, useUpdateProveedorMutation, useDeleteProveedorMutation } from "../api";
+import type { Proveedor } from "../api";
+import CrearProveedorModal from "../components/CrearProveedorModal";
 
 /* ── Componente ────────────────────────────────────── */
 export default function ProveedoresPage() {
 	const { data: proveedores = [], isLoading } = useGetProveedoresQuery();
-	const [createProveedor] = useCreateProveedorMutation();
 	const [updateProveedor] = useUpdateProveedorMutation();
 	const [deleteProveedor] = useDeleteProveedorMutation();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
+	const [showCrearModal, setShowCrearModal] = useState(false);
 	const itemsPerPage = 10;
 
 	/* ── Filtrado y paginación ── */
@@ -51,47 +52,8 @@ export default function ProveedoresPage() {
 	];
 
 	/* ── CRUD Handlers ── */
-	const handleCrear = async () => {
-		const { value: formValues } = await Swal.fire({
-			title: "Nuevo Proveedor",
-			html: `
-				<input id="swal-nombre" class="swal2-input" placeholder="Razón Social *" />
-				<input id="swal-rif" class="swal2-input" placeholder="RIF (ej: J-30928471-0)" />
-				<input id="swal-telefono" class="swal2-input" placeholder="Teléfono" />
-				<input id="swal-correo" class="swal2-input" placeholder="Correo electrónico" />
-				<input id="swal-contacto" class="swal2-input" placeholder="Nombre de contacto" />
-				<input id="swal-direccion" class="swal2-input" placeholder="Dirección" />
-			`,
-			focusConfirm: false,
-			showCancelButton: true,
-			confirmButtonColor: "#0d9488",
-			confirmButtonText: "Guardar",
-			cancelButtonText: "Cancelar",
-			preConfirm: () => {
-				const nombre = (document.getElementById("swal-nombre") as HTMLInputElement)?.value;
-				if (!nombre?.trim()) {
-					Swal.showValidationMessage("El nombre es obligatorio");
-					return false;
-				}
-				return {
-					nombre: nombre.trim(),
-					rif: (document.getElementById("swal-rif") as HTMLInputElement)?.value || undefined,
-					telefono: (document.getElementById("swal-telefono") as HTMLInputElement)?.value || undefined,
-					correo: (document.getElementById("swal-correo") as HTMLInputElement)?.value || undefined,
-					contacto_nombre: (document.getElementById("swal-contacto") as HTMLInputElement)?.value || undefined,
-					direccion: (document.getElementById("swal-direccion") as HTMLInputElement)?.value || undefined,
-				} as CreateProveedorPayload;
-			},
-		});
-
-		if (formValues) {
-			try {
-				await createProveedor(formValues).unwrap();
-				Swal.fire({ icon: "success", title: "Proveedor creado", timer: 1500, showConfirmButton: false });
-			} catch (err: any) {
-				Swal.fire({ icon: "error", title: "Error", text: err?.data?.message || "No se pudo crear el proveedor" });
-			}
-		}
+	const handleCrear = () => {
+		setShowCrearModal(true);
 	};
 
 	const handleToggleActivo = async (prov: Proveedor) => {
@@ -309,6 +271,11 @@ export default function ProveedoresPage() {
 					</div>
 				)}
 			</div>
+
+			<CrearProveedorModal
+				isOpen={showCrearModal}
+				onClose={() => setShowCrearModal(false)}
+			/>
 		</div>
 	);
 }

@@ -271,26 +271,26 @@ export default function CitaMostradorPage() {
 	};
 
 	return (
-		<div className="relative pb-36">
+		<div className="relative pb-36 bg-slate-50 min-h-screen">
 			<PageShell
 				hideHeader
 				title="Cita de Mostrador"
 				description="Registro rápido de pacientes presenciales."
 			/>
-			<div className="mx-auto max-w-5xl space-y-10 pb-8">
-				<div className="space-y-2">
+			<div className="mx-auto max-w-5xl space-y-8 pb-8 pt-6">
+				<div className="space-y-2 px-4 sm:px-0">
 					<h1 className="font-headline text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
 						Cita de Mostrador
 					</h1>
 					<p className="text-lg text-slate-600">Registro rápido de pacientes presenciales en el sistema Garvis.</p>
 				</div>
 
-				<form id="form-cita-mostrador" onSubmit={onFormSubmit} className="space-y-12">
+				<form id="form-cita-mostrador" onSubmit={onFormSubmit} className="flex flex-col gap-6 px-4 sm:px-0">
 					{/* 1 Paciente */}
-					<section className="space-y-6">
-						<div className="flex items-center gap-3">
+					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
+						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								1
@@ -343,8 +343,8 @@ export default function CitaMostradorPage() {
 						</div>
 
 						<div id="bloque-paciente-datos" className="space-y-6">
-							<div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-								<div className="md:col-span-1">
+							<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+								<div className="lg:col-span-3">
 									<label className={labelBase}>Cédula</label>
 									<CedulaField
 										label=""
@@ -360,11 +360,11 @@ export default function CitaMostradorPage() {
 										error={cedulaErrorText}
 										required={false}
 										disabled={pacienteIdentificadoEnSistema}
-										inputClassName={`h-14 rounded-r-2xl border border-neutral-200 text-lg ${cedulaErrorText ? inputError : ""} ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
-										selectClassName={`h-14 rounded-l-2xl border border-r-0 border-neutral-200 font-bold text-[#006965] ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
+										inputClassName={`h-14 rounded-2xl border border-neutral-200 text-lg ${cedulaErrorText ? inputError : ""} ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
+										selectClassName={`h-14 rounded-2xl border border-neutral-200 font-bold text-[#006965] ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
 									/>
 								</div>
-								<div className="md:col-span-1">
+								<div className="lg:col-span-3">
 									<label className={labelBase}>RIF</label>
 									<input
 										type="text"
@@ -376,7 +376,7 @@ export default function CitaMostradorPage() {
 										placeholder="J-00000000-0"
 									/>
 								</div>
-								<div className="md:col-span-2">
+								<div className="lg:col-span-6">
 									<label className={labelBase}>Nombre completo</label>
 									<div className="relative">
 										<input
@@ -701,10 +701,10 @@ export default function CitaMostradorPage() {
 					</section>
 
 					{/* 2 Servicios */}
-					<section className="space-y-6">
-						<div className="flex items-center gap-3">
+					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
+						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								2
@@ -713,7 +713,7 @@ export default function CitaMostradorPage() {
 								Servicios Médicos
 							</h2>
 						</div>
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<div>
 								<label className={labelBase}>Especialidad</label>
 								<div className="relative">
@@ -787,10 +787,10 @@ export default function CitaMostradorPage() {
 					</section>
 
 					{/* 3 Pago */}
-					<section id="paso-pago" className="space-y-6">
-						<div className="flex items-center gap-3">
+					<section id="paso-pago" className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
+						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								3
@@ -833,7 +833,7 @@ export default function CitaMostradorPage() {
 								</p>
 							</div>
 						)}
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 							<div>
 								<label className={labelBase}>Método de pago</label>
 								<select
@@ -881,6 +881,8 @@ export default function CitaMostradorPage() {
 									<Lock className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
 								</div>
 							</div>
+						</div>
+						<div className="rounded-xl bg-slate-50 p-5 mt-2 border border-slate-100 grid grid-cols-1 gap-4 md:grid-cols-2">
 							<div>
 								<label className={labelBase}>{montoPrincipalLabel}</label>
 								{isMetodoEnBs && (
@@ -891,7 +893,7 @@ export default function CitaMostradorPage() {
 										onChange={handleChange}
 										min={0}
 										step={0.01}
-										className={`${inputBase} font-bold text-[#006965] ${fieldErrors.monto ? inputError : ""}`}
+										className={`${inputBase} font-bold bg-white text-[#006965] ${fieldErrors.monto ? inputError : ""}`}
 									/>
 								)}
 								{!isMetodoEnBs && monedaRegistro === "usd" && (
@@ -902,7 +904,7 @@ export default function CitaMostradorPage() {
 										onChange={handleChange}
 										min={0}
 										step={0.01}
-										className={`${inputBase} font-bold text-[#006965] ${fieldErrors.monto ? inputError : ""}`}
+										className={`${inputBase} font-bold bg-white text-[#006965] ${fieldErrors.monto ? inputError : ""}`}
 									/>
 								)}
 								{!isMetodoEnBs && monedaRegistro === "bs" && (
@@ -914,30 +916,28 @@ export default function CitaMostradorPage() {
 										step={0.01}
 										disabled={tasaNum <= 0}
 										placeholder={tasaNum <= 0 ? "Indica tasa BCV primero" : "Ej. 4739.18"}
-										className={`${inputBase} font-bold text-[#006965] ${fieldErrors.monto ? inputError : ""} disabled:opacity-50`}
+										className={`${inputBase} font-bold bg-white text-[#006965] ${fieldErrors.monto ? inputError : ""} disabled:opacity-50`}
 									/>
 								)}
 								{fieldErrors.monto && <p className="mt-1 text-xs text-red-500">{fieldErrors.monto}</p>}
 							</div>
-						</div>
-						<div className="grid grid-cols-1 md:grid-cols-4 md:gap-6">
-							<div className="md:col-start-4">
+							<div>
 								<label className={labelBase}>{equivalentePagoLabel}</label>
 								<input
 									type="text"
 									readOnly
 									value={equivalentePagoValue}
-									className={`${inputBase} bg-slate-50 font-bold text-slate-700`}
+									className={`${inputBase} bg-slate-100 font-bold text-slate-700 hover:border-neutral-200 focus:ring-0`}
 								/>
 							</div>
 						</div>
 					</section>
 
 					{/* 4 Agenda */}
-					<section className="space-y-6">
-						<div className="flex items-center gap-3">
+					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
+						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								4
@@ -947,8 +947,8 @@ export default function CitaMostradorPage() {
 							</h2>
 						</div>
 
-						<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-							<div className="w-full rounded-3xl bg-white p-6 shadow-sm lg:max-w-xs">
+						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+							<div className="w-full lg:col-span-4 rounded-2xl border border-slate-100 bg-slate-50 p-6">
 								<div className="mb-4 flex items-center justify-between">
 									<h3 className="text-sm font-bold text-slate-800">
 										{MESES[calMonth]} {calYear}
@@ -1016,7 +1016,7 @@ export default function CitaMostradorPage() {
 								</div>
 							</div>
 
-							<div className="min-w-0 flex-1 space-y-8">
+							<div className="lg:col-span-8 flex-1 space-y-8">
 								<div>
 									<div className="mb-3 flex items-center gap-2 text-neutral-500">
 										<Sun className="h-4 w-4" />

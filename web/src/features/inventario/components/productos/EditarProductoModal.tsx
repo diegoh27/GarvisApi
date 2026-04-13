@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUpdateProductoMutation, useGetProductoQuery } from "../../api";
-import { X } from "lucide-react";
+import { X, Save, Edit2, Info, Bell } from "lucide-react";
 
 interface EditarProductoModalProps {
   isOpen: boolean;
@@ -100,217 +100,254 @@ export default function EditarProductoModal({
   if (!isOpen) return null;
 
   const inputClassName =
-    "w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 transition-shadow";
+    "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white placeholder-slate-400 transition-all";
+  const labelClassName =
+    "block text-xs font-bold text-slate-600 mb-1.5";
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto overflow-x-hidden">
         {/* Header */}
-        <div className="p-6 pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600">
-                Editar Registro
-              </span>
-              <h2 className="text-xl font-bold text-gray-900 mt-1">
-                Modificar Producto
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Actualice la información del insumo en el inventario.
-              </p>
+        <div className="px-8 py-6 flex justify-between items-center bg-white border-b border-transparent">
+          <div className="flex items-center gap-3">
+            <div className="bg-teal-600 text-white p-1.5 rounded-md flex items-center justify-center">
+              <Edit2 size={18} strokeWidth={3} />
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors p-1 -mr-1 -mt-1"
-            >
-              <X size={20} />
-            </button>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Editar Insumo
+              </h2>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+          >
+            <X size={24} />
+          </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-5">
-          {/* Nombre */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Nombre del Producto *
-            </label>
-            <input
-              type="text"
-              value={formData.nombre}
-              onChange={(e) =>
-                setFormData({ ...formData, nombre: e.target.value })
-              }
-              maxLength={120}
-              className={inputClassName}
-              placeholder="Ej: Guantes de látex"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          {/* Top section: Alerts */}
+          {(error || success) && (
+            <div className="px-8 mt-2">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+                  {success}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Presentación + Unidad de Compra */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Presentación
-              </label>
-              <input
-                type="text"
-                value={formData.presentacion}
-                onChange={(e) =>
-                  setFormData({ ...formData, presentacion: e.target.value })
-                }
-                maxLength={50}
-                className={inputClassName}
-                placeholder="Ej: Galón, Caja"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Unidad de Compra *
-              </label>
-              <input
-                type="text"
-                value={formData.unidad_compra}
-                onChange={(e) =>
-                  setFormData({ ...formData, unidad_compra: e.target.value })
-                }
-                maxLength={50}
-                className={inputClassName}
-                placeholder="Ej: Caja, Galón"
-                required
-              />
-            </div>
-          </div>
+          {/* PASO 01 */}
+          <div className="bg-white px-8 pb-6 pt-2">
+            <h3 className="text-sm font-bold text-slate-400 mb-5">
+              PASO 01 <span className="text-slate-700 ml-1">Detalles Básicos</span>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className={labelClassName}>Nombre del producto</label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  maxLength={120}
+                  className={inputClassName}
+                  placeholder="Ej: Guantes de Nitrilo"
+                  required
+                />
+              </div>
 
-          {/* Unidad de Consumo + Factor */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Unidad de Consumo *
-              </label>
-              <input
-                type="text"
-                value={formData.unidad_consumo}
-                onChange={(e) =>
-                  setFormData({ ...formData, unidad_consumo: e.target.value })
-                }
-                maxLength={50}
-                className={inputClassName}
-                placeholder="Ej: Piezas, ml"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Factor de Conversión *
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0.0001"
-                value={formData.factor_conversion}
-                onChange={(e) =>
-                  setFormData({ ...formData, factor_conversion: e.target.value })
-                }
-                className={inputClassName}
-                placeholder="Ej: 50, 100"
-                required
-              />
+              <div>
+                <label className={labelClassName}>Categoría</label>
+                <select
+                  value={formData.categoria}
+                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                  className={`${inputClassName} appearance-none cursor-pointer`}
+                >
+                  <option value="General" disabled className="text-slate-400">Seleccionar categoría...</option>
+                  <option value="General">General</option>
+                  <option value="Insumos Médicos">Insumos Médicos</option>
+                  <option value="Medicamentos">Medicamentos</option>
+                  <option value="Equipos">Equipos</option>
+                  <option value="Descartables">Descartables</option>
+                  <option value="Diagnóstico">Diagnóstico</option>
+                  <option value="Instrumental">Instrumental</option>
+                  <option value="Líquidos">Líquidos</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Categoría + Mínimo */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Categoría
-              </label>
-              <select
-                value={formData.categoria}
-                onChange={(e) =>
-                  setFormData({ ...formData, categoria: e.target.value })
-                }
-                className={`${inputClassName} bg-white appearance-none`}
+          {/* PASO 02 */}
+          <div className="bg-slate-50 px-8 py-8 border-y border-slate-100">
+            <h3 className="text-sm font-bold text-slate-400 mb-1">
+              PASO 02 <span className="text-slate-700 ml-1">Empaque y Consumo</span>
+            </h3>
+            <p className="text-xs text-slate-500 mb-6 font-medium">
+              Ajusta cómo entra el producto al almacén y la equivalencia descontada en cada cita.
+            </p>
+
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className={labelClassName}>¿Cómo compras este insumo al mayor?</label>
+                <input
+                  type="text"
+                  value={formData.unidad_compra}
+                  onChange={(e) => setFormData({ ...formData, unidad_compra: e.target.value })}
+                  maxLength={50}
+                  className={inputClassName}
+                  placeholder="Ej: Caja"
+                  required
+                />
+              </div>
+              <div>
+                <label className={labelClassName}>¿Cómo se gasta en las citas?</label>
+                <input
+                  type="text"
+                  list="unidades-consumo-edit-list"
+                  value={formData.unidad_consumo}
+                  onChange={(e) => setFormData({ ...formData, unidad_consumo: e.target.value })}
+                  maxLength={50}
+                  className={inputClassName}
+                  placeholder="Ej: Pares"
+                  required
+                />
+                <datalist id="unidades-consumo-edit-list">
+                  <option value="Pares" />
+                  <option value="ml" />
+                  <option value="Gramos" />
+                  <option value="Unidad" />
+                  <option value="Piezas" />
+                  <option value="Cajas" />
+                  <option value="Sobres" />
+                  <option value="Kilos" />
+                  <option value="Litros" />
+                </datalist>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className={labelClassName}>¿Cuánta cantidad trae cada empaque de este producto?</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="any"
+                  min="0.0001"
+                  value={formData.factor_conversion}
+                  onChange={(e) => setFormData({ ...formData, factor_conversion: e.target.value })}
+                  className={`${inputClassName} pr-24`}
+                  placeholder="Ej: 100"
+                  required
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-50 text-teal-700 text-[10px] font-bold px-2 py-1 rounded">
+                  UNIDADES
+                </div>
+              </div>
+            </div>
+
+            {/* Helper Mágico */}
+            <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-4 flex gap-3">
+              <div className="text-teal-600 mt-0.5">
+                <Info size={20} />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-bold text-[#006965]">Ejemplo visual:</span>
+                <p className="text-xs font-medium text-teal-800/80 leading-relaxed">
+                  1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formData.factor_conversion || '100'} {formData.unidad_consumo || 'Pares'}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Pares'}</span>" automáticamente.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* PASO 03 */}
+          <div className="bg-white px-8 pt-8 pb-6 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-400 mb-5">
+              PASO 03 <span className="text-slate-700 ml-1">Stock y Alertas</span>
+            </h3>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className={labelClassName}>
+                  Stock Actual en Inventario <span className="text-slate-400 font-normal">(solo lectura)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={Math.floor(Number(producto?.stock_base_total || 0))}
+                    disabled
+                    className={`${inputClassName} bg-slate-100 cursor-not-allowed`}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">
+                    {formData.unidad_consumo}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className={labelClassName}>
+                  Alerta de stock bajo <span className="text-slate-400 font-normal">(alerta cuando queda poco)</span>
+                </label>
+                <div className="relative">
+                  <Bell size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    value={formData.stock_minimo_base}
+                    onChange={(e) => setFormData({ ...formData, stock_minimo_base: e.target.value })}
+                    className={`${inputClassName} pl-10`}
+                    placeholder="Mínimo de unidades"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-white px-8 py-5 flex items-center justify-between rounded-b-2xl">
+            {/* Left: Switch */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, activo: !formData.activo })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#006965] focus:ring-offset-2 ${
+                  formData.activo ? 'bg-[#006965]' : 'bg-slate-300'
+                }`}
               >
-                <option value="General">General</option>
-                <option value="Insumos Médicos">Insumos Médicos</option>
-                <option value="Medicamentos">Medicamentos</option>
-                <option value="Equipos">Equipos</option>
-                <option value="Descartables">Descartables</option>
-                <option value="Diagnóstico">Diagnóstico</option>
-                <option value="Instrumental">Instrumental</option>
-                <option value="Líquidos">Líquidos</option>
-              </select>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    formData.activo ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-slate-600">Producto activo</span>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                Mínimo ({formData.unidad_consumo || "base"})
-              </label>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                value={formData.stock_minimo_base}
-                onChange={(e) =>
-                  setFormData({ ...formData, stock_minimo_base: e.target.value })
-                }
-                className={inputClassName}
-                placeholder="0"
-              />
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="px-6 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2.5 flex items-center gap-2 bg-[#006965] text-white rounded-lg text-sm font-semibold hover:bg-teal-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+              >
+                <Save size={16} />
+                {isLoading ? "Actualizando..." : "Guardar Cambios"}
+              </button>
             </div>
-          </div>
-
-          {/* Activo */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="activo-editar"
-              checked={formData.activo}
-              onChange={(e) =>
-                setFormData({ ...formData, activo: e.target.checked })
-              }
-              className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-            />
-            <label
-              htmlFor="activo-editar"
-              className="ml-2 text-sm font-medium text-gray-700"
-            >
-              Producto activo
-            </label>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Success */}
-          {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-              {success}
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-6 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm disabled:bg-teal-300 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Actualizando..." : "Actualizar Producto"}
-            </button>
           </div>
         </form>
       </div>

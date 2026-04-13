@@ -13,7 +13,6 @@ import { useAuth, CedulaField } from "../../../shared";
 import type { TipoCedula } from "../../../shared";
 import {
 	useGetRepresentadosQuery,
-	useGetParentescosQuery,
 	useCreateRepresentadoMutation,
 } from "../../representados/representadosApi";
 import type { Representado } from "../../representados/representadosApi";
@@ -46,10 +45,8 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { data: representadosData } = useGetRepresentadosQuery({ page: 1, limit: 50 });
-	const { data: parentescosData } = useGetParentescosQuery();
 	const [createRepresentado, { isLoading: creando }] = useCreateRepresentadoMutation();
 	const representados = representadosData?.data ?? [];
-	const parentescos = parentescosData ?? [];
 
 	// Selection state
 	const [selectionType, setSelectionType] = useState<"yo" | "representado" | null>(null);

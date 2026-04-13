@@ -36,7 +36,7 @@ export default function HistorialModal({
         {/* Header */}
         <div className="flex justify-between items-center p-4 md:p-6 border-b">
           <h2 className="text-lg md:text-xl font-bold">
-            {type === "compras" ? "Historial de Compras" : "Historial de Ajustes"}
+            {type === "compras" ? "Registro de consumo por cita" : "Historial de Ajustes"}
           </h2>
           <button
             onClick={onClose}
@@ -56,7 +56,7 @@ export default function HistorialModal({
             <div className="text-center py-8">
               <p className="text-gray-500">
                 {type === "compras"
-                  ? "No hay compras registradas"
+                  ? "No hay registros de consumo"
                   : "No hay ajustes registrados"}
               </p>
             </div>

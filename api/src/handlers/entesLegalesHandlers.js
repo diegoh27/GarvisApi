@@ -287,8 +287,8 @@ const registrarPagoEnteLegalHandler = async (req, res) => {
 const deletePagoEnteLegalHandler = async (req, res) => {
 	try {
 		const { idPago } = req.params;
-		await deletePagoEnteLegalController(idPago);
-		logInventarioReq(req, "entes", `Eliminó pago de ente (ID: ${idPago})`, {
+		const { nombre_ente } = await deletePagoEnteLegalController(idPago);
+		logInventarioReq(req, "entes", `Eliminó pago para ente "${nombre_ente}"`, {
 			entidad_tipo: "pago_ente",
 			entidad_id: idPago,
 		}).catch((e) => console.error(e));

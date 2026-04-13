@@ -23,19 +23,19 @@ export default function KardexPage() {
 		switch (tipo) {
 			case "ENTRADA":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-green-700">
 						<ArrowUpRight className="w-3.5 h-3.5" /> Entrada
 					</span>
 				);
 			case "SALIDA":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-red-600">
 						<ArrowDownRight className="w-3.5 h-3.5" /> Salida
 					</span>
 				);
 			case "AJUSTE":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-blue-600">
 						<Settings2 className="w-3.5 h-3.5" /> Ajuste
 					</span>
 				);
@@ -110,7 +110,7 @@ export default function KardexPage() {
 			<div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
 				<div>
 					<h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-						<History className="text-teal-600 w-6 h-6" /> Kardex de Movimientos
+						<History className="text-teal-600 w-6 h-6" /> Movimientos de Inventario
 					</h1>
 					<p className="text-gray-500 mt-1 text-sm">
 						Auditoría completa de entradas, salidas y ajustes de inventario.

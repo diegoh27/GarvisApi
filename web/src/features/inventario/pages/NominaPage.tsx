@@ -136,13 +136,13 @@ export default function NominaPage() {
   const getEstadoBadge = (estado: string) => {
     if (estado.toLowerCase() === "activo") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <span className="text-xs font-medium text-emerald-600">
           Activo
         </span>
       );
     }
     return (
-      <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+      <span className="text-xs font-medium text-red-600">
         Inactivo
       </span>
     );
@@ -151,20 +151,20 @@ export default function NominaPage() {
   const getPagoStatusBadge = (estatusPago?: string | null) => {
     if (estatusPago?.toLowerCase() === "pagada") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        <span className="text-xs font-medium text-emerald-600">
           Pagada
         </span>
       );
     }
     if (estatusPago?.toLowerCase() === "vencido") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+        <span className="text-xs font-medium text-red-600">
           Vencido
         </span>
       );
     }
     return (
-      <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+      <span className="text-xs font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -283,7 +283,7 @@ export default function NominaPage() {
     },
     {
       key: "estatus_pago",
-      header: "Estatus Pago",
+      header: "Estado",
       headerClassName:
         "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
       cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
@@ -381,38 +381,40 @@ export default function NominaPage() {
             emptyState="No hay empleados registrados"
           />
         </div>
+        {filteredEmpleados.length > 0 && (
+          <Pagination
+            currentPage={currentPageEmpleados}
+            totalPages={totalPagesEmpleados}
+            totalItems={filteredEmpleados.length}
+            itemsPerPage={itemsPerPage}
+            label="empleados"
+            onPageChange={setCurrentPageEmpleados}
+          />
+        )}
       </div>
 
-      {filteredEmpleados.length > 0 && (
-        <Pagination
-          currentPage={currentPageEmpleados}
-          totalPages={totalPagesEmpleados}
-          totalItems={filteredEmpleados.length}
-          itemsPerPage={itemsPerPage}
-          label="empleados"
-          onPageChange={setCurrentPageEmpleados}
-        />
-      )}
-
       {/* Historial de Pagos */}
-      <HistorialPagosTable
-        historial={currentHistorial}
-        isLoading={historialLoading}
-        variant="nomina"
-        onEditar={(row) => handleEditarPago(row as NominaPago)}
-        onEliminar={handleEliminarPago}
-      />
-
-      {!historialLoading && historialRows.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialRows.length}
-          itemsPerPage={itemsPerPage}
-          label="pagos"
-          onPageChange={setCurrentPageHistorial}
+      <div className="mt-10">
+        <HistorialPagosTable
+          historial={currentHistorial}
+          isLoading={historialLoading}
+          variant="nomina"
+          onEditar={(row) => handleEditarPago(row as NominaPago)}
+          onEliminar={handleEliminarPago}
+          paginationInfo={
+            !historialLoading && historialRows.length > 0
+              ? {
+                  currentPage: currentPageHistorial,
+                  totalPages: totalPagesHistorial,
+                  totalItems: historialRows.length,
+                  itemsPerPage,
+                  label: "pagos",
+                  onPageChange: setCurrentPageHistorial,
+                }
+              : undefined
+          }
         />
-      )}
+      </div>
 
       {/* Modales */}
       <CrearEmpleadoModal

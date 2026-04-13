@@ -1,13 +1,11 @@
 import { useState, useMemo } from "react";
 import { Plus, ClipboardList, AlertTriangle, BadgeDollarSign, Clock } from "lucide-react";
 import Swal from "sweetalert2";
-import { useGetProductosQuery, useGetHistorialComprasQuery, useDeleteCompraMutation, useDeleteProductoMutation, type CompraProducto } from "../api";
-import ComprarProductoModal from "../components/productos/ComprarProductoModal.tsx";
+import { useGetProductosQuery, useGetHistorialConsumosQuery, useGetHistorialComprasQuery, useDeleteProductoMutation, type CompraProducto } from "../api";
 import EditarCompraModal from "../components/productos/EditarCompraModal.tsx";
-import CambiarCantidadModal from "../components/productos/CambiarCantidadModal.tsx";
-import HistorialModal from "../components/productos/HistorialModal.tsx";
 import CrearProductoModal from "../components/productos/CrearProductoModal.tsx";
 import EditarProductoModal from "../components/productos/EditarProductoModal.tsx";
+import ConsumoManualModal from "../components/productos/ConsumoManualModal.tsx";
 import ProductosTable from "../components/productos/ProductosTable";
 import HistorialPagosTable from "../components/HistorialPagosTable";
 import Pagination from "../components/Pagination.tsx";
@@ -15,76 +13,31 @@ import SearchBar from "../components/SearchBar";
 
 export default function ProductosPage() {
   const { data: productos = [], isLoading, refetch } = useGetProductosQuery();
-  const { data: historialCompras = [], isLoading: loadingHistorial } = useGetHistorialComprasQuery();
-  const [deleteCompra] = useDeleteCompraMutation();
+  const { data: historialConsumos = [], isLoading: loadingHistorial } = useGetHistorialConsumosQuery();
+  const { data: historialCompras = [] } = useGetHistorialComprasQuery();
   const [deleteProducto] = useDeleteProductoMutation();
   const [selectedProducto, setSelectedProducto] = useState<string | null>(null);
   const [selectedCompra, setSelectedCompra] = useState<CompraProducto | null>(null);
-  const [showComprarModal, setShowComprarModal] = useState(false);
   const [showEditarCompraModal, setShowEditarCompraModal] = useState(false);
-  const [showCambiarModal, setShowCambiarModal] = useState(false);
-  const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [showCrearModal, setShowCrearModal] = useState(false);
   const [showEditarModal, setShowEditarModal] = useState(false);
-  const [historialType, setHistorialType] = useState<"compras" | "ajustes">(
-    "compras"
-  );
+  const [showConsumoModal, setShowConsumoModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPageProductos, setCurrentPageProductos] = useState(1);
   const [currentPageHistorial, setCurrentPageHistorial] = useState(1);
   const itemsPerPage = 5;
-
-  const handleComprar = (id: string) => {
-    setSelectedProducto(id);
-    setShowComprarModal(true);
-  };
-
-  const handleCambiarCantidad = (id: string) => {
-    setSelectedProducto(id);
-    setShowCambiarModal(true);
-  };
 
   const handleEditar = (id: string) => {
     setSelectedProducto(id);
     setShowEditarModal(true);
   };
 
-  const handleVerHistorial = (id: string, type: "compras" | "ajustes") => {
+  const handleConsumoManual = (id: string) => {
     setSelectedProducto(id);
-    setHistorialType(type);
-    setShowHistorialModal(true);
+    setShowConsumoModal(true);
   };
 
-  const handleEliminarCompra = async (idCompra: string) => {
-    const result = await Swal.fire({
-      title: "¿Eliminar compra?",
-      text: "¿Está seguro que desea eliminar esta compra? Se descontará el stock del producto.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-    });
-    if (result.isConfirmed) {
-      try {
-        await deleteCompra(idCompra).unwrap();
-        await Swal.fire({
-          icon: "success",
-          title: "Compra eliminada",
-          text: "La compra fue eliminada correctamente.",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-      } catch (err: any) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: err?.data?.message || "No se pudo eliminar la compra",
-        });
-      }
-    }
-  };
+
 
   const handleEliminarProducto = async (id: string, nombre: string) => {
     const result = await Swal.fire({
@@ -123,17 +76,17 @@ export default function ProductosPage() {
   // KPI: Valor Total del Inventario
   // Estimated base price per consumption unit
   const latestPrices: Record<string, number> = {};
-  historialCompras.forEach(c => {
+  historialCompras.forEach((c: CompraProducto) => {
     if (!latestPrices[c.id_producto]) {
-       latestPrices[c.id_producto] = Number(c.precio_unitario) || 0;
+      latestPrices[c.id_producto] = Number(c.precio_unitario) || 0;
     }
   });
-  const totalValue = productos.reduce((sum, p) => sum + (Number(p.stock_base_total) * (latestPrices[p.id_producto] || 0) / (Number(p.factor_conversion) || 1)), 0);
+  const totalValue = productos.reduce((sum: number, p) => sum + (Number(p.stock_base_total) * (latestPrices[p.id_producto] || 0) / (Number(p.factor_conversion) || 1)), 0);
 
-  const recentStockIn = historialCompras.filter(c => {
-     const diffDays = Math.floor((new Date().getTime() - new Date(c.fecha_ingreso).getTime()) / (1000 * 3600 * 24));
-     return diffDays <= 7;
-  }).reduce((sum, c) => sum + c.cantidad, 0);
+  const recentStockIn = historialCompras.filter((c: CompraProducto) => {
+    const diffDays = Math.floor((new Date().getTime() - new Date(c.fecha_ingreso).getTime()) / (1000 * 3600 * 24));
+    return diffDays <= 7;
+  }).reduce((sum: number, c: CompraProducto) => sum + Number(c.cantidad), 0);
   // ---
 
   // Filter productos by search query
@@ -159,10 +112,10 @@ export default function ProductosPage() {
   const currentProductos = filteredProductos.slice(startIndexProductos, endIndexProductos);
 
   // Paginación para Historial
-  const totalPagesHistorial = Math.ceil(historialCompras.length / itemsPerPage);
+  const totalPagesHistorial = Math.ceil(historialConsumos.length / itemsPerPage);
   const startIndexHistorial = (currentPageHistorial - 1) * itemsPerPage;
   const endIndexHistorial = startIndexHistorial + itemsPerPage;
-  const currentHistorialCompras = historialCompras.slice(startIndexHistorial, endIndexHistorial);
+  const currentHistorialConsumos = historialConsumos.slice(startIndexHistorial, endIndexHistorial);
 
   if (isLoading) {
     return (
@@ -173,28 +126,11 @@ export default function ProductosPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 mb-16 bg-slate-50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="mb-16">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Inventario</h1>
           <p className="text-sm text-gray-500 mt-1">Estado en tiempo real de insumos clínicos y equipo médico.</p>
-        </div>
-        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-          <SearchBar
-            placeholder="Buscar productos..."
-            onSearch={(query) => {
-              setSearchQuery(query);
-              setCurrentPageProductos(1);
-            }}
-            className="w-full md:w-64"
-          />
-          <button
-            onClick={() => setShowCrearModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium transition-colors w-full md:w-auto justify-center md:justify-start"
-          >
-            <Plus size={18} />
-            Nuevo Insumo
-          </button>
         </div>
       </div>
 
@@ -259,51 +195,63 @@ export default function ProductosPage() {
 
       {/* Tabla de productos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white">
-           <h2 className="text-lg font-semibold text-gray-800">Lista de Inventario</h2>
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white">
+          <h2 className="text-lg font-semibold text-gray-800">Lista de Inventario</h2>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <SearchBar
+              placeholder="Buscar productos..."
+              onSearch={(query) => {
+                setSearchQuery(query);
+                setCurrentPageProductos(1);
+              }}
+              className="w-full sm:w-56"
+            />
+            <button
+              onClick={() => setShowCrearModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium transition-colors w-full sm:w-auto justify-center"
+            >
+              <Plus size={18} />
+              Nuevo Insumo
+            </button>
+          </div>
         </div>
         <ProductosTable
-        productos={currentProductos}
-        startIndex={startIndexProductos}
-        onEditar={handleEditar}
-        onComprar={handleComprar}
-        onCambiarCantidad={handleCambiarCantidad}
-        onVerHistorial={(id) => handleVerHistorial(id, "compras")}
-        onEliminar={handleEliminarProducto}
-      />
+          productos={currentProductos}
+          startIndex={startIndexProductos}
+          onConsumoManual={handleConsumoManual}
+          onEditar={handleEditar}
+          onEliminar={handleEliminarProducto}
+        />
+        {filteredProductos.length > 0 && (
+          <Pagination
+            currentPage={currentPageProductos}
+            totalPages={totalPagesProductos}
+            totalItems={filteredProductos.length}
+            itemsPerPage={itemsPerPage}
+            label="productos"
+            onPageChange={setCurrentPageProductos}
+          />
+        )}
       </div>
-      {filteredProductos.length > 0 && (
-        <Pagination
-          currentPage={currentPageProductos}
-          totalPages={totalPagesProductos}
-          totalItems={filteredProductos.length}
-          itemsPerPage={itemsPerPage}
-          label="productos"
-          onPageChange={setCurrentPageProductos}
-        />
-      )}
 
-      {/* Historial de Compras */}
+      {/* Historial de Consumos */}
       <HistorialPagosTable
-        historial={currentHistorialCompras}
+        historial={currentHistorialConsumos}
         isLoading={loadingHistorial}
-        variant="compras"
-        onEditar={(row) => {
-          setSelectedCompra(row as CompraProducto);
-          setShowEditarCompraModal(true);
-        }}
-        onEliminar={handleEliminarCompra}
+        variant="consumos"
+        paginationInfo={
+          !loadingHistorial && historialConsumos.length > 0
+            ? {
+              currentPage: currentPageHistorial,
+              totalPages: totalPagesHistorial,
+              totalItems: historialConsumos.length,
+              itemsPerPage: itemsPerPage,
+              label: "consumos",
+              onPageChange: setCurrentPageHistorial,
+            }
+            : undefined
+        }
       />
-      {!loadingHistorial && historialCompras.length > 0 && (
-        <Pagination
-          currentPage={currentPageHistorial}
-          totalPages={totalPagesHistorial}
-          totalItems={historialCompras.length}
-          itemsPerPage={itemsPerPage}
-          label="compras"
-          onPageChange={setCurrentPageHistorial}
-        />
-      )}
 
       {/* Modales */}
       <CrearProductoModal
@@ -331,24 +279,13 @@ export default function ProductosPage() {
             onClose={() => setShowEditarModal(false)}
             idProducto={selectedProducto}
           />
-          <ComprarProductoModal
-            isOpen={showComprarModal}
-            onClose={() => setShowComprarModal(false)}
+          <ConsumoManualModal
+            isOpen={showConsumoModal}
+            onClose={() => setShowConsumoModal(false)}
             idProducto={selectedProducto}
             onSuccess={() => refetch()}
           />
-          <CambiarCantidadModal
-            isOpen={showCambiarModal}
-            onClose={() => setShowCambiarModal(false)}
-            idProducto={selectedProducto}
-            onSuccess={() => refetch()}
-          />
-          <HistorialModal
-            isOpen={showHistorialModal}
-            onClose={() => setShowHistorialModal(false)}
-            idProducto={selectedProducto}
-            type={historialType}
-          />
+
         </>
       )}
     </div>

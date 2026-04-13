@@ -371,10 +371,46 @@ const listCitasAtendidasSinInformeController = async () => {
 	return rows;
 };
 
+// Recordar al especialista (enviar notificación)
+const recordarEspecialistaController = async (id_cita) => {
+	const [rows] = await pool.execute(
+		`SELECT c.id_especialista, c.fecha_cita, c.hora_cita, u.nombre, u.apellido, e.nombre AS eco_nombre
+		 FROM cita c
+		 INNER JOIN usuario u ON u.id_usuario = c.id_paciente
+		 INNER JOIN eco e ON e.id_eco = c.id_eco
+		 WHERE c.id_cita = ?`,
+		[id_cita]
+	);
+	
+	if (!rows.length) {
+		const err = new Error("Cita no encontrada");
+		err.code = "NOT_FOUND";
+		throw err;
+	}
+	
+	const cita = rows[0];
+	const fecha = formatFechaCita(cita.fecha_cita);
+	const hora = formatHoraCita(cita.hora_cita);
+	const ecoNombre = cita.eco_nombre ? ` (${cita.eco_nombre})` : "";
+	
+	let mensaje = `Tienes pendiente por subir el informe médico del paciente ${cita.nombre} ${cita.apellido} de la cita del ${fecha} a las ${hora}${ecoNombre}.`;
+	if (mensaje.length > 255) mensaje = `${mensaje.slice(0, 252)}...`;
+	
+	await createNotificacionController({
+		id_usuario: cita.id_especialista,
+		titulo: "Recordatorio: Informe médico pendiente",
+		mensaje,
+		tipo: "recordatorio_informe",
+	});
+	
+	return true;
+};
+
 module.exports = {
 	listInformesByEspecialistaController,
 	getInformeByCitaController,
 	createOrUpdateInformeController,
 	listAllInformesController,
 	listCitasAtendidasSinInformeController,
+	recordarEspecialistaController,
 };

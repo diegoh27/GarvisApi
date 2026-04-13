@@ -24,7 +24,7 @@ const ALL_TABS: { id: TabType; label: string }[] = [
 	{ id: "proveedores", label: "Proveedores" },
 	{ id: "compras", label: "Compras" },
 	{ id: "recetas", label: "Recetas" },
-	{ id: "kardex", label: "Kardex" },
+	{ id: "kardex", label: "Movimientos de inventario" },
 ];
 
 export default function InventarioPage() {
@@ -39,11 +39,11 @@ export default function InventarioPage() {
 	};
 
 	return (
-		<div className="min-h-screen bg-gray-100">
+		<div className="w-full bg-transparent">
 			{/* Tab Navigation */}
-			<div className="bg-white border-b border-gray-200">
-				<div className="max-w-7xl mx-auto w-full">
-					<div className="flex items-center justify-between gap-3 px-2 sm:px-0">
+			<div className="mb-5 bg-white border-b border-gray-200 rounded-t-2xl sm:rounded-2xl shadow-sm">
+				<div className="w-full">
+					<div className="flex items-center justify-between gap-3 px-4 sm:px-6">
 						<div className="overflow-x-auto flex-1 min-w-0">
 							<div className="flex flex-nowrap gap-0 min-w-max">
 								{ALL_TABS.map((tab) => (
@@ -79,7 +79,7 @@ export default function InventarioPage() {
 			</div>
 
 			{/* Tab Content */}
-			<div className="max-w-7xl mx-auto px-2 sm:px-0 pb-8">
+			<div className="w-full pb-8">
 				{activeTab === "productos" && <ProductosPage />}
 				{activeTab === "proveedores" && <ProveedoresPage />}
 				{activeTab === "compras" && <ComprasPage />}

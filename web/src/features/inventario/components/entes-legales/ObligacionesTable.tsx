@@ -1,5 +1,6 @@
 import { Pencil, Trash2, DollarSign, History } from "lucide-react";
 import GenericTable from "../GenericTable";
+import Pagination from "../Pagination";
 import type { Obligacion } from "../../api";
 
 interface ObligacionesTableProps {
@@ -9,6 +10,14 @@ interface ObligacionesTableProps {
   onEliminar: (id: string) => void;
   onGenerarPago?: (id: string) => void;
   onVerHistorial?: (id: string) => void;
+  paginationInfo?: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    label: string;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export default function ObligacionesTable({
@@ -18,25 +27,26 @@ export default function ObligacionesTable({
   onEliminar,
   onGenerarPago,
   onVerHistorial,
+  paginationInfo,
 }: ObligacionesTableProps) {
   const getEstadoBadge = (estado: string) => {
     const estadoLower = estado.toLowerCase();
     if (estadoLower === "pagado") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <span className="text-xs font-medium text-emerald-600">
           Pagado
         </span>
       );
     }
     if (estadoLower === "vencido") {
       return (
-        <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+        <span className="text-xs font-medium text-red-600">
           Vencido
         </span>
       );
     }
     return (
-      <span className="px-2 md:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+      <span className="text-xs font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -147,6 +157,7 @@ export default function ObligacionesTable({
           emptyState="No hay obligaciones registradas"
         />
       </div>
+      {paginationInfo && <Pagination {...paginationInfo} />}
     </div>
   );
 }

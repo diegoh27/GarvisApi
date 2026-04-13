@@ -7,6 +7,7 @@ const {
 	createOrUpdateInformeHandler,
 	listAllInformesHandler,
 	listCitasAtendidasSinInformeHandler,
+	recordarEspecialistaHandler,
 } = require("../handlers/informesHandlers");
 const {
 	uploadFirma,
@@ -31,6 +32,14 @@ informesRoutes.get(
 	authenticateToken,
 	authorizeRoles("moderador", "admin"),
 	listCitasAtendidasSinInformeHandler,
+);
+
+// Ruta para moderadores: recordar al especialista
+informesRoutes.post(
+	"/pendientes/:id_cita/recordar",
+	authenticateToken,
+	authorizeRoles("moderador", "admin"),
+	recordarEspecialistaHandler,
 );
 
 // Rutas que requieren autenticación y rol especialista
