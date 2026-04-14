@@ -1,5 +1,15 @@
 import { baseApi } from "../../app/api/baseApi";
 
+export type PagoGuardado = {
+	id_guardado: string;
+	id_paciente: string;
+	alias: string | null;
+	banco_origen: string;
+	cedula_pagador: string;
+	telefono_pagador: string;
+	creado_en: string;
+};
+
 export type CitaPendientePago = {
 	id_cita: string;
 	id_paciente: string;
@@ -298,6 +308,12 @@ const citasApi = baseApi.injectEndpoints({
 				cedula_pagador: string;
 				telefono_pagador: string;
 				referencia?: string;
+				/** Fecha de la transferencia YYYY-MM-DD (no puede ser futura) */
+				fecha_pago?: string;
+				/** Si true, guarda banco/cédula/teléfono para pagos futuros */
+				guardar_cuenta?: boolean;
+				/** Alias opcional para la cuenta guardada */
+				alias_cuenta?: string;
 			}
 		>({
 			query: (body) => ({
@@ -319,6 +335,20 @@ const citasApi = baseApi.injectEndpoints({
 			transformResponse: (response: { ok: boolean; data: { url: string } }) =>
 				response.data,
 		}),
+		// ─── Pagos Guardados del Paciente ───
+		getPagosGuardados: builder.query<PagoGuardado[], string>({
+			query: (id_paciente) => `/pagos-guardados/${id_paciente}`,
+			transformResponse: (response: { ok: boolean; data: PagoGuardado[] }) =>
+				response.data ?? [],
+			providesTags: ["PagosGuardados"],
+		}),
+		deletePagoGuardado: builder.mutation<{ ok: boolean }, string>({
+			query: (id_guardado) => ({
+				url: `/pagos-guardados/${id_guardado}`,
+				method: "DELETE",
+			}),
+			invalidatesTags: ["PagosGuardados"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -338,6 +368,8 @@ export const {
 	useVincularCitasMostradorMutation,
 	useAsignarCitaMutation,
 	useUploadOrdenMedicaMutation,
+	useGetPagosGuardadosQuery,
+	useDeletePagoGuardadoMutation,
 } = citasApi;
 
 export { citasApi };

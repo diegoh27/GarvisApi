@@ -19,6 +19,7 @@ const informesRoutes = require("./informesRoutes");
 const pagosRoutes = require("./pagosRoutes");
 const metodosPagoRoutes = require("./metodosPagoRoutes");
 const notificacionesRoutes = require("./notificacionesRoutes");
+const pagosGuardadosRoutes = require("./pagosGuardadosRoutes");
 
 const inventarioRoutes = require("./inventarioRoutes");
 const productosRoutes = require("./productosRoutes");
@@ -55,6 +56,7 @@ router.use("/informes", informesRoutes);
 router.use("/pagos", pagosRoutes);
 router.use("/metodos-pago", metodosPagoRoutes);
 router.use("/notificaciones", notificacionesRoutes);
+router.use("/pagos-guardados", pagosGuardadosRoutes);
 
 router.use("/inventario", inventarioRoutes);
 router.use("/productos", productosRoutes);

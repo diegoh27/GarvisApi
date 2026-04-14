@@ -854,6 +854,30 @@ UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================
+-- 11.1) Cuentas de Pago Guardadas del Paciente
+-- =========================
+CREATE TABLE
+IF NOT EXISTS paciente_pago_guardado
+(
+  id_guardado CHAR(36) NOT NULL,
+  id_paciente CHAR(36) NOT NULL,
+  alias VARCHAR(80) NULL COMMENT 'Ej: Mi Pago Móvil principal',
+  banco_origen VARCHAR(100) NOT NULL,
+  cedula_pagador VARCHAR(20) NOT NULL,
+  telefono_pagador VARCHAR(20) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id_guardado),
+  KEY idx_ppg_paciente (id_paciente),
+  UNIQUE KEY uk_ppg_paciente_banco_cedula (id_paciente, banco_origen, cedula_pagador, telefono_pagador),
+
+  CONSTRAINT fk_ppg_paciente
+    FOREIGN KEY (id_paciente) REFERENCES paciente (id_paciente)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
 -- 11) Notificaciones
 -- =========================
 CREATE TABLE

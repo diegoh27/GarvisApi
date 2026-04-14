@@ -125,6 +125,8 @@ const baseApi = createApi({
 		"PermisosMenuModerador",
 		// Auditoría de eventos
 		"Auditoria",
+		// Pagos Guardados del Paciente
+		"PagosGuardados",
 	],
 	endpoints: () => ({}),
 });

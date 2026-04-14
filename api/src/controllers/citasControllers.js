@@ -1801,6 +1801,7 @@ const asignarCitaCompletaController = async ({
 	cedula_pagador,
 	telefono_pagador,
 	referencia,
+	fecha_pago, // ← NUEVO: Fecha de la transferencia (YYYY-MM-DD)
 }) => {
 	const conn = await pool.getConnection();
 	try {
@@ -1936,9 +1937,9 @@ const asignarCitaCompletaController = async ({
 		const id_pago = crypto.randomUUID();
 		const sqlPago = `
       INSERT INTO pagos
-        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, monto_usd, monto_bs, cedula_pagador, telefono_pagador, referencia, estado_pago, tasa_dia_bcv)
+        (id_pago, id_cita, id_paciente, metodo, imagen, banco_origen, banco_destino, monto, monto_usd, monto_bs, cedula_pagador, telefono_pagador, referencia, estado_pago, fecha_pago, tasa_dia_bcv)
       VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, COALESCE(?, CURRENT_TIMESTAMP), ?)
     `;
 		const bancoOrigenVal = String(banco_origen ?? "").trim();
 		const bancoDestinoVal = String(banco_destino ?? "").trim();
@@ -1965,6 +1966,7 @@ const asignarCitaCompletaController = async ({
 			cedula_pagador,
 			telefono_pagador,
 			referenciaVal,
+			fecha_pago || null, // ← NUEVO: fecha de la transferencia del usuario
 			normalizedPago.tasa_dia_bcv,
 		]);
 

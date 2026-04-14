@@ -24,6 +24,7 @@ const {
 	vincularCitasMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
+const { savePagoGuardadoController } = require("../controllers/pagosGuardadosControllers");
 
 /** Alineado con pagos.metodo ENUM y métodos expuestos en /metodos-pago/disponibles */
 const METODOS_ASIGNAR_CITA = new Set([
@@ -670,6 +671,9 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			cedula_pagador,
 			telefono_pagador,
 			referencia,
+			fecha_pago,      // ← NUEVO: Fecha de la transferencia (YYYY-MM-DD)
+			guardar_cuenta,  // ← NUEVO: boolean - guardar datos de pago
+			alias_cuenta,    // ← NUEVO: alias opcional para la cuenta guardada
 		} = req.body;
 
 		const metodoStr = String(metodo || "").trim();
@@ -743,6 +747,23 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			});
 		}
 
+		// Validar y normalizar fecha_pago: debe ser YYYY-MM-DD y no puede ser futura
+		let fechaPagoFinal = null;
+		if (fecha_pago) {
+			const fpStr = String(fecha_pago).trim();
+			if (/^\d{4}-\d{2}-\d{2}$/.test(fpStr)) {
+				const hoy = new Date().toISOString().slice(0, 10);
+				if (fpStr <= hoy) {
+					fechaPagoFinal = fpStr;
+				} else {
+					return res.status(400).json({
+						ok: false,
+						message: "La fecha de pago no puede ser en el futuro",
+					});
+				}
+			}
+		}
+
 		const data = await asignarCitaCompletaController({
 			id_paciente,
 			id_representado,
@@ -760,7 +781,24 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			cedula_pagador: String(cedula_pagador).trim(),
 			telefono_pagador: String(telefono_pagador).trim(),
 			referencia: referencia != null ? String(referencia) : "",
+			fecha_pago: fechaPagoFinal, // ← NUEVO
 		});
+
+		// ← NUEVO: Guardar cuenta si el paciente lo solicitó
+		if (guardar_cuenta && req.user.rol === "paciente" && !isCashPaymentMethodAsignar(metodoStr)) {
+			try {
+				await savePagoGuardadoController({
+					id_paciente: req.user.id,
+					alias: alias_cuenta || null,
+					banco_origen: banco_origen ? String(banco_origen).trim() : "",
+					cedula_pagador: String(cedula_pagador).trim(),
+					telefono_pagador: String(telefono_pagador).trim(),
+				});
+			} catch (saveErr) {
+				// No abortar el flujo principal si falla el guardado
+				console.error("[pagos-guardados] No se pudo guardar la cuenta:", saveErr.message);
+			}
+		}
 
 		return res.status(201).json({
 			ok: true,
