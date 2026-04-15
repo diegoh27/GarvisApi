@@ -570,10 +570,10 @@ const PagosPage = () => {
 																		<button
 																			type="button"
 																			disabled={isUpdating}
-																			onClick={() => handleAprobarPago(cita.id_cita)}
+																			onClick={openPagoModal}
 																			className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-all hover:bg-brand-100 hover:text-brand-800 active:scale-95 disabled:opacity-50"
-																			aria-label="Aprobar pago"
-																			title="Aprobar pago"
+																			aria-label="Ver detalles y aprobar pago"
+																			title="Ver detalles del pago"
 																		>
 																			<Check className="h-5 w-5" strokeWidth={2.5} />
 																		</button>

@@ -192,7 +192,7 @@ const newMainForm = `	/* ─── MAIN FORM ─── */
 									{showReferencia && (
 										<div className="space-y-1.5 relative md:col-span-2">
 											<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-												Referencia (Últimos dígitos)*
+												Referencia 
 											</label>
 											<input
 												type="text"

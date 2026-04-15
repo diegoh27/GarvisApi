@@ -838,6 +838,17 @@ const asignarCitaCompletaHandler = async (req, res) => {
 				code: "PAGO_PENDIENTE",
 			});
 		}
+		if (err.code === "ER_DUP_ENTRY") {
+			// MySQL incluye el nombre de la key en el mensaje: 'Duplicate entry ... for key 'uk_pagos_referencia''
+			const isRefDup = err.message && err.message.includes("uk_pagos_referencia");
+			return res.status(409).json({
+				ok: false,
+				message: isRefDup
+					? "Ese número de referencia ya fue registrado. Por favor ingresa un número diferente."
+					: "Ya existe una cita registrada con esos datos. Si crees que es un error, contáctanos.",
+				code: "DUPLICATE_ENTRY",
+			});
+		}
 		console.error("Error al asignar cita completa:", err);
 		return res.status(500).json({
 			ok: false,

@@ -719,30 +719,39 @@ const PasoCheckout = ({
 													<option value="Otro">Otro</option>
 												</select>
 												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorBanco}</p>}
-												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 										);
 									})()}
 
 									{showReferencia && (() => {
-										const errorReferencia = !referencia.trim() ? "La referencia es obligatoria." : (referencia.trim().length < 4 ? "Mínimo 4 caracteres requeridos." : null);
+										const soloDigitos = /^\d*$/;
+										const errorReferencia = !referencia.trim()
+											? "La referencia es obligatoria."
+											: !soloDigitos.test(referencia)
+												? "Solo se permiten números (sin letras ni espacios)."
+												: referencia.trim().length < 4
+													? "Mínimo 4 dígitos requeridos."
+													: null;
 										const showError = (touchedReferencia || attemptedSubmit) && errorReferencia;
 										return (
 											<div className="space-y-1.5 relative md:col-span-2">
 												<label className="text-[10px] font-bold text-slate-400 uppercase ml-1">
-													Referencia (Últimos dígitos)*
+													Referencia
 												</label>
 												<input
 													type="text"
+													inputMode="numeric"
+													pattern="[0-9]*"
 													maxLength={16}
 													value={referencia}
-													onChange={(e) => setReferencia(e.target.value)}
+													onChange={(e) => setReferencia(e.target.value.replace(/\D/g, ""))}
 													onBlur={() => setTouchedReferencia(true)}
 													placeholder="Ej: 837462947163"
-													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
+													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-paper-50" : ""}`}
 												/>
 												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorReferencia}</p>}
-												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 										);
 									})()}
@@ -763,12 +772,12 @@ const PasoCheckout = ({
 															onBlur={() => setTouchedCedula(true)}
 															error={showError ? (errorCedula || undefined) : undefined}
 															required
-															inputClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
-															selectClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-red-50" : ""}`}
+															inputClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-paper" : ""}`}
+															selectClassName={`bg-cloud border-transparent rounded-xl ${showError ? "border-red-500 bg-paper" : ""}`}
 														/>
 													);
 												})()}
-												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 
 											<div className="space-y-1.5 relative md:col-span-2">
@@ -790,7 +799,7 @@ const PasoCheckout = ({
 														/>
 													);
 												})()}
-												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
+												<div className="absolute left-0 top-6 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 										</>
 									)}
@@ -921,7 +930,7 @@ const PasoCheckout = ({
 								{!isCashTipo(tipoPagoSel) && (
 									<div className="pt-4 border-t border-brand-200/20">
 										<div
-											className={`flex items-center gap-4 p-4 rounded-2xl transition-colors cursor-pointer ${guardarCuenta ? "bg-brand-100 border border-gray-100" : "bg-slate-50 border border-slate-100"}`}
+											className={`flex items-center gap-4 p-4 rounded-2xl transition-colors cursor-pointer ${guardarCuenta ? "bg-brand-100/20 border border-gray-100" : "bg-cloud border border-slate-100"}`}
 											onClick={() => setGuardarCuenta(!guardarCuenta)}
 										>
 											<div className="shrink-0">

@@ -17,6 +17,22 @@ type VerPagoModalProps = {
 
 const formatFecha = (value: string | null) => (value ? formatFechaHoraLocal(value) : "N/A");
 
+/** Muestra solo la fecha (dd/MM/yyyy) sin hora — para la fecha de pago declarada por el paciente. */
+const formatSoloFecha = (value: string | null): string => {
+	if (!value) return "N/A";
+	// Si viene como YYYY-MM-DD (solo fecha) parsear directo para evitar desfase de zona horaria
+	const soloFecha = /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
+		? value.trim()
+		: value.trim().slice(0, 10);
+	const [y, m, d] = soloFecha.split("-").map(Number);
+	if (!y || !m || !d) return formatFechaHoraLocal(value);
+	return new Date(y, m - 1, d).toLocaleDateString("es-VE", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+	});
+};
+
 const formatMonto = (monto: number | string) => {
 	const num = typeof monto === "string" ? parseFloat(monto) : monto;
 	// Formatear como VES (Bolívares) ya que los pagos se hacen en VES
@@ -221,7 +237,7 @@ const VerPagoModal = ({
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div>
 									<p className="text-xs font-semibold text-brand-700">Fecha de pago</p>
-									<p className="mt-0.5 text-sm text-brand-900">{formatFecha(pago.fecha_pago)}</p>
+									<p className="mt-0.5 text-sm text-brand-900">{formatSoloFecha(pago.fecha_pago)}</p>
 								</div>
 								{pago.fecha_validacion && (
 									<div>
