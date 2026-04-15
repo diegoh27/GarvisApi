@@ -24,6 +24,7 @@ const {
 	getUltimoPacienteMostradorHandler,
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
+	crearPacienteMostradorHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -89,6 +90,13 @@ citasRoutes.get(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	getOcupacionEspecialistaHandler,
+);
+// POST /citas/mostrador/crear-paciente (admin/moderador) - Crear o vincular paciente real desde mostrador
+citasRoutes.post(
+	"/mostrador/crear-paciente",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	crearPacienteMostradorHandler,
 );
 // POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
 citasRoutes.post(

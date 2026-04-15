@@ -1,7 +1,9 @@
 const { pool } = require("../db");
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const { getDolarOficialController } = require("./dolarControllers");
 const { normalizeCitaAmounts, round2 } = require("../utils/currency");
+const { getRolIdByName } = require("../utils/roles");
 const { sendEmail } = require("../utils/email");
 const {
 	sendCitaReservadaEmailsAndNotifications,
@@ -1362,6 +1364,24 @@ const createCitaMostradorController = async ({
 			? String(rawHora).trim().padEnd(8, ":00").slice(0, 8)
 			: rawHora;
 
+		// ── REGLA 2: Bloquear si el paciente web ya tiene una cita activa pendiente de pago
+		// Solo aplica cuando el moderador cargó un paciente ya registrado en el sistema.
+		if (id_paciente_titular) {
+			const [citaActivaRows] = await conn.execute(
+				`SELECT 1 FROM cita
+				 WHERE id_paciente = ?
+				   AND estado_cita NOT IN (2, 3)
+				   AND estado_pago = 0
+				 LIMIT 1`,
+				[id_paciente_titular],
+			);
+			if (citaActivaRows.length > 0) {
+				const err = new Error("Este paciente ya tiene una cita en proceso pendiente de validación de pago.");
+				err.code = "CITA_ACTIVA";
+				throw err;
+			}
+		}
+
 		// Verificar que no choque con otra cita del mismo especialista ese día (bloques de 20 min)
 		const [conflictRows] = await conn.execute(
 			`SELECT 1 FROM cita
@@ -1514,7 +1534,12 @@ const createCitaMostradorController = async ({
 	}
 };
 
-/** Horas ya ocupadas por citas del especialista en una fecha (para mostrador: evitar choques; bloques de 20 min). */
+/** Horas ya ocupadas por citas del especialista en una fecha (para mostrador: evitar choques; bloques de 20 min).
+ * Retorna:
+ *   - `ocupados`: slots HH:MM:SS que tienen cita activa (no cancelada).
+ *   - `libres`:   slots disponibles del rango 06:00-18:40 (SOLO los que NO están ocupados).
+ *     Si no se especifica especialista/fecha, `libres` es null (mostrar todos).
+ */
 const getOcupacionEspecialistaPorFechaController = async (id_especialista, fecha) => {
 	const [rows] = await pool.execute(
 		`SELECT hora_cita FROM cita
@@ -1528,8 +1553,21 @@ const getOcupacionEspecialistaPorFechaController = async (id_especialista, fecha
 		if (h instanceof Date) return h.toTimeString().slice(0, 8);
 		const s = String(h).trim();
 		return s.padEnd(8, ":00").slice(0, 8);
-	});
-	return { ocupados: ocupados.filter(Boolean) };
+	}).filter(Boolean);
+
+	// Generar todos los slots de 20 min entre 06:00 y 19:40 (mismo rango que el frontend)
+	const todosSlots = [];
+	for (let h = 6; h < 20; h++) {
+		for (const m of [0, 20, 40]) {
+			const slot = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+			todosSlots.push(slot);
+		}
+	}
+
+	// Filtrar: libre = no tiene cita activa en ese slot
+	const libres = todosSlots.filter((slot) => !ocupados.some((o) => o === slot));
+
+	return { ocupados, libres };
 };
 
 /** Obtiene el último paciente de mostrador registrado con esa cédula (para reutilizar nombre/apellido/rif en otra cita). */
@@ -1556,7 +1594,7 @@ const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
 /** Datos por cédula: paciente registrado, representado y/o última cita de mostrador. */
 const getDatosPorCedulaController = async (cedula) => {
 	const [pacienteRows] = await pool.execute(
-		`SELECT u.nombre, u.apellido, u.cedula, p.rif
+		`SELECT u.nombre, u.apellido, u.cedula, p.rif, p.id_paciente
 		 FROM usuario u
 		 INNER JOIN paciente p ON p.id_paciente = u.id_usuario
 		 WHERE u.cedula = ?
@@ -1581,6 +1619,7 @@ const getDatosPorCedulaController = async (cedula) => {
 	);
 	const paciente = pacienteRows.length
 		? {
+			id_paciente: pacienteRows[0].id_paciente || null,
 			nombre: pacienteRows[0].nombre || "",
 			apellido: pacienteRows[0].apellido || "",
 			cedula: pacienteRows[0].cedula || "",
@@ -1604,7 +1643,34 @@ const getDatosPorCedulaController = async (cedula) => {
 			rif: mostradorRows[0].rif ?? "",
 		}
 		: null;
-	return { paciente, representado, mostrador };
+
+	// Verificar si el paciente (o la cédula mostrador) tiene una cita activa pendiente de pago
+	let citaActiva = false;
+	if (paciente?.id_paciente) {
+		const [citaRows] = await pool.execute(
+			`SELECT id_cita FROM cita
+			 WHERE id_paciente = ?
+			   AND estado_cita NOT IN (2, 3)
+			   AND estado_pago = 0
+			 LIMIT 1`,
+			[paciente.id_paciente],
+		);
+		citaActiva = citaRows.length > 0;
+	} else {
+		// Verificar por cédula en cita_mostrador con cita activa pendiente de pago
+		const [citaMostradorRows] = await pool.execute(
+			`SELECT cm.id_cita FROM cita_mostrador cm
+			 INNER JOIN cita c ON c.id_cita = cm.id_cita
+			 WHERE cm.cedula = ?
+			   AND c.estado_cita NOT IN (2, 3)
+			   AND c.estado_pago = 0
+			 LIMIT 1`,
+			[cedula],
+		);
+		citaActiva = citaMostradorRows.length > 0;
+	}
+
+	return { paciente, representado, mostrador, citaActiva };
 };
 
 /** Buscar representados por nombre y/o apellido (para menores sin cédula). Devuelve titular_cedula para usar en pago. */
@@ -2009,6 +2075,110 @@ const asignarCitaCompletaController = async ({
 	}
 };
 
+// ====================================================
+// Crear paciente real desde mostrador (admin/moderador)
+// ====================================================
+const MOSTRADOR_PASSWORD_HASH = "$2a$10$MOSTRADOR_NO_LOGIN_000000000000000000000000000000"; // inusable
+
+const crearPacienteMostradorController = async ({
+	cedula,
+	nombre,
+	apellido,
+	telefono,
+	tipo_cedula = "V",
+}) => {
+	if (!cedula || !nombre || !apellido) {
+		const err = new Error("Cédula, nombre y apellido son obligatorios");
+		err.code = "VALIDATION_ERROR";
+		throw err;
+	}
+
+	const cedulaFull = `${tipo_cedula}${cedula}`.trim();
+	const conn = await pool.getConnection();
+	try {
+		await conn.beginTransaction();
+
+		// 1) ¿Ya existe un usuario con esta cédula?
+		const [existing] = await conn.execute(
+			"SELECT id_usuario FROM usuario WHERE cedula = ? LIMIT 1",
+			[cedulaFull],
+		);
+
+		if (existing.length > 0) {
+			const idPaciente = existing[0].id_usuario;
+
+			// Verificar cita activa (R2)
+			const [citasActivas] = await conn.execute(
+				`SELECT id_cita FROM cita
+				 WHERE id_paciente = ?
+				   AND estado NOT IN ('Cancelada', 'Completada', 'Atendida')
+				 LIMIT 1`,
+				[idPaciente],
+			);
+
+			await conn.commit();
+			return {
+				id_paciente: idPaciente,
+				existente: true,
+				citaActiva: citasActivas.length > 0,
+			};
+		}
+
+		// 2) No existe → crear usuario + paciente
+		const id_usuario = crypto.randomUUID();
+
+		// Calcular N para email ficticio
+		const [countRows] = await conn.execute(
+			"SELECT COUNT(*) AS total FROM usuario WHERE correo LIKE '%@mostrador.com'",
+		);
+		const n = (countRows[0]?.total ?? 0) + 1;
+		const correo = `paciente.mostrador${n}@mostrador.com`;
+
+		// Hashear password fijo (el paciente no puede iniciar sesión con esto)
+		const hashedPassword = await bcrypt.hash(crypto.randomUUID(), 10);
+		const id_rol = await getRolIdByName(conn, "paciente");
+
+		// Calcular RIF desde cédula
+		const rif = `${tipo_cedula}${cedula}${String(Number(cedula) % 10)}`.trim();
+
+		await conn.execute(
+			`INSERT INTO usuario
+				(id_usuario, nombre, apellido, genero, cedula, correo, telefono, contrasena, activo, fecha_nacimiento, id_rol)
+			 VALUES (?, ?, ?, 'Otro', ?, ?, ?, ?, 1, '2000-01-01', ?)`,
+			[
+				id_usuario,
+				nombre.trim(),
+				apellido.trim(),
+				cedulaFull,
+				correo,
+				telefono?.trim() || "0000000000",
+				hashedPassword,
+				id_rol,
+			],
+		);
+
+		await conn.execute(
+			`INSERT INTO paciente
+				(id_paciente, tipo_sangre, descripcion, direccion, rif, email_verificado)
+			 VALUES (?, 'No especificado', 'Paciente registrado por mostrador', NULL, ?, 0)`,
+			[id_usuario, rif],
+		);
+
+		await conn.commit();
+		return {
+			id_paciente: id_usuario,
+			existente: false,
+			citaActiva: false,
+			correo,
+		};
+	} catch (err) {
+		await conn.rollback();
+		throw err;
+	} finally {
+		conn.release();
+	}
+};
+
 module.exports = {
 	createCitaFromDisponibilidadController,
 	asignarCitaCompletaController,
@@ -2035,4 +2205,5 @@ module.exports = {
 	vincularCitasMostradorController,
 	ensureMostradorPacienteBase,
 	MOSTRADOR_PACIENTE_ID,
+	crearPacienteMostradorController,
 };

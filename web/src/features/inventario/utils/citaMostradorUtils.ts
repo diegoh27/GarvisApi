@@ -53,6 +53,19 @@ export function isMorningSlot(hora: string): boolean {
 
 export const defaultFechaCita = () => toDateKey(new Date());
 
+/** Retorna el valor del slot de 20 min más cercano a la hora actual (o el primero/último si está fuera de rango). */
+export function getCurrentSlot(): string {
+	const now = new Date();
+	const nowMin = now.getHours() * 60 + now.getMinutes();
+	// Buscar el slot cuyo inicio es <= nowMin y el siguiente es > nowMin
+	for (let i = HORA_OPTIONS.length - 1; i >= 0; i--) {
+		if (horaToMinutes(HORA_OPTIONS[i].value) <= nowMin) {
+			return HORA_OPTIONS[i].value;
+		}
+	}
+	return HORA_OPTIONS[0].value; // antes de las 06:00
+}
+
 /** Compara IDs (UUID CHAR u otros) de forma tolerante a espacios y mayúsculas/minúsculas. */
 export function idsCoinciden(a: unknown, b: unknown): boolean {
 	if (a == null || b == null) return false;

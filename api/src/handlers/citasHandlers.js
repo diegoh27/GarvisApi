@@ -22,6 +22,7 @@ const {
 	getUltimoPacienteMostradorPorCedulaController,
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
+	crearPacienteMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 const { savePagoGuardadoController } = require("../controllers/pagosGuardadosControllers");
@@ -944,6 +945,13 @@ const createCitaMostradorHandler = async (req, res) => {
 			data,
 		});
 	} catch (err) {
+		if (err?.code === "CITA_ACTIVA") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+				code: "CITA_ACTIVA",
+			});
+		}
 		if (
 			err?.code === "NOT_FOUND" ||
 			err?.code === "INVALID_AMOUNT" ||
@@ -1164,6 +1172,49 @@ const vincularCitasMostradorHandler = async (req, res) => {
 	}
 };
 
+// =====================================================
+// POST /citas/mostrador/crear-paciente (admin/moderador)
+// =====================================================
+const crearPacienteMostradorHandler = async (req, res) => {
+	try {
+		const { cedula, nombre, apellido, telefono, tipo_cedula } = req.body;
+		if (!cedula || !nombre || !apellido) {
+			return res.status(400).json({
+				ok: false,
+				message: "Cédula, nombre y apellido son obligatorios.",
+			});
+		}
+
+		const result = await crearPacienteMostradorController({
+			cedula,
+			nombre,
+			apellido,
+			telefono,
+			tipo_cedula,
+		});
+
+		return res.status(result.existente ? 200 : 201).json({
+			ok: true,
+			data: result,
+		});
+	} catch (err) {
+		console.error("crearPacienteMostradorHandler error:", err);
+		if (err.code === "VALIDATION_ERROR") {
+			return res.status(400).json({ ok: false, message: err.message });
+		}
+		if (err.code === "ER_DUP_ENTRY") {
+			return res.status(409).json({
+				ok: false,
+				message: "Ya existe un registro con estos datos (cédula o RIF duplicado).",
+			});
+		}
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno al crear paciente de mostrador.",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	asignarCitaCompletaHandler,
@@ -1189,4 +1240,5 @@ module.exports = {
 	getUltimoPacienteMostradorHandler,
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
+	crearPacienteMostradorHandler,
 };

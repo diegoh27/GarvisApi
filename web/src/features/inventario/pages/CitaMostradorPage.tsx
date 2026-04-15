@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PageShell, CedulaField, validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared";
 import { useGetEspecialistasInventarioQuery } from "../api/especialistasApi";
-import { useCrearCitaMostradorMutation } from "../api/comisionesApi";
+import { useCrearCitaMostradorMutation, useCrearPacienteMostradorMutation } from "../api/comisionesApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useCitaMostradorForm } from "../hooks/useCitaMostradorForm";
 import { METODO_UI_OPTIONS, isMorningSlot, idsCoinciden } from "../utils/citaMostradorUtils";
@@ -65,7 +65,9 @@ export default function CitaMostradorPage() {
 	} = useGetEspecialistasInventarioQuery();
 	const { data: especialidades = [] } = useGetEspecialidadesQuery();
 	const [crearCitaMostrador, { isLoading: isSaving }] = useCrearCitaMostradorMutation();
+	const [crearPacienteMostrador, { isLoading: isCreatingPatient }] = useCrearPacienteMostradorMutation();
 
+	const [paso, setPaso] = useState(1);
 	const [idEspecialidad, setIdEspecialidad] = useState("");
 	const [repAccordionOpen, setRepAccordionOpen] = useState(false);
 	/** Texto libre para "Nombre completo" (permite espacios); se parte en nombre/apellido al blur y al enviar. */
@@ -78,6 +80,8 @@ export default function CitaMostradorPage() {
 		error,
 		mensajeCargaAnterior,
 		pacienteIdentificadoEnSistema,
+		citaActivaError,
+		setCitaActivaError,
 		vincularRepresentado,
 		vincularCitaAlTitular,
 		setVincularCitaAlTitular,
@@ -103,6 +107,7 @@ export default function CitaMostradorPage() {
 		loadingEcos,
 		loadingOcupacion,
 		horaOcupada,
+		ocupados,
 		selectedEco,
 		isMetodoEnBs,
 		monedaRegistro,
@@ -132,11 +137,18 @@ export default function CitaMostradorPage() {
 					showConfirmButton: false,
 				});
 			} catch (err: unknown) {
-				const msg =
-					typeof err === "object" && err !== null && "data" in err
-						? (err as { data?: { message?: string } }).data?.message
-						: "No se pudo registrar la cita.";
-				await Swal.fire({ icon: "error", title: "Error", text: msg || "No se pudo registrar la cita." });
+				const apiErr = typeof err === "object" && err !== null && "data" in err
+					? (err as { data?: { message?: string; code?: string } }).data
+					: null;
+				// R2: cita activa — mostrar alerta inline, no SweetAlert
+				if (apiErr?.code === "CITA_ACTIVA") {
+					setCitaActivaError(
+						apiErr.message || "Este paciente ya tiene una cita en proceso en el sistema.",
+					);
+					return; // no re-lanzar ni SweetAlert
+				}
+				const msg = apiErr?.message || "No se pudo registrar la cita.";
+				await Swal.fire({ icon: "error", title: "Error", text: msg });
 				throw err;
 			}
 		},
@@ -270,6 +282,64 @@ export default function CitaMostradorPage() {
 		handleSubmit(e);
 	};
 
+	// === Wizard: validación por paso ===
+	const PASO_LABELS = ["Paciente", "Servicios", "Fecha y Hora", "Pago"];
+
+	const validatePaso = async (p: number): Promise<boolean> => {
+		if (p === 1) {
+			aplicarNombreCompletoAlForm();
+			const n = form.nombre.trim() || splitNombreCompleto(nombreCompletoDraft).nombre.trim();
+			const a = form.apellido.trim() || splitNombreCompleto(nombreCompletoDraft).apellido.trim();
+			if (!form.cedula.trim() || !n || !a) {
+				await Swal.fire({ icon: "warning", title: "Datos incompletos", text: "Ingresa la cédula y nombre del paciente." });
+				return false;
+			}
+			if (!pacienteIdentificadoEnSistema) {
+				try {
+					const result = await crearPacienteMostrador({
+						cedula: form.cedula.trim(),
+						nombre: n,
+						apellido: a,
+						telefono: form.telefono?.trim() || undefined,
+						tipo_cedula: form.tipo_cedula,
+					}).unwrap();
+					if (result.data.citaActiva) {
+						setCitaActivaError("Este paciente ya tiene una cita activa en el sistema.");
+						return false;
+					}
+					setForm((prev) => ({ ...prev, id_paciente_resolved: result.data.id_paciente }));
+				} catch {
+					await Swal.fire({ icon: "error", title: "Error", text: "No se pudo registrar al paciente." });
+					return false;
+				}
+			} else if (citaActivaError) {
+				return false;
+			}
+			return true;
+		}
+		if (p === 2) {
+			if (!form.id_especialista || !form.id_eco) {
+				await Swal.fire({ icon: "warning", title: "Selecciona servicio", text: "Elige un médico y un estudio." });
+				return false;
+			}
+			return true;
+		}
+		if (p === 3) {
+			if (!form.fecha_cita || !form.hora_cita) {
+				await Swal.fire({ icon: "warning", title: "Selecciona horario", text: "Elige una fecha y hora para la cita." });
+				return false;
+			}
+			return true;
+		}
+		return true;
+	};
+
+	const handleNext = async () => {
+		const ok = await validatePaso(paso);
+		if (ok && paso < 4) setPaso((p) => p + 1);
+	};
+	const handlePrev = () => { if (paso > 1) setPaso((p) => p - 1); };
+
 	return (
 		<div className="relative pb-36 bg-slate-50 min-h-screen">
 			<PageShell
@@ -285,8 +355,41 @@ export default function CitaMostradorPage() {
 					<p className="text-lg text-slate-600">Registro rápido de pacientes presenciales en el sistema Garvis.</p>
 				</div>
 
+				{/* === STEPPER === */}
+				<div className="flex items-center justify-center gap-0 px-4 sm:px-0">
+					{PASO_LABELS.map((label, idx) => {
+						const n = idx + 1;
+						const done = paso > n;
+						const active = paso === n;
+						return (
+							<div key={label} className="flex items-center">
+								<div className="flex flex-col items-center">
+									<div
+										className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ${
+											done
+												? "bg-[#006965] text-white shadow-md"
+												: active
+													? "border-2 border-[#006965] bg-white text-[#006965] shadow-sm"
+													: "border border-slate-300 bg-slate-100 text-slate-400"
+										}`}
+									>
+										{done ? <CheckCircle2 className="h-5 w-5" /> : n}
+									</div>
+									<span className={`mt-1 text-[11px] font-semibold ${active ? "text-[#006965]" : done ? "text-slate-700" : "text-slate-400"}`}>
+										{label}
+									</span>
+								</div>
+								{idx < 3 && (
+									<div className={`mx-2 h-0.5 w-8 sm:w-16 transition-all duration-300 ${done ? "bg-[#006965]" : "bg-slate-200"}`} />
+								)}
+							</div>
+						);
+					})}
+				</div>
+
 				<form id="form-cita-mostrador" onSubmit={onFormSubmit} className="flex flex-col gap-6 px-4 sm:px-0">
 					{/* 1 Paciente */}
+					{paso === 1 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
@@ -308,11 +411,12 @@ export default function CitaMostradorPage() {
 									<input
 										type="search"
 										className={`${inputBase} h-14 pl-12 text-lg ${cedulaNumeroInvalida ? "border-red-400 focus:border-red-500 focus:ring-red-200" : ""}`}
-										placeholder="Ej. 12.345.678"
+										placeholder="Ej. 12345678"
 										value={form.cedula}
+										maxLength={8}
 										onChange={(e) =>
 											handleChange({
-												target: { name: "cedula", value: e.target.value.replace(/\D/g, "") },
+												target: { name: "cedula", value: e.target.value.replace(/\D/g, "").slice(0, 8) },
 											} as React.ChangeEvent<HTMLInputElement>)
 										}
 										onKeyDown={(e) => {
@@ -354,7 +458,7 @@ export default function CitaMostradorPage() {
 												target: { name: "tipo_cedula", value: tipo },
 											} as React.ChangeEvent<HTMLSelectElement>);
 											handleChange({
-												target: { name: "cedula", value: numero },
+												target: { name: "cedula", value: numero.replace(/\D/g, "").slice(0, 8) },
 											} as React.ChangeEvent<HTMLInputElement>);
 										}}
 										error={cedulaErrorText}
@@ -403,26 +507,31 @@ export default function CitaMostradorPage() {
 								</div>
 							</div>
 
-							{!pacienteIdentificadoEnSistema &&
-								(form.cedula.length >= 6 || form.nombre || nombreCompletoDraft.trim()) && (
-								<div className="flex justify-end">
-									<button
-										type="button"
-										className="inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-bold text-white shadow-md transition hover:opacity-95"
-										style={{ backgroundColor: PRIMARY }}
-										onClick={() => document.getElementById("paso-pago")?.scrollIntoView({ behavior: "smooth" })}
-									>
-										<CheckCircle2 className="h-4 w-4" />
-										Crear Paciente
-									</button>
-								</div>
-							)}
+							{/* Teléfono (opcional) */}
+							<div>
+								<label className={labelBase}>Teléfono (opcional)</label>
+								<input
+									type="tel"
+									name="telefono"
+									value={form.telefono}
+									onChange={handleChange}
+									readOnly={pacienteIdentificadoEnSistema}
+									className={`${inputBase} h-14 ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
+									placeholder="Ej. 0412-1234567"
+								/>
+							</div>
 						</div>
 
 						{mensajeCargaAnterior && (
 							<p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
 								{mensajeCargaAnterior}
 							</p>
+						)}
+
+						{citaActivaError && (
+							<div className="rounded-2xl border border-red-400 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
+								⚠️ {citaActivaError}
+							</div>
 						)}
 
 						{/* Representado accordion */}
@@ -699,8 +808,10 @@ export default function CitaMostradorPage() {
 							)}
 						</div>
 					</section>
+					)}
 
 					{/* 2 Servicios */}
+					{paso === 2 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
@@ -785,15 +896,17 @@ export default function CitaMostradorPage() {
 							</div>
 						</div>
 					</section>
+					)}
 
-					{/* 3 Pago */}
+					{/* Pago (paso 4) */}
+					{paso === 4 && (
 					<section id="paso-pago" className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
 								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
-								3
+								4
 							</div>
 							<h2 className="font-headline text-xl font-bold" style={{ color: PRIMARY }}>
 								Información de Pago
@@ -932,18 +1045,20 @@ export default function CitaMostradorPage() {
 							</div>
 						</div>
 					</section>
+					)}
 
-					{/* 4 Agenda */}
+					{/* Agenda (paso 3) */}
+					{paso === 3 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
 								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
-								4
+								3
 							</div>
 							<h2 className="font-headline text-xl font-bold" style={{ color: PRIMARY }}>
-								Agenda
+								Fecha y Hora
 							</h2>
 						</div>
 
@@ -1016,13 +1131,32 @@ export default function CitaMostradorPage() {
 								</div>
 							</div>
 
-							<div className="lg:col-span-8 flex-1 space-y-8">
-								<div>
-									<div className="mb-3 flex items-center gap-2 text-neutral-500">
-										<Sun className="h-4 w-4" />
-										<span className="text-xs font-bold uppercase tracking-widest">Horarios de mañana</span>
-										{loadingOcupacion && <span className="text-[10px] text-slate-400">cargando…</span>}
-									</div>
+					<div className="lg:col-span-8 flex-1 space-y-8">
+					{/* Leyenda de disponibilidad */}
+					{form.id_especialista && (
+						<div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+							<span className="flex items-center gap-1.5">
+								<span className="inline-block h-3 w-3 rounded-sm bg-[#006965]" />
+								Disponible
+							</span>
+							<span className="flex items-center gap-1.5">
+								<span className="inline-block h-3 w-3 rounded-sm bg-slate-300" />
+								Ocupado (no disponible)
+							</span>
+							{loadingOcupacion ? (
+								<span className="ml-auto text-slate-400">Cargando disponibilidad…</span>
+							) : ocupados.length > 0 ? (
+								<span className="ml-auto font-semibold text-red-500">{ocupados.length} horario{ocupados.length !== 1 ? "s" : ""} ocupado{ocupados.length !== 1 ? "s" : ""}</span>
+							) : form.fecha_cita ? (
+								<span className="ml-auto text-emerald-600 font-semibold">Todos los horarios disponibles</span>
+							) : null}
+						</div>
+					)}
+					<div>
+						<div className="mb-3 flex items-center gap-2 text-neutral-500">
+							<Sun className="h-4 w-4" />
+							<span className="text-xs font-bold uppercase tracking-widest">Horarios de mañana</span>
+						</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
 										{morningSlots.map((opt) => {
 											const occ = horaOcupada(opt.value);
@@ -1032,6 +1166,7 @@ export default function CitaMostradorPage() {
 													key={opt.value}
 													type="button"
 													disabled={occ}
+													title={occ ? "Horario ocupado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1040,7 +1175,7 @@ export default function CitaMostradorPage() {
 													}
 													className={`rounded-2xl py-3 text-sm font-semibold transition ${
 														occ
-															? "cursor-not-allowed bg-slate-100 text-slate-400 line-through opacity-50"
+															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
 																: "bg-slate-100 text-slate-800 hover:bg-[#1c837f] hover:text-white"
@@ -1071,6 +1206,7 @@ export default function CitaMostradorPage() {
 													key={opt.value}
 													type="button"
 													disabled={occ}
+													title={occ ? "Horario ocupado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1079,7 +1215,7 @@ export default function CitaMostradorPage() {
 													}
 													className={`rounded-2xl py-3 text-sm font-semibold transition ${
 														occ
-															? "cursor-not-allowed bg-slate-100 text-slate-400 line-through opacity-50"
+															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
 																: "bg-slate-100 text-slate-800 hover:bg-[#1c837f] hover:text-white"
@@ -1096,6 +1232,7 @@ export default function CitaMostradorPage() {
 							</div>
 						</div>
 					</section>
+					)}
 
 					{error && (
 						<div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -1104,8 +1241,16 @@ export default function CitaMostradorPage() {
 			</div>
 
 			<div className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex border-t border-slate-200/90 bg-white/95 px-4 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md lg:left-56">
-				<div className="pointer-events-auto mx-auto flex w-full max-w-5xl flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex min-w-0 items-start gap-2 text-sm text-slate-600">
+				<div className="pointer-events-auto mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+					<button
+						type="button"
+						onClick={handlePrev}
+						disabled={paso === 1}
+						className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+					>
+						<ChevronLeft className="h-4 w-4" /> Anterior
+					</button>
+					<div className="flex min-w-0 items-start gap-2 text-sm text-slate-600 max-sm:hidden">
 						<Info className="mt-0.5 h-5 w-5 shrink-0 text-[#006965]" />
 						<p className="min-w-0">
 							<span className="font-semibold text-slate-500">Resumen:</span>{" "}
@@ -1113,15 +1258,27 @@ export default function CitaMostradorPage() {
 							· {resumenTexto.fecha} {resumenTexto.hora}
 						</p>
 					</div>
-					<button
-						type="submit"
-						form="form-cita-mostrador"
-						disabled={isSaving}
-						className="shrink-0 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-60"
-						style={{ backgroundColor: PRIMARY }}
-					>
-						{isSaving ? "Guardando…" : "Confirmar cita ✓"}
-					</button>
+					{paso < 4 ? (
+						<button
+							type="button"
+							onClick={() => void handleNext()}
+							disabled={isCreatingPatient || (paso === 1 && !!citaActivaError)}
+							className="flex items-center gap-2 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md transition disabled:opacity-60"
+							style={{ backgroundColor: PRIMARY }}
+						>
+							{isCreatingPatient ? "Procesando…" : "Siguiente"} <ChevronRight className="h-4 w-4" />
+						</button>
+					) : (
+						<button
+							type="submit"
+							form="form-cita-mostrador"
+							disabled={isSaving || !!citaActivaError}
+							className="shrink-0 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-60"
+							style={{ backgroundColor: PRIMARY }}
+						>
+							{isSaving ? "Guardando…" : "Confirmar cita ✓"}
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

@@ -705,7 +705,7 @@ const PasoCheckout = ({
 													value={bancoOrigen}
 													onChange={(e) => setBancoOrigen(e.target.value)}
 													onBlur={() => setTouchedBanco(true)}
-													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
+													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
 												>
 													<option value="">Seleccionar...</option>
 													<option value="Banesco">Banesco</option>
@@ -748,7 +748,7 @@ const PasoCheckout = ({
 													onChange={(e) => setReferencia(e.target.value.replace(/\D/g, ""))}
 													onBlur={() => setTouchedReferencia(true)}
 													placeholder="Ej: 837462947163"
-													className={`w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-paper-50" : ""}`}
+													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-paper-50" : ""}`}
 												/>
 												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorReferencia}</p>}
 												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
@@ -816,7 +816,7 @@ const PasoCheckout = ({
 												value={fechaPago}
 												max={getTodayLocal()}
 												onChange={(e) => setFechaPago(e.target.value)}
-												className="w-full bg-cloud border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none text-brand-900 font-medium"
+												className="w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none text-brand-900 font-medium"
 											/>
 											<p className="text-[10px] text-slate-400 ml-1">
 												Solo se permite hoy o fechas pasadas. El administrador verá esta fecha en el reporte.

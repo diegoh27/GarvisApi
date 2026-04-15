@@ -12,7 +12,6 @@ import {
 	formatNombreApellido,
 	validarRangoCedula,
 	MENSAJE_RANGO_CEDULA,
-	toDateKey,
 } from "../../../shared";
 import { sanitizeMonto, validarMonto } from "../utils/validation";
 import {
@@ -20,6 +19,7 @@ import {
 	METODOS_API,
 	slotsOverlap,
 	defaultFechaCita,
+	getCurrentSlot,
 	idsCoinciden,
 } from "../utils/citaMostradorUtils";
 
@@ -49,7 +49,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		id_especialista: "",
 		id_eco: "",
 		fecha_cita: defaultFechaCita(),
-		hora_cita: "08:00:00",
+		telefono: "",
+		hora_cita: getCurrentSlot(),
 		metodo: "Transferencia" as "Efectivo" | "Transferencia" | "PagoMovil" | "Zelle" | "Otro",
 		monto: "",
 		tasa_dia_bcv: "",
@@ -59,12 +60,17 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		cedula: "",
 		rif: "",
 		referencia: "",
+		id_paciente_resolved: "",
 	});
 	const [error, setError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 	const [mensajeCargaAnterior, setMensajeCargaAnterior] = useState<string | null>(null);
-	/** Tras “Cargar paciente”: hay datos en sistema para esta cédula (UI página: solo lectura). */
+	/** Tras â€œCargar pacienteâ€: hay datos en sistema para esta cédula (UI página: solo lectura). */
 	const [pacienteIdentificadoEnSistema, setPacienteIdentificadoEnSistema] = useState(false);
+	/** R1: id_paciente del paciente web identificado al cargar por cédula. */
+	const [idPacienteWeb, setIdPacienteWeb] = useState<string | null>(null);
+	/** R2: mensaje de error cuando el paciente ya tiene una cita activa. */
+	const [citaActivaError, setCitaActivaError] = useState<string | null>(null);
 	const [vincularRepresentado, setVincularRepresentado] = useState<{
 		id_paciente: string;
 		id_representado: string;
@@ -128,19 +134,65 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 
 	const { data: ocupacionData, isLoading: loadingOcupacion } = useGetOcupacionEspecialistaQuery(
 		{ id_especialista: form.id_especialista, fecha: form.fecha_cita },
-		{ skip: !form.id_especialista || !form.fecha_cita },
+		{
+			skip: !form.id_especialista || !form.fecha_cita,
+			refetchOnMountOrArgChange: true,
+		},
 	);
 	const ocupados = ocupacionData?.ocupados ?? [];
+	/** Slots libres retornados por el backend (null = sin filtro, mostrar todos). R3 */
+	const libresBackend: string[] | null = ocupacionData?.libres ?? null;
 
 	const horaOcupada = useMemo(
 		() => (slot: string) => ocupados.some((o) => slotsOverlap(o, slot)),
 		[ocupados],
 	);
 
+	/** R3: true si el slot está disponible según el backend. */
+	const horaDisponible = useMemo(
+		() =>
+			(slot: string) => {
+				if (libresBackend === null) return true; // sin especialista/fecha: mostrar todos
+				const norm = slot.padEnd(8, ":00").slice(0, 8);
+				return libresBackend.some((l) => l.padEnd(8, ":00").slice(0, 8) === norm);
+			},
+		[libresBackend],
+	);
+
 	const selectedEco = useMemo(
 		() => ecos.find((eco) => idsCoinciden(eco.id_eco, form.id_eco)),
 		[ecos, form.id_eco],
 	);
+
+	// Auto-seleccionar slot: si el slot actual está ocupado, tomar el siguiente libre
+	useEffect(() => {
+		if (libresBackend === null) return;
+		const current = getCurrentSlot();
+		const normCurrent = current.padEnd(8, ":00").slice(0, 8);
+		const isCurrentFree = libresBackend.some((l) => l.padEnd(8, ":00").slice(0, 8) === normCurrent);
+		if (isCurrentFree) {
+			setForm((prev) => ({ ...prev, hora_cita: current }));
+			return;
+		}
+		// Buscar el siguiente slot libre después del actual
+		const currentIdx = HORA_OPTIONS.findIndex((o) => o.value === current);
+		for (let i = currentIdx + 1; i < HORA_OPTIONS.length; i++) {
+			const v = HORA_OPTIONS[i].value;
+			const normV = v.padEnd(8, ":00").slice(0, 8);
+			if (libresBackend.some((l) => l.padEnd(8, ":00").slice(0, 8) === normV)) {
+				setForm((prev) => ({ ...prev, hora_cita: v }));
+				return;
+			}
+		}
+		// Si todos ocupados, mantener el primero disponible
+		for (const opt of HORA_OPTIONS) {
+			const normV = opt.value.padEnd(8, ":00").slice(0, 8);
+			if (libresBackend.some((l) => l.padEnd(8, ":00").slice(0, 8) === normV)) {
+				setForm((prev) => ({ ...prev, hora_cita: opt.value }));
+				return;
+			}
+		}
+	}, [libresBackend]);
 
 	const isMetodoEnBs = form.metodo === "Transferencia" || form.metodo === "PagoMovil";
 
@@ -185,6 +237,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		if (name === "cedula" || name === "tipo_cedula") {
 			setVincularRepresentado(null);
 			setPacienteIdentificadoEnSistema(false);
+			setIdPacienteWeb(null);
+			setCitaActivaError(null);
 		}
 	};
 
@@ -200,7 +254,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 			Number(form.tasa_dia_bcv) > 0
 				? Number(form.tasa_dia_bcv)
 				: Number(dolarOficial?.promedio) > 0
-					? Number(dolarOficial.promedio)
+					? Number(dolarOficial?.promedio)
 					: 0;
 		if (!Number.isFinite(tasa) || tasa <= 0) return;
 		const bs = Number(cleaned);
@@ -414,7 +468,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 				typeof err === "object" && err !== null && "data" in err
 					? (err as { data?: { message?: string } }).data?.message
 					: "No se pudo crear el representado.";
-			setRepFormErrors((prev) => ({ ...prev, _form: msg }));
+			setRepFormErrors((prev) => ({ ...prev, _form: msg || "Error desconocido" }));
 		}
 	};
 
@@ -433,8 +487,10 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		setVincularRepresentado(null);
 		setVincularCitaAlTitular(false);
 		setPacienteIdentificadoEnSistema(false);
+		setIdPacienteWeb(null);
+		setCitaActivaError(null);
 		try {
-			const { paciente, representado, mostrador } = await getDatosPorCedula(cedulaCompleta).unwrap();
+		const { paciente, representado, mostrador, citaActiva } = await getDatosPorCedula(cedulaCompleta).unwrap();
 			const tienePaciente = paciente && (paciente.nombre || paciente.apellido);
 			const tieneRepresentado = representado && (representado.nombre || representado.apellido);
 			const tieneMostrador = mostrador && (mostrador.nombre || mostrador.apellido);
@@ -463,6 +519,10 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 				}));
 				setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "" }));
 				setPacienteIdentificadoEnSistema(true);
+				// R1: guardar id_paciente del paciente web identificado
+				if (tienePaciente && paciente!.id_paciente) {
+					setIdPacienteWeb(paciente!.id_paciente);
+				}
 				if (tieneRepresentado) {
 					setVincularRepresentado({
 						id_paciente: representado!.id_paciente,
@@ -475,8 +535,12 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 				if (tieneRepresentado) partes.push("representado");
 				if (tieneMostrador) partes.push("cita de mostrador anterior");
 				setMensajeCargaAnterior(
-					`Datos cargados (${partes.join(", ")}). Puedes editarlos y registrar la nueva cita.${tieneRepresentado ? " Si marcas «Vincular al titular», la cita aparecerá en Mis citas del representado." : ""}`,
+					`Datos cargados (${partes.join(", ")}). Puedes editarlos y registrar la nueva cita.${tieneRepresentado ? " Si marcas \u00abVincular al titular\u00bb, la cita aparecerá en Mis citas del representado." : ""}`,
 				);
+				// Mostrar alerta de cita activa inmediatamente en Paso 1
+				if (citaActiva) {
+					setCitaActivaError("Este paciente ya tiene una cita activa en el sistema. No se puede agendar otra cita hasta que finalice o cancele la actual.");
+				}
 			} else {
 				setPacienteIdentificadoEnSistema(false);
 				setMensajeCargaAnterior(
@@ -512,7 +576,13 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 			if (!form.tasa_dia_bcv?.trim()) err.tasa_dia_bcv = "La tasa BCV es obligatoria para este método.";
 			else if (!Number.isFinite(tasa) || tasa <= 0) err.tasa_dia_bcv = "La tasa BCV debe ser mayor a 0.";
 		}
-		if (form.referencia.trim().length > 80) err.referencia = "Máximo 80 caracteres.";
+		// Referencia obligatoria para métodos que no sean Efectivo
+		if (form.metodo !== "Efectivo") {
+			if (!form.referencia?.trim()) err.referencia = "El número de referencia es obligatorio para este método de pago.";
+			else if (form.referencia.trim().length > 80) err.referencia = "Máximo 80 caracteres.";
+		} else if (form.referencia.trim().length > 80) {
+			err.referencia = "Máximo 80 caracteres.";
+		}
 		setFieldErrors(err);
 		if (Object.keys(err).length > 0) {
 			setError(Object.values(err)[0]);
@@ -548,9 +618,14 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 			cedula: `${form.tipo_cedula}${form.cedula}`.trim(),
 			rif: form.rif.trim() || undefined,
 			referencia: form.referencia.trim() || undefined,
+			// R1: si hay paciente web identificado (sin representado), pasar su id
 			...(vincularCitaAlTitular && vincularRepresentado
 				? { id_paciente: vincularRepresentado.id_paciente, id_representado: vincularRepresentado.id_representado }
-				: {}),
+				: idPacienteWeb && !vincularRepresentado
+					? { id_paciente: idPacienteWeb }
+					: form.id_paciente_resolved
+						? { id_paciente: form.id_paciente_resolved }
+						: {}),
 		});
 	};
 
@@ -563,6 +638,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		error,
 		mensajeCargaAnterior,
 		pacienteIdentificadoEnSistema,
+		citaActivaError,
+		setCitaActivaError,
 		vincularRepresentado,
 		vincularCitaAlTitular,
 		setVincularCitaAlTitular,
@@ -588,6 +665,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		loadingEcos,
 		loadingOcupacion,
 		horaOcupada,
+		ocupados,
+		horaDisponible,
 		selectedEco,
 		isMetodoEnBs,
 		monedaRegistro,
