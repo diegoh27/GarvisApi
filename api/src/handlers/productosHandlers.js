@@ -16,6 +16,11 @@ const {
 } = require("../controllers/productosControllers");
 const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
+const UNIDADES_MEDIDA = [
+	"Bulto", "Caja", "Galón", "Gramo", "Kilo", "Kit", 
+	"Litro", "Mililitro", "Paquete", "Par", "Pieza", "Sobre", "Unidad"
+];
+
 // ==========================================
 // PRODUCTOS
 // ==========================================
@@ -43,6 +48,18 @@ const createProductoHandler = async (req, res) => {
 			return res.status(400).json({
 				ok: false,
 				message: "El nombre es requerido",
+			});
+		}
+		if (unidad_compra && !UNIDADES_MEDIDA.includes(unidad_compra)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Unidad de compra no válida",
+			});
+		}
+		if (unidad_consumo && !UNIDADES_MEDIDA.includes(unidad_consumo)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Unidad de consumo no válida",
 			});
 		}
 		const data = await createProductoController({
@@ -107,6 +124,19 @@ const updateProductoHandler = async (req, res) => {
 	try {
 		const { id } = req.params;
 		const { nombre, presentacion, categoria, unidad_compra, unidad_consumo, factor_conversion, stock_minimo_base, activo } = req.body;
+
+		if (unidad_compra && !UNIDADES_MEDIDA.includes(unidad_compra)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Unidad de compra no válida",
+			});
+		}
+		if (unidad_consumo && !UNIDADES_MEDIDA.includes(unidad_consumo)) {
+			return res.status(400).json({
+				ok: false,
+				message: "Unidad de consumo no válida",
+			});
+		}
 
 		const data = await updateProductoController({
 			id_producto: id,

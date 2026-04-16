@@ -5,6 +5,11 @@ const {
 	createProveedorHandler,
 	updateProveedorHandler,
 	deleteProveedorHandler,
+	getCatalogoGlobalHandler,
+	getCatalogoHandler,
+	asociarCatalogoHandler,
+	updateCatalogoHandler,
+	deleteCatalogoHandler,
 } = require("../handlers/proveedoresHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -25,6 +30,14 @@ proveedoresRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	createProveedorHandler,
+);
+
+// GET /proveedores/catalogo-global - obtener todo el catalogo (Debe ir antes de /:id)
+proveedoresRoutes.get(
+	"/catalogo-global",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	getCatalogoGlobalHandler,
 );
 
 // GET /proveedores/:id - obtener un proveedor
@@ -49,6 +62,40 @@ proveedoresRoutes.delete(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	deleteProveedorHandler,
+);
+
+// ==========================================
+// CATÁLOGO
+// ==========================================
+
+// ==========================================
+
+proveedoresRoutes.get(
+	"/:id/catalogo",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	getCatalogoHandler,
+);
+
+proveedoresRoutes.post(
+	"/:id/catalogo",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	asociarCatalogoHandler,
+);
+
+proveedoresRoutes.patch(
+	"/:id/catalogo/:idRelacion",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	updateCatalogoHandler,
+);
+
+proveedoresRoutes.delete(
+	"/:id/catalogo/:idRelacion",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	deleteCatalogoHandler,
 );
 
 module.exports = proveedoresRoutes;

@@ -576,6 +576,18 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 			if (!form.tasa_dia_bcv?.trim()) err.tasa_dia_bcv = "La tasa BCV es obligatoria para este método.";
 			else if (!Number.isFinite(tasa) || tasa <= 0) err.tasa_dia_bcv = "La tasa BCV debe ser mayor a 0.";
 		}
+		if (form.telefono?.trim()) {
+			const tel = form.telefono.trim();
+			if (tel.length !== 11) {
+				err.telefono = "El teléfono debe tener exactamente 11 dígitos.";
+			} else {
+				const suffix = tel.substring(4);
+				if (/^(\d)\1{6}$/.test(suffix) || suffix === "1234567") {
+					err.telefono = "El número ingresado no es válido.";
+				}
+			}
+		}
+
 		// Referencia obligatoria para métodos que no sean Efectivo
 		if (form.metodo !== "Efectivo") {
 			if (!form.referencia?.trim()) err.referencia = "El número de referencia es obligatorio para este método de pago.";

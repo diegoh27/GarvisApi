@@ -97,6 +97,8 @@ const baseApi = createApi({
 		"HistorialAjustes",
 		// Inventario - Proveedores
 		"Proveedores",
+		"ProveedorCatalogo",
+		"OrdenesCompra",
 		"NotasCompra",
 		"EcoInsumos",
 		"Kardex",

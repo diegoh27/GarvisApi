@@ -32,6 +32,7 @@ const espComisionRoutes = require("./espComisionRoutes");
 const facturacionRoutes = require("./facturacionRoutes");
 const proveedoresRoutes = require("./proveedoresRoutes");
 const notaCompraRoutes = require("./notaCompraRoutes");
+const ordenesCompraRoutes = require("./ordenesCompraRoutes");
 const ecoInsumosRoutes = require("./ecoInsumosRoutes");
 const kardexRoutes = require("./kardexRoutes");
 
@@ -69,6 +70,7 @@ router.use("/comisiones-especialistas", espComisionRoutes);
 router.use("/facturacion", facturacionRoutes);
 router.use("/proveedores", proveedoresRoutes);
 router.use("/notas-compra", notaCompraRoutes);
+router.use("/ordenes-compra", ordenesCompraRoutes);
 router.use("/eco-insumos", ecoInsumosRoutes);
 router.use("/kardex", kardexRoutes);
 

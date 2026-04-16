@@ -5,6 +5,8 @@ import { baseApi } from "../../../app/api/baseApi";
 import ProductosPage from "./ProductosPage";
 import ProveedoresPage from "./ProveedoresPage";
 import ComprasPage from "./ComprasPage";
+import CrearOrdenCompraPage from "./CrearOrdenCompraPage";
+import RecepcionComprasPage from "./RecepcionComprasPage";
 import RecetasPage from "./RecetasPage";
 import KardexPage from "./KardexPage";
 
@@ -17,12 +19,14 @@ const INVENTARIO_TAGS = [
 	"InventarioAuditoria",
 ] as const;
 
-type TabType = "productos" | "proveedores" | "compras" | "recetas" | "kardex";
+type TabType = "productos" | "proveedores" | "ordenes_compra" | "recepcion_compras" | "compras" | "recetas" | "kardex";
 
 const ALL_TABS: { id: TabType; label: string }[] = [
 	{ id: "productos", label: "Productos" },
 	{ id: "proveedores", label: "Proveedores" },
-	{ id: "compras", label: "Compras" },
+	{ id: "ordenes_compra", label: "Órdenes de Compra" },
+	{ id: "recepcion_compras", label: "Facturas de Compra" },
+	{ id: "compras", label: "Compras Rápidas" },
 	{ id: "recetas", label: "Recetas" },
 	{ id: "kardex", label: "Movimientos de inventario" },
 ];
@@ -82,6 +86,8 @@ export default function InventarioPage() {
 			<div className="w-full pb-8">
 				{activeTab === "productos" && <ProductosPage />}
 				{activeTab === "proveedores" && <ProveedoresPage />}
+				{activeTab === "ordenes_compra" && <CrearOrdenCompraPage />}
+				{activeTab === "recepcion_compras" && <RecepcionComprasPage />}
 				{activeTab === "compras" && <ComprasPage />}
 				{activeTab === "recetas" && <RecetasPage />}
 				{activeTab === "kardex" && <KardexPage />}

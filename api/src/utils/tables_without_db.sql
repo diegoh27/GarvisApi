@@ -1511,6 +1511,7 @@ CREATE TABLE IF NOT EXISTS inv_nota_compra (
   id_nota_compra CHAR(36) NOT NULL,
   id_proveedor CHAR(36) NOT NULL,
   numero_factura VARCHAR(60) NULL,
+  id_orden CHAR(36) NULL,
   fecha_compra DATE NOT NULL,
   subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
   impuesto DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -1530,7 +1531,90 @@ CREATE TABLE IF NOT EXISTS inv_nota_compra (
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT fk_inv_nota_compra_usuario
     FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
-    ON UPDATE CASCADE ON DELETE RESTRICT
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_inv_nota_compra_orden
+    FOREIGN KEY (id_orden) REFERENCES inv_orden_compra (id_orden)
+    ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- =========================
+-- 19.5) MINI-ERP INVENTARIO - Catálogo Proveedor-Producto (N:M)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_producto_proveedor (
+  id_relacion CHAR(36) NOT NULL,
+  id_proveedor CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  precio_costo DECIMAL(10,2) NOT NULL DEFAULT 0,
+  fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  PRIMARY KEY (id_relacion),
+  UNIQUE KEY uk_proveedor_producto (id_proveedor, id_producto),
+  KEY idx_inv_pp_proveedor (id_proveedor),
+  KEY idx_inv_pp_producto (id_producto),
+  
+  CONSTRAINT fk_inv_pp_proveedor FOREIGN KEY (id_proveedor) REFERENCES inv_proveedor (id_proveedor) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_inv_pp_producto FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+) ENGINE=InnoDB;
+
+-- =========================
+-- Historial Variación de Precios de Compra
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_historial_precios (
+  id_historial CHAR(36) NOT NULL,
+  id_proveedor CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  precio_anterior DECIMAL(10,2) NOT NULL DEFAULT 0,
+  precio_nuevo DECIMAL(10,2) NOT NULL DEFAULT 0,
+  fecha_cambio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id_usuario CHAR(36) NOT NULL,
+  
+  PRIMARY KEY (id_historial),
+  KEY idx_inv_hist_precios_prov (id_proveedor),
+  KEY idx_inv_hist_precios_prod (id_producto),
+  CONSTRAINT fk_inv_hist_precios_prov FOREIGN KEY (id_proveedor) REFERENCES inv_proveedor (id_proveedor) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_inv_hist_precios_prod FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_inv_hist_precios_usu FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
+-- Órdenes de Compra (CABECERA)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_orden_compra (
+  id_orden CHAR(36) NOT NULL,
+  numero_orden VARCHAR(50) NOT NULL,
+  id_proveedor CHAR(36) NOT NULL,
+  fecha_emision DATE NOT NULL,
+  estado ENUM('Pendiente', 'Recibida', 'Cancelada') NOT NULL DEFAULT 'Pendiente',
+  total_estimado DECIMAL(12,2) NOT NULL DEFAULT 0,
+  id_usuario CHAR(36) NOT NULL,
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  
+  PRIMARY KEY (id_orden),
+  UNIQUE KEY uk_inv_orden_compra_num (numero_orden),
+  KEY idx_inv_orden_proveedor (id_proveedor),
+  KEY idx_inv_orden_usuario (id_usuario),
+  CONSTRAINT fk_inv_orden_prov FOREIGN KEY (id_proveedor) REFERENCES inv_proveedor (id_proveedor) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_inv_orden_usu FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- =========================
+-- Órdenes de Compra (DETALLE)
+-- =========================
+CREATE TABLE IF NOT EXISTS inv_orden_compra_detalle (
+  id_detalle CHAR(36) NOT NULL,
+  id_orden CHAR(36) NOT NULL,
+  id_producto CHAR(36) NOT NULL,
+  cantidad_ordenada INT NOT NULL,
+  precio_unitario_acordado DECIMAL(10,2) NOT NULL DEFAULT 0,
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+  
+  PRIMARY KEY (id_detalle),
+  KEY idx_inv_orden_det_orden (id_orden),
+  KEY idx_inv_orden_det_prod (id_producto),
+  CONSTRAINT fk_inv_orden_det_orden FOREIGN KEY (id_orden) REFERENCES inv_orden_compra (id_orden) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_inv_orden_det_prod FOREIGN KEY (id_producto) REFERENCES inv_producto (id_producto) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================

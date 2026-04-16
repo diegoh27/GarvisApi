@@ -117,7 +117,7 @@ export default function ProductosTable({
            return (
             <div className="flex items-center gap-2 text-red-600">
               <div className="w-1.5 h-1.5 rounded-full bg-red-600"></div>
-              LOW STOCK
+              Bajo Stock
             </div>
           );
         }
@@ -125,7 +125,7 @@ export default function ProductosTable({
         return (
           <div className="flex items-center gap-2 text-teal-600">
             <div className="w-1.5 h-1.5 rounded-full bg-teal-500"></div>
-            IN STOCK
+            Disponible
           </div>
         );
       },

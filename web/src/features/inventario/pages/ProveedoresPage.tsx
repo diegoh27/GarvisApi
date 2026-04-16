@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Building2, TrendingUp, Package, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Plus, Search, Building2, TrendingUp, Package, ChevronLeft, ChevronRight, Trash2, PackagePlus } from "lucide-react";
 import Swal from "sweetalert2";
 import { useGetProveedoresQuery, useUpdateProveedorMutation, useDeleteProveedorMutation } from "../api";
 import type { Proveedor } from "../api";
 import CrearProveedorModal from "../components/CrearProveedorModal";
+import CatalogoProveedorModal from "../components/CatalogoProveedorModal";
 
 /* ── Componente ────────────────────────────────────── */
 export default function ProveedoresPage() {
@@ -13,6 +14,7 @@ export default function ProveedoresPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [showCrearModal, setShowCrearModal] = useState(false);
+	const [catalogoProveedorActivo, setCatalogoProveedorActivo] = useState<Proveedor | null>(null);
 	const itemsPerPage = 10;
 
 	/* ── Filtrado y paginación ── */
@@ -225,6 +227,13 @@ export default function ProveedoresPage() {
 									<td className="px-6 py-4 text-right">
 										<div className="flex justify-end gap-2">
 											<button
+												onClick={() => setCatalogoProveedorActivo(prov)}
+												className="text-teal-600 hover:text-teal-800 p-1.5 rounded hover:bg-teal-50 transition-colors"
+												title="Ver/Agregar Productos (Catálogo)"
+											>
+												<PackagePlus className="h-4 w-4" />
+											</button>
+											<button
 												onClick={() => handleEliminar(prov)}
 												className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors"
 												title="Eliminar"
@@ -275,6 +284,12 @@ export default function ProveedoresPage() {
 			<CrearProveedorModal
 				isOpen={showCrearModal}
 				onClose={() => setShowCrearModal(false)}
+			/>
+
+			<CatalogoProveedorModal
+				isOpen={!!catalogoProveedorActivo}
+				onClose={() => setCatalogoProveedorActivo(null)}
+				proveedor={catalogoProveedorActivo}
 			/>
 		</div>
 	);

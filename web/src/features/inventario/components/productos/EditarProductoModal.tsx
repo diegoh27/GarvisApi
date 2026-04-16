@@ -291,7 +291,7 @@ export default function EditarProductoModal({
               </div>
               <div>
                 <label className={labelClassName}>
-                  Alerta de stock bajo <span className="text-slate-400 font-normal">(alerta cuando queda poco)</span>
+                  Stock mínimo <span className="text-slate-400 font-normal">(alerta cuando queda poco)</span>
                 </label>
                 <div className="relative">
                   <Bell size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

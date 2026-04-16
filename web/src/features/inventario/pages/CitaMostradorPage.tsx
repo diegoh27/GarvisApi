@@ -508,17 +508,52 @@ export default function CitaMostradorPage() {
 							</div>
 
 							{/* Teléfono (opcional) */}
-							<div>
+							<div className="flex flex-col">
 								<label className={labelBase}>Teléfono (opcional)</label>
-								<input
-									type="tel"
-									name="telefono"
-									value={form.telefono}
-									onChange={handleChange}
-									readOnly={pacienteIdentificadoEnSistema}
-									className={`${inputBase} h-14 ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
-									placeholder="Ej. 0412-1234567"
-								/>
+								<div className="flex gap-2">
+									<select
+										className={`${inputBase} h-14 w-32 ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""}`}
+										value={form.telefono ? form.telefono.substring(0, 4) : "0412"}
+										disabled={pacienteIdentificadoEnSistema}
+										onChange={(e) => {
+											const currentNum = form.telefono ? form.telefono.substring(4) : "";
+											handleChange({
+												target: { name: "telefono", value: currentNum ? e.target.value + currentNum : e.target.value }
+											} as any);
+										}}
+									>
+										<option value="0412">0412</option>
+										<option value="0414">0414</option>
+										<option value="0416">0416</option>
+										<option value="0422">0422</option>
+										<option value="0424">0424</option>
+										<option value="0426">0426</option>
+									</select>
+									<input
+										type="tel"
+										value={form.telefono ? form.telefono.substring(4) : ""}
+										onChange={(e) => {
+											const val = e.target.value.replace(/\D/g, "").slice(0, 7);
+											const prefix = form.telefono ? form.telefono.substring(0, 4) : "0412";
+											if (val) {
+												handleChange({
+													target: { name: "telefono", value: prefix + val }
+												} as any);
+											} else {
+												handleChange({
+													target: { name: "telefono", value: "" }
+												} as any);
+											}
+										}}
+										readOnly={pacienteIdentificadoEnSistema}
+										className={`${inputBase} h-14 flex-1 ${pacienteIdentificadoEnSistema ? "bg-slate-100" : ""} ${fieldErrors.telefono ? inputError : ""}`}
+										placeholder="0000000"
+										maxLength={7}
+									/>
+								</div>
+								{fieldErrors.telefono && (
+									<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono}</p>
+								)}
 							</div>
 						</div>
 

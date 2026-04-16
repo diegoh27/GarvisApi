@@ -16,3 +16,5 @@ export { default as HistorialModal } from "./productos/HistorialModal";
 export { default as CrearEnteModal } from "./entes-legales/CrearEnteModal";
 export { default as EditarEnteModal } from "./entes-legales/EditarEnteModal";
 
+// Ordenes de Compra
+export { default as RecepcionCompraModal } from "./RecepcionCompraModal";

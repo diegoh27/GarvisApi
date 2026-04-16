@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCreateProductoMutation } from "../../api";
 import { X, Plus, Save, Bell, Info } from "lucide-react";
+import { pluralizarUnidad, formatUnidad } from "../../../../utils/pluralizar";
 
 interface CrearProductoModalProps {
   isOpen: boolean;
@@ -16,8 +17,8 @@ export default function CrearProductoModal({
     nombre: "",
     presentacion: "",
     categoria: "General",
-    unidad_compra: "",
-    unidad_consumo: "",
+    unidad_compra: "Caja",
+    unidad_consumo: "Par",
     factor_conversion: "1",
     stock_base_total: "0",
     stock_minimo_base: "0",
@@ -85,8 +86,8 @@ export default function CrearProductoModal({
           nombre: "",
           presentacion: "",
           categoria: "General",
-          unidad_compra: "",
-          unidad_consumo: "",
+          unidad_compra: "Caja",
+          unidad_consumo: "Par",
           factor_conversion: "1",
           stock_base_total: "0",
           stock_minimo_base: "0",
@@ -105,6 +106,15 @@ export default function CrearProductoModal({
     "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white placeholder-slate-400 transition-all";
   const labelClassName =
     "block text-xs font-bold text-slate-600 mb-1.5";
+
+  const UNIDADES_MEDIDA = [
+    "Litro", "Mililitro", 
+    "Par", "Unidad", "Kit", "Pieza", "Sobre", "Kilo", "Gramo","Lata","Bolsa","Ampolla","Frasco","Miligramo"
+  ].sort();
+
+  const UNIDADES_MEDIDA_MAYOR = [
+    "Barril", "Galón  ", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet"
+  ].sort();
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -197,39 +207,31 @@ export default function CrearProductoModal({
             <div className="grid grid-cols-2 gap-6 mb-6">
               <div>
                 <label className={labelClassName}>¿Cómo compras este insumo al mayor?</label>
-                <input
-                  type="text"
+                <select
                   value={formData.unidad_compra}
                   onChange={(e) => setFormData({ ...formData, unidad_compra: e.target.value })}
-                  maxLength={50}
-                  className={inputClassName}
-                  placeholder="Ej: Caja"
+                  className={`${inputClassName} appearance-none cursor-pointer`}
                   required
-                />
+                >
+                  <option value="" disabled className="text-slate-400">Seleccionar unidad...</option>
+                  {UNIDADES_MEDIDA_MAYOR.map(unidad => (
+                    <option key={`compra-${unidad}`} value={unidad}>{unidad}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <label className={labelClassName}>¿Cómo se gasta en las citas?</label>
-                <input
-                  type="text"
-                  list="unidades-consumo-list"
+                <label className={labelClassName}>¿Cómo se mide este producto?</label>
+                <select
                   value={formData.unidad_consumo}
                   onChange={(e) => setFormData({ ...formData, unidad_consumo: e.target.value })}
-                  maxLength={50}
-                  className={inputClassName}
-                  placeholder="Ej: Pares"
+                  className={`${inputClassName} appearance-none cursor-pointer`}
                   required
-                />
-                <datalist id="unidades-consumo-list">
-                  <option value="Pares" />
-                  <option value="ml" />
-                  <option value="Gramos" />
-                  <option value="Unidad" />
-                  <option value="Piezas" />
-                  <option value="Cajas" />
-                  <option value="Sobres" />
-                  <option value="Kilos" />
-                  <option value="Litros" />
-                </datalist>
+                >
+                  <option value="" disabled className="text-slate-400">Seleccionar unidad...</option>
+                  {UNIDADES_MEDIDA.map(unidad => (
+                    <option key={`consumo-${unidad}`} value={unidad}>{unidad}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -246,21 +248,21 @@ export default function CrearProductoModal({
                   placeholder="Ej: 100"
                   required
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-50 text-teal-700 text-[10px] font-bold px-2 py-1 rounded">
-                  UNIDADES
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-50 text-teal-700 text-[10px] font-bold px-2 py-1 rounded uppercase">
+                  {pluralizarUnidad(formData.unidad_consumo || "Unidad", Number(formData.factor_conversion) || 1)}
                 </div>
               </div>
             </div>
 
             {/* Helper Mágico */}
-            <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-4 flex gap-3">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3 flex gap-3">
               <div className="text-teal-600 mt-0.5">
-                <Info size={20} />
+                <Info size={18} />
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-[#006965]">Ejemplo visual:</span>
                 <p className="text-xs font-medium text-teal-800/80 leading-relaxed">
-                  1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formData.factor_conversion || '100'} {formData.unidad_consumo || 'Pares'}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Pares'}</span>" automáticamente.
+                  1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formatUnidad(Number(formData.factor_conversion) || 1, formData.unidad_consumo || 'Unidad')}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Unidad'}</span>" automáticamente.
                 </p>
               </div>
             </div>
@@ -289,7 +291,7 @@ export default function CrearProductoModal({
               </div>
               <div>
                 <label className={labelClassName}>
-                  Alerta de stock bajo <span className="text-slate-400 font-normal">(alerta cuando queda poco)</span>
+                  Stock mínimo <span className="text-slate-400 font-normal">(alerta cuando queda poco)</span>
                 </label>
                 <div className="relative">
                   <Bell size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

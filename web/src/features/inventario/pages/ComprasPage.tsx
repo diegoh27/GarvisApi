@@ -240,8 +240,7 @@ export default function ComprasPage() {
 					Registro de Compra
 				</h1>
 				<p className="text-gray-500 mt-1 text-sm">
-					Gestione la entrada de nuevos insumos al inventario médico con precisión
-					editorial y control total.
+					Gestione la entrada real de stock al inventario médico con precisión editorial y control total.
 				</p>
 			</div>
 
