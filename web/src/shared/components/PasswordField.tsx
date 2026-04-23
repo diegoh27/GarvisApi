@@ -23,7 +23,7 @@ const PasswordField = ({
 	return (
 		<div>
 			{label && (
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label className="mb-1 block text-base font-medium text-brand-700">
 					{label} {required && <span className="text-red-500">*</span>}
 				</label>
 			)}
@@ -34,7 +34,7 @@ const PasswordField = ({
 					onChange={(event) => onChange(event.target.value)}
 					placeholder={placeholder}
 					required={required}
-					className={className || "h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"}
+					className={className || "h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"}
 				/>
 				<button
 					type="button"

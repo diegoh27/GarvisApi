@@ -23,7 +23,7 @@ const QuickActionsModerador = ({
 				<div className="text-2xl font-bold text-brand-700">
 					{citasPendientesPago}
 				</div>
-				<div className="text-sm text-brand-600">Verificar pagos</div>
+				<div className="text-base text-brand-600">Verificar pagos</div>
 			</a>
 			<a
 				href="/disponibilidad/pendientes"
@@ -32,7 +32,7 @@ const QuickActionsModerador = ({
 				<div className="text-2xl font-bold text-brand-700">
 					{disponibilidadPendiente}
 				</div>
-				<div className="text-sm text-brand-600">
+				<div className="text-base text-brand-600">
 					Aprobar disponibilidades
 				</div>
 			</a>
@@ -43,14 +43,14 @@ const QuickActionsModerador = ({
 				<div className="text-2xl font-bold text-brand-700">
 					{citasSinResultado}
 				</div>
-				<div className="text-sm text-brand-600">Subir resultados</div>
+				<div className="text-base text-brand-600">Subir resultados</div>
 			</a>
 			<a
 				href="/inventario"
 				className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
 			>
 				<div className="text-2xl font-bold text-brand-700">📦</div>
-				<div className="text-sm text-brand-600">Visualizar inventario</div>
+				<div className="text-base text-brand-600">Visualizar inventario</div>
 			</a>
 			{showAdminLink && (
 				<a
@@ -58,7 +58,7 @@ const QuickActionsModerador = ({
 					className="rounded-lg border border-brand-300 bg-paper p-3 text-center transition-colors hover:bg-brand-50"
 				>
 					<div className="text-2xl font-bold text-brand-700">+</div>
-					<div className="text-sm text-brand-600">
+					<div className="text-base text-brand-600">
 						Registrar especialista
 					</div>
 				</a>

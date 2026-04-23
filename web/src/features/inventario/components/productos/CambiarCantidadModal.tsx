@@ -102,7 +102,7 @@ export default function CambiarCantidadModal({
           {/* Stock Actual */}
           {producto && (
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
+              <p className="text-base text-blue-800">
                 <strong>Stock Actual:</strong> {Number(producto.stock_base_total)} {producto.unidad_consumo || "base"}
               </p>
             </div>
@@ -110,7 +110,7 @@ export default function CambiarCantidadModal({
 
           {/* Stock Nuevo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Cantidad Nueva *
             </label>
             <input
@@ -129,7 +129,7 @@ export default function CambiarCantidadModal({
               required
             />
             {formData.stock_nuevo && producto && (
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-base text-gray-600 mt-2">
                 Cambio: {Number(formData.stock_nuevo) - Number(producto.stock_base_total) > 0 ? "+" : ""}
                 {(Number(formData.stock_nuevo) - Number(producto.stock_base_total)).toFixed(4).replace(/\.?0+$/, "")} {producto.unidad_consumo || "base"}
               </p>
@@ -138,7 +138,7 @@ export default function CambiarCantidadModal({
 
           {/* Motivo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Motivo del Ajuste
             </label>
             <textarea
@@ -155,14 +155,14 @@ export default function CambiarCantidadModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-base">
               {error}
             </div>
           )}
 
           {/* Success */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-base">
               {success}
             </div>
           )}

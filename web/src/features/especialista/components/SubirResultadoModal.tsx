@@ -322,7 +322,7 @@ const SubirResultadoModal = ({
 						<h2 className="text-lg font-semibold text-brand-900">
 							Subir resultados
 						</h2>
-						<p className="text-xs text-brand-800 mt-1">
+						<p className="text-sm text-brand-800 mt-1">
 							{cita.paciente_nombre} {cita.paciente_apellido} -{" "}
 							{cita.eco_nombre}
 						</p>
@@ -342,7 +342,7 @@ const SubirResultadoModal = ({
 					{hasDicomOrZip && (
 						<div className="flex items-start gap-3 rounded-xl border border-purple-200 bg-purple-50 p-3">
 							<Stethoscope className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
-							<p className="text-sm text-purple-800">
+							<p className="text-base text-purple-800">
 								Los archivos <strong>DICOM (.dcm)</strong> y{" "}
 								<strong>ZIP</strong> se enviarán a <strong>Orthanc</strong> y
 								podrán visualizarse con el visor <strong>OHIF</strong>.
@@ -351,7 +351,7 @@ const SubirResultadoModal = ({
 					)}
 
 					<div>
-						<label className="block text-sm font-semibold text-brand-900 mb-2">
+						<label className="block text-base font-semibold text-brand-900 mb-2">
 							Seleccionar archivo(s) o carpeta
 						</label>
 						<div className="flex flex-wrap gap-2">
@@ -379,20 +379,20 @@ const SubirResultadoModal = ({
 							/>
 							<label
 								htmlFor="file-input"
-								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
+								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
 							>
 								<Upload className="h-4 w-4" />
 								Elegir archivos
 							</label>
 							<label
 								htmlFor="folder-input"
-								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
+								className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-brand-50 disabled:pointer-events-none disabled:opacity-50"
 							>
 								<FolderOpen className="h-4 w-4" />
 								Elegir carpeta
 							</label>
 						</div>
-						<p className="text-xs text-brand-800 mt-1">
+						<p className="text-sm text-brand-800 mt-1">
 							Imágenes (JPEG, PNG, WEBP, TIFF), PDF, DICOM (.dcm), Videos (MP4, AVI,
 							MOV, MKV), ZIP/RAR. La carpeta sube todos los archivos soportados sin
 							comprimir — suele ser más rápido para muchos DICOMs.
@@ -401,7 +401,7 @@ const SubirResultadoModal = ({
 
 					{selectedFiles.length > 0 && (
 						<div className="space-y-2">
-							<p className="text-sm font-semibold text-brand-900">
+							<p className="text-base font-semibold text-brand-900">
 								Archivos seleccionados ({selectedFiles.length})
 							</p>
 							<div className="space-y-3 max-h-96 overflow-y-auto">
@@ -422,10 +422,10 @@ const SubirResultadoModal = ({
 												<div className="flex items-center gap-3 flex-1 min-w-0">
 													{getFileIcon(file)}
 													<div className="flex-1 min-w-0">
-														<p className="text-sm font-medium text-brand-900 truncate">
+														<p className="text-base font-medium text-brand-900 truncate">
 															{file.name}
 														</p>
-														<p className="text-xs text-brand-800">
+														<p className="text-sm text-brand-800">
 															{formatFileSize(file.size)}
 														</p>
 													</div>
@@ -457,7 +457,7 @@ const SubirResultadoModal = ({
 											{isDicom && (
 												<div className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2">
 													<Stethoscope className="h-4 w-4 text-purple-600 flex-shrink-0" />
-													<p className="text-xs text-purple-700">
+													<p className="text-sm text-purple-700">
 														DICOM — se enviará a Orthanc y se visualizará con OHIF.
 													</p>
 												</div>
@@ -465,7 +465,7 @@ const SubirResultadoModal = ({
 											{isVideo && (
 												<div className="flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2">
 													<Video className="h-4 w-4 text-orange-600 flex-shrink-0" />
-													<p className="text-xs text-orange-700">
+													<p className="text-sm text-orange-700">
 														Video — se descargará o abrirá en el reproductor.
 													</p>
 												</div>
@@ -473,7 +473,7 @@ const SubirResultadoModal = ({
 											{isZip && isDicomFile(file) === false && (
 												<div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2">
 													<FolderArchive className="h-4 w-4 text-yellow-700 flex-shrink-0" />
-													<p className="text-xs text-yellow-700">
+													<p className="text-sm text-yellow-700">
 														ZIP — se extraerán los DICOM y se enviarán a Orthanc.
 													</p>
 												</div>
@@ -490,7 +490,7 @@ const SubirResultadoModal = ({
 				{uploadProgress !== null && (
 					<div className="border-t border-mist bg-paper px-6 py-3">
 						<div className="flex items-center justify-between gap-3 mb-2">
-							<span className="text-sm font-medium text-brand-800">
+							<span className="text-base font-medium text-brand-800">
 								{uploadProgress.loaded >= uploadProgress.total && uploadProgress.total > 0
 									? uploadProgress.phase === "orthanc"
 										? "Procesando en Orthanc…"
@@ -499,7 +499,7 @@ const SubirResultadoModal = ({
 										? "Subiendo a Orthanc…"
 										: "Subiendo archivos…"}
 							</span>
-							<span className="text-sm text-brand-600 tabular-nums">
+							<span className="text-base text-brand-600 tabular-nums">
 								{uploadProgress.percent}%
 							</span>
 						</div>
@@ -510,7 +510,7 @@ const SubirResultadoModal = ({
 							/>
 						</div>
 						{uploadProgress.total > 0 && (
-							<p className="text-xs text-brand-600 mt-1">
+							<p className="text-sm text-brand-600 mt-1">
 								{(uploadProgress.loaded / (1024 * 1024)).toFixed(1)} MB /{" "}
 								{(uploadProgress.total / (1024 * 1024)).toFixed(1)} MB
 							</p>
@@ -523,14 +523,14 @@ const SubirResultadoModal = ({
 					<button
 						onClick={handleClose}
 						disabled={isUploading}
-						className="rounded-lg border border-mist bg-paper px-4 py-2 text-sm font-medium text-brand-800 hover:bg-cloud disabled:opacity-50"
+						className="rounded-lg border border-mist bg-paper px-4 py-2 text-base font-medium text-brand-800 hover:bg-cloud disabled:opacity-50"
 					>
 						Cancelar
 					</button>
 					<button
 						onClick={handleUpload}
 						disabled={isUploading || selectedFiles.length === 0}
-						className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800 disabled:opacity-50 flex items-center gap-2"
+						className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800 disabled:opacity-50 flex items-center gap-2"
 					>
 						{isUploading ? (
 							<>

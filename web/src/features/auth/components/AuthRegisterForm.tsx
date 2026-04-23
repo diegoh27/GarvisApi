@@ -249,64 +249,64 @@ const AuthRegisterForm = () => {
 			<h1 className="text-2xl font-semibold text-emerald-700">Registrarse</h1>
 			<form className="mt-6 space-y-5" onSubmit={onSubmit}>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Nombre
 					</label>
 					<input
 						type="text"
 						placeholder="Nombre"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.nombre ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.nombre}
 						onChange={(event) => updateField("nombre", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.nombre && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.nombre}</p>
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Apellido
 					</label>
 					<input
 						type="text"
 						placeholder="Apellido"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.apellido ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.apellido}
 						onChange={(event) => updateField("apellido", event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 						maxLength={30}
 					/>
 					{fieldErrors.apellido && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.apellido}</p>
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Correo electrónico
 					</label>
 					<input
 						type="email"
 						placeholder="Correo"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.correo ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.correo ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.correo}
 						onChange={(event) => updateField("correo", event.target.value)}
 					/>
 					{fieldErrors.correo && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.correo}</p>
 					)}
 				</div>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						<label className="mb-1.5 block text-sm font-medium text-slate-500">
 							Fecha de nacimiento
 						</label>
 						<input
 							type="date"
 							placeholder="Fecha de nacimiento"
-							className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-emerald-200"
+							className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-emerald-200"
 								}`}
 							value={form.fecha_nacimiento}
 							max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
@@ -315,15 +315,15 @@ const AuthRegisterForm = () => {
 							}
 						/>
 						{fieldErrors.fecha_nacimiento && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.fecha_nacimiento}</p>
 						)}
 					</div>
 					<div>
-						<label className="mb-1.5 block text-xs font-medium text-slate-500">
+						<label className="mb-1.5 block text-sm font-medium text-slate-500">
 							Género
 						</label>
 						<select
-							className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.genero ? "border-red-500" : "border-emerald-200"
+							className={`h-11 w-full rounded-full border px-4 text-base text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.genero ? "border-red-500" : "border-emerald-200"
 								}`}
 							value={form.genero}
 							onChange={(event) => updateField("genero", event.target.value)}
@@ -333,17 +333,17 @@ const AuthRegisterForm = () => {
 							<option>Masculino</option>
 						</select>
 						{fieldErrors.genero && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.genero}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.genero}</p>
 						)}
 					</div>
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Cédula de identidad
 					</label>
 					<div className="flex gap-2">
 						<select
-							className="h-11 w-20 rounded-full border border-emerald-200 px-3 text-sm outline-none focus:border-emerald-500"
+							className="h-11 w-20 rounded-full border border-emerald-200 px-3 text-base outline-none focus:border-emerald-500"
 							value={form.tipo_rif}
 							onChange={(event) => updateField("tipo_rif", event.target.value)}
 						>
@@ -357,20 +357,20 @@ const AuthRegisterForm = () => {
 							<input
 								type="text"
 								placeholder="Cédula de identidad"
-								className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
+								className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.cedula ? "border-red-500" : "border-emerald-200"
 									}`}
 								value={form.cedula}
 								onChange={(event) => updateField("cedula", event.target.value.replace(/\D/g, ""))}
 								maxLength={8}
 							/>
 							{fieldErrors.cedula && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.cedula}</p>
 							)}
 						</div>
 					</div>
 				</div>
 				<div>
-					<label className="mb-1.5 flex items-center gap-1 text-xs font-medium text-slate-500">
+					<label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-slate-500">
 						RIF
 						<span
 							className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-amber-400 bg-amber-50 text-[9px] font-bold text-amber-600"
@@ -386,13 +386,13 @@ const AuthRegisterForm = () => {
 					<input
 						type="text"
 						placeholder="Ej: V12345678"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.rif ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.rif ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.rif}
 						onChange={(event) => updateField("rif", event.target.value.toUpperCase())}
 					/>
 					{fieldErrors.rif && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.rif}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.rif}</p>
 					)}
 					{form.rif && !fieldErrors.rif && (
 						<div className="mt-2 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2">
@@ -407,7 +407,7 @@ const AuthRegisterForm = () => {
 									clipRule="evenodd"
 								/>
 							</svg>
-							<p className="text-xs text-amber-800">
+							<p className="text-sm text-amber-800">
 								Por favor, verifica que tus datos sean correctos antes de continuar.
 							</p>
 						</div>
@@ -415,7 +415,7 @@ const AuthRegisterForm = () => {
 				</div>
 				<div>
 					<TelefonoField
-						label={<span className="text-xs font-medium text-slate-500">Teléfono</span>}
+						label={<span className="text-sm font-medium text-slate-500">Teléfono</span>}
 						value={`${form.telefono_prefijo}${form.telefono_numero}`}
 						onChange={(prefijo, numero) => {
 							setForm((prev) => ({ ...prev, telefono_prefijo: prefijo, telefono_numero: numero }));
@@ -426,33 +426,33 @@ const AuthRegisterForm = () => {
 						error={fieldErrors.telefono_numero}
 						required
 						placeholder="1234567"
-						inputClassName="h-11 rounded-full border-emerald-200 px-4 text-sm"
-						selectClassName="h-11 w-24 rounded-full border-emerald-200 px-3 text-sm"
+						inputClassName="h-11 rounded-full border-emerald-200 px-4 text-base"
+						selectClassName="h-11 w-24 rounded-full border-emerald-200 px-3 text-base"
 					/>
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Dirección <span className="text-slate-400 font-normal">(opcional)</span>
 					</label>
 					<input
 						type="text"
 						placeholder="Dirección"
-						className={`h-11 w-full rounded-full border px-4 text-sm outline-none focus:border-emerald-500 ${fieldErrors.direccion ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base outline-none focus:border-emerald-500 ${fieldErrors.direccion ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.direccion}
 						onChange={(event) => updateField("direccion", event.target.value)}
 						maxLength={200}
 					/>
 					{fieldErrors.direccion && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.direccion}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.direccion}</p>
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Tipo de sangre
 					</label>
 					<select
-						className={`h-11 w-full rounded-full border px-4 text-sm text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 text-base text-slate-500 outline-none focus:border-emerald-500 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.tipo_sangre}
 						onChange={(event) => updateField("tipo_sangre", event.target.value)}
@@ -465,61 +465,61 @@ const AuthRegisterForm = () => {
 						))}
 					</select>
 					{fieldErrors.tipo_sangre && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.tipo_sangre}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.tipo_sangre}</p>
 					)}
 				</div>
 				<div>
 					<textarea
 						placeholder="Descripción (padecimientos o notas)"
-						className={`min-h-[90px] w-full rounded-[24px] border px-4 py-3 text-sm outline-none focus:border-emerald-500 ${fieldErrors.descripcion ? "border-red-500" : "border-emerald-200"
+						className={`min-h-[90px] w-full rounded-[24px] border px-4 py-3 text-base outline-none focus:border-emerald-500 ${fieldErrors.descripcion ? "border-red-500" : "border-emerald-200"
 							}`}
 						value={form.descripcion}
 						onChange={(event) => updateField("descripcion", event.target.value)}
 						maxLength={500}
 					/>
 					{fieldErrors.descripcion && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.descripcion}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.descripcion}</p>
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Contraseña
 					</label>
 					<PasswordField
 						value={form.contrasena}
 						onChange={(value) => updateField("contrasena", value)}
 						placeholder="Contraseña"
-						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${fieldErrors.contrasena ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-base outline-none focus:border-emerald-500 ${fieldErrors.contrasena ? "border-red-500" : "border-emerald-200"
 							}`}
 					/>
 					{fieldErrors.contrasena && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.contrasena}</p>
 					)}
 				</div>
 				<div>
-					<label className="mb-1.5 block text-xs font-medium text-slate-500">
+					<label className="mb-1.5 block text-sm font-medium text-slate-500">
 						Confirmar contraseña
 					</label>
 					<PasswordField
 						value={form.confirmar_contrasena}
 						onChange={(value) => updateField("confirmar_contrasena", value)}
 						placeholder="Confirmar contraseña"
-						className={`h-11 w-full rounded-full border px-4 pr-10 text-sm outline-none focus:border-emerald-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-emerald-200"
+						className={`h-11 w-full rounded-full border px-4 pr-10 text-base outline-none focus:border-emerald-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-emerald-200"
 							}`}
 					/>
 					{fieldErrors.confirmar_contrasena && (
-						<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>
+						<p className="mt-1 text-sm text-red-500">{fieldErrors.confirmar_contrasena}</p>
 					)}
 				</div>
-				{localError ? <p className="text-sm text-rose-500">{localError}</p> : null}
-				{error ? <p className="text-sm text-rose-500">{error}</p> : null}
+				{localError ? <p className="text-base text-rose-500">{localError}</p> : null}
+				{error ? <p className="text-base text-rose-500">{error}</p> : null}
 				<button
-					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-70"
+					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-base font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-70"
 					disabled={isLoading}
 				>
 					{isLoading ? "Registrando..." : "Regístrate"}
 				</button>
-				<p className="text-sm text-slate-500">
+				<p className="text-base text-slate-500">
 					¿Ya tienes una cuenta?{" "}
 					<Link to="/auth/login" className="font-semibold text-emerald-700">
 						Inicia sesión aquí

@@ -21,20 +21,20 @@ export default function ProductosTable({
     {
       key: "id",
       header: "ID",
-      headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-      cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
+      headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      cellClassName: "px-3 md:px-6 py-5 text-base font-medium text-gray-400 whitespace-nowrap",
       render: (_row: Producto, index: number) =>
         `#INV-${String(startIndex + index + 1).padStart(4, "0")}`,
     },
     {
       key: "nombre",
       header: "PRODUCT NAME",
-      headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
       cellClassName: "px-3 md:px-6 py-5 whitespace-nowrap",
       render: (row: Producto) => (
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-gray-800">{row.nombre}</span>
-          <span className="text-xs text-gray-400 mt-0.5">
+          <span className="text-base font-bold text-gray-800">{row.nombre}</span>
+          <span className="text-base text-gray-400 mt-0.5">
             {row.presentacion ? `${row.presentacion} • ` : ""}
             1 {row.unidad_compra || "Caja"} = {Number(row.factor_conversion) || 1} {row.unidad_consumo || "u"}
           </span>
@@ -44,10 +44,10 @@ export default function ProductosTable({
     {
       key: "categoria",
       header: "CATEGORY",
-      headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
       cellClassName: "px-3 md:px-6 py-5 whitespace-nowrap",
       render: (row: Producto) => (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100/50">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-base font-medium bg-cyan-50 text-cyan-700 border border-cyan-100/50">
           {row.categoria || "General"}
         </span>
       ),
@@ -55,12 +55,12 @@ export default function ProductosTable({
     {
       key: "cant",
       header: "STOCK ACTUAL",
-      headerClassName: "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-      cellClassName: "px-3 md:px-6 py-5 text-sm text-center font-bold text-gray-800",
+      headerClassName: "px-3 md:px-6 py-4 text-center text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      cellClassName: "px-3 md:px-6 py-5 text-base text-center font-bold text-gray-800",
       render: (row: Producto) => (
         <span>
           {Math.floor(Number(row.stock_base_total))}{" "}
-          <span className="text-xs text-gray-400 font-normal">
+          <span className="text-base text-gray-400 font-normal">
             {row.unidad_consumo || "u"}
           </span>
         </span>
@@ -69,7 +69,7 @@ export default function ProductosTable({
     {
       key: "consumo",
       header: "CONSUMO",
-      headerClassName: "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0 min-w-[150px]",
+      headerClassName: "px-3 md:px-6 py-4 text-center text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0 min-w-[150px]",
       cellClassName: "px-3 md:px-6 py-5 text-center",
       render: (row: Producto) => {
         const consumo = Number(row.consumo_actual) || 0;
@@ -80,11 +80,11 @@ export default function ProductosTable({
 
         return (
           <div className="flex flex-col items-center gap-1.5">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-base text-gray-600">
               <span className="font-medium">
                 {consumo}{unidad} / {fConv}{unidad}
               </span>
-              <span className={`text-xs font-bold ${pct > 75 ? "text-red-500" : pct > 40 ? "text-amber-500" : "text-gray-400"}`}>
+              <span className={`text-base font-bold ${pct > 75 ? "text-red-500" : pct > 40 ? "text-amber-500" : "text-gray-400"}`}>
                 {pct}%
               </span>
             </div>
@@ -101,8 +101,8 @@ export default function ProductosTable({
     {
       key: "estado",
       header: "STATUS",
-      headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-      cellClassName: "px-3 md:px-6 py-5 whitespace-nowrap text-xs font-bold uppercase tracking-wide",
+      headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      cellClassName: "px-3 md:px-6 py-5 whitespace-nowrap text-base font-bold uppercase tracking-wide",
       render: (row: Producto) => {
         if (row.activo === 0) {
           return (
@@ -133,7 +133,7 @@ export default function ProductosTable({
     {
       key: "config",
       header: "CONFIG",
-      headerClassName: "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+      headerClassName: "px-3 md:px-6 py-4 text-center text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
       cellClassName: "px-3 md:px-6 py-5 text-center",
       render: (row: Producto) => (
         <div className="flex gap-1 md:gap-2 justify-center">
@@ -170,7 +170,7 @@ export default function ProductosTable({
           columns={columns}
           rows={productos}
           rowKey={(row) => row.id_producto}
-          tableClassName="w-full min-w-full text-sm"
+          tableClassName="w-full min-w-full text-base"
           theadClassName="bg-white border-b border-gray-100"
           getRowClassName={() => ("bg-white border-b border-gray-50 hover:bg-gray-50/50 transition-colors")}
           emptyState="No hay productos registrados"

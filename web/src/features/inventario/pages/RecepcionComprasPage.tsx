@@ -3,10 +3,12 @@ import { PackageOpen, Clock, FileText, CheckCircle2, XCircle, Printer, Package }
 import { useGetOrdenesCompraQuery, useCancelarOrdenCompraMutation } from "../api/ordenesCompraApi";
 import RecepcionCompraModal from "../components/RecepcionCompraModal";
 import type { OrdenCompra } from "../api/ordenesCompraApi";
+import { useGetDolarOficialQuery } from "../../dolar";
 import Swal from "sweetalert2";
 
 export default function RecepcionComprasPage() {
 	const { data: ordenes = [], isLoading } = useGetOrdenesCompraQuery();
+	const { data: dolarOficial } = useGetDolarOficialQuery();
 	const [selectedOrden, setSelectedOrden] = useState<OrdenCompra | null>(null);
 
 	// Filtros simples
@@ -42,11 +44,11 @@ export default function RecepcionComprasPage() {
 	const getEstadoBadge = (estado: string) => {
 		switch (estado) {
 			case "Pendiente":
-				return <span className="bg-paper text-amber-700 font-bold px-2.5 py-1 rounded-md text-xs border border-paper flex items-center gap-1 w-max"><Clock size={12} /> Stand By</span>;
+				return <span className="bg-paper text-amber-700 font-bold px-2.5 py-1 rounded-md text-base border border-paper flex items-center gap-1 w-max"><Clock size={12} /> Stand By</span>;
 			case "Recibida":
-				return <span className="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-md text-xs border border-emerald-200 flex items-center gap-1 w-max"><CheckCircle2 size={12} /> Recibida</span>;
+				return <span className="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-md text-base border border-emerald-200 flex items-center gap-1 w-max"><CheckCircle2 size={12} /> Recibida</span>;
 			case "Cancelada":
-				return <span className="bg-red-100 text-red-700 font-bold px-2.5 py-1 rounded-md text-xs border border-red-200 flex items-center gap-1 w-max"><XCircle size={12} /> Cancelada</span>;
+				return <span className="bg-red-100 text-red-700 font-bold px-2.5 py-1 rounded-md text-base border border-red-200 flex items-center gap-1 w-max"><XCircle size={12} /> Cancelada</span>;
 			default:
 				return <span>{estado}</span>;
 		}
@@ -62,7 +64,7 @@ export default function RecepcionComprasPage() {
 					</div>
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight text-slate-800">Recepción de Compras</h1>
-						<p className="text-sm font-medium text-slate-500">
+						<p className="text-base font-medium text-slate-500">
 							Procesa las Órdenes de Compra en Stand By para generar factura y registrar entrada.
 						</p>
 					</div>
@@ -73,7 +75,7 @@ export default function RecepcionComprasPage() {
 						<button
 							key={opt}
 							onClick={() => setFiltroEstado(opt as any)}
-							className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${filtroEstado === opt ? 'bg-white text-teal-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+							className={`px-4 py-2 text-base font-bold rounded-lg transition-all ${filtroEstado === opt ? 'bg-white text-teal-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
 						>
 							{opt}
 						</button>
@@ -84,8 +86,8 @@ export default function RecepcionComprasPage() {
 			{/* Tabla */}
 			<div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 				<div className="overflow-x-auto">
-					<table className="w-full text-sm text-left">
-						<thead className="bg-slate-50 text-xs text-slate-500 font-bold uppercase border-b border-slate-100">
+					<table className="w-full text-base text-left">
+						<thead className="bg-slate-50 text-base text-slate-500 font-bold uppercase border-b border-slate-100">
 							<tr>
 								<th className="px-5 py-4">N° Orden</th>
 								<th className="px-5 py-4">Proveedor</th>
@@ -120,19 +122,19 @@ export default function RecepcionComprasPage() {
 										{/* Columna Productos */}
 										<td className="px-5 py-4 text-center">
 											<div className="flex flex-col items-center gap-0.5">
-												<span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-bold">
+												<span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-base font-bold">
 													<Package size={11} />
 													{orden.num_productos ?? 0} líneas
 												</span>
 												{(orden.total_unidades ?? 0) > 0 && (
-													<span className="text-xs text-slate-400">{Number(orden.total_unidades).toFixed(0)} und</span>
+													<span className="text-base text-slate-400">{Number(orden.total_unidades).toFixed(0)} und</span>
 												)}
 											</div>
 										</td>
 										{/* Columna Total + IVA */}
 										<td className="px-5 py-4 text-right">
 											<p className="font-bold text-slate-800">${Number(orden.total_con_iva ?? Number(orden.total_estimado) * 1.16).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-											<p className="text-xs text-slate-400 font-medium">Base: ${Number(orden.total_estimado).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+											<p className="text-base text-slate-400 font-medium">Bs {(Number(orden.total_con_iva ?? Number(orden.total_estimado) * 1.16) * (Number(dolarOficial?.promedio) || 1)).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
 										</td>
 										{/* Columna Acciones */}
 										<td className="px-5 py-4">
@@ -141,13 +143,13 @@ export default function RecepcionComprasPage() {
 													<>
 														<button
 															onClick={() => setSelectedOrden(orden)}
-															className="bg-[#006965] hover:bg-teal-800 text-white px-4 py-2 font-bold rounded-lg text-xs transition-colors shadow-sm whitespace-nowrap"
+															className="bg-[#006965] hover:bg-teal-800 text-white px-4 py-2 font-bold rounded-lg text-base transition-colors shadow-sm whitespace-nowrap"
 														>
 															Procesar
 														</button>
 														<button
 															onClick={() => handleCancelar(orden.id_orden, orden.numero_orden)}
-															className="text-slate-400 hover:text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-xs font-bold transition-colors"
+															className="text-slate-400 hover:text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg text-base font-bold transition-colors"
 															title="Cancelar Orden"
 														>
 															<XCircle size={18} />
@@ -156,13 +158,13 @@ export default function RecepcionComprasPage() {
 												) : orden.estado === "Recibida" ? (
 													<button
 														onClick={() => setSelectedOrden(orden)}
-														className="text-teal-600 hover:text-teal-800 hover:bg-teal-50 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold"
+														className="text-teal-600 hover:text-teal-800 hover:bg-teal-50 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 text-base font-bold"
 														title="Ver / Imprimir Factura"
 													>
 														<Printer size={16} /> Factura
 													</button>
 												) : (
-													<span className="text-slate-400 text-xs font-medium">Cancelada</span>
+													<span className="text-slate-400 text-base font-medium">Cancelada</span>
 												)}
 											</div>
 										</td>

@@ -67,7 +67,7 @@ export default function CrearEnteModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Nombre Ente */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Nombre del Ente *
             </label>
             <input
@@ -84,14 +84,14 @@ export default function CrearEnteModal({
           {/* Error */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-base text-red-600">{error}</p>
             </div>
           )}
 
           {/* Success */}
           {success && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{success}</p>
+              <p className="text-base text-green-600">{success}</p>
             </div>
           )}
 

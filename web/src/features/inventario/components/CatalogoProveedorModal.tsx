@@ -187,7 +187,7 @@ export default function CatalogoProveedorModal({
 
 	if (!isOpen || !proveedor) return null;
 
-	const inputClassName = "w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white transition-colors placeholder-slate-400";
+	const inputClassName = "w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white transition-colors placeholder-slate-400";
 
 	return (
 		<div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -200,7 +200,7 @@ export default function CatalogoProveedorModal({
 						</div>
 						<div>
 							<h2 className="text-xl font-bold text-slate-800">Catálogo de {proveedor.nombre}</h2>
-							<p className="text-xs text-slate-500 font-medium">Asocia productos y establece su costo de compra</p>
+							<p className="text-base text-slate-500 font-medium">Asocia productos y establece su costo de compra</p>
 						</div>
 					</div>
 					<button
@@ -216,10 +216,10 @@ export default function CatalogoProveedorModal({
 					
 					{/* Panel Superior: Vincular Nuevo */}
 					<div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
-						<h3 className="text-sm font-bold text-slate-700 mb-4">Vincular Nuevo Producto</h3>
+						<h3 className="text-base font-bold text-slate-700 mb-4">Vincular Nuevo Producto</h3>
 						<form onSubmit={handleAsociar} className="flex flex-col md:flex-row gap-4 items-end">
 							<div className="flex-1 relative">
-								<label className="block text-xs font-semibold text-slate-500 mb-1">Producto</label>
+								<label className="block text-base font-semibold text-slate-500 mb-1">Producto</label>
 								<div className="relative">
 									<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 										<Search size={14} className="text-slate-400" />
@@ -244,7 +244,7 @@ export default function CatalogoProveedorModal({
 								{isDropdownOpen && (
 									<div className="absolute top-full left-0 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl max-h-56 overflow-y-auto z-20">
 										{productosFiltrados.length === 0 ? (
-											<div className="p-3 text-sm text-slate-500 text-center">No se encontraron productos</div>
+											<div className="p-3 text-base text-slate-500 text-center">No se encontraron productos</div>
 										) : (
 											productosFiltrados.map((p: any) => (
 												<button
@@ -255,7 +255,7 @@ export default function CatalogoProveedorModal({
 														setSearchQuery(p.nombre);
 														setIsDropdownOpen(false);
 													}}
-													className="w-full text-left px-4 py-2.5 text-sm hover:bg-teal-50 hover:text-[#006965] border-b border-slate-100 last:border-0 transition-colors font-medium text-slate-700"
+													className="w-full text-left px-4 py-2.5 text-base hover:bg-teal-50 hover:text-[#006965] border-b border-slate-100 last:border-0 transition-colors font-medium text-slate-700"
 												>
 													{p.nombre}
 												</button>
@@ -266,7 +266,7 @@ export default function CatalogoProveedorModal({
 							</div>
 							
 							<div className="w-full md:w-40">
-								<label className="block text-xs font-semibold text-slate-500 mb-1">Costo (USD)</label>
+								<label className="block text-base font-semibold text-slate-500 mb-1">Costo (USD)</label>
 								<div className="relative">
 									<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 										<DollarSign size={14} className="text-slate-400" />
@@ -285,9 +285,9 @@ export default function CatalogoProveedorModal({
 							</div>
 
 							<div className="w-full md:w-40">
-								<label className="block text-xs font-semibold text-slate-500 mb-1">Costo (Bs)</label>
+								<label className="block text-base font-semibold text-slate-500 mb-1">Costo (Bs)</label>
 								<div className="relative">
-									<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-sm font-medium">
+									<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-base font-medium">
 										Bs
 									</div>
 									<input
@@ -306,7 +306,7 @@ export default function CatalogoProveedorModal({
 							<button
 								type="submit"
 								disabled={isAsociando || !selectedProducto}
-								className="w-full md:w-auto px-6 py-2 bg-[#006965] hover:bg-teal-800 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 h-[38px] flex items-center justify-center gap-2"
+								className="w-full md:w-auto px-6 py-2 bg-[#006965] hover:bg-teal-800 text-white text-base font-semibold rounded-lg transition-colors disabled:opacity-50 h-[38px] flex items-center justify-center gap-2"
 							>
 								{isAsociando ? "Vinculando..." : "Vincular"}
 							</button>
@@ -316,20 +316,20 @@ export default function CatalogoProveedorModal({
 					{/* Lista de asociados */}
 					<div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 						<div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-gray-50/50">
-							<h3 className="text-sm font-bold text-slate-700">Productos Vinculados ({catalogo.length})</h3>
+							<h3 className="text-base font-bold text-slate-700">Productos Vinculados ({catalogo.length})</h3>
 						</div>
 
 						{isLoadingCatalogo ? (
-							<div className="p-8 text-center text-slate-500 text-sm">Cargando catálogo...</div>
+							<div className="p-8 text-center text-slate-500 text-base">Cargando catálogo...</div>
 						) : catalogo.length === 0 ? (
 							<div className="p-10 text-center flex flex-col items-center gap-2 text-slate-500">
 								<PackagePlus size={32} className="text-slate-300" />
-								<p className="text-sm font-medium">Este proveedor aún no tiene productos vinculados.</p>
+								<p className="text-base font-medium">Este proveedor aún no tiene productos vinculados.</p>
 							</div>
 						) : (
 							<div className="overflow-x-auto">
-								<table className="w-full text-sm text-left">
-									<thead className="bg-slate-50 text-xs text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider">
+								<table className="w-full text-base text-left">
+									<thead className="bg-slate-50 text-base text-slate-500 font-semibold border-b border-slate-200 uppercase tracking-wider">
 										<tr>
 											<th className="px-6 py-3">Producto</th>
 											<th className="px-6 py-3">Categoría</th>
@@ -344,7 +344,7 @@ export default function CatalogoProveedorModal({
 												<td className="px-6 py-3.5 font-semibold text-slate-800">
 													{item.producto_nombre}
 												</td>
-												<td className="px-6 py-3.5 text-slate-500 text-xs font-medium">
+												<td className="px-6 py-3.5 text-slate-500 text-base font-medium">
 													{item.producto_categoria || 'N/A'}
 												</td>
 												<td className="px-6 py-3.5">
@@ -353,7 +353,7 @@ export default function CatalogoProveedorModal({
 															<input
 																type="number"
 																step="any"
-																className="w-24 px-2 py-1 text-sm border-2 border-teal-500 rounded focus:outline-none"
+																className="w-24 px-2 py-1 text-base border-2 border-teal-500 rounded focus:outline-none"
 																value={editingPrecio}
 																onChange={(e) => setEditingPrecio(e.target.value)}
 																autoFocus
@@ -371,7 +371,7 @@ export default function CatalogoProveedorModal({
 														</span>
 													)}
 												</td>
-												<td className="px-6 py-3.5 text-slate-400 text-xs">
+												<td className="px-6 py-3.5 text-slate-400 text-base">
 													{new Date(item.fecha_actualizacion).toLocaleString()}
 												</td>
 												<td className="px-6 py-3.5 text-right flex items-center justify-end gap-3">

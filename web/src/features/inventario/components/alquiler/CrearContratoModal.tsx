@@ -167,13 +167,13 @@ export default function CrearContratoModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm">
+            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-base">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Nombre *
             </label>
             <input
@@ -188,7 +188,7 @@ export default function CrearContratoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Descripción
             </label>
             <input
@@ -203,7 +203,7 @@ export default function CrearContratoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Período *
             </label>
             <select
@@ -221,7 +221,7 @@ export default function CrearContratoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Monto ($) *
             </label>
             <input
@@ -238,7 +238,7 @@ export default function CrearContratoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Vencimiento *
             </label>
             <input
@@ -251,7 +251,7 @@ export default function CrearContratoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Estado
             </label>
             <select

@@ -70,7 +70,7 @@ export default function CrearProveedorModal({
   if (!isOpen) return null;
 
   const inputClassName =
-    "w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 transition-shadow";
+    "w-full px-4 py-3 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 placeholder-gray-400 transition-shadow";
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -79,13 +79,13 @@ export default function CrearProveedorModal({
         <div className="p-6 pb-2">
           <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-bold uppercase tracking-widest text-teal-600">
+              <span className="text-base font-bold uppercase tracking-widest text-teal-600">
                 Nuevo Registro
               </span>
               <h2 className="text-xl font-bold text-gray-900 mt-1">
                 Agregar Proveedor
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-base text-gray-500 mt-1">
                 Complete la información del socio comercial para registrarlo en el sistema.
               </p>
             </div>
@@ -102,7 +102,7 @@ export default function CrearProveedorModal({
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-4 space-y-5">
           {/* Razón Social */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
               Razón Social *
             </label>
             <input
@@ -121,7 +121,7 @@ export default function CrearProveedorModal({
           {/* RIF + Teléfono */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 RIF
               </label>
               <input
@@ -136,7 +136,7 @@ export default function CrearProveedorModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Teléfono
               </label>
               <input
@@ -155,7 +155,7 @@ export default function CrearProveedorModal({
           {/* Correo + Nombre de Contacto */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Correo Electrónico
               </label>
               <input
@@ -170,7 +170,7 @@ export default function CrearProveedorModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                 Nombre de Contacto
               </label>
               <input
@@ -188,7 +188,7 @@ export default function CrearProveedorModal({
 
           {/* Dirección */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
               Dirección
             </label>
             <input
@@ -205,14 +205,14 @@ export default function CrearProveedorModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-base">
               {error}
             </div>
           )}
 
           {/* Success */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-base">
               {success}
             </div>
           )}
@@ -223,14 +223,14 @@ export default function CrearProveedorModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 text-base font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm disabled:bg-teal-300 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-teal-600 text-white rounded-lg text-base font-medium hover:bg-teal-700 transition-colors shadow-sm disabled:bg-teal-300 disabled:cursor-not-allowed"
             >
               {isLoading ? "Guardando..." : "Guardar Proveedor"}
             </button>

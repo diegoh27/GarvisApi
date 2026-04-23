@@ -30,7 +30,7 @@ const SobreNosotrosSection = () => {
 			<div className="mx-auto w-full max-w-7xl">
 				{/* Título */}
 				<div className="mb-10 overflow-visible text-center md:mb-14">
-					<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+					<p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 						Conócenos
 					</p>
 					<div className="overflow-visible py-1">
@@ -41,7 +41,7 @@ const SobreNosotrosSection = () => {
 							Sobre nosotros
 						</h2>
 					</div>
-					<p className="mx-auto mt-3 max-w-2xl text-sm text-[#4A5568] md:text-base">
+					<p className="mx-auto mt-3 max-w-2xl text-base text-[#4A5568] md:text-base">
 						Somos una unidad especializada en ecografía que combina experiencia médica,
 						tecnología avanzada y un trato humano cercano para cuidar de tu salud.
 					</p>
@@ -63,14 +63,14 @@ const SobreNosotrosSection = () => {
 							que nos permiten obtener resultados confiables en el menor tiempo posible.
 						</p>
 
-						<div className="mt-4 grid gap-4 text-sm text-[#4A5568] md:grid-cols-2">
+						<div className="mt-4 grid gap-4 text-base text-[#4A5568] md:grid-cols-2">
 							<div className="flex items-start gap-3 rounded-xl bg-white/60 p-4 shadow-sm">
 								<span className="mt-1 text-lg">✔</span>
 								<div>
-									<p className="text-sm font-semibold text-[#1C837F]">
+									<p className="text-base font-semibold text-[#1C837F]">
 										Acompañamiento en todo el proceso
 									</p>
-									<p className="mt-1 text-xs md:text-sm">
+									<p className="mt-1 text-sm md:text-base">
 										Desde la cita hasta la entrega del informe, te guiamos con un trato cercano.
 									</p>
 								</div>
@@ -78,10 +78,10 @@ const SobreNosotrosSection = () => {
 							<div className="flex items-start gap-3 rounded-xl bg-white/60 p-4 shadow-sm">
 								<span className="mt-1 text-lg">✔</span>
 								<div>
-									<p className="text-sm font-semibold text-[#1C837F]">
+									<p className="text-base font-semibold text-[#1C837F]">
 										Protocolos claros y organizados
 									</p>
-									<p className="mt-1 text-xs md:text-sm">
+									<p className="mt-1 text-sm md:text-base">
 										Agendamiento sencillo, atención puntual y resultados en tiempos definidos.
 									</p>
 								</div>
@@ -94,38 +94,38 @@ const SobreNosotrosSection = () => {
 						<div className="grid gap-6 md:grid-cols-3">
 							<div className="text-center">
 								<div className="text-3xl font-bold text-[#1C837F] md:text-4xl">+10</div>
-								<div className="mt-2 text-sm font-medium text-[#4A5568] md:text-base">
+								<div className="mt-2 text-base font-medium text-[#4A5568] md:text-base">
 									Años de experiencia
 								</div>
-								<p className="mt-1 text-xs text-[#718096]">
+								<p className="mt-1 text-sm text-[#718096]">
 									en ecografía y diagnóstico por imágenes.
 								</p>
 							</div>
 							<div className="hidden h-16 w-px bg-gradient-to-b from-[#E0F2F1] via-[#C4E4DF] to-[#E0F2F1] md:block" />
 							<div className="text-center md:col-span-1">
 								<div className="text-3xl font-bold text-[#1C837F] md:text-4xl">100%</div>
-								<div className="mt-2 text-sm font-medium text-[#4A5568] md:text-base">
+								<div className="mt-2 text-base font-medium text-[#4A5568] md:text-base">
 									Equipos certificados
 								</div>
-								<p className="mt-1 text-xs text-[#718096]">
+								<p className="mt-1 text-sm text-[#718096]">
 									con estándares internacionales de calidad.
 								</p>
 							</div>
 							<div className="hidden h-16 w-px bg-gradient-to-b from-[#E0F2F1] via-[#C4E4DF] to-[#E0F2F1] md:block" />
 							<div className="text-center">
 								<div className="text-3xl font-bold text-[#1C837F] md:text-4xl">24/7</div>
-								<div className="mt-2 text-sm font-medium text-[#4A5568] md:text-base">
+								<div className="mt-2 text-base font-medium text-[#4A5568] md:text-base">
 									Atención disponible
 								</div>
-								<p className="mt-1 text-xs text-[#718096]">
+								<p className="mt-1 text-sm text-[#718096]">
 									para responder tus dudas y gestionar tus estudios.
 								</p>
 							</div>
 						</div>
 
-						<div className="mt-6 rounded-2xl bg-[#E0F2F1]/70 p-4 text-sm text-[#2F4F4F]">
+						<div className="mt-6 rounded-2xl bg-[#E0F2F1]/70 p-4 text-base text-[#2F4F4F]">
 							<p className="font-semibold text-[#1C837F]">Nuestra misión</p>
-							<p className="mt-1 text-xs md:text-sm">
+							<p className="mt-1 text-sm md:text-base">
 								Brindar diagnósticos confiables y oportunos, con calidez humana y una experiencia de
 								atención clara, cómoda y segura para cada paciente.
 							</p>
@@ -144,7 +144,7 @@ const SobreNosotrosSection = () => {
 								{valor.icono}
 							</div>
 							<h3 className="mb-2 text-lg font-bold text-[#1C837F]">{valor.titulo}</h3>
-							<p className="text-sm leading-relaxed text-[#4A5568]">{valor.descripcion}</p>
+							<p className="text-base leading-relaxed text-[#4A5568]">{valor.descripcion}</p>
 						</div>
 					))}
 				</div>

@@ -98,13 +98,13 @@ const EcosList = () => {
 		<div className="space-y-8">
 			<div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
 				<div className="max-w-2xl space-y-2">
-					<span className="text-xs font-bold uppercase tracking-widest text-brand-800">
+					<span className="text-sm font-bold uppercase tracking-widest text-brand-800">
 						Gestión clínica
 					</span>
 					<h2 className="text-3xl font-bold tracking-tight text-brand-900 sm:text-4xl">
 						Catálogo de ecos
 					</h2>
-					<p className="text-sm leading-relaxed text-brand-900/70">
+					<p className="text-base leading-relaxed text-brand-900/70">
 						Administra los estudios ecográficos disponibles, precios y duraciones para la
 						agenda de pacientes.
 					</p>
@@ -112,7 +112,7 @@ const EcosList = () => {
 				<button
 					type="button"
 					onClick={handleNew}
-					className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3.5 text-sm font-bold text-paper shadow-lg shadow-brand-900/10 transition hover:bg-brand-800"
+					className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3.5 text-base font-bold text-paper shadow-lg shadow-brand-900/10 transition hover:bg-brand-800"
 				>
 					<PlusCircle className="h-5 w-5" aria-hidden />
 					Nuevo eco
@@ -133,7 +133,7 @@ const EcosList = () => {
 						<h3 className="mb-6 text-lg font-bold text-brand-900">Resumen del catálogo</h3>
 						<div className="flex flex-col gap-6 sm:flex-row sm:items-stretch sm:gap-0">
 							<div className="flex-1">
-								<p className="mb-1 text-sm text-brand-900/60">Total estudios</p>
+								<p className="mb-1 text-base text-brand-900/60">Total estudios</p>
 								<p className="text-3xl font-extrabold text-brand-800">{totalEcos}</p>
 							</div>
 							<div
@@ -141,14 +141,14 @@ const EcosList = () => {
 								aria-hidden
 							/>
 							<div className="flex-1 sm:pl-8">
-								<p className="mb-1 text-sm text-brand-900/60">Catálogo activo</p>
+								<p className="mb-1 text-base text-brand-900/60">Catálogo activo</p>
 								<p className="text-3xl font-extrabold text-brand-800">{ecosActivos}</p>
 							</div>
 						</div>
 					</div>
 
 					<div className="space-y-4">
-						<p className="text-xs font-bold uppercase tracking-widest text-brand-900/45">
+						<p className="text-sm font-bold uppercase tracking-widest text-brand-900/45">
 							Lista de estudios
 						</p>
 						<div
@@ -197,7 +197,7 @@ const EcosList = () => {
 											</div>
 											<div className="min-w-0">
 												<p className="font-bold text-brand-900">{eco.nombre}</p>
-												<p className="text-xs font-medium text-brand-900/50">{eco.etiqueta || "Sin categoría"}</p>
+												<p className="text-sm font-medium text-brand-900/50">{eco.etiqueta || "Sin categoría"}</p>
 											</div>
 										</div>
 										<div className="flex items-center gap-2 border-t border-brand-200/50 pt-3 text-brand-800 md:border-0 md:pt-0">
@@ -205,7 +205,7 @@ const EcosList = () => {
 												className="h-4 w-4 shrink-0 text-brand-800/50"
 												aria-hidden
 											/>
-											<span className="text-sm font-medium">{eco.duracion_min} min</span>
+											<span className="text-base font-medium">{eco.duracion_min} min</span>
 										</div>
 										<div className="border-t border-brand-200/50 pt-2 font-bold text-brand-900 md:border-0 md:pt-0">
 											{formatPrecio(eco.precio)}
@@ -277,7 +277,7 @@ const EcosList = () => {
 								>
 									{editingEco ? "Editar eco" : "Nuevo eco"}
 								</h2>
-								<p className="mt-1 text-sm leading-relaxed text-brand-900/55">
+								<p className="mt-1 text-base leading-relaxed text-brand-900/55">
 									{editingEco
 										? "Actualiza nombre, precio, duración o estado del estudio."
 										: "Completa los datos del estudio para el catálogo y la agenda."}

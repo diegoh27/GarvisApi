@@ -15,7 +15,7 @@ const NextAppointmentCard = ({ appointment }: NextAppointmentCardProps) => {
 	return (
 		<div className="rounded-2xl bg-paper p-5 shadow-sm">
 			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold text-brand-900">Próxima cita</h3>
+				<h3 className="text-base font-semibold text-brand-900">Próxima cita</h3>
 				{appointment ? (
 					<span className="text-[11px] font-semibold text-brand-800">
 						{appointment.dateLabel}
@@ -28,8 +28,8 @@ const NextAppointmentCard = ({ appointment }: NextAppointmentCardProps) => {
 						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-cloud text-brand-800">
 							{"+"}
 						</div>
-						<div className="space-y-1 text-xs text-brand-800">
-							<p className="text-sm font-semibold text-brand-900">
+						<div className="space-y-1 text-sm text-brand-800">
+							<p className="text-base font-semibold text-brand-900">
 								{appointment.patientName}
 							</p>
 							<p>{appointment.study}</p>
@@ -46,7 +46,7 @@ const NextAppointmentCard = ({ appointment }: NextAppointmentCardProps) => {
 					</div>
 				</>
 			) : (
-				<p className="mt-4 text-xs text-brand-800">No hay citas próximas.</p>
+				<p className="mt-4 text-sm text-brand-800">No hay citas próximas.</p>
 			)}
 		</div>
 	);

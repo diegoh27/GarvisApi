@@ -174,7 +174,7 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 						</div>
 						<div>
 							<h2 className="text-xl font-black text-slate-800">Procesar Recepción de Compra</h2>
-							<p className="text-sm font-medium text-slate-500 flex items-center gap-2">
+							<p className="text-base font-medium text-slate-500 flex items-center gap-2">
 								<span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">{orden.numero_orden}</span>
 								<span>• {orden.proveedor_nombre}</span>
 							</p>
@@ -195,7 +195,7 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 					{/* Cabecera / Info de Factura */}
 					<div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-6">
 						<div className="flex-1">
-							<label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+							<label className="text-base font-bold text-slate-500 uppercase tracking-wider mb-2 block">
 								Nº de Factura del Proveedor <span className="text-red-500">*</span>
 							</label>
 							<div className="relative">
@@ -206,20 +206,20 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 									type="text" 
 									value={factura}
 									onChange={(e) => setFactura(e.target.value)}
-									className="w-full border border-slate-200 rounded-lg bg-slate-50 pl-10 pr-4 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all font-bold text-slate-800"
+									className="w-full border border-slate-200 rounded-lg bg-slate-50 pl-10 pr-4 py-2.5 text-base outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all font-bold text-slate-800"
 									placeholder="F-000000"
 								/>
 							</div>
 						</div>
 						<div className="flex-1">
-							<label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+							<label className="text-base font-bold text-slate-500 uppercase tracking-wider mb-2 block">
 								Fecha de Recepción
 							</label>
 							<input 
 								type="date"
 								value={fecha}
 								onChange={(e) => setFecha(e.target.value)}
-								className="w-full border border-slate-200 rounded-lg bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-teal-500 transition-all text-slate-700"
+								className="w-full border border-slate-200 rounded-lg bg-slate-50 px-4 py-2.5 text-base outline-none focus:border-teal-500 transition-all text-slate-700"
 							/>
 						</div>
 					</div>
@@ -227,12 +227,12 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 					{/* Tabla Editable */}
 					<div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
 						<div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
-							<h3 className="font-bold text-slate-700 text-sm">Validación de Items (Pre-cargados)</h3>
+							<h3 className="font-bold text-slate-700 text-base">Validación de Items (Pre-cargados)</h3>
 						</div>
 						
 						<div className="overflow-x-auto">
-							<table className="w-full text-sm text-left">
-								<thead className="bg-white text-xs text-slate-400 font-bold uppercase border-b border-slate-100">
+							<table className="w-full text-base text-left">
+								<thead className="bg-white text-base text-slate-400 font-bold uppercase border-b border-slate-100">
 									<tr>
 										<th className="px-4 py-4">Producto</th>
 										<th className="px-4 py-4 w-24">Und</th>
@@ -257,8 +257,8 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 											<tr key={d.id_producto} className="hover:bg-slate-50 transition-colors">
 												<td className="px-4 py-4">
 													<p className="font-bold text-slate-700">{d.producto_nombre}</p>
-													{d.presentacion && <p className="text-xs text-slate-400 mt-0.5">{d.presentacion}</p>}
-													<p className="text-xs text-teal-600 font-semibold mt-0.5">
+													{d.presentacion && <p className="text-base text-slate-400 mt-0.5">{d.presentacion}</p>}
+													<p className="text-base text-teal-600 font-semibold mt-0.5">
 														{pluralizarUnidad(d.unidad_compra || "", currentLine.cantidad)}
 													</p>
 												</td>
@@ -274,7 +274,7 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 												{/* Precio USD — editable */}
 												<td className="px-4 py-4">
 													<div className="flex items-center">
-														<span className="text-slate-400 bg-slate-100 border border-r-0 border-slate-300 rounded-l px-2 py-2 font-bold text-xs">$</span>
+														<span className="text-slate-400 bg-slate-100 border border-r-0 border-slate-300 rounded-l px-2 py-2 font-bold text-base">$</span>
 														<input 
 															type="number"
 															step="0.01"
@@ -289,52 +289,52 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 												<td className="px-4 py-4">
 													{tasaBcv > 0 ? (
 														<div className="flex items-center">
-															<span className="text-slate-400 bg-amber-50 border border-r-0 border-amber-200 rounded-l px-2 py-2 font-bold text-xs text-amber-600">Bs</span>
+															<span className="text-slate-400 bg-amber-50 border border-r-0 border-amber-200 rounded-l px-2 py-2 font-bold text-base text-amber-600">Bs</span>
 															<input
 																type="number"
 																step="0.01"
 																min="0"
 																value={parseFloat(precioBs.toFixed(2))}
 																onChange={(e) => handleBsPriceChange(i, e.target.value)}
-																className="w-full border border-amber-200 rounded-r px-2 py-2 font-bold text-amber-700 text-right text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
+																className="w-full border border-amber-200 rounded-r px-2 py-2 font-bold text-amber-700 text-right text-base outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
 															/>
 														</div>
 													) : (
-														<span className="text-xs text-slate-400 italic">Sin tasa BCV</span>
+														<span className="text-base text-slate-400 italic">Sin tasa BCV</span>
 													)}
 												</td>
 												{/* Variación USD únicamente */}
 												<td className="px-4 py-4 text-center">
 													{diff > 0 ? (
-														<span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+														<span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-base font-bold flex items-center justify-center gap-1">
 															<TrendingUp size={11} /> +${diff.toFixed(2)}
 														</span>
 													) : diff < 0 ? (
-														<span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+														<span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg text-base font-bold flex items-center justify-center gap-1">
 															<TrendingDown size={11} /> -${Math.abs(diff).toFixed(2)}
 														</span>
 													) : (
-														<span className="text-slate-400 font-medium text-xs">Sin cambios</span>
+														<span className="text-slate-400 font-medium text-base">Sin cambios</span>
 													)}
 												</td>
 												{/* Variación Bs únicamente */}
 												<td className="px-4 py-4 text-center">
 													{diff > 0 && tasaBcv > 0 ? (
-														<span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+														<span className="bg-red-100 text-red-600 px-2 py-1 rounded-lg text-base font-bold flex items-center justify-center gap-1">
 															<TrendingUp size={11} /> +Bs {(diff * tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
 														</span>
 													) : diff < 0 && tasaBcv > 0 ? (
-														<span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg text-xs font-bold flex items-center justify-center gap-1">
+														<span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-lg text-base font-bold flex items-center justify-center gap-1">
 															<TrendingDown size={11} /> -Bs {(Math.abs(diff) * tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
 														</span>
 													) : (
-														<span className="text-slate-400 font-medium text-xs">Sin cambios</span>
+														<span className="text-slate-400 font-medium text-base">Sin cambios</span>
 													)}
 												</td>
 												{/* Subtotal */}
 												<td className="px-4 py-4 text-right">
 													<p className="font-black text-slate-800">${sumUsd.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-													{tasaBcv > 0 && <p className="text-xs text-amber-600 font-semibold">Bs {sumBs.toLocaleString("es-VE", { minimumFractionDigits: 2 })}</p>}
+													{tasaBcv > 0 && <p className="text-base text-amber-600 font-semibold">Bs {sumBs.toLocaleString("es-VE", { minimumFractionDigits: 2 })}</p>}
 												</td>
 											</tr>
 										)
@@ -344,7 +344,7 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 						</div>
 						
 						{/* Info Banner */}
-						<div className="bg-amber-50 border-t border-amber-100 p-4 flex gap-3 text-amber-800 text-sm">
+						<div className="bg-amber-50 border-t border-amber-100 p-4 flex gap-3 text-amber-800 text-base">
 							<AlertCircle size={20} className="shrink-0" />
 							<p>Verifique los precios y cantidades contra la Factura entregada por el proveedor. Si un precio se edita, se <strong>actualizará automáticamente</strong> el Catálogo de Costos permanente del sistema.</p>
 						</div>
@@ -358,14 +358,14 @@ export default function RecepcionCompraModal({ orden, onClose }: RecepcionCompra
 					{/* Totales */}
 					<div className="flex items-center gap-6">
 						<div>
-							<p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Subtotal</p>
+							<p className="text-base font-bold text-slate-400 uppercase tracking-widest mb-1">Subtotal</p>
 							<p className="text-lg font-bold text-slate-600">${subtotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
 						</div>
 						<div>
-							<p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total (+IVA)</p>
+							<p className="text-base font-bold text-slate-400 uppercase tracking-widest mb-1">Total (+IVA)</p>
 							<div className="flex items-center gap-2">
 								<p className="text-2xl font-black text-[#006965]">${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
-								{tasaBcv > 0 && <p className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">Bs {(total * tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</p>}
+								{tasaBcv > 0 && <p className="text-base font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">Bs {(total * tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}</p>}
 							</div>
 						</div>
 					</div>

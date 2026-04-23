@@ -156,13 +156,13 @@ export default function CrearEmpleadoModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm">
+            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-base">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Nombre *
             </label>
             <input
@@ -177,7 +177,7 @@ export default function CrearEmpleadoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Apellido
             </label>
             <input
@@ -206,7 +206,7 @@ export default function CrearEmpleadoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Cargo *
             </label>
             <input
@@ -221,7 +221,7 @@ export default function CrearEmpleadoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Período
             </label>
             <select
@@ -239,7 +239,7 @@ export default function CrearEmpleadoModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Sueldo *
             </label>
             <input

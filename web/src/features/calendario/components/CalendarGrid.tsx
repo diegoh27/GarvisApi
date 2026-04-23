@@ -226,11 +226,11 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-dashed border-slate-300 bg-white p-3 text-left shadow-sm leading-snug">
 						<div className="flex items-start justify-between gap-2">
-							<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
+							<span className="text-base font-semibold text-slate-800">{rangeText}</span>
 							<Lightbulb className="h-4 w-4 shrink-0 text-teal-600/70" />
 						</div>
-						<p className="mt-2 text-sm font-medium text-slate-700">{b.eco_nombre ?? "Vista previa"}</p>
-						<p className="mt-0.5 text-sm text-slate-500">{sub}</p>
+						<p className="mt-2 text-base font-medium text-slate-700">{b.eco_nombre ?? "Vista previa"}</p>
+						<p className="mt-0.5 text-base text-slate-500">{sub}</p>
 					</div>
 				);
 			}
@@ -239,11 +239,11 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-dashed border-amber-300 bg-amber-50/80 p-3 text-left leading-snug shadow-sm">
 						<div className="flex items-start justify-between gap-2">
-							<span className="text-sm font-semibold text-slate-800">{rangeText}</span>
+							<span className="text-base font-semibold text-slate-800">{rangeText}</span>
 							<Lightbulb className="h-4 w-4 shrink-0 text-amber-600" />
 						</div>
-						<p className="mt-2 text-sm font-medium text-slate-800">{b.eco_nombre ?? "Eco"}</p>
-						<p className="mt-0.5 text-sm font-medium text-amber-800">En espera de aprobación</p>
+						<p className="mt-2 text-base font-medium text-slate-800">{b.eco_nombre ?? "Eco"}</p>
+						<p className="mt-0.5 text-base font-medium text-amber-800">En espera de aprobación</p>
 					</div>
 				);
 			}
@@ -252,13 +252,13 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-[#F0F9F9] border-l-[6px] border-l-teal-700 p-3 text-left shadow-sm leading-snug">
 						<div className="flex items-start justify-between gap-2">
-							<span className="text-sm font-semibold leading-snug text-slate-900">{rangeText}</span>
+							<span className="text-base font-semibold leading-snug text-slate-900">{rangeText}</span>
 							<Check className="h-4 w-4 shrink-0 text-teal-700" strokeWidth={2.5} />
 						</div>
-						<p className="mt-2 text-sm font-medium leading-snug text-slate-600">
+						<p className="mt-2 text-base font-medium leading-snug text-slate-600">
 							{b.eco_nombre ?? "Eco"}
 						</p>
-						<p className="mt-1 text-sm font-medium leading-snug text-teal-600">Aprobada</p>
+						<p className="mt-1 text-base font-medium leading-snug text-teal-600">Aprobada</p>
 					</div>
 				);
 			}
@@ -268,11 +268,11 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg bg-[#006965] border border-[#006965] p-3 text-left shadow-sm leading-snug text-white">
 						<div className="flex items-start justify-between gap-2">
-							<span className="text-sm font-bold leading-snug">{rangeText}</span>
+							<span className="text-base font-bold leading-snug">{rangeText}</span>
 							<User className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2.5} />
 						</div>
-						<p className="mt-2 text-sm font-semibold leading-snug truncate">{pacienteStr}</p>
-						<p className="mt-1 text-sm font-medium text-white/80 truncate">{b.eco_nombre ?? "Cita"}</p>
+						<p className="mt-2 text-base font-semibold leading-snug truncate">{pacienteStr}</p>
+						<p className="mt-1 text-base font-medium text-white/80 truncate">{b.eco_nombre ?? "Cita"}</p>
 					</div>
 				);
 			}
@@ -281,10 +281,10 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-red-50 border-l-[6px] border-l-red-500 p-3 text-left shadow-sm leading-snug">
 						<div className="flex items-start justify-between gap-1">
-							<span className="text-sm font-semibold text-red-900">{rangeText}</span>
+							<span className="text-base font-semibold text-red-900">{rangeText}</span>
 							<AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
 						</div>
-						<p className="mt-1 text-sm font-medium text-red-950">Rechazada</p>
+						<p className="mt-1 text-base font-medium text-red-950">Rechazada</p>
 					</div>
 				);
 			}
@@ -293,12 +293,12 @@ const CalendarGrid = ({
 				return (
 					<div className="pointer-events-auto flex h-full w-full min-h-[40px] flex-col overflow-hidden rounded-lg border border-rose-200 bg-rose-50 p-3 text-left shadow-sm leading-snug border-l-[6px] border-l-rose-700">
 						<div className="flex items-start justify-between gap-1">
-							<span className="text-sm font-semibold text-rose-950">{rangeText}</span>
+							<span className="text-base font-semibold text-rose-950">{rangeText}</span>
 							<Ban className="h-4 w-4 shrink-0 text-rose-800" strokeWidth={2} />
 						</div>
-						<p className="mt-2 text-sm font-medium text-rose-950">Cancelado por especialista</p>
+						<p className="mt-2 text-base font-medium text-rose-950">Cancelado por especialista</p>
 						{b.eco_nombre ? (
-							<p className="mt-0.5 text-sm text-rose-900/85">{b.eco_nombre}</p>
+							<p className="mt-0.5 text-base text-rose-900/85">{b.eco_nombre}</p>
 						) : null}
 					</div>
 				);
@@ -460,7 +460,7 @@ const CalendarGrid = ({
 													}}
 													aria-hidden
 												>
-													<span className="select-none text-xs font-semibold leading-snug text-white">
+													<span className="select-none text-sm font-semibold leading-snug text-white">
 														{dragSelectionTimeLabel}
 													</span>
 												</div>

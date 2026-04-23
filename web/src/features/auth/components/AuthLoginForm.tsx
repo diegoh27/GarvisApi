@@ -116,24 +116,24 @@ const AuthLoginForm = () => {
 				Iniciar sesión
 			</h1>
 			{banner?.type === "success" && (
-				<div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+				<div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-base text-emerald-800">
 					{banner.message}
 				</div>
 			)}
 			{banner?.type === "error" && (
-				<div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+				<div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-base text-rose-800">
 					<span className="font-semibold">Error:</span> {banner.message}
 				</div>
 			)}
 			{/* Botón de Google comentado temporalmente
-			<button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
-				<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">
+			<button className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-200 px-4 py-2 text-base font-semibold text-emerald-700 transition hover:bg-emerald-50">
+				<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-sm text-white">
 					G
 				</span>
 				Iniciar sesión con Google
 			</button>
 			*/}
-			<p className="mt-4 text-sm text-slate-500">
+			<p className="mt-4 text-base text-slate-500">
 				Si no posees una cuenta regístrate{" "}
 				<Link to="/auth/register" className="font-semibold text-emerald-700">
 					aquí
@@ -144,7 +144,7 @@ const AuthLoginForm = () => {
 				<input
 					type="email"
 					placeholder="Correo electrónico"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
+					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-base outline-none focus:border-emerald-500"
 					value={correo}
 					onChange={(event) => setCorreo(event.target.value)}
 				/>
@@ -152,25 +152,25 @@ const AuthLoginForm = () => {
 					value={contrasena}
 					onChange={setContrasena}
 					placeholder="Contraseña"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-sm outline-none focus:border-emerald-500"
+					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-base outline-none focus:border-emerald-500"
 				/>
 				{localError ? (
-					<p className="text-sm text-rose-500">{localError}</p>
+					<p className="text-base text-rose-500">{localError}</p>
 				) : null}
-				{error && !isLocked ? <p className="text-sm text-rose-500">{error}</p> : null}
+				{error && !isLocked ? <p className="text-base text-rose-500">{error}</p> : null}
 				{isLocked && (
-					<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+					<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-base text-amber-800">
 						Demasiados intentos fallidos. Podrás intentarlo de nuevo en{" "}
 						<span className="font-bold">{lockoutSecs}s</span>.
 					</div>
 				)}
 				<button
-					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-base font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
 					disabled={isLoading || isLocked}
 				>
 					{isLoading ? "Ingresando..." : isLocked ? `Bloqueado (${lockoutSecs}s)` : "Iniciar sesión"}
 				</button>
-				<Link to="/auth/forgot" className="text-sm font-semibold text-emerald-700">
+				<Link to="/auth/forgot" className="text-base font-semibold text-emerald-700">
 					Olvidé mi contraseña
 				</Link>
 			</form>

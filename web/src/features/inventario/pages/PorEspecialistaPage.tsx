@@ -43,9 +43,9 @@ export default function PorEspecialistaPage() {
       key: "id",
       header: "ID",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: EspecialistaInventario, index: number) =>
         String(startIndex + index + 1).padStart(3, "0"),
     },
@@ -53,8 +53,8 @@ export default function PorEspecialistaPage() {
       key: "nombre",
       header: "Nombre",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaInventario) =>
         `${row.nombre} ${row.apellido}`,
     },
@@ -62,17 +62,17 @@ export default function PorEspecialistaPage() {
       key: "especialidad",
       header: "Especialidad",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaInventario) => row.especialidad || "-",
     },
     {
       key: "porcentaje",
       header: "Porcentaje",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
       render: (row: EspecialistaInventario) =>
         row.porcentaje !== null && row.porcentaje !== undefined
           ? `${Number(row.porcentaje).toFixed(2)}%`
@@ -129,7 +129,7 @@ export default function PorEspecialistaPage() {
             columns={columns}
             rows={currentEspecialistas}
             rowKey={(row) => row.id_especialista}
-            tableClassName="w-full min-w-full text-sm"
+            tableClassName="w-full min-w-full text-base"
             theadClassName="bg-teal-500 text-white"
             getRowClassName={(_row, index) =>
               index % 2 === 0 ? "bg-gray-50" : "bg-white"

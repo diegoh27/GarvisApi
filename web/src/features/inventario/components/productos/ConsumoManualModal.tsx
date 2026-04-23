@@ -102,7 +102,7 @@ export default function ConsumoManualModal({
               <h2 className="text-lg font-bold text-gray-900">
                 Consumo Manual
               </h2>
-              <p className="text-xs text-gray-500 font-medium">Extraer stock de forma directa</p>
+              <p className="text-base text-gray-500 font-medium">Extraer stock de forma directa</p>
             </div>
           </div>
           <button
@@ -118,8 +118,8 @@ export default function ConsumoManualModal({
           {/* Stock Actual */}
           {producto && (
             <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-center">
-              <span className="text-sm font-semibold text-gray-600">Stock Actual Disponible:</span>
-              <span className="text-sm font-bold text-gray-900">
+              <span className="text-base font-semibold text-gray-600">Stock Actual Disponible:</span>
+              <span className="text-base font-bold text-gray-900">
                 {Number(producto.stock_base_total)} {producto.unidad_consumo || "u"}
               </span>
             </div>
@@ -127,7 +127,7 @@ export default function ConsumoManualModal({
 
           {/* Cantidad Retirar */}
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <label className="block text-base font-bold text-gray-500 uppercase tracking-wider mb-2">
               Cantidad a descontar *
             </label>
             <div className="relative">
@@ -146,12 +146,12 @@ export default function ConsumoManualModal({
                 placeholder="Ej: 5"
                 required
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-base font-bold">
                  {producto?.unidad_consumo || "U"}
               </div>
             </div>
             {formData.cantidad_consumida && producto && (
-              <p className="text-xs font-medium text-rose-600 mt-2">
+              <p className="text-base font-medium text-rose-600 mt-2">
                 Quedará en inventario: {Math.max(0, Number(producto.stock_base_total) - Number(formData.cantidad_consumida))} {producto.unidad_consumo || "u"}
               </p>
             )}
@@ -159,7 +159,7 @@ export default function ConsumoManualModal({
 
           {/* Motivo */}
           <div>
-             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+             <label className="block text-base font-bold text-gray-500 uppercase tracking-wider mb-2">
               Motivo u Observación
             </label>
             <textarea
@@ -168,7 +168,7 @@ export default function ConsumoManualModal({
                 setFormData({ ...formData, motivo: e.target.value })
               }
               maxLength={500}
-              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-shadow text-sm"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-shadow text-base"
               placeholder="(Opcional) Especificar por qué se descuenta manualmente"
               rows={2}
             />
@@ -176,14 +176,14 @@ export default function ConsumoManualModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-base">
               {error}
             </div>
           )}
 
           {/* Success */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-base">
               {success}
             </div>
           )}
@@ -194,14 +194,14 @@ export default function ConsumoManualModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 text-base font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2.5 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-2.5 bg-rose-600 text-white rounded-lg text-base font-semibold hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <MinusCircle size={16} />
               {isLoading ? "Descontando..." : "Descontar stock"}

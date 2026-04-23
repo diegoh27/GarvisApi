@@ -343,14 +343,14 @@ const PagosPage = () => {
 					<div className="rounded-xl border border-slate-100 bg-paper p-6 shadow-sm border-l-4 border-l-yellow-400">
 						<div className="flex items-start justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Pendientes de Verificación</p>
+								<p className="text-base font-medium text-slate-500">Pendientes de Verificación</p>
 								<p className="mt-2 font-headline text-4xl font-extrabold text-brand-900">{kpiPendientes}</p>
 							</div>
 							<div className="rounded-lg bg-yellow-50 p-3 text-yellow-600">
 								<Clock3 className="h-6 w-6" strokeWidth={2} />
 							</div>
 						</div>
-						<p className="mt-4 flex items-center gap-1 text-xs text-slate-400">
+						<p className="mt-4 flex items-center gap-1 text-sm text-slate-400">
 							<TrendingUp className="h-3.5 w-3.5 shrink-0" />
 							Citas web con pago pendiente de revisar
 						</p>
@@ -358,7 +358,7 @@ const PagosPage = () => {
 					<div className="rounded-xl border border-slate-100 bg-paper p-6 shadow-sm border-l-4 border-l-brand-800">
 						<div className="flex items-start justify-between">
 							<div>
-								<p className="text-sm font-medium text-slate-500">Verificados Hoy</p>
+								<p className="text-base font-medium text-slate-500">Verificados Hoy</p>
 								<p className="mt-2 font-headline text-4xl font-extrabold text-brand-900">
 									{kpiVerificadosHoy}
 								</p>
@@ -367,7 +367,7 @@ const PagosPage = () => {
 								<CheckCircle2 className="h-6 w-6" strokeWidth={2} />
 							</div>
 						</div>
-						<p className="mt-4 flex items-start gap-1 text-xs text-slate-400">
+						<p className="mt-4 flex items-start gap-1 text-sm text-slate-400">
 							<History className="mt-0.5 h-3.5 w-3.5 shrink-0" />
 							<span>
 								Pagos web con gestión registrada hoy (aprobar, rechazar, cancelar cita o posponer).
@@ -390,14 +390,14 @@ const PagosPage = () => {
 									value={query}
 									onChange={(e) => setQuery(e.target.value)}
 									placeholder="Buscar por nombre, apellido, cédula, teléfono, especialista o eco..."
-									className="font-body w-full border-none bg-transparent text-sm text-brand-900 outline-none ring-0 placeholder:text-slate-400"
+									className="font-body w-full border-none bg-transparent text-base text-brand-900 outline-none ring-0 placeholder:text-slate-400"
 								/>
 							</div>
 							<div className="flex shrink-0 gap-2">
 								<button
 									type="button"
 									onClick={() => searchInputRef.current?.focus()}
-									className="flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-brand-800 transition-colors hover:bg-slate-50"
+									className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-slate-50"
 								>
 									<Filter className="h-4 w-4" />
 									Filtrar
@@ -406,7 +406,7 @@ const PagosPage = () => {
 									type="button"
 									disabled
 									title="Próximamente"
-									className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-slate-400 opacity-70"
+									className="flex cursor-not-allowed items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-400 opacity-70"
 								>
 									<Download className="h-4 w-4" />
 									Exportar
@@ -428,7 +428,7 @@ const PagosPage = () => {
 							<div className="overflow-x-auto">
 								<table className="w-full text-left">
 									<thead>
-										<tr className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+										<tr className="bg-slate-50 text-sm font-semibold uppercase tracking-wider text-slate-500">
 											<th className="px-6 py-4 text-center">Paciente</th>
 											<th className="px-4 py-4 text-center">Fecha / Hora</th>
 											<th className="px-4 py-4 text-center">Método</th>
@@ -439,7 +439,7 @@ const PagosPage = () => {
 											<th className="px-6 py-4 text-center">Acciones</th>
 										</tr>
 									</thead>
-									<tbody className="divide-y divide-slate-100 text-sm">
+									<tbody className="divide-y divide-slate-100 text-base">
 										{paginatedCitas.map((cita: CitaPendientePago, rowIndex: number) => {
 											const est = getEstadoPagoListaStyles(cita.estado_pago);
 											const openPagoModal = () => {
@@ -456,7 +456,7 @@ const PagosPage = () => {
 													<td className="px-6 py-5 pl-8 align-top">
 														<div className="flex items-start gap-3">
 															<div
-																className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ${avatarToneForRow(rowIndex)}`}
+																className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarToneForRow(rowIndex)}`}
 															>
 																{inicialesPaciente(cita.paciente_nombre, cita.paciente_apellido)}
 															</div>
@@ -464,7 +464,7 @@ const PagosPage = () => {
 																<p className="font-semibold text-brand-900">
 																	{cita.paciente_nombre} {cita.paciente_apellido}
 																</p>
-																<div className="mt-2 space-y-1.5 text-xs text-slate-600">
+																<div className="mt-2 space-y-1.5 text-sm text-slate-600">
 																	<div className="flex items-start gap-2">
 																		<ScanLine
 																			className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-700/70"
@@ -521,7 +521,7 @@ const PagosPage = () => {
 																{metodoTxt}
 															</span>
 														) : (
-															<span className="text-sm text-slate-400" title="Sin método en el registro de pago">
+															<span className="text-base text-slate-400" title="Sin método en el registro de pago">
 																—
 															</span>
 														)}
@@ -540,7 +540,7 @@ const PagosPage = () => {
 															className="group mx-auto flex items-center justify-center gap-1 text-brand-800 hover:underline"
 														>
 															<FileText className="h-[18px] w-[18px] shrink-0" />
-															<span className="text-xs">
+															<span className="text-sm">
 																{cita.estado_pago === 0 ? "Verificar pago" : "Ver pago"}
 															</span>
 														</button>
@@ -639,12 +639,12 @@ const PagosPage = () => {
 							</div>
 
 							{filteredCitas.length > 0 && filteredCitas.length <= itemsPerPage && (
-								<div className="border-t border-slate-100 p-6 text-sm text-slate-500">
+								<div className="border-t border-slate-100 p-6 text-base text-slate-500">
 									Mostrando {filteredCitas.length} de {filteredCitas.length} pagos pendientes
 								</div>
 							)}
 							{filteredCitas.length > itemsPerPage && (
-								<div className="flex flex-col gap-4 border-t border-slate-100 p-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex flex-col gap-4 border-t border-slate-100 p-6 text-base text-slate-500 sm:flex-row sm:items-center sm:justify-between">
 									<p>
 										Mostrando {paginatedCitas.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-
 										{Math.min(currentPage * itemsPerPage, filteredCitas.length)} de {filteredCitas.length}{" "}
@@ -665,7 +665,7 @@ const PagosPage = () => {
 												key={page}
 												type="button"
 												onClick={() => setCurrentPage(page)}
-												className={`flex h-8 min-w-[2rem] items-center justify-center rounded px-1 text-sm font-medium ${
+												className={`flex h-8 min-w-[2rem] items-center justify-center rounded px-1 text-base font-medium ${
 													page === currentPage
 														? "bg-brand-800 text-white"
 														: "text-slate-700 hover:bg-slate-100"

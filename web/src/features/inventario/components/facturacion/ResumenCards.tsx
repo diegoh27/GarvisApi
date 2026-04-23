@@ -62,10 +62,10 @@ export default function ResumenCards({ resumen, isLoading = false }: ResumenCard
 
         return (
           <div key={period.key} className="bg-white rounded-lg shadow-md p-4 md:p-5">
-            <h3 className="text-sm md:text-base font-semibold text-gray-800 mb-3">
+            <h3 className="text-base md:text-base font-semibold text-gray-800 mb-3">
               {period.label}
             </h3>
-            <div className="space-y-2 text-sm md:text-[15px]">
+            <div className="space-y-2 text-base md:text-[15px]">
               <p className="flex justify-between gap-3">
                 <span className="text-gray-600">Ingresos</span>
                 <span className="font-medium text-emerald-700">

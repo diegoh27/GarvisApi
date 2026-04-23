@@ -130,7 +130,7 @@ export default function ProductosPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 mt-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Inventario</h1>
-          <p className="text-sm text-gray-500 mt-1">Estado en tiempo real de insumos clínicos y equipo médico.</p>
+          <p className="text-base text-gray-500 mt-1">Estado en tiempo real de insumos clínicos y equipo médico.</p>
         </div>
       </div>
 
@@ -144,9 +144,9 @@ export default function ProductosPage() {
             </div>
             <span className="text-[10px] font-bold tracking-wider text-gray-400 uppercase">Activo</span>
           </div>
-          <p className="text-xs text-gray-500 mb-1">Total Insumos</p>
+          <p className="text-base text-gray-500 mb-1">Total Insumos</p>
           <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{totalItems}</h3>
-          <p className="text-xs text-teal-600 mt-2 font-medium flex items-center gap-1">
+          <p className="text-base text-teal-600 mt-2 font-medium flex items-center gap-1">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
             Actualizado hoy
           </p>
@@ -161,9 +161,9 @@ export default function ProductosPage() {
             </div>
             <span className="text-[10px] font-bold tracking-wider text-red-500 uppercase mr-2">Urgente</span>
           </div>
-          <p className="text-xs text-gray-500 mb-1">Alertas de Stock</p>
+          <p className="text-base text-gray-500 mb-1">Alertas de Stock</p>
           <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{lowStockCount}</h3>
-          <p className="text-xs text-red-500 mt-2 font-medium">Requieren reposición</p>
+          <p className="text-base text-red-500 mt-2 font-medium">Requieren reposición</p>
         </div>
 
         {/* Card 3: Total Value */}
@@ -174,9 +174,9 @@ export default function ProductosPage() {
             </div>
             <span className="text-[10px] font-bold tracking-wider text-gray-400 uppercase">Valuación</span>
           </div>
-          <p className="text-xs text-gray-500 mb-1">Valor Total</p>
+          <p className="text-base text-gray-500 mb-1">Valor Total</p>
           <h3 className="text-2xl md:text-3xl font-bold text-gray-800">${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-          <p className="text-xs text-gray-400 mt-2">Activos en inventario</p>
+          <p className="text-base text-gray-400 mt-2">Activos en inventario</p>
         </div>
 
         {/* Card 4: Recent Stock */}
@@ -187,9 +187,9 @@ export default function ProductosPage() {
             </div>
             <span className="text-[10px] font-bold tracking-wider text-gray-400 uppercase">Reciente</span>
           </div>
-          <p className="text-xs text-gray-500 mb-1">Entradas (últimos 7d)</p>
+          <p className="text-base text-gray-500 mb-1">Entradas (últimos 7d)</p>
           <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{recentStockIn}</h3>
-          <p className="text-xs text-gray-400 mt-2">Unidades ingresadas</p>
+          <p className="text-base text-gray-400 mt-2">Unidades ingresadas</p>
         </div>
       </div>
 

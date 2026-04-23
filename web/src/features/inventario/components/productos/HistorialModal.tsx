@@ -63,7 +63,7 @@ export default function HistorialModal({
           ) : (
             <div className="overflow-x-auto max-w-full">
               {type === "compras" ? (
-                <table className="w-full min-w-full text-sm">
+                <table className="w-full min-w-full text-base">
                   <thead className="bg-gray-100">
                     <tr>
                       <th className="px-4 py-2 text-left font-medium text-gray-700">
@@ -97,22 +97,22 @@ export default function HistorialModal({
                           index % 2 === 0 ? "bg-gray-50" : "bg-white"
                         }
                       >
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900">
                           {compra.id_compra.slice(0, 6)}...
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900 hidden sm:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900 hidden sm:table-cell">
                           {formatDate(compra.fecha_ingreso)}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-right text-xs md:text-sm text-gray-900">
+                        <td className="px-2 md:px-4 py-2 text-right text-base md:text-base text-gray-900">
                           {compra.cantidad}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-right text-xs md:text-sm text-gray-900 hidden sm:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-right text-base md:text-base text-gray-900 hidden sm:table-cell">
                           ${Number(compra.precio_unitario).toFixed(2)}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-right text-xs md:text-sm font-semibold text-gray-900 hidden md:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-right text-base md:text-base font-semibold text-gray-900 hidden md:table-cell">
                           ${Number(compra.precio_total).toFixed(2)}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900 hidden lg:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900 hidden lg:table-cell">
                           {compra.proveedor || "-"}
                         </td>
                       </tr>
@@ -120,25 +120,25 @@ export default function HistorialModal({
                   </tbody>
                 </table>
               ) : (
-                <table className="w-full min-w-full text-xs md:text-sm">
+                <table className="w-full min-w-full text-base md:text-base">
                   <thead className="bg-gray-100">
                     <tr>
-                      <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-700">
+                      <th className="px-2 md:px-4 py-2 text-left text-base font-medium text-gray-700">
                         ID
                       </th>
-                      <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-700 hidden sm:table-cell">
+                      <th className="px-2 md:px-4 py-2 text-left text-base font-medium text-gray-700 hidden sm:table-cell">
                         Fecha
                       </th>
-                      <th className="px-2 md:px-4 py-2 text-center text-xs font-medium text-gray-700 hidden md:table-cell">
+                      <th className="px-2 md:px-4 py-2 text-center text-base font-medium text-gray-700 hidden md:table-cell">
                         S.Anterior
                       </th>
-                      <th className="px-2 md:px-4 py-2 text-center text-xs font-medium text-gray-700 hidden md:table-cell">
+                      <th className="px-2 md:px-4 py-2 text-center text-base font-medium text-gray-700 hidden md:table-cell">
                         S.Nuevo
                       </th>
-                      <th className="px-2 md:px-4 py-2 text-center text-xs font-medium text-gray-700">
+                      <th className="px-2 md:px-4 py-2 text-center text-base font-medium text-gray-700">
                         Cambio
                       </th>
-                      <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-700 hidden lg:table-cell">
+                      <th className="px-2 md:px-4 py-2 text-left text-base font-medium text-gray-700 hidden lg:table-cell">
                         Motivo
                       </th>
                     </tr>
@@ -151,19 +151,19 @@ export default function HistorialModal({
                           index % 2 === 0 ? "bg-gray-50" : "bg-white"
                         }
                       >
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900">
                           {ajuste.id_ajuste.slice(0, 6)}...
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900 hidden sm:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900 hidden sm:table-cell">
                           {formatDate(ajuste.fecha)}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-center text-xs md:text-sm text-gray-900 hidden md:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-center text-base md:text-base text-gray-900 hidden md:table-cell">
                           {ajuste.stock_anterior}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-center text-xs md:text-sm text-gray-900 hidden md:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-center text-base md:text-base text-gray-900 hidden md:table-cell">
                           {ajuste.stock_nuevo}
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-center text-xs md:text-sm font-semibold">
+                        <td className="px-2 md:px-4 py-2 text-center text-base md:text-base font-semibold">
                           <span
                             className={
                               ajuste.stock_nuevo - ajuste.stock_anterior > 0
@@ -175,7 +175,7 @@ export default function HistorialModal({
                             {ajuste.stock_nuevo - ajuste.stock_anterior}
                           </span>
                         </td>
-                        <td className="px-2 md:px-4 py-2 text-xs md:text-sm text-gray-900 hidden lg:table-cell">
+                        <td className="px-2 md:px-4 py-2 text-base md:text-base text-gray-900 hidden lg:table-cell">
                           {ajuste.motivo || "-"}
                         </td>
                       </tr>
@@ -191,7 +191,7 @@ export default function HistorialModal({
         <div className="border-t p-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 md:px-6 py-2 text-sm bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+            className="px-4 md:px-6 py-2 text-base bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
           >
             Cerrar
           </button>

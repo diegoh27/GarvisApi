@@ -138,11 +138,11 @@ export default function GenerarPagoObligacionModal({
         <div className="flex justify-between items-center p-4 md:p-6 border-b">
           <div>
             <h2 className="text-lg md:text-xl font-bold">Generar Pago</h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-base text-gray-600 mt-1">
               {obligacion.nombre_ente} - {obligacion.concepto}
             </p>
             {estaVencido && (
-              <p className="text-sm font-medium text-amber-700 mt-1">
+              <p className="text-base font-medium text-amber-700 mt-1">
                 Esta obligación está vencida{fechaVenc ? ` (vencimiento: ${fechaVenc})` : ""}.
               </p>
             )}
@@ -157,7 +157,7 @@ export default function GenerarPagoObligacionModal({
 
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Pago *
             </label>
             <input
@@ -169,13 +169,13 @@ export default function GenerarPagoObligacionModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-base text-gray-500 mt-1">
               Próximo vencimiento se calcula según período ({obligacion.periodo}). Puedes editarlo abajo.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Monto ($) *
             </label>
             <input
@@ -194,7 +194,7 @@ export default function GenerarPagoObligacionModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Próxima Fecha de Vencimiento *
             </label>
             <input
@@ -213,13 +213,13 @@ export default function GenerarPagoObligacionModal({
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-base">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-base">
               {success}
             </div>
           )}

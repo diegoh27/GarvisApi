@@ -551,7 +551,7 @@ const DisponibilidadPendientesPage = () => {
 							key={key}
 							type="button"
 							onClick={() => setTab(key)}
-							className={`pb-4 text-sm transition-all ${
+							className={`pb-4 text-base transition-all ${
 								tab === key
 									? "border-b-2 border-[#006965] font-semibold text-[#006965]"
 									: "font-medium text-zinc-400 hover:text-zinc-600"
@@ -573,7 +573,7 @@ const DisponibilidadPendientesPage = () => {
 							<select
 								value={idEspecialistaFiltro}
 								onChange={(e) => setIdEspecialistaFiltro(e.target.value)}
-								className="w-full border-none bg-transparent p-0 text-sm text-zinc-700 focus:ring-0"
+								className="w-full border-none bg-transparent p-0 text-base text-zinc-700 focus:ring-0"
 							>
 								<option value="">Todos los especialistas</option>
 								{especialistaOptions.map((o) => (
@@ -596,7 +596,7 @@ const DisponibilidadPendientesPage = () => {
 								onChange={(e) =>
 									setFiltros((f) => ({ ...f, fechaDesde: e.target.value }))
 								}
-								className="min-w-0 flex-1 border-none bg-transparent text-sm text-zinc-700 focus:ring-0"
+								className="min-w-0 flex-1 border-none bg-transparent text-base text-zinc-700 focus:ring-0"
 							/>
 							<span className="text-zinc-400">—</span>
 							<input
@@ -605,7 +605,7 @@ const DisponibilidadPendientesPage = () => {
 								onChange={(e) =>
 									setFiltros((f) => ({ ...f, fechaHasta: e.target.value }))
 								}
-								className="min-w-0 flex-1 border-none bg-transparent text-sm text-zinc-700 focus:ring-0"
+								className="min-w-0 flex-1 border-none bg-transparent text-base text-zinc-700 focus:ring-0"
 							/>
 						</div>
 					</div>
@@ -618,7 +618,7 @@ const DisponibilidadPendientesPage = () => {
 							<select
 								value={filtros.ecoId}
 								onChange={(e) => setFiltros((f) => ({ ...f, ecoId: e.target.value }))}
-								className="w-full border-none bg-transparent p-0 text-sm text-zinc-700 focus:ring-0"
+								className="w-full border-none bg-transparent p-0 text-base text-zinc-700 focus:ring-0"
 							>
 								<option value="">Cualquier eco</option>
 								{ecoOptions.map((o) => (
@@ -635,7 +635,7 @@ const DisponibilidadPendientesPage = () => {
 					<button
 						type="button"
 						onClick={() => refetch()}
-						className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#006965] px-6 py-3 text-sm font-semibold text-white shadow-sm shadow-[#006965]/20 transition-all hover:opacity-90"
+						className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#006965] px-6 py-3 text-base font-semibold text-white shadow-sm shadow-[#006965]/20 transition-all hover:opacity-90"
 					>
 						<Filter className="h-4 w-4" />
 						Aplicar / actualizar
@@ -648,7 +648,7 @@ const DisponibilidadPendientesPage = () => {
 					<section className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
 						{unifiedItems.length === 0 ? (
 							<div className="col-span-1 flex flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-sm">
-								<p className="text-sm font-medium text-zinc-600">
+								<p className="text-base font-medium text-zinc-600">
 									{filtros.query.trim() ||
 									filtros.fechaDesde ||
 									filtros.fechaHasta ||
@@ -694,7 +694,7 @@ const DisponibilidadPendientesPage = () => {
 								<p className="mt-4 font-bold text-zinc-400 transition-colors hover:text-[#006965]">
 									Nueva solicitud manual
 								</p>
-								<p className="mt-2 max-w-xs text-center text-xs text-zinc-400">
+								<p className="mt-2 max-w-xs text-center text-sm text-zinc-400">
 									Disponibilidad extraordinaria (suplencias), sin flujo automático del médico.
 								</p>
 							</button>
@@ -709,7 +709,7 @@ const DisponibilidadPendientesPage = () => {
 									Resumen global
 								</span>
 								<h4 className="mt-4 font-headline text-3xl font-bold">{totalSolicitudesPendientes}</h4>
-								<p className="mt-1 text-sm text-emerald-100/80">Solicitudes pendientes por procesar</p>
+								<p className="mt-1 text-base text-emerald-100/80">Solicitudes pendientes por procesar</p>
 							</div>
 							<div className="relative z-[1] mt-8 flex items-end justify-between">
 								<div className="space-y-1">
@@ -731,7 +731,7 @@ const DisponibilidadPendientesPage = () => {
 
 				{!isLoading && unifiedItems.length > 0 && totalPages > 1 && (
 					<div className="flex items-center justify-between border-t border-zinc-200 pt-6">
-						<p className="text-xs text-zinc-500">
+						<p className="text-sm text-zinc-500">
 							Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
 							{Math.min(currentPage * ITEMS_PER_PAGE, unifiedItems.length)} de {unifiedItems.length}{" "}
 							jornadas
@@ -741,7 +741,7 @@ const DisponibilidadPendientesPage = () => {
 								type="button"
 								disabled={currentPage === 1}
 								onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-								className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-xs text-zinc-700 disabled:opacity-40"
+								className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm text-zinc-700 disabled:opacity-40"
 							>
 								Anterior
 							</button>
@@ -749,7 +749,7 @@ const DisponibilidadPendientesPage = () => {
 								type="button"
 								disabled={currentPage === totalPages}
 								onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-								className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-xs text-zinc-700 disabled:opacity-40"
+								className="rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm text-zinc-700 disabled:opacity-40"
 							>
 								Siguiente
 							</button>
@@ -758,12 +758,12 @@ const DisponibilidadPendientesPage = () => {
 				)}
 
 				<details className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
-					<summary className="cursor-pointer text-sm font-semibold text-zinc-700">
+					<summary className="cursor-pointer text-base font-semibold text-zinc-700">
 						Filtros avanzados
 					</summary>
 					<div className="mt-4 flex flex-col gap-6 lg:flex-row">
 						<div className="flex-1 space-y-3">
-							<p className="text-xs text-zinc-500">
+							<p className="text-sm text-zinc-500">
 								Búsqueda, horas y orden (vista detallada).
 							</p>
 							<FiltrosDisponibilidadPendientes
@@ -783,17 +783,17 @@ const DisponibilidadPendientesPage = () => {
 					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 						<div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
 							<h3 className="text-lg font-bold text-zinc-800">Nueva solicitud manual</h3>
-							<p className="mt-1 text-sm text-zinc-500">
+							<p className="mt-1 text-base text-zinc-500">
 								Cargue una jornada en nombre de un especialista (suplencias u horas extraordinarias).
 							</p>
 							<div className="mt-4 space-y-3">
-								<label className="block text-xs font-semibold text-zinc-600">Especialista</label>
+								<label className="block text-sm font-semibold text-zinc-600">Especialista</label>
 								<select
 									value={manualForm.id_especialista}
 									onChange={(e) =>
 										setManualForm((f) => ({ ...f, id_especialista: e.target.value }))
 									}
-									className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+									className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-base"
 								>
 									<option value="">Seleccione…</option>
 									{especialistasLista.map((e) => (
@@ -804,31 +804,31 @@ const DisponibilidadPendientesPage = () => {
 								</select>
 								<div className="grid grid-cols-2 gap-2">
 									<div>
-										<label className="text-xs font-semibold text-zinc-600">Desde</label>
+										<label className="text-sm font-semibold text-zinc-600">Desde</label>
 										<input
 											type="date"
 											value={manualForm.fecha_desde}
 											onChange={(e) =>
 												setManualForm((f) => ({ ...f, fecha_desde: e.target.value }))
 											}
-											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-sm"
+											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-base"
 										/>
 									</div>
 									<div>
-										<label className="text-xs font-semibold text-zinc-600">Hasta</label>
+										<label className="text-sm font-semibold text-zinc-600">Hasta</label>
 										<input
 											type="date"
 											value={manualForm.fecha_hasta}
 											onChange={(e) =>
 												setManualForm((f) => ({ ...f, fecha_hasta: e.target.value }))
 											}
-											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-sm"
+											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-base"
 										/>
 									</div>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									<div>
-										<label className="text-xs font-semibold text-zinc-600">Hora inicio</label>
+										<label className="text-sm font-semibold text-zinc-600">Hora inicio</label>
 										<input
 											type="time"
 											value={manualForm.hora_inicio.slice(0, 5)}
@@ -838,11 +838,11 @@ const DisponibilidadPendientesPage = () => {
 													hora_inicio: `${e.target.value}:00`,
 												}))
 											}
-											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-sm"
+											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-base"
 										/>
 									</div>
 									<div>
-										<label className="text-xs font-semibold text-zinc-600">Hora fin</label>
+										<label className="text-sm font-semibold text-zinc-600">Hora fin</label>
 										<input
 											type="time"
 											value={manualForm.hora_fin.slice(0, 5)}
@@ -852,18 +852,18 @@ const DisponibilidadPendientesPage = () => {
 													hora_fin: `${e.target.value}:00`,
 												}))
 											}
-											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-sm"
+											className="mt-1 w-full rounded-xl border border-zinc-200 px-2 py-2 text-base"
 										/>
 									</div>
 								</div>
 								<div>
-									<label className="text-xs font-semibold text-zinc-600">Eco (opcional)</label>
+									<label className="text-sm font-semibold text-zinc-600">Eco (opcional)</label>
 									<select
 										value={manualForm.id_eco}
 										onChange={(e) =>
 											setManualForm((f) => ({ ...f, id_eco: e.target.value }))
 										}
-										className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+										className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2 text-base"
 									>
 										<option value="">Sin especificar</option>
 										{ecosLista.map((eco) => (
@@ -878,7 +878,7 @@ const DisponibilidadPendientesPage = () => {
 								<button
 									type="button"
 									onClick={() => setShowManual(false)}
-									className="rounded-xl px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-100"
+									className="rounded-xl px-4 py-2 text-base text-zinc-600 hover:bg-zinc-100"
 								>
 									Cancelar
 								</button>
@@ -886,7 +886,7 @@ const DisponibilidadPendientesPage = () => {
 									type="button"
 									disabled={isCreandoManual}
 									onClick={() => void handleSubmitManual()}
-									className="rounded-xl bg-[#006965] px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+									className="rounded-xl bg-[#006965] px-5 py-2 text-base font-semibold text-white hover:opacity-90 disabled:opacity-50"
 								>
 									{isCreandoManual ? "Guardando…" : "Guardar solicitud"}
 								</button>

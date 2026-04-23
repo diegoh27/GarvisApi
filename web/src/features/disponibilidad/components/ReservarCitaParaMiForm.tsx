@@ -119,7 +119,7 @@ const ReservarCitaParaMiForm = ({
 			icon: "question",
 			title: "Confirmar monto a pagar",
 			html: `
-				<div class="text-left space-y-2 text-sm">
+				<div class="text-left space-y-2 text-base">
 					<p><strong>Precio del eco:</strong> $${precioUSD.toFixed(2)} USD</p>
 					${montoCalculadoBs !== null ? `<p><strong>Total en Bs (tasa BCV):</strong> ${montoCalculadoBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>` : ""}
 					<p><strong>Monto que ingresó:</strong> ${montoIngresado.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>
@@ -279,16 +279,16 @@ const ReservarCitaParaMiForm = ({
 			<div className="flex-1 overflow-y-auto p-6">
 				<div className="mb-4 rounded-lg border border-brand-200 bg-brand-50 p-3 space-y-1">
 					{representado && (
-						<p className="text-sm font-medium text-brand-900">
+						<p className="text-base font-medium text-brand-900">
 							Cita para: {representado.nombre} {representado.apellido}
 							{representado.parentesco ? ` (${representado.parentesco})` : ""}
 						</p>
 					)}
-					<p className="text-sm font-medium text-brand-900">
+					<p className="text-base font-medium text-brand-900">
 						{formatFecha(normalizeFecha(block.fecha))} a las{" "}
 						{formatHora(block.hora_inicio)}
 					</p>
-					<p className="text-sm text-brand-600">
+					<p className="text-base text-brand-600">
 						{block.especialista_nombre} {block.especialista_apellido} •{" "}
 						{block.especialidad_nombre} • {eco.nombre}
 					</p>
@@ -315,7 +315,7 @@ const ReservarCitaParaMiForm = ({
 						<button
 							type="button"
 							onClick={onBack}
-							className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
+							className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-cloud"
 							disabled={isLoading}
 						>
 							← Volver
@@ -326,7 +326,7 @@ const ReservarCitaParaMiForm = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
+						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-cloud"
 						disabled={isLoading}
 					>
 						Cancelar
@@ -335,7 +335,7 @@ const ReservarCitaParaMiForm = ({
 						type="button"
 						onClick={handleReservar}
 						disabled={isLoading}
-						className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+						className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{isLoading ? "Reservando..." : "Reservar cita"}
 					</button>

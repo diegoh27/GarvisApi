@@ -136,13 +136,13 @@ export default function NominaPage() {
   const getEstadoBadge = (estado: string) => {
     if (estado.toLowerCase() === "activo") {
       return (
-        <span className="text-xs font-medium text-emerald-600">
+        <span className="text-base font-medium text-emerald-600">
           Activo
         </span>
       );
     }
     return (
-      <span className="text-xs font-medium text-red-600">
+      <span className="text-base font-medium text-red-600">
         Inactivo
       </span>
     );
@@ -151,20 +151,20 @@ export default function NominaPage() {
   const getPagoStatusBadge = (estatusPago?: string | null) => {
     if (estatusPago?.toLowerCase() === "pagada") {
       return (
-        <span className="text-xs font-medium text-emerald-600">
+        <span className="text-base font-medium text-emerald-600">
           Pagada
         </span>
       );
     }
     if (estatusPago?.toLowerCase() === "vencido") {
       return (
-        <span className="text-xs font-medium text-red-600">
+        <span className="text-base font-medium text-red-600">
           Vencido
         </span>
       );
     }
     return (
-      <span className="text-xs font-medium text-amber-500">
+      <span className="text-base font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -217,9 +217,9 @@ export default function NominaPage() {
       key: "id_empleado",
       header: "ID",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: Empleado, index: number) =>
         String(startIndexEmpleados + index + 1).padStart(3, "0"),
     },
@@ -227,57 +227,57 @@ export default function NominaPage() {
       key: "nombre",
       header: "Nombre",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Empleado) => `${row.nombre} ${row.apellido || ""}`,
     },
     {
       key: "cedula",
       header: "Cédula",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Empleado) => row.cedula || "-",
     },
     {
       key: "cargo",
       header: "Cargo",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Empleado) => row.cargo,
     },
     {
       key: "periodo",
       header: "Período",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Empleado) => row.periodo,
     },
     {
       key: "sueldo",
       header: "Sueldo",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
       render: (row: Empleado) => `$${Number(row.sueldo).toFixed(2)}`,
     },
     {
       key: "estado",
       header: "Estado",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: Empleado) => getEstadoBadge(row.estado),
     },
     {
       key: "proximo_pago",
       header: "Prox. Pago",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Empleado) =>
         row.proximo_pago ? formatFechaLocal(row.proximo_pago) : "-",
     },
@@ -285,16 +285,16 @@ export default function NominaPage() {
       key: "estatus_pago",
       header: "Estado",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: Empleado) => getPagoStatusBadge(row.estatus_pago),
     },
     {
       key: "acciones",
       header: "Acciones",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: Empleado) => (
         <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
           <button
@@ -373,7 +373,7 @@ export default function NominaPage() {
             rowKey={(row, index) =>
               `${row.id_empleado}-${startIndexEmpleados + index}`
             }
-            tableClassName="w-full min-w-full text-sm"
+            tableClassName="w-full min-w-full text-base"
             theadClassName="bg-teal-500 text-white"
             getRowClassName={(_row, index) =>
               index % 2 === 0 ? "bg-gray-50" : "bg-white"

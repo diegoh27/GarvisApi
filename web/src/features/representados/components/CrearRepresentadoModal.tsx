@@ -103,7 +103,7 @@ const CrearRepresentadoModal = ({
 
 				<form onSubmit={handleSubmit} className="p-6 space-y-4">
 					<div>
-						<label htmlFor="nombre" className="mb-1 block text-sm font-medium text-brand-800">
+						<label htmlFor="nombre" className="mb-1 block text-base font-medium text-brand-800">
 							Nombre
 						</label>
 						<input
@@ -120,12 +120,12 @@ const CrearRepresentadoModal = ({
 							disabled={isLoading}
 						/>
 						{errors.nombre && (
-							<p className="mt-1 text-sm text-red-600">{errors.nombre}</p>
+							<p className="mt-1 text-base text-red-600">{errors.nombre}</p>
 						)}
 					</div>
 
 					<div>
-						<label htmlFor="apellido" className="mb-1 block text-sm font-medium text-brand-800">
+						<label htmlFor="apellido" className="mb-1 block text-base font-medium text-brand-800">
 							Apellido
 						</label>
 						<input
@@ -142,7 +142,7 @@ const CrearRepresentadoModal = ({
 							disabled={isLoading}
 						/>
 						{errors.apellido && (
-							<p className="mt-1 text-sm text-red-600">{errors.apellido}</p>
+							<p className="mt-1 text-base text-red-600">{errors.apellido}</p>
 						)}
 					</div>
 
@@ -164,7 +164,7 @@ const CrearRepresentadoModal = ({
 					</div>
 
 					<div>
-						<label htmlFor="fecha_nacimiento" className="mb-1 block text-sm font-medium text-brand-800">
+						<label htmlFor="fecha_nacimiento" className="mb-1 block text-base font-medium text-brand-800">
 							Fecha de nacimiento
 						</label>
 						<input
@@ -179,12 +179,12 @@ const CrearRepresentadoModal = ({
 							disabled={isLoading}
 						/>
 						{errors.fecha_nacimiento && (
-							<p className="mt-1 text-sm text-red-600">{errors.fecha_nacimiento}</p>
+							<p className="mt-1 text-base text-red-600">{errors.fecha_nacimiento}</p>
 						)}
 					</div>
 
 					<div>
-						<label htmlFor="genero" className="mb-1 block text-sm font-medium text-brand-800">
+						<label htmlFor="genero" className="mb-1 block text-base font-medium text-brand-800">
 							Género
 						</label>
 						<select
@@ -205,12 +205,12 @@ const CrearRepresentadoModal = ({
 							))}
 						</select>
 						{errors.genero && (
-							<p className="mt-1 text-sm text-red-600">{errors.genero}</p>
+							<p className="mt-1 text-base text-red-600">{errors.genero}</p>
 						)}
 					</div>
 
 					<div>
-						<label htmlFor="parentesco" className="mb-1 block text-sm font-medium text-brand-800">
+						<label htmlFor="parentesco" className="mb-1 block text-base font-medium text-brand-800">
 							Parentesco (opcional)
 						</label>
 						<input
@@ -227,7 +227,7 @@ const CrearRepresentadoModal = ({
 							disabled={isLoading}
 						/>
 						{errors.parentesco && (
-							<p className="mt-1 text-sm text-red-600">{errors.parentesco}</p>
+							<p className="mt-1 text-base text-red-600">{errors.parentesco}</p>
 						)}
 					</div>
 
@@ -235,7 +235,7 @@ const CrearRepresentadoModal = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 hover:bg-cloud"
+							className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 hover:bg-cloud"
 							disabled={isLoading}
 						>
 							Cancelar
@@ -243,7 +243,7 @@ const CrearRepresentadoModal = ({
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800 disabled:opacity-50"
+							className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800 disabled:opacity-50"
 						>
 							{isLoading ? "Guardando..." : "Crear representado"}
 						</button>

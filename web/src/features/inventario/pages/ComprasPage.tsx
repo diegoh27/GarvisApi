@@ -239,7 +239,7 @@ export default function ComprasPage() {
 				<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
 					Registro de Compra
 				</h1>
-				<p className="text-gray-500 mt-1 text-sm">
+				<p className="text-gray-500 mt-1 text-base">
 					Gestione la entrada real de stock al inventario médico con precisión editorial y control total.
 				</p>
 			</div>
@@ -253,13 +253,13 @@ export default function ComprasPage() {
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<div>
-						<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+						<label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
 							Proveedor *
 						</label>
 						<select
 							value={proveedor}
 							onChange={(e) => setProveedor(e.target.value)}
-							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
 						>
 							<option value="">Seleccionar Proveedor</option>
 							{proveedores.filter((p) => p.activo).map((p) => (
@@ -270,7 +270,7 @@ export default function ComprasPage() {
 						</select>
 					</div>
 					<div>
-						<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+						<label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
 							Nº Factura
 						</label>
 						<input
@@ -278,18 +278,18 @@ export default function ComprasPage() {
 							placeholder="F-001-2024"
 							value={numFactura}
 							onChange={(e) => setNumFactura(e.target.value)}
-							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
 						/>
 					</div>
 					<div>
-						<label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+						<label className="block text-base font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
 							Fecha de Compra *
 						</label>
 						<input
 							type="date"
 							value={fechaCompra}
 							onChange={(e) => setFechaCompra(e.target.value)}
-							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+							className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
 						/>
 					</div>
 				</div>
@@ -304,14 +304,14 @@ export default function ComprasPage() {
 					</div>
 					<button
 						onClick={addLinea}
-						className="text-teal-600 hover:text-teal-800 text-sm font-medium flex items-center gap-1"
+						className="text-teal-600 hover:text-teal-800 text-base font-medium flex items-center gap-1"
 					>
 						<Plus className="h-4 w-4" />
 						Agregar Línea
 					</button>
 				</div>
 
-				<div className="hidden md:grid grid-cols-12 gap-3 text-xs font-semibold text-gray-500 uppercase tracking-wider px-1">
+				<div className="hidden md:grid grid-cols-12 gap-3 text-base font-semibold text-gray-500 uppercase tracking-wider px-1">
 					<div className="col-span-4">Insumo / Producto</div>
 					<div className="col-span-2">Cantidad</div>
 					<div className="col-span-3">Costo Unitario</div>
@@ -331,12 +331,12 @@ export default function ComprasPage() {
 								<select
 									value={linea.id_producto}
 									onChange={(e) => updateLinea(linea.id, "id_producto", e.target.value)}
-									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
 								>
 									<option value="">Seleccionar producto...</option>
-									{productos.map((p) => (
+									{productos.filter((p) => p.unidad_compra === "Detal").map((p) => (
 										<option key={p.id_producto} value={p.id_producto}>
-											{p.nombre} - {p.unidad_compra || "Caja"} x{Number(p.factor_conversion) || 1} (Stock: {Math.floor(Number(p.stock_base_total || 0) / (Number(p.factor_conversion) || 1))} {p.unidad_compra || "Caja"})
+											{p.nombre} (Stock: {Number(p.stock_base_total || 0)} {p.unidad_consumo || "Unidad"})
 										</option>
 									))}
 								</select>
@@ -351,13 +351,13 @@ export default function ComprasPage() {
 										updateLinea(linea.id, "cantidad", Number(e.target.value))
 									}
 									onFocus={(e) => e.target.select()}
-									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+									className="w-full border border-gray-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 							</div>
 							<div className="col-span-3">
 								<div className="grid grid-cols-2 gap-2">
 									<div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
-										<span className="bg-gray-50 px-2 py-2 text-xs text-gray-600 border-r border-gray-200">$</span>
+										<span className="bg-gray-50 px-2 py-2 text-base text-gray-600 border-r border-gray-200">$</span>
 										<input
 											type="number"
 											step="0.01"
@@ -367,11 +367,11 @@ export default function ComprasPage() {
 												updateLinea(linea.id, "precioUnitario", Number(e.target.value))
 											}
 											onFocus={(e) => e.target.select()}
-											className="w-full px-2 py-2 text-sm focus:outline-none"
+											className="w-full px-2 py-2 text-base focus:outline-none"
 										/>
 									</div>
 									<div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-500">
-										<span className="bg-gray-50 px-2 py-2 text-xs text-gray-600 border-r border-gray-200">Bs</span>
+										<span className="bg-gray-50 px-2 py-2 text-base text-gray-600 border-r border-gray-200">Bs</span>
 										<input
 											type="number"
 											step="0.01"
@@ -386,13 +386,13 @@ export default function ComprasPage() {
 											onFocus={(e) => e.target.select()}
 											disabled={tasaBcv <= 0}
 											placeholder={tasaBcv > 0 ? "0.00" : "Sin tasa BCV"}
-											className="w-full px-2 py-2 text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
+											className="w-full px-2 py-2 text-base focus:outline-none disabled:bg-gray-50 disabled:text-gray-400"
 										/>
 									</div>
 								</div>
 							</div>
 							<div className="col-span-2 text-right font-semibold text-gray-800">
-								<div className="flex items-center justify-end gap-2 text-xs md:text-sm">
+								<div className="flex items-center justify-end gap-2 text-base md:text-base">
 									<span>${lineSubtotalUsd.toFixed(2)}</span>
 									<span className="text-gray-400">|</span>
 									<span className="text-gray-600">Bs {lineSubtotalBs.toFixed(2)}</span>
@@ -412,10 +412,10 @@ export default function ComprasPage() {
 
 				{/* ── Totales ── */}
 				<div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
-					<div className="flex justify-end text-xs text-gray-500">
+					<div className="flex justify-end text-base text-gray-500">
 						Tasa BCV del día: {tasaBcv > 0 ? `${tasaBcv.toFixed(2)} Bs/USD` : "No disponible"}
 					</div>
-					<div className="flex justify-end gap-8 text-sm text-gray-600">
+					<div className="flex justify-end gap-8 text-base text-gray-600">
 						<span>Subtotal</span>
 						<div className="font-medium text-right flex items-center gap-2">
 							<span>${subtotal.toFixed(2)}</span>
@@ -423,7 +423,7 @@ export default function ComprasPage() {
 							<span>Bs {subtotalBs.toFixed(2)}</span>
 						</div>
 					</div>
-					<div className="flex justify-end gap-8 text-sm text-gray-600">
+					<div className="flex justify-end gap-8 text-base text-gray-600">
 						<span>Impuestos (16%)</span>
 						<div className="font-medium text-right flex items-center gap-2">
 							<span>${impuesto.toFixed(2)}</span>
@@ -436,7 +436,7 @@ export default function ComprasPage() {
 						<div className="text-teal-600 text-right flex items-center gap-2">
 							<span>${total.toFixed(2)}</span>
 							<span className="text-teal-300">|</span>
-							<span className="text-sm">Bs {totalBs.toFixed(2)}</span>
+							<span className="text-base">Bs {totalBs.toFixed(2)}</span>
 						</div>
 					</div>
 				</div>
@@ -446,7 +446,7 @@ export default function ComprasPage() {
 			<div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl border border-gray-200 p-4">
 				<button
 					onClick={resetForm}
-					className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm font-medium"
+					className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-base font-medium"
 				>
 					<X className="h-4 w-4" />
 					Descartar
@@ -454,7 +454,7 @@ export default function ComprasPage() {
 				<button
 					onClick={handleGuardar}
 					disabled={saving}
-					className="px-6 py-2.5 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors shadow-sm disabled:opacity-60"
+					className="px-6 py-2.5 bg-teal-600 text-white rounded-lg text-base font-medium hover:bg-teal-700 transition-colors shadow-sm disabled:opacity-60"
 				>
 					{saving ? "Guardando..." : "Guardar Compra"}
 				</button>
@@ -468,7 +468,7 @@ export default function ComprasPage() {
 						{filteredNotas.length > 0 && (
 							<button
 								onClick={handleDownloadReport}
-								className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-teal-700 md:w-auto"
+								className="flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-3 py-1.5 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700 md:w-auto"
 							>
 								<FileDown size={14} />
 								Descargar Reporte
@@ -481,7 +481,7 @@ export default function ComprasPage() {
 							<button
 								key={f.key}
 								onClick={() => { setDateFilter(f.key); setCurrentPage(1); }}
-								className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+								className={`px-3 py-1.5 rounded-full text-base font-medium transition-all ${
 									dateFilter === f.key
 										? "bg-teal-600 text-white shadow-sm"
 										: "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -499,16 +499,16 @@ export default function ComprasPage() {
 				) : (
 					<>
 						<div className="overflow-x-auto">
-							<table className="w-full text-sm">
+							<table className="w-full text-base">
 								<thead>
 									<tr className="bg-gray-50 border-b border-gray-200">
-										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Fecha</th>
-										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Proveedor</th>
-										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Nº Factura</th>
-										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Descripción</th>
-										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Total</th>
-										<th className="text-center px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Líneas</th>
-										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Acciones</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Fecha</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Proveedor</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Nº Factura</th>
+										<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Descripción</th>
+										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Total</th>
+										<th className="text-center px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Líneas</th>
+										<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Acciones</th>
 									</tr>
 								</thead>
 								<tbody className="divide-y divide-gray-100">
@@ -531,14 +531,14 @@ export default function ComprasPage() {
 													{nc.numero_factura || "S/N"}
 												</button>
 											</td>
-											<td className="px-6 py-4 text-gray-600 text-xs">
+											<td className="px-6 py-4 text-gray-600 text-base">
 												{nc.descripcion_productos || nc.observaciones || "S/D"}
 											</td>
 											<td className="px-6 py-4 text-right font-bold text-teal-600">
 												${Number(nc.total).toFixed(2)}
 											</td>
 											<td className="px-6 py-4 text-center">
-												<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+												<span className="inline-flex items-center px-2 py-0.5 rounded-full text-base font-medium bg-gray-100 text-gray-700">
 													{nc.total_lineas || 0}
 												</span>
 											</td>
@@ -559,7 +559,7 @@ export default function ComprasPage() {
 							</table>
 						</div>
 						{totalPages > 1 && (
-							<div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+							<div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-base text-gray-500">
 								<span>Mostrando {currentNotas.length} de {filteredNotas.length} notas{dateFilter !== "all" ? ` (filtradas)` : ""}</span>
 								<div className="flex items-center gap-1">
 									<button

@@ -147,8 +147,8 @@ export default function CrearOrdenCompraPage() {
 		}
 	};
 
-	const inputClass = "w-full border border-slate-200 rounded-lg bg-slate-50 px-4 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all font-medium text-slate-700";
-	const labelClass = "text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block";
+	const inputClass = "w-full border border-slate-200 rounded-lg bg-slate-50 px-4 py-2.5 text-base outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all font-medium text-slate-700";
+	const labelClass = "text-base font-bold text-slate-500 uppercase tracking-wider mb-2 block";
 
 	return (
 		<div className="w-full p-4 md:p-6 flex flex-col gap-6">
@@ -159,7 +159,7 @@ export default function CrearOrdenCompraPage() {
 				</div>
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight text-slate-800">Generar Orden de Compra</h1>
-					<p className="text-sm font-medium text-slate-500">
+					<p className="text-base font-medium text-slate-500">
 						Los items estarán en "Stand By" hasta ser formalmente recibidos. No alteran el stock físico.
 					</p>
 				</div>
@@ -178,7 +178,7 @@ export default function CrearOrdenCompraPage() {
 					<div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 						<div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
 							<Package size={18} className="text-slate-400" />
-							<h3 className="font-bold text-slate-700 text-sm">Agregar Productos (Catálogo)</h3>
+							<h3 className="font-bold text-slate-700 text-base">Agregar Productos (Catálogo)</h3>
 						</div>
 						
 						<div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_1fr_100px_100px_90px_40px] gap-3 items-end">
@@ -221,12 +221,12 @@ export default function CrearOrdenCompraPage() {
 							<div>
 								<label className={labelClass}>Costo ($)</label>
 								<div className="flex items-center border border-slate-200 bg-white rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-teal-500">
-									<span className="bg-slate-50 px-2 py-2.5 text-xs text-slate-500 border-r border-slate-200 shrink-0">$</span>
+									<span className="bg-slate-50 px-2 py-2.5 text-base text-slate-500 border-r border-slate-200 shrink-0">$</span>
 									<input 
 										type="number" step="any" min="0"
 										value={precioUnitario}
 										onChange={(e) => setPrecioUnitario(e.target.value)}
-										className="w-full min-w-0 px-2 py-2.5 text-sm outline-none text-slate-700"
+										className="w-full min-w-0 px-2 py-2.5 text-base outline-none text-slate-700"
 										placeholder="0.00"
 									/>
 								</div>
@@ -236,7 +236,7 @@ export default function CrearOrdenCompraPage() {
 								<div>
 									<label className={labelClass}>Costo (Bs)</label>
 									<div className="flex items-center border border-slate-200 bg-white rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-teal-500">
-										<span className="bg-slate-50 px-2 py-2.5 text-xs text-slate-500 border-r border-slate-200 shrink-0">Bs</span>
+										<span className="bg-slate-50 px-2 py-2.5 text-base text-slate-500 border-r border-slate-200 shrink-0">Bs</span>
 									<input 
 										type="number" step="any" min="0"
 										value={tasaBcv > 0 && Number(precioUnitario) > 0 ? Number((Number(precioUnitario) * tasaBcv).toFixed(2)) : ""}
@@ -245,7 +245,7 @@ export default function CrearOrdenCompraPage() {
 											if (tasaBcv > 0) setPrecioUnitario(String(v / tasaBcv));
 										}}
 										disabled={tasaBcv <= 0}
-										className="w-full min-w-0 px-2 py-2.5 text-sm outline-none text-slate-700 disabled:bg-slate-50"
+										className="w-full min-w-0 px-2 py-2.5 text-base outline-none text-slate-700 disabled:bg-slate-50"
 										placeholder={tasaBcv > 0 ? "0.00" : "—"}
 									/>
 								</div>
@@ -263,7 +263,7 @@ export default function CrearOrdenCompraPage() {
 									placeholder="0"
 								/>
 								{productoSeleccionadoInfo && cantidad && Number(cantidad) > 0 && (
-									<p className="mt-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+									<p className="mt-1 text-base font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
 										≈ {Number(cantidad) * Number(productoSeleccionadoInfo.factor_conversion)} {productoSeleccionadoInfo.unidad_consumo}
 									</p>
 								)}
@@ -287,19 +287,19 @@ export default function CrearOrdenCompraPage() {
 					{/* PARTE C: TABLA DE DETALLES TEMPORALES */}
 					<div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-1">
 						<div className="px-5 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-							<h3 className="font-bold text-slate-700 text-sm">Resumen de Orden</h3>
-							<span className="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">{detalles.length} Items</span>
+							<h3 className="font-bold text-slate-700 text-base">Resumen de Orden</h3>
+							<span className="text-base font-bold text-slate-500 bg-white px-2 py-1 rounded border border-slate-200 shadow-sm">{detalles.length} Items</span>
 						</div>
 
 						{detalles.length === 0 ? (
 							<div className="p-12 flex flex-col items-center justify-center text-slate-400">
 								<Package size={32} className="mb-3 opacity-50" />
-								<p className="text-sm font-medium">Aún no has agregado productos a la orden.</p>
+								<p className="text-base font-medium">Aún no has agregado productos a la orden.</p>
 							</div>
 						) : (
 							<div className="overflow-x-auto flex-1">
-								<table className="w-full text-sm text-left whitespace-nowrap">
-									<thead className="bg-slate-50 text-xs text-slate-500 font-bold uppercase border-b border-slate-100">
+								<table className="w-full text-base text-left whitespace-nowrap">
+									<thead className="bg-slate-50 text-base text-slate-500 font-bold uppercase border-b border-slate-100">
 										<tr>
 											<th className="px-5 py-3">Producto</th>
 											<th className="px-5 py-3">Vendedor Asignado</th>
@@ -313,11 +313,11 @@ export default function CrearOrdenCompraPage() {
 										{detalles.map((d, idx) => (
 											<tr key={idx} className="hover:bg-slate-50 transition-colors">
 												<td className="px-5 py-3.5 font-semibold text-slate-700">{d.producto_nombre}</td>
-												<td className="px-5 py-3.5 text-slate-500 font-medium text-xs uppercase tracking-wide">
+												<td className="px-5 py-3.5 text-slate-500 font-medium text-base uppercase tracking-wide">
 													{d.proveedor_nombre}
 												</td>
 												<td className="px-5 py-3.5 text-slate-600 font-medium">
-													{d.cantidad_ordenada} <span className="text-xs text-slate-400">({d.unidad_compra})</span>
+													{d.cantidad_ordenada} <span className="text-base text-slate-400">({d.unidad_compra})</span>
 												</td>
 												<td className="px-5 py-3.5 text-right font-medium text-slate-600">
 													${d.precio_unitario_acordado.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -345,7 +345,7 @@ export default function CrearOrdenCompraPage() {
 						{/* FOOTER: TOTALES Y GENERAR */}
 						<div className="bg-slate-50 border-t border-slate-200 p-5 flex flex-col md:flex-row justify-between items-center gap-4">
 							<div className="flex flex-col items-center md:items-start text-slate-600 bg-white px-6 py-3 border border-slate-200 rounded-xl shadow-sm">
-								<span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Gran Total de la Orden</span>
+								<span className="text-base font-bold uppercase tracking-wider text-slate-400 mb-1">Gran Total de la Orden</span>
 								<div className="flex items-center gap-3">
 									<div className="text-2xl font-black text-slate-800">
 										${totalOrden.toLocaleString("en-US", { minimumFractionDigits: 2 })}
@@ -353,7 +353,7 @@ export default function CrearOrdenCompraPage() {
 									{tasaBcv > 0 && (
 										<>
 											<span className="text-slate-300">|</span>
-											<div className="text-sm font-bold text-slate-500">
+											<div className="text-base font-bold text-slate-500">
 												Bs {(totalOrden * tasaBcv).toLocaleString("es-VE", { minimumFractionDigits: 2 })}
 											</div>
 										</>

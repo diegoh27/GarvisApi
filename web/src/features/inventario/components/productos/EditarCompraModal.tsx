@@ -126,7 +126,7 @@ export default function EditarCompraModal({
             <h2 className="text-xl md:text-2xl font-bold text-gray-800">
               Editar Compra
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-base text-gray-600 mt-1">
               {compra?.nombre_producto || "Producto"}
             </p>
           </div>
@@ -155,7 +155,7 @@ export default function EditarCompraModal({
 
           {/* Fecha de Ingreso */}
           <div>
-            <label htmlFor="fecha_ingreso" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="fecha_ingreso" className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Ingreso *
             </label>
             <input
@@ -173,7 +173,7 @@ export default function EditarCompraModal({
           {/* Cantidad y Precio Unitario en Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="cantidad" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="cantidad" className="block text-base font-medium text-gray-700 mb-1">
                 Cantidad *
               </label>
               <input
@@ -192,7 +192,7 @@ export default function EditarCompraModal({
             </div>
 
             <div>
-              <label htmlFor="precio_unitario" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="precio_unitario" className="block text-base font-medium text-gray-700 mb-1">
                 Precio Unitario ($) * (mín. 0,01)
               </label>
               <input
@@ -214,7 +214,7 @@ export default function EditarCompraModal({
 
           {/* Precio Total (solo calculado) */}
           <div>
-            <label htmlFor="precio_total" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="precio_total" className="block text-base font-medium text-gray-700 mb-1">
               Precio Total ($)
             </label>
             <input
@@ -227,7 +227,7 @@ export default function EditarCompraModal({
               tabIndex={-1}
               aria-label="Precio total (calculado)"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-base text-gray-500 mt-1">
               Calculado automáticamente (cantidad × precio unitario)
             </p>
           </div>
@@ -235,7 +235,7 @@ export default function EditarCompraModal({
           {/* Proveedor y Referencia */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="proveedor" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="proveedor" className="block text-base font-medium text-gray-700 mb-1">
                 Proveedor
               </label>
               <input
@@ -252,7 +252,7 @@ export default function EditarCompraModal({
             </div>
 
             <div>
-              <label htmlFor="referencia" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="referencia" className="block text-base font-medium text-gray-700 mb-1">
                 Referencia
               </label>
               <input

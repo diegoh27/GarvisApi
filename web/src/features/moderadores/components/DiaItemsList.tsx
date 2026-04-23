@@ -372,7 +372,7 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 	return (
 		<div className="rounded-2xl bg-paper p-4 shadow-sm">
 			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold text-brand-900">
+				<h3 className="text-base font-semibold text-brand-900">
 					{formatFecha(fecha)}
 				</h3>
 				{loading ? (
@@ -418,7 +418,7 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 									>
 										<div className="flex items-start justify-between">
 											<div className="flex-1">
-												<p className="text-xs font-semibold text-brand-900">
+												<p className="text-sm font-semibold text-brand-900">
 													{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
 												</p>
 												<p className="text-[11px] text-brand-800 mt-1">
@@ -474,7 +474,7 @@ const DiaItemsList = ({ fecha, disponibilidades, citas, loading }: DiaItemsListP
 									>
 										<div className="flex items-start justify-between">
 											<div className="flex-1">
-												<p className="text-xs font-semibold text-brand-900">
+												<p className="text-sm font-semibold text-brand-900">
 													{formatHora(cita.hora_cita)}
 												</p>
 												<p className="text-[11px] text-brand-800 mt-1">

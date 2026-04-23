@@ -107,13 +107,13 @@ const RepresentadosPage = () => {
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								placeholder="Buscar por nombre, apellido, cédula..."
-								className="w-full rounded-lg border border-brand-300 bg-paper py-2 pl-9 pr-3 text-sm text-brand-900 placeholder:text-brand-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+								className="w-full rounded-lg border border-brand-300 bg-paper py-2 pl-9 pr-3 text-base text-brand-900 placeholder:text-brand-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 							/>
 						</div>
 						<select
 							value={filtroParentesco}
 							onChange={(e) => setFiltroParentesco(e.target.value)}
-							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 						>
 							<option value="">Todos los parentescos</option>
 							{parentescos.map((p) => (
@@ -125,7 +125,7 @@ const RepresentadosPage = () => {
 						<select
 							value={filtroGenero}
 							onChange={(e) => setFiltroGenero(e.target.value as "Masculino" | "Femenino" | "")}
-							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 						>
 							<option value="">Todos los géneros</option>
 							{GENEROS.map((g) => (
@@ -139,7 +139,7 @@ const RepresentadosPage = () => {
 						type="button"
 						onClick={() => setIsCreateModalOpen(true)}
 						disabled={!isEmailVerified}
-						className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+						className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-base font-medium transition-colors ${
 							!isEmailVerified
 								? "bg-brand-800 text-paper/90 cursor-not-allowed"
 								: "bg-brand-700 text-paper hover:bg-brand-800"
@@ -164,7 +164,7 @@ const RepresentadosPage = () => {
 						<>
 							{/* Vista de tabla (pantallas medianas y grandes) */}
 							<div className="hidden md:block overflow-x-auto">
-								<table className="w-full text-left text-sm">
+								<table className="w-full text-left text-base">
 									<thead className="border-b border-brand-200 bg-brand-50">
 										<tr>
 											<th className="px-4 py-3 font-medium text-brand-900">Nombre</th>
@@ -230,15 +230,15 @@ const RepresentadosPage = () => {
 													<h3 className="font-medium text-brand-900">
 														{r.nombre} {r.apellido}
 													</h3>
-													<p className="text-sm text-brand-600">{r.cedula ?? "—"}</p>
+													<p className="text-base text-brand-600">{r.cedula ?? "—"}</p>
 												</div>
 												{r.parentesco && (
-													<span className="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-800">
+													<span className="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-0.5 text-sm font-medium text-brand-800">
 														{r.parentesco}
 													</span>
 												)}
 											</div>
-											<div className="grid grid-cols-2 gap-2 text-sm">
+											<div className="grid grid-cols-2 gap-2 text-base">
 												<div>
 													<p className="text-brand-600">Fecha nac.</p>
 													<p className="text-brand-900">
@@ -254,7 +254,7 @@ const RepresentadosPage = () => {
 												<button
 													type="button"
 													onClick={() => setEditingRepresentado(r)}
-													className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition-colors"
+													className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-base font-medium text-blue-700 hover:bg-blue-100 transition-colors"
 													disabled={isDeleting}
 												>
 													<Pencil className="h-4 w-4" />
@@ -263,7 +263,7 @@ const RepresentadosPage = () => {
 												<button
 													type="button"
 													onClick={() => handleDelete(r)}
-													className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-100 transition-colors"
+													className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-base font-medium text-red-700 hover:bg-red-100 transition-colors"
 													disabled={isDeleting}
 												>
 													<Trash2 className="h-4 w-4" />
@@ -281,7 +281,7 @@ const RepresentadosPage = () => {
 				{/* Paginación */}
 				{totalPages > 1 && (
 					<div className="flex items-center justify-between gap-4">
-						<p className="text-sm text-brand-600">
+						<p className="text-base text-brand-600">
 							Mostrando {(page - 1) * ITEMS_PER_PAGE + 1}–
 							{Math.min(page * ITEMS_PER_PAGE, total)} de {total}
 						</p>
@@ -295,7 +295,7 @@ const RepresentadosPage = () => {
 							>
 								<ChevronLeft className="h-5 w-5" />
 							</button>
-							<span className="text-sm font-medium text-brand-800">
+							<span className="text-base font-medium text-brand-800">
 								Página {page} de {totalPages}
 							</span>
 							<button

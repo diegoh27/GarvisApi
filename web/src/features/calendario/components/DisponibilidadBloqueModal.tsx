@@ -123,10 +123,10 @@ const DisponibilidadBloqueModal = ({
 						>
 							{labelEstado(b)}
 						</p>
-						<p className="mt-1 text-sm text-slate-600">{fechaLarga}</p>
-						<p className="mt-2 text-sm font-semibold text-slate-800">{rangoActualLabel}</p>
+						<p className="mt-1 text-base text-slate-600">{fechaLarga}</p>
+						<p className="mt-2 text-base font-semibold text-slate-800">{rangoActualLabel}</p>
 						{ecoLine ? (
-							<p className="mt-1 text-xs text-slate-500">{ecoLine}</p>
+							<p className="mt-1 text-sm text-slate-500">{ecoLine}</p>
 						) : null}
 					</div>
 					<div className="flex shrink-0 items-center gap-1">
@@ -154,14 +154,14 @@ const DisponibilidadBloqueModal = ({
 				<div className="space-y-4 px-5 py-4">
 					{editando && puedeGestionar ? (
 						<div className="rounded-xl bg-cloud/80 p-4">
-							<p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+							<p className="text-sm font-bold uppercase tracking-wide text-slate-500">
 								Nuevo horario (bloques de 20 min)
 							</p>
 							<div className="mt-3 grid grid-cols-2 gap-3">
-								<label className="block text-xs font-medium text-slate-600">
+								<label className="block text-sm font-medium text-slate-600">
 									Desde
 									<select
-										className="mt-1 w-full rounded-lg border border-mist bg-paper px-2 py-2 text-sm"
+										className="mt-1 w-full rounded-lg border border-mist bg-paper px-2 py-2 text-base"
 										value={horaIniSel}
 										onChange={(e) => setHoraIniSel(e.target.value)}
 									>
@@ -172,10 +172,10 @@ const DisponibilidadBloqueModal = ({
 										))}
 									</select>
 								</label>
-								<label className="block text-xs font-medium text-slate-600">
+								<label className="block text-sm font-medium text-slate-600">
 									Hasta (último bloque)
 									<select
-										className="mt-1 w-full rounded-lg border border-mist bg-paper px-2 py-2 text-sm"
+										className="mt-1 w-full rounded-lg border border-mist bg-paper px-2 py-2 text-base"
 										value={horaFinSel}
 										onChange={(e) => setHoraFinSel(e.target.value)}
 									>
@@ -187,17 +187,17 @@ const DisponibilidadBloqueModal = ({
 									</select>
 								</label>
 							</div>
-							<p className="mt-2 text-xs text-slate-500">Vista previa: {rangoEditLabel}</p>
+							<p className="mt-2 text-sm text-slate-500">Vista previa: {rangoEditLabel}</p>
 						</div>
 					) : null}
 
 					{esCancelada ? (
-						<p className="text-sm text-slate-600">
+						<p className="text-base text-slate-600">
 							Este tramo está cancelado. Puedes volver a enviar una solicitud con el mismo rango
 							y equipos al moderador.
 						</p>
 					) : (
-						<p className="text-sm text-slate-600">
+						<p className="text-base text-slate-600">
 							Usa el lápiz para proponer otro horario; se notificará al moderador.{" "}
 							<span className="font-medium text-slate-700">
 								Cancelar disponibilidad
@@ -211,7 +211,7 @@ const DisponibilidadBloqueModal = ({
 				<div className="flex flex-col gap-2 border-t border-mist/60 px-5 py-4 sm:flex-row sm:justify-end">
 					<button
 						type="button"
-						className="order-2 rounded-xl border border-mist px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-cloud sm:order-1"
+						className="order-2 rounded-xl border border-mist px-4 py-2.5 text-base font-semibold text-slate-700 transition hover:bg-cloud sm:order-1"
 						onClick={onClose}
 						disabled={loading}
 					>
@@ -220,7 +220,7 @@ const DisponibilidadBloqueModal = ({
 					{esCancelada ? (
 						<button
 							type="button"
-							className="order-1 rounded-xl bg-[#006965] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#055e5a] disabled:opacity-60 sm:order-2"
+							className="order-1 rounded-xl bg-[#006965] px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:bg-[#055e5a] disabled:opacity-60 sm:order-2"
 							disabled={loading}
 							onClick={() => void onVolverASolicitar()}
 						>
@@ -230,7 +230,7 @@ const DisponibilidadBloqueModal = ({
 						<>
 							<button
 								type="button"
-								className="order-3 rounded-xl border border-red-200 bg-red-50/90 px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-60 sm:order-2"
+								className="order-3 rounded-xl border border-red-200 bg-red-50/90 px-4 py-2.5 text-base font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-60 sm:order-2"
 								disabled={loading}
 								onClick={() => void onCancelarDisponibilidad()}
 							>
@@ -239,7 +239,7 @@ const DisponibilidadBloqueModal = ({
 							{editando && puedeGestionar ? (
 								<button
 									type="button"
-									className="order-1 rounded-xl bg-[#006965] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#055e5a] disabled:opacity-60 sm:order-3"
+									className="order-1 rounded-xl bg-[#006965] px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:bg-[#055e5a] disabled:opacity-60 sm:order-3"
 									disabled={
 										loading ||
 										!cambioValido ||

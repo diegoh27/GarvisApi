@@ -74,7 +74,7 @@ const HeaderLanding = () => {
 					<img
 						src="/logo.png"
 						alt="Logo Garbis"
-						className="h-30 w-30 object-contain drop-shadow-[0_2px_8px_rgba(20,184,166,0.15)]"
+						className="h-14 w-auto object-contain drop-shadow-[0_2px_8px_rgba(20,184,166,0.15)]"
 					/>
 				</Link>
 
@@ -87,7 +87,7 @@ const HeaderLanding = () => {
 								key={href}
 								href={href}
 								onClick={(e) => handleNavClick(e, href)}
-								className="group relative px-4 py-2.5 text-sm font-semibold uppercase tracking-wider"
+								className="group relative px-4 py-2.5 text-base font-semibold uppercase tracking-wider"
 							>
 								<span
 									className={`transition-colors duration-200 ${isActive ? "text-[#0E7490]" : "text-slate-500"
@@ -108,13 +108,13 @@ const HeaderLanding = () => {
 				<div className="hidden items-center gap-2 lg:flex">
 					<Link
 						to="/auth/login"
-						className="rounded-full border border-[#14B8A6]/50 bg-white/90 px-5 py-2.5 text-sm font-semibold text-[#0E7490] shadow-sm transition-all duration-200 hover:border-[#14B8A6] hover:bg-[#F0FDFA] hover:shadow-md"
+						className="rounded-full border border-[#14B8A6]/50 bg-white/90 px-5 py-2.5 text-base font-semibold text-[#0E7490] shadow-sm transition-all duration-200 hover:border-[#14B8A6] hover:bg-[#F0FDFA] hover:shadow-md"
 					>
 						Iniciar Sesión
 					</Link>
 					<Link
 						to="/auth/register"
-						className="rounded-full bg-gradient-to-r from-[#14B8A6] to-[#0E7490] px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal-500/25 transition-all duration-200 hover:shadow-lg hover:shadow-teal-500/30 hover:-translate-y-0.5"
+						className="rounded-full bg-gradient-to-r from-[#14B8A6] to-[#0E7490] px-5 py-2.5 text-base font-semibold text-white shadow-md shadow-teal-500/25 transition-all duration-200 hover:shadow-lg hover:shadow-teal-500/30 hover:-translate-y-0.5"
 					>
 						Registrarse
 					</Link>
@@ -172,14 +172,14 @@ const HeaderLanding = () => {
 						<Link
 							to="/auth/login"
 							onClick={closeMenu}
-							className="flex min-h-[44px] items-center justify-center rounded-xl border border-[#14B8A6]/50 bg-white py-3 text-center text-sm font-semibold leading-normal text-[#0E7490] transition-colors hover:bg-[#F0FDFA]"
+							className="flex min-h-[44px] items-center justify-center rounded-xl border border-[#14B8A6]/50 bg-white py-3 text-center text-base font-semibold leading-normal text-[#0E7490] transition-colors hover:bg-[#F0FDFA]"
 						>
 							Iniciar Sesión
 						</Link>
 						<Link
 							to="/auth/register"
 							onClick={closeMenu}
-							className="flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-[#14B8A6] to-[#0E7490] py-3 text-center text-sm font-semibold leading-normal text-white shadow-md shadow-teal-500/25 transition-all hover:shadow-lg"
+							className="flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-[#14B8A6] to-[#0E7490] py-3 text-center text-base font-semibold leading-normal text-white shadow-md shadow-teal-500/25 transition-all hover:shadow-lg"
 						>
 							Registrarse
 						</Link>

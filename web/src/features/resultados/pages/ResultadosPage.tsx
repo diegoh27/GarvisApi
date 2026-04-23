@@ -352,32 +352,32 @@ const ResultadosPage = () => {
 									>
 										<div className="space-y-4">
 											<div className="flex items-center gap-2 flex-wrap">
-												<span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-paper">
+												<span className="rounded-full bg-accent px-2 py-0.5 text-sm font-medium text-paper">
 													{cita.eco_nombre}
 												</span>
-												<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoCitaColor(cita.estado_cita)}`}>
+												<span className={`rounded-full px-2 py-0.5 text-sm font-medium ${getEstadoCitaColor(cita.estado_cita)}`}>
 													{getEstadoCitaLabel(cita.estado_cita)}
 												</span>
-												<span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getEstadoPagoColor(cita.estado_pago)}`}>
+												<span className={`rounded-full px-2 py-0.5 text-sm font-medium ${getEstadoPagoColor(cita.estado_pago)}`}>
 													{getEstadoPagoLabel(cita.estado_pago)}
 												</span>
 										{archivos.length > 0 && (
-												<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
+												<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-sm font-medium text-paper">
 													{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
 												</span>
 											)}
 											{tieneDicom && (
-												<span className="rounded-full bg-purple-500 px-2 py-0.5 text-xs font-medium text-paper">
+												<span className="rounded-full bg-purple-500 px-2 py-0.5 text-sm font-medium text-paper">
 													DICOM
 												</span>
 											)}
 												{tieneInforme && (
-													<span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-paper">
+													<span className="rounded-full bg-blue-500 px-2 py-0.5 text-sm font-medium text-paper">
 														Con informe
 													</span>
 												)}
 											</div>
-											<div className="space-y-1 text-sm text-brand-600">
+											<div className="space-y-1 text-base text-brand-600">
 												<div>
 													<span className="font-medium">Especialista:</span> {especialistaFullName}
 												</div>
@@ -390,7 +390,7 @@ const ResultadosPage = () => {
 												<button
 													type="button"
 													onClick={() => setSelectedCitaIdForView(cita.id_cita)}
-													className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
+													className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
 												>
 													<Calendar className="h-4 w-4" />
 													Ver detalles
@@ -399,7 +399,7 @@ const ResultadosPage = () => {
 													<button
 														type="button"
 														onClick={() => setSelectedCitaForPago(cita.id_cita)}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
+														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
 													>
 														<Receipt className="h-4 w-4" />
 														Ver pago
@@ -409,13 +409,13 @@ const ResultadosPage = () => {
 													<button
 														type="button"
 														onClick={() => setSelectedInforme({ pdfUrl: cita.informe_pdf_url || "", ecoNombre: cita.eco_nombre })}
-														className="rounded-lg border border-blue-500 bg-paper px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 flex items-center gap-2"
+														className="rounded-lg border border-blue-500 bg-paper px-4 py-2 text-base font-medium text-blue-600 transition-colors hover:bg-blue-50 flex items-center gap-2"
 													>
 														<FileText className="h-4 w-4" />
 														Ver informe
 													</button>
 												) : (
-													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
+													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-base font-medium text-brand-600">
 														Sin informe
 													</span>
 												)}
@@ -431,13 +431,13 @@ const ResultadosPage = () => {
 																idCita: cita.id_cita,
 															});
 														}}
-														className="rounded-lg border border-emerald-500 bg-paper px-4 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-50 flex items-center gap-2"
+														className="rounded-lg border border-emerald-500 bg-paper px-4 py-2 text-base font-medium text-emerald-600 transition-colors hover:bg-emerald-50 flex items-center gap-2"
 													>
 														<FileCheck className="h-4 w-4" />
 														Ver {totalResultados} resultado{totalResultados !== 1 ? "s" : ""}
 													</button>
 												) : (
-													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
+													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-base font-medium text-brand-600">
 														Sin resultado
 													</span>
 												)}
@@ -445,13 +445,13 @@ const ResultadosPage = () => {
 													<button
 														type="button"
 														onClick={() => handleViewOrdenMedica(cita.orden)}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
+														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50 flex items-center gap-2"
 													>
 														<Eye className="h-4 w-4" />
 														Ver orden médica
 													</button>
 												) : (
-													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-sm font-medium text-brand-600">
+													<span className="rounded-lg border border-brand-200 bg-cloud px-4 py-2 text-base font-medium text-brand-600">
 														Sin orden médica
 													</span>
 												)}
@@ -566,14 +566,14 @@ const ResultadosPage = () => {
 								value={query}
 								onChange={(e) => setQuery(e.target.value)}
 								placeholder="Buscar por nombre, apellido, especialista o eco..."
-								className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-brand-900 shadow-sm outline-none ring-[#006965]/20 placeholder:text-slate-400 focus:border-[#006965]/30 focus:ring-2"
+								className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-base text-brand-900 shadow-sm outline-none ring-[#006965]/20 placeholder:text-slate-400 focus:border-[#006965]/30 focus:ring-2"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<h3 className="font-headline flex flex-wrap items-center gap-2 text-xl font-bold text-brand-900">
 								Pacientes con resultados pendientes
-								<span className="rounded-full bg-[#1c837f] px-2.5 py-0.5 text-xs font-bold text-white">
+								<span className="rounded-full bg-[#1c837f] px-2.5 py-0.5 text-sm font-bold text-white">
 									{filteredCitas.length}
 								</span>
 							</h3>
@@ -618,7 +618,7 @@ const ResultadosPage = () => {
 															• Ref: #{cita.id_cita.slice(0, 8)}
 														</span>
 													</div>
-													<p className="mt-1 text-xs text-slate-500">
+													<p className="mt-1 text-sm text-slate-500">
 														{cita.especialista_nombre} {cita.especialista_apellido} ·{" "}
 														{formatFecha(cita.fecha_cita)} {formatHora(cita.hora_cita)}
 													</p>
@@ -628,7 +628,7 @@ const ResultadosPage = () => {
 												type="button"
 												onClick={() => setSelectedCitaForUpload(cita)}
 												disabled={isUploading}
-												className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1c837f] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/20 transition-all hover:bg-[#006965] active:scale-[0.98] disabled:opacity-50"
+												className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1c837f] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#006965]/20 transition-all hover:bg-[#006965] active:scale-[0.98] disabled:opacity-50"
 											>
 												<CloudUpload className="h-5 w-5" aria-hidden />
 												Subir resultado
@@ -650,9 +650,9 @@ const ResultadosPage = () => {
 								<span className="h-2 w-2 animate-pulse rounded-full bg-[#006965]" aria-hidden />
 							</div>
 							{isLoadingCitasConResultado ? (
-								<p className="py-6 text-center text-sm text-slate-500">Cargando actividad…</p>
+								<p className="py-6 text-center text-base text-slate-500">Cargando actividad…</p>
 							) : recentActivity.length === 0 ? (
-								<p className="py-6 text-center text-sm text-slate-500">
+								<p className="py-6 text-center text-base text-slate-500">
 									Aún no hay cargas recientes.
 								</p>
 							) : (
@@ -672,12 +672,12 @@ const ResultadosPage = () => {
 												</div>
 												<div className="min-w-0 flex-1 pb-1">
 													<div className="mb-1 flex items-start justify-between gap-2">
-														<p className="truncate text-sm font-bold text-brand-900">{nombreArchivo}</p>
+														<p className="truncate text-base font-bold text-brand-900">{nombreArchivo}</p>
 														<span className="shrink-0 text-[10px] font-medium text-slate-400">
 															{activityTimeLabel(cita)}
 														</span>
 													</div>
-													<p className="mb-2 text-xs text-slate-600">
+													<p className="mb-2 text-sm text-slate-600">
 														Paciente:{" "}
 														<span className="font-semibold text-brand-900">
 															{cita.paciente_nombre} {cita.paciente_apellido}
@@ -700,7 +700,7 @@ const ResultadosPage = () => {
 										block: "start",
 									})
 								}
-								className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[#006965]/15 py-3 text-xs font-bold uppercase tracking-widest text-[#006965] transition-all hover:bg-[#006965]/5"
+								className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[#006965]/15 py-3 text-sm font-bold uppercase tracking-widest text-[#006965] transition-all hover:bg-[#006965]/5"
 							>
 								Ver historial completo
 								<ArrowRight className="h-4 w-4" aria-hidden />
@@ -781,7 +781,7 @@ const ResultadosPage = () => {
 																)}
 															</div>
 															<div className="min-w-0">
-																<p className="truncate text-sm font-bold text-brand-900">{etiqueta}</p>
+																<p className="truncate text-base font-bold text-brand-900">{etiqueta}</p>
 																<p className="text-[10px] text-slate-400">
 																	{cita.eco_nombre}
 																	{archivos.length > 1 ? ` · +${archivos.length - 1}` : ""}
@@ -790,13 +790,13 @@ const ResultadosPage = () => {
 														</div>
 													</td>
 													<td className="py-5">
-														<p className="text-sm font-semibold text-brand-900">
+														<p className="text-base font-semibold text-brand-900">
 															{cita.paciente_nombre} {cita.paciente_apellido}
 														</p>
 														<p className="text-[10px] text-slate-400">ID: #{cita.id_cita.slice(0, 8)}</p>
 													</td>
 													<td className="py-5">
-														<p className="text-sm text-slate-700">{formatFecha(cita.fecha_cita)}</p>
+														<p className="text-base text-slate-700">{formatFecha(cita.fecha_cita)}</p>
 														<p className="text-[10px] text-slate-400">{formatHora(cita.hora_cita)}</p>
 													</td>
 													<td className="py-5">

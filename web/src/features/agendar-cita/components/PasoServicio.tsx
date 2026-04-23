@@ -144,7 +144,7 @@ const MiniCalendar = ({ selectedDate, onSelectDate }: MiniCalendarProps) => {
 			</div>
 
 			{/* Month name */}
-			<p className="text-xs font-bold font-headline text-brand-900 mb-2 px-0.5">
+			<p className="text-sm font-bold font-headline text-brand-900 mb-2 px-0.5">
 				{MONTH_NAMES[viewMonth]} {viewYear}
 			</p>
 
@@ -289,7 +289,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 				<h2 className="font-headline text-2xl font-extrabold text-brand-900 tracking-tight mb-2 sm:text-3xl lg:text-4xl">
 					Tipo de Ecografía
 				</h2>
-				<p className="text-brand-600 text-sm lg:text-base max-w-2xl leading-relaxed">
+				<p className="text-brand-600 text-base lg:text-base max-w-2xl leading-relaxed">
 					Selecciona una fecha y elige el tipo de ecografía que deseas realizarte. Solo se muestran
 					los tipos de ecografías con especialistas disponibles para el día seleccionado.
 				</p>
@@ -315,7 +315,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					className="order-2 lg:col-span-7 lg:col-start-1 lg:row-start-1 lg:row-span-2 space-y-6 scroll-mt-24"
 				>
 					<div className="rounded-xl border border-slate-200 bg-paper/30 p-4">
-						<h3 className="mb-4 font-headline text-sm font-bold text-brand-900">
+						<h3 className="mb-4 font-headline text-base font-bold text-brand-900">
 							Tipo de eco
 						</h3>
 						{isLoading || isFetching ? (
@@ -382,11 +382,11 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 														)}
 													</div>
 												</div>
-												<p className="mt-1 line-clamp-2 text-sm leading-snug text-brand-600">
+												<p className="mt-1 line-clamp-2 text-base leading-snug text-brand-600">
 													{desc}
 												</p>
 												{isSelected && eco.especialistas.length > 0 && (
-													<p className="mt-2 text-xs text-brand-500">
+													<p className="mt-2 text-sm text-brand-500">
 														Especialista{eco.especialistas.length > 1 ? "s" : ""}:{" "}
 														{eco.especialistas.join(", ")}
 													</p>
@@ -402,7 +402,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 								<p className="mb-2 font-headline text-lg font-bold text-brand-900">
 									No hay servicios disponibles
 								</p>
-								<p className="mx-auto max-w-sm text-sm text-brand-600">
+								<p className="mx-auto max-w-sm text-base text-brand-600">
 									No hay especialistas con disponibilidad para el día seleccionado. Intenta seleccionar otra fecha en el
 									calendario.
 								</p>
@@ -411,7 +411,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					</div>
 
 					<div className="rounded-2xl border border-brand-200/50 bg-slate-50 p-6 lg:p-8 shadow-sm">
-						<h5 className="mb-6 text-xs font-bold uppercase tracking-widest text-brand-800">
+						<h5 className="mb-6 text-sm font-bold uppercase tracking-widest text-brand-800">
 							Detalles de la cita
 						</h5>
 						{selectedGroup ? (
@@ -430,7 +430,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 									</span>
 									<div className="mt-1 flex items-center gap-2">
 										<div className="h-2 w-2 rounded-full bg-amber-400" />
-										<p className="text-sm font-medium text-brand-900">
+										<p className="text-base font-medium text-brand-900">
 											{selectedGroup.especialistas.length} especialista
 											{selectedGroup.especialistas.length > 1 ? "s" : ""} disponible
 											{selectedGroup.especialistas.length > 1 ? "s" : ""}
@@ -438,7 +438,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 									</div>
 								</div>
 								<div className="border-t border-brand-200/30 pt-4">
-									<p className="text-xs leading-relaxed text-brand-600">
+									<p className="text-sm leading-relaxed text-brand-600">
 										Al continuar, verás los horarios disponibles para esta ecografía con nuestros especialistas.
 									</p>
 								</div>
@@ -446,7 +446,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 						) : (
 							<div className="py-6 text-center">
 								<ScanHeart className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-								<p className="text-sm font-medium text-slate-400">
+								<p className="text-base font-medium text-slate-400">
 									{ecoGroups.length > 0
 										? "Selecciona una ecografía para ver los detalles"
 										: "Selecciona una fecha con disponibilidad"}
@@ -463,8 +463,8 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 							<Info className="h-4 w-4 text-brand-600 lg:h-5 lg:w-5" />
 						</div>
 						<div>
-							<h6 className="text-sm font-bold text-brand-900">¿Necesitas orientación?</h6>
-							<p className="mt-1 text-xs leading-relaxed text-brand-600">
+							<h6 className="text-base font-bold text-brand-900">¿Necesitas orientación?</h6>
+							<p className="mt-1 text-sm leading-relaxed text-brand-600">
 								Si no estás seguro qué tipo de ecografía necesitas, consulta con tu médico tratante antes de agendar. También puedes enviarnos un mensaje al +584144774526 si requieres alguna asesoría
 							</p>
 						</div>
@@ -486,7 +486,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 				<button
 					type="button"
 					onClick={onBack}
-					className="w-full mt-3 py-3 text-brand-800 font-semibold text-sm hover:bg-cloud rounded-xl transition-colors"
+					className="w-full mt-3 py-3 text-brand-800 font-semibold text-base hover:bg-cloud rounded-xl transition-colors"
 				>
 					Volver al paso anterior
 				</button>
@@ -497,7 +497,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 				<button
 					type="button"
 					onClick={onBack}
-					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-sm"
+					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-base"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					<span className="font-headline tracking-tight">Volver</span>
@@ -506,7 +506,7 @@ const PasoServicio = ({ onNext, onBack }: PasoServicioProps) => {
 					type="button"
 					onClick={handleContinue}
 					disabled={!canContinue}
-					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
+					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-base"
 				>
 					Continuar
 					<ArrowRight className="h-4 w-4" />

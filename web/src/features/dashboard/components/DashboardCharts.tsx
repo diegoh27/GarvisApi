@@ -209,7 +209,7 @@ const DashboardCharts = () => {
 				<div className="flex bg-slate-50 border border-slate-200 rounded-lg p-1 space-x-1 overflow-x-auto w-full sm:w-auto">
 					<button
 						onClick={() => setActiveTab("citas")}
-						className={`px-3 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-colors ${
+						className={`px-3 py-1.5 text-sm font-bold rounded-md whitespace-nowrap transition-colors ${
 							activeTab === "citas"
 								? "bg-white text-teal-800 shadow-sm border border-slate-200"
 								: "text-slate-500 hover:text-brand-900"
@@ -219,7 +219,7 @@ const DashboardCharts = () => {
 					</button>
 					<button
 						onClick={() => setActiveTab("facturacion")}
-						className={`px-3 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-colors ${
+						className={`px-3 py-1.5 text-sm font-bold rounded-md whitespace-nowrap transition-colors ${
 							activeTab === "facturacion"
 								? "bg-white text-teal-800 shadow-sm border border-slate-200"
 								: "text-slate-500 hover:text-brand-900"
@@ -229,7 +229,7 @@ const DashboardCharts = () => {
 					</button>
 					<button
 						onClick={() => setActiveTab("productos")}
-						className={`px-3 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-colors ${
+						className={`px-3 py-1.5 text-sm font-bold rounded-md whitespace-nowrap transition-colors ${
 							activeTab === "productos"
 								? "bg-white text-teal-800 shadow-sm border border-slate-200"
 								: "text-slate-500 hover:text-brand-900"
@@ -247,7 +247,7 @@ const DashboardCharts = () => {
 							<select
 								value={citasView}
 								onChange={(e) => setCitasView(e.target.value as any)}
-								className="text-xs border border-slate-200 rounded-md py-1 px-2 focus:ring-teal-500"
+								className="text-sm border border-slate-200 rounded-md py-1 px-2 focus:ring-teal-500"
 							>
 								<option value="dias">Estadística diaria (7 días)</option>
 								<option value="semanas">Estadística semanal (1 mes)</option>
@@ -255,7 +255,7 @@ const DashboardCharts = () => {
 							</select>
 						</div>
 						{loadingCitas ? (
-							<div className="flex flex-1 items-center justify-center text-slate-400 text-sm">Cargando...</div>
+							<div className="flex flex-1 items-center justify-center text-slate-400 text-base">Cargando...</div>
 						) : (
 							<ResponsiveContainer width="100%" height="100%">
 								<LineChart data={chartDataCitas} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -282,7 +282,7 @@ const DashboardCharts = () => {
 							<select
 								value={facturacionView}
 								onChange={(e) => setFacturacionView(e.target.value as any)}
-								className="text-xs border border-slate-200 rounded-md py-1 px-2 focus:ring-teal-500"
+								className="text-sm border border-slate-200 rounded-md py-1 px-2 focus:ring-teal-500"
 							>
 								<option value="semanal">Flujo Semanal (Últimos 7 días)</option>
 								<option value="mensual">Flujo Mensual (Últimas 4 semanas)</option>
@@ -291,7 +291,7 @@ const DashboardCharts = () => {
 							</select>
 						</div>
 						{loadingMov ? (
-							<div className="flex flex-1 items-center justify-center text-slate-400 text-sm">Cargando...</div>
+							<div className="flex flex-1 items-center justify-center text-slate-400 text-base">Cargando...</div>
 						) : (
 							<ResponsiveContainer width="100%" height="100%">
 								<BarChart data={chartDataFacturacion} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -314,10 +314,10 @@ const DashboardCharts = () => {
 				{activeTab === "productos" && (
 					<div className="w-full h-full flex flex-col">
 						<div className="flex justify-between items-center mb-2">
-							<span className="text-xs text-slate-500 font-medium">Existencia vs Consumo (Top 10 más consumidos)</span>
+							<span className="text-sm text-slate-500 font-medium">Existencia vs Consumo (Top 10 más consumidos)</span>
 						</div>
 						{loadingProd ? (
-							<div className="flex flex-1 items-center justify-center text-slate-400 text-sm">Cargando...</div>
+							<div className="flex flex-1 items-center justify-center text-slate-400 text-base">Cargando...</div>
 						) : (
 							<ResponsiveContainer width="100%" height="100%">
 								<BarChart layout="vertical" data={chartDataProductos} margin={{ top: 5, right: 30, left: 40, bottom: 0 }}>

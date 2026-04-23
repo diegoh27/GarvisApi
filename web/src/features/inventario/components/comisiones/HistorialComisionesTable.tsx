@@ -30,9 +30,9 @@ export default function HistorialComisionesTable({
       key: "id",
       header: "ID",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: EspecialistaComision, index: number) =>
         String(index + 1).padStart(3, "0"),
     },
@@ -40,8 +40,8 @@ export default function HistorialComisionesTable({
       key: "especialista",
       header: "Especialista",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) =>
         `${row.especialista_nombre} ${row.especialista_apellido || ""}`.trim(),
     },
@@ -49,24 +49,24 @@ export default function HistorialComisionesTable({
       key: "eco",
       header: "Eco",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.eco_nombre || "-",
     },
     {
       key: "rif",
       header: "RIF",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.paciente_rif || "-",
     },
     {
       key: "fecha_cita",
       header: "Fecha Cita",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) =>
         row.fecha_cita ? formatFechaCortaLocal(row.fecha_cita) : "-",
     },
@@ -74,8 +74,8 @@ export default function HistorialComisionesTable({
       key: "fecha_pago",
       header: "Fecha Pago",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) =>
         row.fecha_pago ? formatFechaCortaLocal(row.fecha_pago) : "-",
     },
@@ -83,9 +83,9 @@ export default function HistorialComisionesTable({
       key: "monto",
       header: "Monto (USD)",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right font-semibold text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right font-semibold text-gray-900",
       render: (row: EspecialistaComision) =>
         `$${Number(row.monto).toFixed(2)}`,
     },
@@ -93,9 +93,9 @@ export default function HistorialComisionesTable({
       key: "porcentaje",
       header: "%",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-center text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-center text-gray-900",
       render: (row: EspecialistaComision) =>
         `${Number(row.porcentaje).toFixed(1)}%`,
     },
@@ -105,7 +105,7 @@ export default function HistorialComisionesTable({
             key: "actions",
             header: "Acciones",
             headerClassName:
-              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+              "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-center",
             render: (row: EspecialistaComision) => (
               <button
@@ -157,7 +157,7 @@ export default function HistorialComisionesTable({
         {comisiones.length > 0 && (
           <button
             onClick={handleDownloadReport}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
           >
             <FileDown size={18} />
             Descargar Reporte
@@ -169,7 +169,7 @@ export default function HistorialComisionesTable({
           columns={columns}
           rows={comisiones}
           rowKey={(row) => row.id_comision}
-          tableClassName="w-full min-w-[720px] text-sm"
+          tableClassName="w-full min-w-[720px] text-base"
           theadClassName="bg-gray-100"
           getRowClassName={(_row, index) =>
             index % 2 === 0 ? "bg-gray-50" : "bg-white"

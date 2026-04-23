@@ -21,25 +21,25 @@ export default function EntesLegalesTable({
     {
       key: "id_ente",
       header: "ID",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: EnteLegal, index: number) =>
         String(startIndex + index + 1).padStart(3, "0"),
     },
     {
       key: "nombre",
       header: "Nombre",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EnteLegal) => row.nombre,
     },
     {
       key: "cant_obligaciones",
       header: "Obligaciones",
-      headerClassName: "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 text-center",
+      headerClassName: "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 text-center",
       render: (row: EnteLegal) => (
-        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-xs font-medium">
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-base font-medium">
           {row.cant_obligaciones}
         </span>
       ),
@@ -47,11 +47,11 @@ export default function EntesLegalesTable({
     {
       key: "activo",
       header: "Estado",
-      headerClassName: "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+      headerClassName: "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: EnteLegal) => (
         <span
-          className={`text-xs font-medium ${row.activo
+          className={`text-base font-medium ${row.activo
               ? "text-emerald-600"
               : "text-gray-500"
             }`}
@@ -63,8 +63,8 @@ export default function EntesLegalesTable({
     {
       key: "acciones",
       header: "Acciones",
-      headerClassName: "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+      headerClassName: "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: EnteLegal) => (
         <div className="flex gap-1 md:gap-2 justify-center">
           <button
@@ -102,7 +102,7 @@ export default function EntesLegalesTable({
           columns={columns}
           rows={entes}
           rowKey={(row) => row.id_ente}
-          tableClassName="w-full min-w-full text-sm"
+          tableClassName="w-full min-w-full text-base"
           theadClassName="bg-teal-500 text-white"
           getRowClassName={(_row, index) => (index % 2 === 0 ? "bg-gray-50" : "bg-white")}
           emptyState="No hay entes legales registrados"

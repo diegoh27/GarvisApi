@@ -25,7 +25,7 @@ type PasoParaQuienProps = {
 const InitialAvatar = ({ nombre, apellido, size = "w-12 h-12" }: { nombre: string; apellido: string; size?: string }) => {
 	const initials = `${(nombre?.[0] ?? "").toUpperCase()}${(apellido?.[0] ?? "").toUpperCase()}`;
 	return (
-		<div className={`${size} rounded-2xl bg-brand-200 text-brand-800 flex items-center justify-center font-bold text-sm shrink-0`}>
+		<div className={`${size} rounded-2xl bg-brand-200 text-brand-800 flex items-center justify-center font-bold text-base shrink-0`}>
 			{initials || <UserCircle className="h-5 w-5" />}
 		</div>
 	);
@@ -197,7 +197,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 				<h2 className="font-headline text-2xl font-extrabold text-brand-900 tracking-tight mb-1 leading-tight sm:text-3xl lg:text-4xl lg:mb-2">
 					¿Para quién es la cita?
 				</h2>
-				<p className="text-brand-600 text-sm lg:text-base">
+				<p className="text-brand-600 text-base lg:text-base">
 					Selecciona si la cita es para ti u otra persona.
 				</p>
 			</div>
@@ -246,7 +246,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					{/* Text content */}
 					<div>
 						<h3 className="font-headline text-lg font-bold mb-0.5 lg:text-xl lg:mb-1">Para mí</h3>
-						<p className={`text-sm font-semibold ${selectionType === "yo" ? "text-white/80" : "text-brand-600"}`}>
+						<p className={`text-base font-semibold ${selectionType === "yo" ? "text-white/80" : "text-brand-600"}`}>
 							{userName}
 						</p>
 					</div>
@@ -294,7 +294,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					{/* Text content */}
 					<div>
 						<h3 className="font-headline text-lg font-bold mb-0.5 lg:text-xl lg:mb-1">Para un familiar</h3>
-						<p className={`text-sm ${selectionType === "representado" ? "text-white/70" : "text-brand-600"}`}>
+						<p className={`text-base ${selectionType === "representado" ? "text-white/70" : "text-brand-600"}`}>
 							Registra los datos de tu representado.
 						</p>
 					</div>
@@ -334,10 +334,10 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 													<InitialAvatar nombre={rep.nombre} apellido={rep.apellido} size="w-10 h-10 lg:w-12 lg:h-12" />
 												)}
 												<div className="text-left min-w-0">
-													<p className={`font-bold text-sm truncate ${selectedRepresentadoId === rep.id_representado ? "text-white" : "text-brand-900"}`}>
+													<p className={`font-bold text-base truncate ${selectedRepresentadoId === rep.id_representado ? "text-white" : "text-brand-900"}`}>
 														{rep.nombre} {rep.apellido}
 													</p>
-													<p className={`text-xs font-medium uppercase tracking-wider truncate ${selectedRepresentadoId === rep.id_representado ? "text-white/60" : "text-brand-600"}`}>
+													<p className={`text-sm font-medium uppercase tracking-wider truncate ${selectedRepresentadoId === rep.id_representado ? "text-white/60" : "text-brand-600"}`}>
 														{rep.parentesco ?? "Familiar"}
 													</p>
 												</div>
@@ -347,14 +347,14 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 									))}
 								</div>
 							) : (
-								<div className="text-center py-4 text-brand-600 text-sm mb-5 lg:py-6 lg:mb-6">
+								<div className="text-center py-4 text-brand-600 text-base mb-5 lg:py-6 lg:mb-6">
 									No tienes representados registrados aún.
 								</div>
 							)}
 							<button
 								type="button"
 								onClick={() => setShowForm(true)}
-								className="w-full py-3 border-2 border-dashed border-brand-300 rounded-2xl text-brand-600 font-bold text-sm hover:border-brand-800 hover:text-brand-800 transition-all flex items-center justify-center gap-2 lg:py-4"
+								className="w-full py-3 border-2 border-dashed border-brand-300 rounded-2xl text-brand-600 font-bold text-base hover:border-brand-800 hover:text-brand-800 transition-all flex items-center justify-center gap-2 lg:py-4"
 							>
 								<PlusCircle className="h-5 w-5" />
 								Registrar nuevo familiar
@@ -378,11 +378,11 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												onChange={(e) => setFormNombre(e.target.value)}
 												onBlur={() => handleBlur("nombre")}
 												onFocus={() => handleFocus("nombre")}
-												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-base font-medium focus:ring-0 placeholder:text-slate-400"
 												placeholder="Ej: Maria"
 											/>
 										</div>
-										{errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
+										{errors.nombre && <p className="text-sm text-red-500 mt-1">{errors.nombre}</p>}
 									</div>
 									<div className="flex-1 space-y-1.5">
 										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
@@ -396,11 +396,11 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												onChange={(e) => setFormApellido(e.target.value)}
 												onBlur={() => handleBlur("apellido")}
 												onFocus={() => handleFocus("apellido")}
-												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-base font-medium focus:ring-0 placeholder:text-slate-400"
 												placeholder="Ej: González"
 											/>
 										</div>
-										{errors.apellido && <p className="text-xs text-red-500 mt-1">{errors.apellido}</p>}
+										{errors.apellido && <p className="text-sm text-red-500 mt-1">{errors.apellido}</p>}
 									</div>
 								</div>
 
@@ -421,7 +421,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										inputClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3 !px-4"
 										selectClassName="!bg-paper !border-b border-brand-200 !rounded-sm !py-3"
 									/>
-									{errors.cedula && <p className="text-xs text-red-500 mt-1">{errors.cedula}</p>}
+									{errors.cedula && <p className="text-sm text-red-500 mt-1">{errors.cedula}</p>}
 								</div>
 
 								{/* Fecha + Parentesco (side by side on mobile too) */}
@@ -440,10 +440,10 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												onChange={(e) => setFormFechaNacimiento(e.target.value)}
 												onBlur={() => handleBlur("fecha_nacimiento")}
 												onFocus={() => handleFocus("fecha_nacimiento")}
-												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 text-brand-600"
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-base font-medium focus:ring-0 text-brand-600"
 											/>
 										</div>
-										{errors.fecha_nacimiento && <p className="text-xs text-red-500 mt-1">{errors.fecha_nacimiento}</p>}
+										{errors.fecha_nacimiento && <p className="text-sm text-red-500 mt-1">{errors.fecha_nacimiento}</p>}
 									</div>
 									<div className="flex-1 space-y-1.5">
 										<label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 ml-1">
@@ -457,11 +457,11 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 												onChange={(e) => setFormParentesco(e.target.value)}
 												onBlur={() => handleBlur("parentesco")}
 												onFocus={() => handleFocus("parentesco")}
-												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-sm font-medium focus:ring-0 placeholder:text-slate-400"
+												className="w-full bg-paper border-b border-brand-400 rounded-sm py-3 pl-4 pr-3 text-base font-medium focus:ring-0 placeholder:text-slate-400"
 												placeholder="Ej: Hijo/a"
 											/>
 										</div>
-										{errors.parentesco && <p className="text-xs text-red-500 mt-1">{errors.parentesco}</p>}
+										{errors.parentesco && <p className="text-sm text-red-500 mt-1">{errors.parentesco}</p>}
 									</div>
 								</div>
 
@@ -475,7 +475,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										<button
 											type="button"
 											onClick={() => setFormGenero("Masculino")}
-											className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-colors ${formGenero === "Masculino"
+											className={`flex-1 py-3 px-4 rounded-xl text-base font-semibold border-2 transition-colors ${formGenero === "Masculino"
 												? "border-brand-800 bg-brand-800 text-white"
 												: "border-transparent bg-paper text-brand-900 hover:border-brand-300"
 												}`}
@@ -485,7 +485,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 										<button
 											type="button"
 											onClick={() => setFormGenero("Femenino")}
-											className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-colors ${formGenero === "Femenino"
+											className={`flex-1 py-3 px-4 rounded-xl text-base font-semibold border-2 transition-colors ${formGenero === "Femenino"
 												? "border-brand-800 bg-brand-800 text-white"
 												: "border-transparent bg-paper text-brand-900 hover:border-brand-300"
 												}`}
@@ -497,7 +497,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 									<select
 										value={formGenero}
 										onChange={(e) => setFormGenero(e.target.value)}
-										className="hidden lg:block w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-sm font-medium outline-none transition-all"
+										className="hidden lg:block w-full bg-paper border border-brand-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-brand-800/20 focus:border-brand-500 text-base font-medium outline-none transition-all"
 									>
 										<option value="">Seleccionar...</option>
 										<option value="Femenino">Femenino</option>
@@ -507,14 +507,14 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 							</div>
 
 							{formError && (
-								<p className="mt-3 text-sm text-red-600 font-medium lg:mt-4">{formError}</p>
+								<p className="mt-3 text-base text-red-600 font-medium lg:mt-4">{formError}</p>
 							)}
 
 							<div className="flex gap-3 mt-5 lg:mt-8">
 								<button
 									type="button"
 									onClick={() => { setShowForm(false); setFormError(""); }}
-									className="px-5 py-2.5 rounded-xl text-brand-600 font-semibold hover:bg-brand-100 transition-colors text-sm lg:px-6 lg:py-3"
+									className="px-5 py-2.5 rounded-xl text-brand-600 font-semibold hover:bg-brand-100 transition-colors text-base lg:px-6 lg:py-3"
 								>
 									Cancelar
 								</button>
@@ -522,7 +522,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 									type="button"
 									onClick={handleCreateRepresentado}
 									disabled={creando}
-									className="px-5 py-2.5 rounded-xl bg-brand-800 text-white font-bold hover:bg-brand-900 transition-colors text-sm flex items-center gap-2 disabled:opacity-60 lg:px-6 lg:py-3"
+									className="px-5 py-2.5 rounded-xl bg-brand-800 text-white font-bold hover:bg-brand-900 transition-colors text-base flex items-center gap-2 disabled:opacity-60 lg:px-6 lg:py-3"
 								>
 									{creando ? "Registrando..." : (
 										<><PlusCircle className="h-4 w-4" /> Registrar familiar</>
@@ -543,12 +543,12 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					disabled={!canContinue}
 					className="w-full bg-gradient-to-br from-brand-900 to-brand-800 text-white py-4 rounded-3xl font-headline font-bold text-lg shadow-xl shadow-brand-800/20 active:scale-95 transition-transform duration-200 disabled:opacity-40 disabled:active:scale-100"
 				>
-					Continuar a Especialidad
+					Continuar
 				</button>
 				<button
 					type="button"
 					onClick={() => navigate("/dashboard")}
-					className="w-full mt-3 py-3 text-brand-800 font-semibold text-sm hover:bg-cloud rounded-xl transition-colors"
+					className="w-full mt-3 py-3 text-brand-800 font-semibold text-base hover:bg-cloud rounded-xl transition-colors"
 				>
 					Cancelar solicitud
 				</button>
@@ -559,7 +559,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 				<button
 					type="button"
 					onClick={() => navigate("/dashboard")}
-					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-sm"
+					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-base"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					<span className="font-headline tracking-tight">Cancelar</span>
@@ -568,7 +568,7 @@ const PasoParaQuien = ({ onNext }: PasoParaQuienProps) => {
 					type="button"
 					onClick={handleContinue}
 					disabled={!canContinue}
-					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
+					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-base"
 				>
 					Continuar
 					<ArrowRight className="h-4 w-4" />

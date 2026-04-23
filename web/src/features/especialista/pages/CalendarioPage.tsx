@@ -1197,7 +1197,7 @@ const CalendarioPage = () => {
 									)}
 								</div>
 							</div>
-							<div className="flex rounded-xl bg-cloud p-1 text-sm font-semibold">
+							<div className="flex rounded-xl bg-cloud p-1 text-base font-semibold">
 								<button
 									type="button"
 									className={
@@ -1355,11 +1355,11 @@ const CalendarioPage = () => {
 							<p className="mt-1 font-headline text-base font-bold text-brand-900">
 								{popoverPaciente}
 							</p>
-							<p className="mt-2 text-sm text-slate-600">
+							<p className="mt-2 text-base text-slate-600">
 								<span className="font-semibold text-slate-700">Hora: </span>
 								{formatHora(citaPopover.bloque.hora_inicio)}
 							</p>
-							<p className="mt-1 text-sm text-slate-600">
+							<p className="mt-1 text-base text-slate-600">
 								<span className="font-semibold text-slate-700">Tipo de eco: </span>
 								{citaPopover.bloque.eco_nombre ?? "—"}
 							</p>
@@ -1369,7 +1369,7 @@ const CalendarioPage = () => {
 									new Date().toISOString().slice(0, 10) && (
 									<button
 										type="button"
-										className="mt-4 w-full rounded-xl bg-brand-800 py-2.5 text-sm font-semibold text-paper"
+										className="mt-4 w-full rounded-xl bg-brand-800 py-2.5 text-base font-semibold text-paper"
 										onClick={() => void handleMarcarAtendidaFromPopover()}
 									>
 										Marcar como atendida
@@ -1424,7 +1424,7 @@ const CalendarioPage = () => {
 							}
 						/>
 					) : (
-						<div className="rounded-2xl bg-paper p-4 text-center text-xs text-brand-800 shadow-sm">
+						<div className="rounded-2xl bg-paper p-4 text-center text-sm text-brand-800 shadow-sm">
 							Este calendario es interactivo solo para especialistas.
 						</div>
 					)}

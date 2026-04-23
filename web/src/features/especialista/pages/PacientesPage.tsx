@@ -323,7 +323,7 @@ const PacientesPage = () => {
 		return (
 			<div className="mt-4 flex flex-col flex-1 min-h-0">
 				<div className="overflow-auto flex-1 min-h-0">
-					<table className="w-full text-left text-xs text-brand-800">
+					<table className="w-full text-left text-sm text-brand-800">
 						<thead>
 							<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
 								<th className="px-2 py-2 whitespace-nowrap">Fecha</th>
@@ -410,7 +410,7 @@ const PacientesPage = () => {
 								})
 							) : (
 								<tr>
-									<td colSpan={10} className="px-2 py-6 text-center text-sm text-brand-800">
+									<td colSpan={10} className="px-2 py-6 text-center text-base text-brand-800">
 										No hay citas que coincidan con los filtros.
 									</td>
 								</tr>
@@ -420,7 +420,7 @@ const PacientesPage = () => {
 				</div>
 				{listaCitas.length > 0 && (
 					<div className="mt-4 shrink-0 flex items-center justify-between border-t border-mist pt-4">
-						<div className="text-xs text-brand-800">
+						<div className="text-sm text-brand-800">
 							Mostrando {(pageState - 1) * itemsPerPage + 1} -{" "}
 							{Math.min(pageState * itemsPerPage, listaCitas.length)} de{" "}
 							{listaCitas.length} citas
@@ -430,18 +430,18 @@ const PacientesPage = () => {
 								type="button"
 								onClick={() => setPageState((p) => Math.max(1, p - 1))}
 								disabled={pageState === 1}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								Anterior
 							</button>
-							<span className="text-xs text-brand-800">
+							<span className="text-sm text-brand-800">
 								Página {pageState} de {totalPages}
 							</span>
 							<button
 								type="button"
 								onClick={() => setPageState((p) => Math.min(totalPages, p + 1))}
 								disabled={pageState === totalPages}
-								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+								className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
 							>
 								Siguiente
 							</button>
@@ -472,7 +472,7 @@ const PacientesPage = () => {
 
 			<div className="grid gap-4 md:grid-cols-3">
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">
+					<p className="text-sm font-semibold text-brand-800">
 						Pacientes por atender
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -480,13 +480,13 @@ const PacientesPage = () => {
 					</p>
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">Citas registradas</p>
+					<p className="text-sm font-semibold text-brand-800">Citas registradas</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
 						{citas.length}
 					</p>
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">
+					<p className="text-sm font-semibold text-brand-800">
 						Resultados pendientes
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -506,15 +506,15 @@ const PacientesPage = () => {
 						<h2 className="text-base font-semibold text-brand-900">
 							Listado de pacientes
 						</h2>
-						<p className="text-xs text-brand-800 mt-0.5">
+						<p className="text-sm text-brand-800 mt-0.5">
 							Pacientes con citas registradas.
 						</p>
 					</div>
 
 					{loading ? (
-						<p className="mt-4 text-sm text-brand-800">Cargando pacientes...</p>
+						<p className="mt-4 text-base text-brand-800">Cargando pacientes...</p>
 					) : error ? (
-						<p className="mt-4 text-sm text-brand-900">{error}</p>
+						<p className="mt-4 text-base text-brand-900">{error}</p>
 					) : (
 						<>
 							{/* Lista con filas que reparten el espacio: primero arriba, último abajo */}
@@ -535,7 +535,7 @@ const PacientesPage = () => {
 													key={cita.id_cita}
 													className="grid grid-cols-[1fr_5rem_6rem] gap-1 flex-1 min-h-[3.5rem] items-center border-b border-mist/70 px-3 py-2 text-brand-800"
 												>
-													<div className="font-semibold text-brand-900 truncate text-sm" title={fullName}>
+													<div className="font-semibold text-brand-900 truncate text-base" title={fullName}>
 														{fullName}
 													</div>
 													<div className="flex justify-center">
@@ -554,7 +554,7 @@ const PacientesPage = () => {
 																		cita.paciente_contacto_telefono,
 																})
 															}
-															className="rounded-full border border-mint px-2.5 py-1 text-xs text-brand-800 shrink-0"
+															className="rounded-full border border-mint px-2.5 py-1 text-sm text-brand-800 shrink-0"
 														>
 															Ver
 														</button>
@@ -569,7 +569,7 @@ const PacientesPage = () => {
 																});
 																setCitaParaMarcarAtendida(cita);
 															}}
-															className="rounded-full border border-mint px-2.5 py-1 text-xs text-brand-800 shrink-0"
+															className="rounded-full border border-mint px-2.5 py-1 text-sm text-brand-800 shrink-0"
 														>
 															Ver historial
 														</button>
@@ -578,7 +578,7 @@ const PacientesPage = () => {
 											);
 										})
 									) : (
-										<div className="flex-1 flex items-center justify-center px-3 py-6 text-sm text-brand-800">
+										<div className="flex-1 flex items-center justify-center px-3 py-6 text-base text-brand-800">
 											No hay registros para mostrar.
 										</div>
 									)}
@@ -595,7 +595,7 @@ const PacientesPage = () => {
 												key={cita.id_cita}
 												className="rounded-2xl border border-brand-200 bg-paper p-4"
 											>
-												<p className="text-sm font-semibold text-brand-900">
+												<p className="text-base font-semibold text-brand-900">
 													{fullName}
 												</p>
 												<div className="mt-3 flex flex-wrap gap-2 text-[11px] text-brand-800">
@@ -636,7 +636,7 @@ const PacientesPage = () => {
 										);
 									})
 								) : (
-									<div className="rounded-2xl border border-brand-200 bg-paper p-6 text-center text-sm text-brand-800">
+									<div className="rounded-2xl border border-brand-200 bg-paper p-6 text-center text-base text-brand-800">
 										No hay registros para mostrar.
 									</div>
 								)}
@@ -647,7 +647,7 @@ const PacientesPage = () => {
 					{/* Paginación izquierda */}
 					{pacientesAgrupados.length > 0 && (
 						<div className="mt-4 shrink-0 flex items-center justify-between border-t border-mist pt-4">
-							<div className="text-xs text-brand-800">
+							<div className="text-sm text-brand-800">
 								Mostrando {paginatedPacientes.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} -{" "}
 								{Math.min(currentPage * itemsPerPage, pacientesAgrupados.length)} de{" "}
 								{pacientesAgrupados.length} pacientes
@@ -657,18 +657,18 @@ const PacientesPage = () => {
 									type="button"
 									onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
 									disabled={currentPage === 1}
-									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Anterior
 								</button>
-								<span className="text-xs text-brand-800">
+								<span className="text-sm text-brand-800">
 									Página {currentPage} de {totalPages}
 								</span>
 								<button
 									type="button"
 									onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
 									disabled={currentPage === totalPages}
-									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+									className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Siguiente
 								</button>
@@ -683,7 +683,7 @@ const PacientesPage = () => {
 						<h2 className="text-base font-semibold text-brand-900">
 							Citas por atender
 						</h2>
-						<p className="text-xs text-brand-800 mt-0.5">
+						<p className="text-sm text-brand-800 mt-0.5">
 							Busca por nombre, eco o fecha. Filtra por estado y resultados.
 						</p>
 					</div>
@@ -692,12 +692,12 @@ const PacientesPage = () => {
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Buscar paciente, eco o fecha"
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700 flex-1 min-w-0 sm:max-w-xs"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700 flex-1 min-w-0 sm:max-w-xs"
 						/>
 						<select
 							value={estado}
 							onChange={(e) => setEstado(e.target.value)}
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 						>
 							<option value="todos">Todos</option>
 							<option value="confirmadas">Confirmadas (por atender)</option>
@@ -706,7 +706,7 @@ const PacientesPage = () => {
 						<select
 							value={filtroResultado}
 							onChange={(e) => setFiltroResultado(e.target.value)}
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 						>
 							<option value="todos">Todos los resultados</option>
 							<option value="sin-resultado">Sin resultados</option>
@@ -715,7 +715,7 @@ const PacientesPage = () => {
 					</div>
 
 					{loading ? (
-						<p className="mt-4 text-sm text-brand-800">Cargando citas...</p>
+						<p className="mt-4 text-base text-brand-800">Cargando citas...</p>
 					) : (
 						renderCitasTable(citasPorAtenderArr, citasPage, setCitasPage)
 					)}
@@ -728,12 +728,12 @@ const PacientesPage = () => {
 					<h2 className="text-base font-semibold text-brand-900">
 						Historial de citas
 					</h2>
-					<p className="text-xs text-brand-800 mt-0.5">
+					<p className="text-sm text-brand-800 mt-0.5">
 						Registro de citas que ya fueron atendidas o que han sido canceladas/negadas.
 					</p>
 				</div>
 				{loading ? (
-					<p className="mt-4 text-sm text-brand-800">Cargando historial...</p>
+					<p className="mt-4 text-base text-brand-800">Cargando historial...</p>
 				) : (
 					renderCitasTable(citasHistorialArr, citasHistorialPage, setCitasHistorialPage)
 				)}

@@ -63,7 +63,7 @@ const JornadaSolicitudCard = ({
 						<h3 className="font-bold tracking-tight text-zinc-800">
 							Dr./Dra. {segmento.nombre} {segmento.apellido}
 						</h3>
-						<p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+						<p className="text-sm font-semibold uppercase tracking-widest text-zinc-400">
 							{segmento.especialidad}
 						</p>
 					</div>
@@ -80,7 +80,7 @@ const JornadaSolicitudCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<Calendar className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium capitalize text-zinc-600">
+					<span className="text-base font-medium capitalize text-zinc-600">
 						{fechaLarga}
 					</span>
 				</div>
@@ -88,7 +88,7 @@ const JornadaSolicitudCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<Clock className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium text-zinc-600">
+					<span className="text-base font-medium text-zinc-600">
 						{formatHora(segmento.hora_inicio)} — {formatHora(segmento.hora_fin)} ({hrsLabel})
 					</span>
 				</div>
@@ -96,10 +96,10 @@ const JornadaSolicitudCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<MapPin className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium text-zinc-600">{ubicacion}</span>
+					<span className="text-base font-medium text-zinc-600">{ubicacion}</span>
 				</div>
 				{segmento.ids.length > 1 && (
-					<p className="text-xs text-zinc-400">
+					<p className="text-sm text-zinc-400">
 						{segmento.ids.length} bloques de 20 min · un solo turno
 					</p>
 				)}
@@ -110,7 +110,7 @@ const JornadaSolicitudCard = ({
 					type="button"
 					disabled={disabled || !puedeAprobar}
 					onClick={() => onAprobar(segmento.ids)}
-					className="flex-1 rounded-xl bg-emerald-50 py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+					className="flex-1 rounded-xl bg-emerald-50 py-3 text-base font-bold text-emerald-700 transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					Aprobar Turno
 				</button>
@@ -118,7 +118,7 @@ const JornadaSolicitudCard = ({
 					type="button"
 					disabled={disabled || !puedeArchivar}
 					onClick={() => onArchivar(segmento.ids)}
-					className="px-4 py-3 text-sm font-semibold text-zinc-400 transition-all hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-40"
+					className="px-4 py-3 text-base font-semibold text-zinc-400 transition-all hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					Archivar
 				</button>

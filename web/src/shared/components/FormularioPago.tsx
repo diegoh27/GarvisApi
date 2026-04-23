@@ -595,7 +595,7 @@ const FormularioPago = ({
 			{montoWarning && (
 				<div className="rounded-lg border border-yellow-300 bg-yellow-50 p-3 flex items-start gap-2">
 					<AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-					<p className="text-sm text-yellow-800">
+					<p className="text-base text-yellow-800">
 						<strong>Advertencia:</strong> El monto en Bs ha sido modificado manualmente. Por favor verifique que el monto de la cita sea correcto según el precio del eco en USD y la tasa del BCV actual.
 					</p>
 				</div>
@@ -603,7 +603,7 @@ const FormularioPago = ({
 
 			{/* Método de pago */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className="block text-base font-medium text-brand-900 mb-1">
 					Método de pago *
 				</label>
 				<select
@@ -617,7 +617,7 @@ const FormularioPago = ({
 						}));
 						setSelectedMetodoDestinoId("");
 					}}
-					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+					className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none"
 					disabled={isLoading || disabled}
 				>
 					<option value="Transferencia">Transferencia</option>
@@ -627,7 +627,7 @@ const FormularioPago = ({
 
 			{/* Métodos configurados por admin (según tipo seleccionado) */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className="block text-base font-medium text-brand-900 mb-1">
 					{formData.metodo === "PagoMovil"
 						? "Opciones de Pago Móvil"
 						: "Opciones de Transferencia"}
@@ -653,7 +653,7 @@ const FormularioPago = ({
 								setFormData((prev) => ({ ...prev, banco_destino: "" }));
 							}
 						}}
-						className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none"
+						className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none"
 						disabled={isLoading || disabled || loadingMetodosDisponibles}
 					>
 						<option value="">
@@ -671,20 +671,20 @@ const FormularioPago = ({
 						type="button"
 						onClick={() => setShowMetodoDatosModal(true)}
 						disabled={!metodoDestinoSeleccionado || isLoading || disabled}
-						className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base font-medium text-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						<Eye className="h-4 w-4" />
 						Ver datos
 					</button>
 				</div>
-				<p className="mt-1 text-xs text-brand-600">
+				<p className="mt-1 text-sm text-brand-600">
 					Al seleccionar una opción, el banco destino se asigna automáticamente.
 				</p>
 			</div>
 
 			{/* Tasa del día (solo lectura; se guarda en la tabla pago) */}
 			<div>
-				<label className="block text-sm font-medium text-brand-900 mb-1">
+				<label className="block text-base font-medium text-brand-900 mb-1">
 					Tasa del día (BCV)
 				</label>
 				<input
@@ -697,20 +697,20 @@ const FormularioPago = ({
 								? `${dolarOficial.promedio.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs/$`
 								: "No disponible"
 					}
-					className="w-full rounded-lg border border-brand-200 bg-brand-50/50 px-3 py-2 text-sm text-brand-700 cursor-not-allowed"
+					className="w-full rounded-lg border border-brand-200 bg-brand-50/50 px-3 py-2 text-base text-brand-700 cursor-not-allowed"
 					aria-readonly
 				/>
 			</div>
 
 			{/* Banco origen */}
 			<div ref={bancoOrigenRef} className="relative">
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("banco_origen") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("banco_origen") ? "text-red-600" : "text-brand-900"}`}>
 					Banco origen *
 				</label>
 				<button
 					type="button"
 					onClick={() => !disabled && !isLoading && setBancoOrigenOpen((o) => !o)}
-					className={`w-full rounded-lg border px-3 py-2 text-sm text-left flex items-center justify-between gap-2 focus:outline-none ${isInvalid("banco_origen") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
+					className={`w-full rounded-lg border px-3 py-2 text-base text-left flex items-center justify-between gap-2 focus:outline-none ${isInvalid("banco_origen") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					disabled={isLoading || disabled}
 				>
 					<span className={formData.banco_origen ? "" : "text-brand-500"}>
@@ -727,12 +727,12 @@ const FormularioPago = ({
 								value={bancoOrigenSearch}
 								onChange={(e) => setBancoOrigenSearch(e.target.value)}
 								placeholder="Buscar por código o nombre..."
-								className="flex-1 rounded border border-brand-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none"
+								className="flex-1 rounded border border-brand-300 px-2 py-1.5 text-base focus:border-brand-500 focus:outline-none"
 							/>
 						</div>
 						<ul className="overflow-y-auto max-h-48 py-1">
 							{bancosOrigenFiltrados.length === 0 ? (
-								<li className="px-3 py-2 text-sm text-brand-500">Sin resultados</li>
+								<li className="px-3 py-2 text-base text-brand-500">Sin resultados</li>
 							) : (
 								bancosOrigenFiltrados.map((b) => (
 									<li key={b.Code}>
@@ -743,7 +743,7 @@ const FormularioPago = ({
 												setBancoOrigenOpen(false);
 												setBancoOrigenSearch("");
 											}}
-											className="w-full text-left px-3 py-2 text-sm hover:bg-brand-100 focus:bg-brand-100 focus:outline-none"
+											className="w-full text-left px-3 py-2 text-base hover:bg-brand-100 focus:bg-brand-100 focus:outline-none"
 										>
 											{bancoLabel(b.Code, b.Name)}
 										</button>
@@ -753,21 +753,21 @@ const FormularioPago = ({
 						</ul>
 					</div>
 				)}
-				{isInvalid("banco_origen") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("banco_origen") && <p className="mt-1 text-sm text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Banco destino: solo lectura; se asigna solo al elegir una opción (Transferencia o Pago Móvil) */}
 			<div>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("banco_destino") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("banco_destino") ? "text-red-600" : "text-brand-900"}`}>
 					Banco destino *
 				</label>
 				<div
-					className={`rounded-lg border px-3 py-2 text-sm ${isInvalid("banco_destino") ? invalidClass : "border-brand-300 bg-brand-50 text-brand-900"}`}
+					className={`rounded-lg border px-3 py-2 text-base ${isInvalid("banco_destino") ? invalidClass : "border-brand-300 bg-brand-50 text-brand-900"}`}
 				>
 					{formData.banco_destino ? (
 						<>
 							<span>{formData.banco_destino}</span>
-							<span className="ml-2 text-brand-600 text-xs">(asignado por la opción de pago)</span>
+							<span className="ml-2 text-brand-600 text-sm">(asignado por la opción de pago)</span>
 						</>
 					) : (
 						<span className="text-brand-500">
@@ -775,7 +775,7 @@ const FormularioPago = ({
 						</span>
 					)}
 				</div>
-				{isInvalid("banco_destino") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("banco_destino") && <p className="mt-1 text-sm text-red-600">Campo requerido</p>}
 			</div>
 
 			{showMetodoDatosModal && metodoDestinoSeleccionado && (
@@ -796,36 +796,36 @@ const FormularioPago = ({
 							</button>
 						</div>
 						<div className="space-y-3 p-4">
-							<p className="text-sm text-brand-800"><strong>Nombre:</strong> {metodoDestinoSeleccionado.nombre}</p>
-							<p className="text-sm text-brand-800"><strong>Banco:</strong> {bancoLabel(metodoDestinoSeleccionado.banco_codigo, metodoDestinoSeleccionado.banco_nombre)}</p>
+							<p className="text-base text-brand-800"><strong>Nombre:</strong> {metodoDestinoSeleccionado.nombre}</p>
+							<p className="text-base text-brand-800"><strong>Banco:</strong> {bancoLabel(metodoDestinoSeleccionado.banco_codigo, metodoDestinoSeleccionado.banco_nombre)}</p>
 							<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
-								<p className="text-sm text-brand-800"><strong>Cédula:</strong> {metodoDestinoSeleccionado.titular_identificacion || "No disponible"}</p>
+								<p className="text-base text-brand-800"><strong>Cédula:</strong> {metodoDestinoSeleccionado.titular_identificacion || "No disponible"}</p>
 								<button
 									type="button"
 									onClick={() => copyToClipboard(metodoDestinoSeleccionado.titular_identificacion || "", "Cédula")}
-									className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+									className="rounded-md border border-brand-300 px-2 py-1 text-sm font-medium text-brand-800"
 								>
 									Copiar
 								</button>
 							</div>
 							{metodoDestinoSeleccionado.tipo_pago === "PagoMovil" ? (
 								<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
-									<p className="text-sm text-brand-800"><strong>Teléfono:</strong> {metodoDestinoSeleccionado.telefono || "No disponible"}</p>
+									<p className="text-base text-brand-800"><strong>Teléfono:</strong> {metodoDestinoSeleccionado.telefono || "No disponible"}</p>
 									<button
 										type="button"
 										onClick={() => copyToClipboard(metodoDestinoSeleccionado.telefono || "", "Teléfono")}
-										className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+										className="rounded-md border border-brand-300 px-2 py-1 text-sm font-medium text-brand-800"
 									>
 										Copiar
 									</button>
 								</div>
 							) : (
 								<div className="flex items-center justify-between gap-2 rounded-lg border border-brand-200 p-2">
-									<p className="text-sm text-brand-800"><strong>Número de cuenta:</strong> {metodoDestinoSeleccionado.numero_cuenta || "No disponible"}</p>
+									<p className="text-base text-brand-800"><strong>Número de cuenta:</strong> {metodoDestinoSeleccionado.numero_cuenta || "No disponible"}</p>
 									<button
 										type="button"
 										onClick={() => copyToClipboard(metodoDestinoSeleccionado.numero_cuenta || "", "Número de cuenta")}
-										className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+										className="rounded-md border border-brand-300 px-2 py-1 text-sm font-medium text-brand-800"
 									>
 										Copiar
 									</button>
@@ -835,11 +835,11 @@ const FormularioPago = ({
 							{metodoDestinoSeleccionado.imagen_url ? (
 								<div className="rounded-lg border border-brand-200 p-2">
 									<div className="mb-2 flex items-center justify-between gap-2">
-										<p className="text-xs text-brand-700">QR / Imagen de pago</p>
+										<p className="text-sm text-brand-700">QR / Imagen de pago</p>
 										<button
 											type="button"
 											onClick={() => setShowMetodoImagenAmplia(true)}
-											className="rounded-md border border-brand-300 px-2 py-1 text-xs font-medium text-brand-800"
+											className="rounded-md border border-brand-300 px-2 py-1 text-sm font-medium text-brand-800"
 										>
 											Agrandar
 										</button>
@@ -851,7 +851,7 @@ const FormularioPago = ({
 									/>
 								</div>
 							) : (
-								<p className="text-sm text-brand-600">Este método no tiene imagen disponible.</p>
+								<p className="text-base text-brand-600">Este método no tiene imagen disponible.</p>
 							)}
 						</div>
 						<div className="border-t border-brand-200 px-4 py-3">
@@ -861,7 +861,7 @@ const FormularioPago = ({
 									setShowMetodoDatosModal(false);
 									setShowMetodoImagenAmplia(false);
 								}}
-								className="w-full rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
+								className="w-full rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800"
 							>
 								Cerrar
 							</button>
@@ -892,7 +892,7 @@ const FormularioPago = ({
 
 			{/* Monto */}
 			<div>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("monto") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("monto") ? "text-red-600" : "text-brand-900"}`}>
 					Monto (Bs) *
 				</label>
 				<input
@@ -903,32 +903,32 @@ const FormularioPago = ({
 						setFormData((prev) => ({ ...prev, monto: e.target.value }))
 					}
 					onWheel={(e) => e.currentTarget.blur()}
-					className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("monto") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
+					className={`w-full rounded-lg border px-3 py-2 text-base focus:outline-none ${isInvalid("monto") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					placeholder="0.00"
 					disabled={isLoading || disabled || loadingDolar}
 				/>
 				{precioEcoUSD && (
 					<div className="mt-2 space-y-1">
-						<p className="text-xs text-brand-600">
+						<p className="text-sm text-brand-600">
 							Precio del eco: <strong>${precioEcoUSD} USD</strong>
 						</p>
 						{loadingDolar ? (
-							<p className="text-xs text-brand-500">Calculando monto en Bs...</p>
+							<p className="text-sm text-brand-500">Calculando monto en Bs...</p>
 						) : dolarOficial && montoCalculado !== null ? (
-							<p className="text-xs text-brand-600">
+							<p className="text-sm text-brand-600">
 								Total en Bs: <strong>{montoCalculado.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</strong>
 								<span className="text-brand-500 ml-1">
 									(Tasa BCV: {dolarOficial.promedio.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs/$)
 								</span>
 							</p>
 						) : (
-							<p className="text-xs text-yellow-600">
+							<p className="text-sm text-yellow-600">
 								No se pudo obtener la tasa del BCV. Por favor ingrese el monto manualmente.
 							</p>
 						)}
 					</div>
 				)}
-				{isInvalid("monto") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("monto") && <p className="mt-1 text-sm text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Cédula pagador: mismo componente que en el resto del sistema (tipo + número, rango 100.000–99.000.000) */}
@@ -976,7 +976,7 @@ const FormularioPago = ({
 
 			{/* Referencia: solo números, máximo 16 caracteres */}
 			<div>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("referencia") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("referencia") ? "text-red-600" : "text-brand-900"}`}>
 					Referencia *
 				</label>
 				<input
@@ -988,12 +988,12 @@ const FormularioPago = ({
 						const v = e.target.value.replace(/\D/g, "").slice(0, 16);
 						setFormData((prev) => ({ ...prev, referencia: v }));
 					}}
-					className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${isInvalid("referencia") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
+					className={`w-full rounded-lg border px-3 py-2 text-base focus:outline-none ${isInvalid("referencia") ? invalidClass : "border-brand-300 bg-paper text-brand-900 focus:border-brand-500"}`}
 					placeholder="Solo números, máximo 16 dígitos"
 					disabled={isLoading || disabled}
 				/>
 				{isInvalid("referencia") && (
-					<p className="mt-1 text-xs text-red-600">
+					<p className="mt-1 text-sm text-red-600">
 						{!formData.referencia.trim()
 							? "Campo requerido"
 							: "Solo números, máximo 16 dígitos"}
@@ -1003,7 +1003,7 @@ const FormularioPago = ({
 
 			{/* Orden médica */}
 			<div className={isInvalid("orden_medica") ? "rounded-lg border-2 border-red-500 bg-red-50/30 p-2 -m-2" : ""}>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("orden_medica") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("orden_medica") ? "text-red-600" : "text-brand-900"}`}>
 					Orden médica *
 				</label>
 				{!formData.orden_medica && !ordenMedicaPreview ? (
@@ -1014,13 +1014,13 @@ const FormularioPago = ({
 							accept="image/jpeg,image/jpg,image/png,image/webp"
 							onChange={handleOrdenMedicaSelect}
 							disabled={isLoading || disabled || uploadingOrdenMedica}
-							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
+							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-base file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
 						/>
-						<p className="text-xs text-brand-600 mt-1">
+						<p className="text-sm text-brand-600 mt-1">
 							Formatos permitidos: JPEG, PNG, WEBP. Máximo 2MB (se comprimirá automáticamente a 100-200KB).
 						</p>
 						{uploadingOrdenMedica && (
-							<p className="text-xs text-brand-500 mt-1">Comprimiendo orden médica...</p>
+							<p className="text-sm text-brand-500 mt-1">Comprimiendo orden médica...</p>
 						)}
 					</div>
 				) : (
@@ -1044,23 +1044,23 @@ const FormularioPago = ({
 							</div>
 						)}
 						{selectedOrdenMedica && (
-							<div className="flex items-center gap-2 text-xs text-brand-600">
+							<div className="flex items-center gap-2 text-sm text-brand-600">
 								<ImageIcon className="h-4 w-4" />
 								<span>{selectedOrdenMedica.name}</span>
 								<span>({formatFileSize(selectedOrdenMedica.size)})</span>
 							</div>
 						)}
 						{formData.orden_medica && !ordenMedicaPreview && (
-							<p className="text-xs text-green-600">✓ Orden médica subida exitosamente</p>
+							<p className="text-sm text-green-600">✓ Orden médica subida exitosamente</p>
 						)}
 					</div>
 				)}
-				{isInvalid("orden_medica") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("orden_medica") && <p className="mt-1 text-sm text-red-600">Campo requerido</p>}
 			</div>
 
 			{/* Imagen del comprobante */}
 			<div className={isInvalid("imagen") ? "rounded-lg border-2 border-red-500 bg-red-50/30 p-2 -m-2" : ""}>
-				<label className={`block text-sm font-medium mb-1 ${isInvalid("imagen") ? "text-red-600" : "text-brand-900"}`}>
+				<label className={`block text-base font-medium mb-1 ${isInvalid("imagen") ? "text-red-600" : "text-brand-900"}`}>
 					Imagen del comprobante *
 				</label>
 				{!formData.imagen && !imagePreview ? (
@@ -1071,13 +1071,13 @@ const FormularioPago = ({
 							accept="image/jpeg,image/jpg,image/png,image/webp"
 							onChange={handleFileSelect}
 							disabled={isLoading || disabled || uploadingImage}
-							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
+							className="w-full rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-base file:font-medium file:text-paper file:hover:bg-brand-800 disabled:opacity-50"
 						/>
-						<p className="text-xs text-brand-600 mt-1">
+						<p className="text-sm text-brand-600 mt-1">
 							Formatos permitidos: JPEG, PNG, WEBP. Máximo 2MB (se comprimirá automáticamente a 100-200KB).
 						</p>
 						{uploadingImage && (
-							<p className="text-xs text-brand-500 mt-1">Subiendo imagen...</p>
+							<p className="text-sm text-brand-500 mt-1">Subiendo imagen...</p>
 						)}
 					</div>
 				) : (
@@ -1101,18 +1101,18 @@ const FormularioPago = ({
 							</div>
 						)}
 						{selectedImage && (
-							<div className="flex items-center gap-2 text-xs text-brand-600">
+							<div className="flex items-center gap-2 text-sm text-brand-600">
 								<ImageIcon className="h-4 w-4" />
 								<span>{selectedImage.name}</span>
 								<span>({formatFileSize(selectedImage.size)})</span>
 							</div>
 						)}
 						{formData.imagen && !imagePreview && (
-							<p className="text-xs text-green-600">✓ Imagen subida exitosamente</p>
+							<p className="text-sm text-green-600">✓ Imagen subida exitosamente</p>
 						)}
 					</div>
 				)}
-				{isInvalid("imagen") && <p className="mt-1 text-xs text-red-600">Campo requerido</p>}
+				{isInvalid("imagen") && <p className="mt-1 text-sm text-red-600">Campo requerido</p>}
 			</div>
 		</div>
 	);

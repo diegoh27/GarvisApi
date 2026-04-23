@@ -143,7 +143,7 @@ export default function FacturacionPage() {
     <div className="p-4 md:p-6">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold">Facturación</h1>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-base text-gray-600 mt-1">
           Resumen de ingresos, egresos y balance con historial de movimientos.
         </p>
       </div>
@@ -168,7 +168,7 @@ export default function FacturacionPage() {
                     period.id as Exclude<QuickPeriod, "custom">,
                   )
                 }
-                className={`px-3 py-1.5 text-xs md:text-sm rounded-full border transition-colors ${isActive
+                className={`px-3 py-1.5 text-base md:text-base rounded-full border transition-colors ${isActive
                   ? "bg-teal-600 text-white border-teal-600"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}

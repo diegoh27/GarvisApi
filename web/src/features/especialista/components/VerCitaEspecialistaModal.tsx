@@ -103,17 +103,17 @@ const VerCitaEspecialistaModal = ({
 
 					<div className="p-6 space-y-6">
 						{error ? (
-							<p className="text-sm text-red-600">No se pudo cargar la información de la cita.</p>
+							<p className="text-base text-red-600">No se pudo cargar la información de la cita.</p>
 						) : isLoading ? (
-							<p className="text-sm text-brand-600">Cargando...</p>
+							<p className="text-base text-brand-600">Cargando...</p>
 						) : (
 							<>
 								<div>
-									<h3 className="mb-3 text-sm font-semibold text-brand-900">Información de la cita</h3>
+									<h3 className="mb-3 text-base font-semibold text-brand-900">Información de la cita</h3>
 									<div className="grid gap-4 sm:grid-cols-2">
 										<div>
-											<p className="text-xs font-semibold text-brand-700">Fecha</p>
-											<p className="mt-1 text-sm text-brand-900">
+											<p className="text-sm font-semibold text-brand-700">Fecha</p>
+											<p className="mt-1 text-base text-brand-900">
 												{formatFecha(
 													typeof citaFromList.fecha_cita === "string"
 														? citaFromList.fecha_cita
@@ -124,13 +124,13 @@ const VerCitaEspecialistaModal = ({
 											</p>
 										</div>
 										<div>
-											<p className="text-xs font-semibold text-brand-700">Hora</p>
-											<p className="mt-1 text-sm text-brand-900">{formatHora(citaFromList.hora_cita)}</p>
+											<p className="text-sm font-semibold text-brand-700">Hora</p>
+											<p className="mt-1 text-base text-brand-900">{formatHora(citaFromList.hora_cita)}</p>
 										</div>
 										<div>
-											<p className="text-xs font-semibold text-brand-700">Estado de la cita</p>
+											<p className="text-sm font-semibold text-brand-700">Estado de la cita</p>
 											<span
-												className={`inline-flex rounded-full px-2 py-1 text-xs ${citaFromList.estado_cita === 0
+												className={`inline-flex rounded-full px-2 py-1 text-sm ${citaFromList.estado_cita === 0
 														? "bg-amber-400 text-brand-900"
 														: citaFromList.estado_cita === 1
 															? "bg-brand-700 text-paper"
@@ -143,9 +143,9 @@ const VerCitaEspecialistaModal = ({
 											</span>
 										</div>
 										<div>
-											<p className="text-xs font-semibold text-brand-700">Estado del pago</p>
+											<p className="text-sm font-semibold text-brand-700">Estado del pago</p>
 											<span
-												className={`inline-flex rounded-full px-2 py-1 text-xs ${estadoPago === 0
+												className={`inline-flex rounded-full px-2 py-1 text-sm ${estadoPago === 0
 														? "bg-amber-400 text-brand-900"
 														: estadoPago === 1
 															? "bg-emerald-600 text-paper"
@@ -156,24 +156,24 @@ const VerCitaEspecialistaModal = ({
 											</span>
 										</div>
 										<div className="sm:col-span-2">
-											<p className="text-xs font-semibold text-brand-700">Paciente</p>
-											<p className="mt-1 text-sm text-brand-900">{pacienteName}</p>
+											<p className="text-sm font-semibold text-brand-700">Paciente</p>
+											<p className="mt-1 text-base text-brand-900">{pacienteName}</p>
 										</div>
 										<div className="sm:col-span-2">
-											<p className="text-xs font-semibold text-brand-700">Especialista</p>
-											<p className="mt-1 text-sm text-brand-900">
+											<p className="text-sm font-semibold text-brand-700">Especialista</p>
+											<p className="mt-1 text-base text-brand-900">
 												{cita?.especialista_nombre} {cita?.especialista_apellido}
 											</p>
 										</div>
 										<div>
-											<p className="text-xs font-semibold text-brand-700">Estudio / Eco</p>
-											<p className="mt-1 text-sm text-brand-900">{citaFromList.eco_nombre}</p>
+											<p className="text-sm font-semibold text-brand-700">Estudio / Eco</p>
+											<p className="mt-1 text-base text-brand-900">{citaFromList.eco_nombre}</p>
 										</div>
 										<div className="sm:col-span-2">
-											<p className="text-xs font-semibold text-brand-700">Representado</p>
+											<p className="text-sm font-semibold text-brand-700">Representado</p>
 											{cita?.id_representado &&
 												(cita.representado_nombre ?? cita.representado_apellido) ? (
-												<div className="mt-1 rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-sm text-brand-900 space-y-1">
+												<div className="mt-1 rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-base text-brand-900 space-y-1">
 													<p>
 														<strong>Nombre:</strong>{" "}
 														{[cita.representado_nombre, cita.representado_apellido]
@@ -198,14 +198,14 @@ const VerCitaEspecialistaModal = ({
 													)}
 												</div>
 											) : (
-												<p className="mt-1 text-sm text-brand-600">Representado: NO</p>
+												<p className="mt-1 text-base text-brand-600">Representado: NO</p>
 											)}
 										</div>
 									</div>
 								</div>
 
 								<div>
-									<h3 className="mb-3 text-sm font-semibold text-brand-900">Documentos</h3>
+									<h3 className="mb-3 text-base font-semibold text-brand-900">Documentos</h3>
 									<div className="flex flex-wrap gap-3">
 										{citaFromList.orden && citaFromList.orden.trim() !== "" ? (
 											<button
@@ -218,13 +218,13 @@ const VerCitaEspecialistaModal = ({
 															: `https://${citaFromList.orden!}`;
 													window.open(url, "_blank", "noopener,noreferrer");
 												}}
-												className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+												className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 											>
 												<FileCheck className="h-4 w-4" />
 												Ver orden médica
 											</button>
 										) : (
-											<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+											<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 												<FileCheck className="h-4 w-4" />
 												Orden médica no disponible
 											</span>
@@ -238,13 +238,13 @@ const VerCitaEspecialistaModal = ({
 														`Informe-${pacienteName}-${citaFromList.fecha_cita}.pdf`.replace(/\s+/g, "-")
 													)
 												}
-												className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+												className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 											>
 												<FileText className="h-4 w-4" />
 												Ver informe médico
 											</button>
 										) : (
-											<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+											<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 												<FileText className="h-4 w-4" />
 												Informe no disponible
 											</span>
@@ -253,13 +253,13 @@ const VerCitaEspecialistaModal = ({
 										<button
 											type="button"
 											onClick={() => setShowResultados(true)}
-											className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+											className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 										>
 											<Images className="h-4 w-4" />
 											{totalResultados === 1 ? "Ver resultado" : `Ver ${totalResultados} resultados`}
 										</button>
 									) : (
-										<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+										<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 											<Images className="h-4 w-4" />
 											Resultados no disponibles
 										</span>
@@ -273,7 +273,7 @@ const VerCitaEspecialistaModal = ({
 					<div className="sticky bottom-0 border-t border-mist bg-paper p-4 flex justify-end">
 						<button
 							onClick={onClose}
-							className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
+							className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800"
 						>
 							Cerrar
 						</button>

@@ -29,7 +29,7 @@ const StepperProgress = ({ currentStep }: StepperProgressProps) => {
 					<span className="text-[10px] font-bold tracking-widest uppercase text-brand-800">
 						Paso {currentStep} de {steps.length}
 					</span>
-					<span className="text-xs font-semibold text-slate-400">
+					<span className="text-sm font-semibold text-slate-400">
 						{steps[currentStep - 1]?.label}
 					</span>
 				</div>
@@ -79,7 +79,7 @@ const StepperProgress = ({ currentStep }: StepperProgressProps) => {
 									)}
 								</div>
 								<span
-									className={`text-xs font-headline tracking-tight ${
+									className={`text-sm font-headline tracking-tight ${
 										isActive
 											? "font-bold text-brand-800"
 											: isCompleted

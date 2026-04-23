@@ -50,7 +50,7 @@ const ModeradoresPage = () => {
 							<h2 className="text-xl font-bold text-slate-900">
 								Visibilidad de módulos en el menú lateral
 							</h2>
-							<p className="mt-1 text-sm text-slate-600">
+							<p className="mt-1 text-base text-slate-600">
 								Activa o desactiva qué secciones pueden ver los moderadores en la barra lateral. El
 								inicio (Home) siempre permanece visible para ellos.
 							</p>
@@ -111,7 +111,7 @@ const ModeradoresPage = () => {
 												>
 													{label}
 												</h3>
-												<p className="mt-1 text-xs leading-relaxed text-slate-500">{description}</p>
+												<p className="mt-1 text-sm leading-relaxed text-slate-500">{description}</p>
 											</div>
 										</div>
 									);
@@ -121,12 +121,12 @@ const ModeradoresPage = () => {
 							<div className="sticky bottom-0 z-10 mt-8 rounded-xl border border-slate-200 bg-slate-50/95 px-4 py-4 backdrop-blur sm:px-6">
 								<div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
 									{saved ? (
-										<div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-800">
+										<div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-base font-medium text-green-800">
 											<ShieldCheck className="h-4 w-4 shrink-0" />
 											Los permisos se actualizaron correctamente
 										</div>
 									) : (
-										<p className="text-sm text-slate-600">
+										<p className="text-base text-slate-600">
 											Los cambios se aplicarán en el próximo inicio de sesión de los moderadores.
 										</p>
 									)}
@@ -134,7 +134,7 @@ const ModeradoresPage = () => {
 										type="button"
 										onClick={handleGuardar}
 										disabled={isSaving}
-										className="inline-flex items-center justify-center gap-2 self-end rounded-xl bg-[#006965] px-6 py-3 text-sm font-semibold text-white shadow-md transition-all hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-500/25 active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 sm:self-auto"
+										className="inline-flex items-center justify-center gap-2 self-end rounded-xl bg-[#006965] px-6 py-3 text-base font-semibold text-white shadow-md transition-all hover:bg-teal-800 focus:outline-none focus:ring-4 focus:ring-teal-500/25 active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 sm:self-auto"
 									>
 										{isSaving ? (
 											"Guardando..."

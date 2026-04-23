@@ -32,7 +32,7 @@ export default function NotaCompraDetalleModal({
               <h2 className="text-lg font-bold text-gray-900">
                 Detalles de Factura
               </h2>
-              <p className="text-xs text-gray-500 font-medium">ID: {idNotaCompra.slice(0, 8)}...</p>
+              <p className="text-base text-gray-500 font-medium">ID: {idNotaCompra.slice(0, 8)}...</p>
             </div>
           </div>
           <button
@@ -58,7 +58,7 @@ export default function NotaCompraDetalleModal({
               {/* Información General */}
               <div className="bg-gray-50 rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-4 border border-gray-100">
                 <div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <div className="text-base text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5" /> Proveedor
                   </div>
                   <div className="font-semibold text-gray-900">
@@ -66,7 +66,7 @@ export default function NotaCompraDetalleModal({
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <div className="text-base text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5" /> Nº Factura
                   </div>
                   <div className="font-semibold text-gray-900">
@@ -74,7 +74,7 @@ export default function NotaCompraDetalleModal({
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <div className="text-base text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" /> Fecha
                   </div>
                   <div className="font-medium text-gray-900">
@@ -82,10 +82,10 @@ export default function NotaCompraDetalleModal({
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <div className="text-base text-gray-500 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1.5">
                     <Text className="w-3.5 h-3.5" /> Observaciones
                   </div>
-                  <div className="text-sm text-gray-700">
+                  <div className="text-base text-gray-700">
                     {notaCompra.observaciones || "Sin observaciones"}
                   </div>
                 </div>
@@ -99,13 +99,13 @@ export default function NotaCompraDetalleModal({
                 </h3>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-base text-left">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-xs">Producto</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-xs text-center">Cant.</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-xs text-right">P. Unitario</th>
-                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-xs text-right">Subtotal</th>
+                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-base">Producto</th>
+                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-base text-center">Cant.</th>
+                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-base text-right">P. Unitario</th>
+                          <th className="px-4 py-3 font-semibold text-gray-500 uppercase text-base text-right">Subtotal</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
@@ -133,11 +133,11 @@ export default function NotaCompraDetalleModal({
               {/* Totales */}
               <div className="flex justify-end pt-4">
                 <div className="w-full max-w-sm bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2">
-                  <div className="flex justify-between text-sm text-gray-600">
+                  <div className="flex justify-between text-base text-gray-600">
                     <span>Subtotal:</span>
                     <span className="font-medium">${Number(notaCompra.subtotal).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm text-gray-600">
+                  <div className="flex justify-between text-base text-gray-600">
                     <span>Impuesto (16%):</span>
                     <span className="font-medium">${Number(notaCompra.impuesto).toFixed(2)}</span>
                   </div>
@@ -145,7 +145,7 @@ export default function NotaCompraDetalleModal({
                     <span>Total USD:</span>
                     <span className="text-teal-600">${Number(notaCompra.total).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-semibold text-gray-700">
+                  <div className="flex justify-between text-base font-semibold text-gray-700">
                     <span>Total Bs:</span>
                     <span>Bs {Number(notaCompra.monto_bs).toFixed(2)}</span>
                   </div>

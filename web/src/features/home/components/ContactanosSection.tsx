@@ -14,7 +14,7 @@ const ContactanosSection = () => {
 		>
 			<div className="mx-auto w-full max-w-7xl">
 				<div className="mb-10 overflow-visible text-center md:mb-14">
-					<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+					<p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 						Estamos para ayudarte
 					</p>
 					<div className="overflow-visible py-1">
@@ -25,7 +25,7 @@ const ContactanosSection = () => {
 							Contáctanos y agenda tu estudio
 						</h2>
 					</div>
-					<p className="mx-auto mt-3 max-w-2xl text-sm text-[#4A5568] md:text-base">
+					<p className="mx-auto mt-3 max-w-2xl text-base text-[#4A5568] md:text-base">
 						Escríbenos por el canal que prefieras y coordinamos tu cita de forma rápida y sencilla.
 					</p>
 				</div>
@@ -33,13 +33,13 @@ const ContactanosSection = () => {
 				<div className="grid gap-8 md:grid-cols-2 lg:gap-12">
 					{/* Columna izquierda - Tarjeta de contacto */}
 					<div className="mx-auto w-full max-w-md rounded-3xl bg-gradient-to-br from-[#E0F7FA] via-[#E0F2F1] to-white p-8 shadow-xl ring-1 ring-[#B2DFDB]/60 md:mx-0 md:max-w-none md:p-10">
-						<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+						<h3 className="mb-2 text-base font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 							Canales de contacto
 						</h3>
 						<h2 className="mb-4 text-2xl font-bold text-[#1C837F] md:text-3xl">
 							Escríbenos y te orientamos
 						</h2>
-						<p className="mb-6 text-sm text-[#4A5568] md:text-base">
+						<p className="mb-6 text-base text-[#4A5568] md:text-base">
 							Resolvemos tus dudas, te indicamos la preparación para tu estudio y coordinamos el mejor
 							horario para tu cita.
 						</p>
@@ -51,10 +51,10 @@ const ContactanosSection = () => {
 									<MapPin className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+									<p className="text-sm font-semibold uppercase tracking-wide text-[#1C837F]/90">
 										Dirección
 									</p>
-									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="mt-1 text-base font-medium text-[#4A5568] md:text-base">
 										Urbanización Caña de Azúcar, Sector 1, Casa Nro. 6, a 50 Mts. del Seguro Social, El limón.
 									</p>
 								</div>
@@ -78,10 +78,10 @@ const ContactanosSection = () => {
 									</svg>
 								</div>
 								<div className="flex-1">
-									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+									<p className="text-sm font-semibold uppercase tracking-wide text-[#1C837F]/90">
 										WhatsApp
 									</p>
-									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="mt-1 text-base font-medium text-[#4A5568] md:text-base">
 										+58 412-423-86-03
 									</p>
 								</div>
@@ -98,10 +98,10 @@ const ContactanosSection = () => {
 									<Instagram className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+									<p className="text-sm font-semibold uppercase tracking-wide text-[#1C837F]/90">
 										Instagram
 									</p>
-									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="mt-1 text-base font-medium text-[#4A5568] md:text-base">
 										@unidadecografiagarbis
 									</p>
 								</div>
@@ -118,10 +118,10 @@ const ContactanosSection = () => {
 									<Facebook className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+									<p className="text-sm font-semibold uppercase tracking-wide text-[#1C837F]/90">
 										Facebook
 									</p>
-									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="mt-1 text-base font-medium text-[#4A5568] md:text-base">
 										Unidad de Ecografía Garbis
 									</p>
 								</div>
@@ -136,10 +136,10 @@ const ContactanosSection = () => {
 									<Mail className="h-5 w-5 text-white" />
 								</div>
 								<div className="flex-1">
-									<p className="text-xs font-semibold uppercase tracking-wide text-[#1C837F]/90">
+									<p className="text-sm font-semibold uppercase tracking-wide text-[#1C837F]/90">
 										Correo electrónico
 									</p>
-									<p className="mt-1 text-sm font-medium text-[#4A5568] md:text-base">
+									<p className="mt-1 text-base font-medium text-[#4A5568] md:text-base">
 										unidadecografiagarbis1@gmail.com
 									</p>
 								</div>
@@ -151,7 +151,7 @@ const ContactanosSection = () => {
 					<div className="mx-auto w-full max-w-md space-y-8 md:mx-0 md:max-w-none">
 						{/* Ubícanos */}
 						<div>
-							<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+							<h3 className="mb-2 text-base font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 								Ubicación
 							</h3>
 							<h2 className="mb-3 text-2xl font-bold text-[#1C837F] md:text-3xl">
@@ -160,7 +160,7 @@ const ContactanosSection = () => {
 							<p className="mb-1 text-base text-[#4A5568] md:text-lg">
 								Urbanización Caña de Azúcar Sector 1, Casa Nro. 6
 							</p>
-							<p className="mb-6 text-sm text-[#4A5568] md:text-base">
+							<p className="mb-6 text-base text-[#4A5568] md:text-base">
 								Punto de referencia: 50 Mts. del Seguro Social, El limón
 							</p>
 
@@ -181,17 +181,17 @@ const ContactanosSection = () => {
 
 						{/* Horario */}
 						<div className="rounded-2xl bg-white/80 p-6 shadow-md ring-1 ring-slate-100">
-							<h3 className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+							<h3 className="mb-2 text-base font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 								Horario
 							</h3>
-							<p className="text-sm text-[#4A5568] md:text-base">
+							<p className="text-base text-[#4A5568] md:text-base">
 								Trabajamos de <span className="font-semibold text-[#1C837F]">lunes a viernes</span> en el
 								siguiente horario:
 							</p>
 							<p className="mt-3 text-base font-semibold text-[#1C837F] md:text-lg">
 								De 8:00 a 11:00 am
 							</p>
-							<p className="mt-2 text-xs text-[#718096] md:text-sm">
+							<p className="mt-2 text-sm text-[#718096] md:text-base">
 								Te recomendamos escribirnos previamente para confirmar disponibilidad y recibir
 								indicaciones específicas según tu estudio.
 							</p>

@@ -77,7 +77,7 @@ const ReservarCitaElegirModal = ({
 
 					{step === "elegir" && (
 						<div className="flex-1 overflow-y-auto p-6">
-							<p className="mb-6 text-sm text-brand-600">
+							<p className="mb-6 text-base text-brand-600">
 								Elija si la cita es para usted o para una persona que representa (hijo, familiar, etc.).
 							</p>
 							<div className="grid gap-4 sm:grid-cols-2">
@@ -90,7 +90,7 @@ const ReservarCitaElegirModal = ({
 										<User className="h-7 w-7" />
 									</div>
 									<span className="font-semibold text-brand-900">Para mí</span>
-									<span className="text-sm text-brand-600">
+									<span className="text-base text-brand-600">
 										Reservar la cita a mi nombre
 									</span>
 								</button>
@@ -103,7 +103,7 @@ const ReservarCitaElegirModal = ({
 										<Users className="h-7 w-7" />
 									</div>
 									<span className="font-semibold text-brand-900">Para un representado</span>
-									<span className="text-sm text-brand-600">
+									<span className="text-base text-brand-600">
 										Reservar la cita para otra persona
 									</span>
 								</button>
@@ -131,13 +131,13 @@ const ReservarCitaElegirModal = ({
 										value={searchRepresentado}
 										onChange={(e) => setSearchRepresentado(e.target.value)}
 										placeholder="Buscar por nombre o cédula..."
-										className="w-full rounded-lg border border-brand-300 bg-paper py-2 pl-9 pr-3 text-sm text-brand-900 placeholder:text-brand-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+										className="w-full rounded-lg border border-brand-300 bg-paper py-2 pl-9 pr-3 text-base text-brand-900 placeholder:text-brand-500 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 									/>
 								</div>
 								<button
 									type="button"
 									onClick={() => setIsAddRepresentadoOpen(true)}
-									className="inline-flex items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 hover:bg-cloud"
+									className="inline-flex items-center gap-2 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 hover:bg-cloud"
 								>
 									<UserPlus className="h-4 w-4" />
 									Agregar representado
@@ -145,7 +145,7 @@ const ReservarCitaElegirModal = ({
 							</div>
 							<div className="flex-1 overflow-y-auto p-4">
 								{loadingRepresentados ? (
-									<p className="text-center text-sm text-brand-600">Cargando representados...</p>
+									<p className="text-center text-base text-brand-600">Cargando representados...</p>
 								) : representados.length === 0 ? (
 									<div className="rounded-lg border border-brand-200 bg-brand-50 p-6 text-center">
 										<p className="text-brand-700">
@@ -154,14 +154,14 @@ const ReservarCitaElegirModal = ({
 												: "No tiene representados."}
 										</p>
 										{!hasSearch && (
-											<p className="mt-2 text-sm text-brand-600">
+											<p className="mt-2 text-base text-brand-600">
 												Use el botón &quot;Agregar representado&quot; para registrar a una persona (hijo, familiar, etc.) y poder reservar citas a su nombre.
 											</p>
 										)}
 										<button
 											type="button"
 											onClick={() => setStep("elegir")}
-											className="mt-4 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 hover:bg-cloud"
+											className="mt-4 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 hover:bg-cloud"
 										>
 											← Volver
 										</button>
@@ -177,7 +177,7 @@ const ReservarCitaElegirModal = ({
 													<p className="font-medium text-brand-900">
 														{r.nombre} {r.apellido}
 													</p>
-													<p className="text-sm text-brand-600">
+													<p className="text-base text-brand-600">
 														Cédula: {r.cedula}
 														{r.parentesco ? ` • ${r.parentesco}` : ""}
 													</p>
@@ -185,7 +185,7 @@ const ReservarCitaElegirModal = ({
 												<button
 													type="button"
 													onClick={() => handleSelectRepresentado(r)}
-													className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-sm font-medium text-paper hover:bg-brand-800"
+													className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-base font-medium text-paper hover:bg-brand-800"
 												>
 													<CalendarPlus className="h-4 w-4" />
 													Reservar para este
@@ -195,7 +195,7 @@ const ReservarCitaElegirModal = ({
 									</ul>
 								)}
 								{totalRepresentados > LIMIT_REPRESENTADOS && (
-									<p className="mt-3 text-center text-xs text-brand-500">
+									<p className="mt-3 text-center text-sm text-brand-500">
 										Mostrando los primeros {LIMIT_REPRESENTADOS} de {totalRepresentados}. Use la búsqueda para filtrar.
 									</p>
 								)}
@@ -204,7 +204,7 @@ const ReservarCitaElegirModal = ({
 								<button
 									type="button"
 									onClick={() => setStep("elegir")}
-									className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 hover:bg-cloud"
+									className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 hover:bg-cloud"
 								>
 									← Volver
 								</button>

@@ -44,7 +44,7 @@ const calcularEdad = (fechaNacimiento: string): number => {
 const InitialAvatar = ({ nombre, apellido }: { nombre: string; apellido: string }) => {
 	const initials = `${(nombre?.[0] ?? "").toUpperCase()}${(apellido?.[0] ?? "").toUpperCase()}`;
 	return (
-		<div className="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center font-bold text-sm shrink-0">
+		<div className="w-10 h-10 rounded-full bg-brand-200 text-brand-800 flex items-center justify-center font-bold text-base shrink-0">
 			{initials || <User className="h-4 w-4" />}
 		</div>
 	);
@@ -97,7 +97,7 @@ const DashboardPaciente = () => {
 			{tienePagoPendiente && (
 				<div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
 					<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-					<div className="min-w-0 flex-1 text-sm">
+					<div className="min-w-0 flex-1 text-base">
 						<p className="font-semibold">Tiene una cita con pago pendiente de verificación</p>
 						<p className="mt-1">
 							No puede agendar otra cita hasta que un moderador apruebe o rechace el pago. Puede revisar el estado en{" "}
@@ -122,10 +122,10 @@ const DashboardPaciente = () => {
 
 			{/* HERO BANNER */}
 			<section>
-				<div className="relative bg-brand-800 rounded-3xl p-8 overflow-hidden flex items-center justify-between shadow-xl sm:p-10">
+				<div className="relative bg-brand-800 rounded-3xl p-6 sm:p-8 overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-xl sm:px-10">
 					{/* Background decorative texture */}
 					<div
-						className="absolute top-0 right-0 w-1/3 h-full bg-brand-600 opacity-20"
+						className="absolute top-0 right-0 w-1/2 h-full bg-brand-600 opacity-20 sm:w-1/3"
 						style={{ clipPath: "polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%)" }}
 					/>
 					<div className="relative z-10 max-w-xl">
@@ -136,10 +136,10 @@ const DashboardPaciente = () => {
 							Gestiona tu salud hoy mismo agendando una nueva cita con nuestros especialistas.
 						</p>
 					</div>
-					<div className="relative z-10 hidden sm:block">
+					<div className="relative z-10 mt-6 sm:mt-0 w-full sm:w-auto">
 						{tienePagoPendiente ? (
 							<span
-								className="bg-white/60 text-brand-600 font-bold px-8 py-4 rounded-xl flex items-center gap-3 shadow-lg cursor-not-allowed select-none"
+								className="bg-white/60 text-brand-600 font-bold px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl flex items-center justify-center gap-3 shadow-lg cursor-not-allowed select-none w-full sm:w-auto"
 								title="Tiene una cita con pago pendiente de verificación"
 							>
 								<CalendarPlus className="h-5 w-5" />
@@ -148,7 +148,7 @@ const DashboardPaciente = () => {
 						) : (
 							<Link
 								to="/agendar-cita"
-								className="bg-white text-brand-800 font-bold px-8 py-4 rounded-xl flex items-center gap-3 shadow-lg hover:bg-slate-50 transition-all active:scale-95 group"
+								className="bg-white text-brand-800 font-bold px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl flex items-center justify-center gap-3 shadow-lg hover:bg-slate-50 transition-all active:scale-95 group w-full sm:w-auto text-base"
 							>
 								<CalendarPlus className="h-5 w-5 group-hover:rotate-12 transition-transform" />
 								Agendar Nueva Cita
@@ -179,7 +179,7 @@ const DashboardPaciente = () => {
 										<h4 className="text-xl font-headline font-bold text-brand-900 mb-1 pr-24 sm:text-2xl">
 											{proximaCita.eco_nombre}
 										</h4>
-										<p className="text-brand-600 font-medium flex items-center gap-2 mb-4 sm:mb-6 text-sm">
+										<p className="text-brand-600 font-medium flex items-center gap-2 mb-4 sm:mb-6 text-base">
 											<User className="h-3.5 w-3.5" />
 											{proximaCita.especialista_nombre} {proximaCita.especialista_apellido}
 										</p>
@@ -192,7 +192,7 @@ const DashboardPaciente = () => {
 													<p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
 														Fecha
 													</p>
-													<p className="font-semibold text-brand-900 text-sm">
+													<p className="font-semibold text-brand-900 text-base">
 														{formatFechaConDiaSinAnio(proximaCita.fecha_cita)}
 													</p>
 												</div>
@@ -205,7 +205,7 @@ const DashboardPaciente = () => {
 													<p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
 														Hora
 													</p>
-													<p className="font-semibold text-brand-900 text-sm">
+													<p className="font-semibold text-brand-900 text-base">
 														{formatHora(proximaCita.hora_cita)}
 													</p>
 												</div>
@@ -217,16 +217,16 @@ const DashboardPaciente = () => {
 						) : (
 							<div className="text-center py-6">
 								<CalendarDays className="mx-auto h-12 w-12 text-brand-300" />
-								<p className="mt-3 text-sm font-medium text-brand-800">
+								<p className="mt-3 text-base font-medium text-brand-800">
 									No tienes citas pendientes
 								</p>
-								<p className="mt-1 text-xs text-brand-600">
+								<p className="mt-1 text-sm text-brand-600">
 									Agenda una cita cuando lo necesites.
 								</p>
 								{!tienePagoPendiente && (
 									<Link
 										to="/agendar-cita"
-										className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900 transition-colors"
+										className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-800 px-4 py-2 text-base font-medium text-white hover:bg-brand-900 transition-colors"
 									>
 										<CalendarPlus className="h-4 w-4" />
 										Agendar cita
@@ -244,7 +244,7 @@ const DashboardPaciente = () => {
 							</h4>
 							<Link
 								to="/citas"
-								className="text-brand-800 font-semibold text-sm hover:underline flex items-center gap-1"
+								className="text-brand-800 font-semibold text-base hover:underline flex items-center gap-1"
 							>
 								Ver todo
 								<ArrowRight className="h-3.5 w-3.5" />
@@ -267,16 +267,16 @@ const DashboardPaciente = () => {
 												<Stethoscope className="h-5 w-5" />
 											</div>
 											<div className="min-w-0">
-												<p className="font-bold text-brand-900 text-sm truncate">
+												<p className="font-bold text-brand-900 text-base truncate">
 													{cita.eco_nombre}
 												</p>
-												<p className="text-xs text-brand-600 truncate">
+												<p className="text-sm text-brand-600 truncate">
 													{cita.especialista_nombre} {cita.especialista_apellido}
 												</p>
 											</div>
 										</div>
 										<div className="text-right shrink-0 ml-3">
-											<p className="text-sm font-semibold text-brand-900">
+											<p className="text-base font-semibold text-brand-900">
 												{formatFechaConDiaSinAnio(cita.fecha_cita)}
 											</p>
 											<p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">
@@ -286,7 +286,7 @@ const DashboardPaciente = () => {
 									</div>
 								))
 							) : (
-								<div className="text-center py-6 text-brand-600 text-sm">
+								<div className="text-center py-6 text-brand-600 text-base">
 									No tienes citas completadas aún.
 								</div>
 							)}
@@ -316,7 +316,7 @@ const DashboardPaciente = () => {
 										<div className="flex items-center gap-3 min-w-0">
 											<InitialAvatar nombre={rep.nombre} apellido={rep.apellido} />
 											<div className="min-w-0">
-												<p className="text-sm font-bold text-brand-900 truncate">
+												<p className="text-base font-bold text-brand-900 truncate">
 													{rep.nombre} {rep.apellido}
 												</p>
 												<p className="text-[10px] text-brand-600 font-medium uppercase tracking-wider truncate">
@@ -329,7 +329,7 @@ const DashboardPaciente = () => {
 									</div>
 								))
 							) : (
-								<div className="text-center py-4 text-brand-600 text-sm">
+								<div className="text-center py-4 text-brand-600 text-base">
 									No tienes representados registrados.
 								</div>
 							)}
@@ -337,7 +337,7 @@ const DashboardPaciente = () => {
 							{/* Gestionar familia button */}
 							<Link
 								to="/representados"
-								className="w-full py-3 border-2 border-dashed border-brand-300 rounded-2xl text-brand-600 font-bold text-sm hover:border-brand-800 hover:text-brand-800 transition-all flex items-center justify-center gap-2 sm:py-4"
+								className="w-full py-3 border-2 border-dashed border-brand-300 rounded-2xl text-brand-600 font-bold text-base hover:border-brand-800 hover:text-brand-800 transition-all flex items-center justify-center gap-2 sm:py-4"
 							>
 								<PlusCircle className="h-5 w-5" />
 								Gestionar familia
@@ -348,7 +348,7 @@ const DashboardPaciente = () => {
 						<div className="mt-auto bg-brand-100/70 p-4 rounded-2xl border-l-4 border-brand-500 sm:p-5">
 							<div className="flex gap-3">
 								<Info className="h-5 w-5 text-brand-600 shrink-0 mt-0.5" />
-								<p className="text-sm text-brand-800 leading-relaxed font-medium">
+								<p className="text-base text-brand-800 leading-relaxed font-medium">
 									Como representante, puedes visualizar expedientes y agendar citas para tus familiares
 									registrados.
 								</p>
@@ -365,7 +365,7 @@ const DashboardPaciente = () => {
 					className="fixed bottom-6 right-6 w-14 h-14 bg-brand-800 text-white rounded-2xl shadow-2xl hidden lg:flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-40 group sm:bottom-8 sm:right-8 sm:w-16 sm:h-16"
 				>
 					<Plus className="h-6 w-6" />
-					<div className="absolute right-full mr-4 bg-brand-900 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+					<div className="absolute right-full mr-4 bg-brand-900 text-white text-sm px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
 						Nueva Consulta Rápida
 					</div>
 				</Link>

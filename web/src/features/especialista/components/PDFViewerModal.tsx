@@ -83,7 +83,7 @@ const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
 							<button
 								type="button"
 								onClick={handleDownload}
-								className="rounded-full border border-brand-700 bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+								className="rounded-full border border-brand-700 bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800"
 							>
 								Descargar
 							</button>
@@ -102,10 +102,10 @@ const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
 
 				<div className="flex-1 overflow-hidden flex flex-col items-center justify-center bg-cloud/30">
 					{loading && (
-						<p className="text-sm text-brand-700">Cargando PDF...</p>
+						<p className="text-base text-brand-700">Cargando PDF...</p>
 					)}
 					{error && (
-						<p className="text-sm text-red-600 px-4">{error}</p>
+						<p className="text-base text-red-600 px-4">{error}</p>
 					)}
 					{blobUrl && !loading && (
 						<iframe

@@ -45,7 +45,7 @@ const BloquesList = ({
 	return (
 		<div className="rounded-2xl bg-paper p-4 shadow-sm">
 			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold text-brand-900">Mis bloques</h3>
+				<h3 className="text-base font-semibold text-brand-900">Mis bloques</h3>
 				{loading ? (
 					<span className="text-[11px] text-brand-800">Cargando...</span>
 				) : null}
@@ -100,7 +100,7 @@ const BloquesList = ({
 							>
 								<div className="flex items-start justify-between">
 									<div className="flex-1">
-										<p className="text-xs font-semibold text-brand-900">
+										<p className="text-sm font-semibold text-brand-900">
 											{formatFecha(bloque.fecha)}
 										</p>
 										<p className="text-[11px] text-brand-800">

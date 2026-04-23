@@ -16,18 +16,18 @@ const AuthLogin = () => {
 						/>
 						<div className="absolute inset-0 bg-emerald-900/35" />
 						<div className="relative flex h-full flex-col justify-between p-10 text-white">
-							{/* <div className="text-sm font-semibold uppercase tracking-widest">
+							{/* <div className="text-base font-semibold uppercase tracking-widest">
 								Logo
 							</div> */}
 							<Link to="/" className="flex items-center gap-3 -ml-2 lg:-ml-4">
 								<img
 									src="/logo.png"
 									alt="Logo Garbis"
-									className="h-30 w-30 object-contain"
+									className="h-20 w-auto object-contain"
 								/>
 							</Link>
 							<div className="space-y-2">
-								<p className="text-sm font-semibold uppercase tracking-[0.2em]">
+								<p className="text-base font-semibold uppercase tracking-[0.2em]">
 									Agenda tu ecografía
 								</p>
 								<p className="text-[32px] font-black leading-tight">
@@ -39,7 +39,7 @@ const AuthLogin = () => {
 					<div className="relative px-8 py-10 sm:px-12">
 						<Link
 							to="/"
-							className="absolute left-8 top-6 text-sm font-semibold text-emerald-700"
+							className="absolute left-8 top-6 text-base font-semibold text-emerald-700"
 						>
 							← Regresar al home
 						</Link>

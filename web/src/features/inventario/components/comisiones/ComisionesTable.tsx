@@ -29,13 +29,13 @@ export default function ComisionesTable({
   const getEstadoBadge = (estado: EspecialistaComision["estado"]) => {
     if (estado === "Pagada") {
       return (
-        <span className="text-xs font-medium text-emerald-600">
+        <span className="text-base font-medium text-emerald-600">
           Pagada
         </span>
       );
     }
     return (
-      <span className="text-xs font-medium text-amber-500">
+      <span className="text-base font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -46,9 +46,9 @@ export default function ComisionesTable({
       key: "id",
       header: "ID",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: EspecialistaComision, index: number) =>
         String(startIndex + index + 1).padStart(3, "0"),
     },
@@ -56,8 +56,8 @@ export default function ComisionesTable({
       key: "especialista",
       header: "Especialista",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) =>
         `${row.especialista_nombre} ${row.especialista_apellido || ""}`.trim(),
     },
@@ -65,41 +65,41 @@ export default function ComisionesTable({
       key: "paciente",
       header: "Paciente",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.paciente_nombre || "-",
     },
     {
       key: "cedula",
       header: "Cédula",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.paciente_cedula || "-",
     },
     {
       key: "rif",
       header: "RIF",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.paciente_rif || "-",
     },
     {
       key: "especialidad",
       header: "Eco",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) => row.eco_nombre || "-",
     },
     {
       key: "monto",
       header: "Monto ($)",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-white",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-white",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
       render: (row: EspecialistaComision) =>
         `$${Number(row.monto).toFixed(2)}`,
     },
@@ -107,9 +107,9 @@ export default function ComisionesTable({
       key: "porcentaje",
       header: "Porcentaje",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-white",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-white",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-center text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-center text-gray-900",
       render: (row: EspecialistaComision) =>
         `${Number(row.porcentaje).toFixed(1)}%`,
     },
@@ -117,8 +117,8 @@ export default function ComisionesTable({
       key: "fecha_cita",
       header: "Fecha de Cita",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: EspecialistaComision) =>
         row.fecha_cita ? formatFechaLocal(row.fecha_cita) : "-",
     },
@@ -126,16 +126,16 @@ export default function ComisionesTable({
       key: "estado",
       header: "Estado",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: EspecialistaComision) => getEstadoBadge(row.estado),
     },
     {
       key: "acciones",
       header: "Acciones",
       headerClassName:
-        "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-white",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+        "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-white",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: EspecialistaComision) => (
         row.estado === "Pagada" ? (
           <button
@@ -164,7 +164,7 @@ export default function ComisionesTable({
         columns={columns}
         rows={comisiones}
         rowKey={(row) => row.id_comision}
-        tableClassName="w-full min-w-full text-sm"
+        tableClassName="w-full min-w-full text-base"
         theadClassName="bg-teal-500 text-white"
         getRowClassName={(_row, index) =>
           index % 2 === 0 ? "bg-gray-50" : "bg-white"

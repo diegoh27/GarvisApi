@@ -42,30 +42,30 @@ export default function HistorialObligacionModal({
     {
       key: "id_pago",
       header: "ID",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: HistorialRow) => `${row.id_historial?.slice(0, 6)}...` || "-",
     },
     {
       key: "fecha",
       header: "Fecha de Pago",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: HistorialRow) =>
         formatFechaCortaLocal(row.fecha_ingreso),
     },
     {
       key: "monto",
       header: "Monto ($)",
-      headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
       render: (row: HistorialRow) => `$${Number(row.precio_unitario).toFixed(2)}`,
     },
     {
       key: "registrado",
       header: "Registrado en",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: HistorialRow) =>
         formatFechaHoraLocal(row.creado_en),
     },
@@ -105,7 +105,7 @@ export default function HistorialObligacionModal({
             <h2 className="text-xl md:text-2xl font-bold text-gray-800">
               Historial de Pagos
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-base text-gray-600 mt-1">
               {obligacion.nombre_ente} - {obligacion.concepto}
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function HistorialObligacionModal({
             {historialFiltrado.length > 0 && (
               <button
                 onClick={handleDownloadReport}
-                className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+                className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
               >
                 <FileDown size={18} />
                 <span className="hidden sm:inline">Descargar Reporte</span>
@@ -145,7 +145,7 @@ export default function HistorialObligacionModal({
                   columns={columns}
                   rows={currentHistorial}
                   rowKey={(row) => row.id_historial || ""}
-                  tableClassName="w-full min-w-[500px] text-sm"
+                  tableClassName="w-full min-w-[500px] text-base"
                   theadClassName="bg-gray-100"
                   getRowClassName={(_row, index) =>
                     index % 2 === 0 ? "bg-gray-50" : "bg-white"
@@ -157,7 +157,7 @@ export default function HistorialObligacionModal({
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     Mostrando {startIndex + 1} a{" "}
                     {Math.min(endIndex, historialFiltrado.length)} de{" "}
                     {historialFiltrado.length}
@@ -166,11 +166,11 @@ export default function HistorialObligacionModal({
                     <button
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base"
                     >
                       Anterior
                     </button>
-                    <span className="text-sm text-gray-600 flex items-center px-2">
+                    <span className="text-base text-gray-600 flex items-center px-2">
                       Página {currentPage} de {totalPages}
                     </span>
                     <button
@@ -178,7 +178,7 @@ export default function HistorialObligacionModal({
                         setCurrentPage((p) => Math.min(totalPages, p + 1))
                       }
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-base"
                     >
                       Siguiente
                     </button>
@@ -188,10 +188,10 @@ export default function HistorialObligacionModal({
 
               {/* Summary */}
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-800">
+                <p className="text-base text-blue-800">
                   <strong>Total de pagos:</strong> {historialFiltrado.length}
                 </p>
-                <p className="text-sm text-blue-800">
+                <p className="text-base text-blue-800">
                   <strong>Monto total pagado:</strong> $
                   {historialFiltrado
                     .reduce((sum, p) => sum + (Number(p.precio_unitario) || 0), 0)

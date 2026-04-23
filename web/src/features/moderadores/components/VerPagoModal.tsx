@@ -126,29 +126,29 @@ const VerPagoModal = ({
 				<div className="overflow-y-auto flex-1 p-4">
 					{error ? (
 						<div className="text-center py-8">
-							<p className="text-sm text-red-600">{error}</p>
+							<p className="text-base text-red-600">{error}</p>
 						</div>
 					) : !pago ? (
 						<div className="text-center py-8">
-							<p className="text-sm text-brand-800">Cargando información del pago...</p>
+							<p className="text-base text-brand-800">Cargando información del pago...</p>
 						</div>
 					) : (
 						<div className="space-y-3">
 							{/* Información básica */}
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Método de pago</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.metodo}</p>
+									<p className="text-sm font-semibold text-brand-700">Método de pago</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.metodo}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Referencia</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.referencia}</p>
+									<p className="text-sm font-semibold text-brand-700">Referencia</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.referencia}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Estado</p>
+									<p className="text-sm font-semibold text-brand-700">Estado</p>
 									<p className="mt-0.5">
 										<span
-											className={`inline-flex rounded-full px-2 py-0.5 text-xs ${estadoPago === 0
+											className={`inline-flex rounded-full px-2 py-0.5 text-sm ${estadoPago === 0
 												? "bg-amber-400 text-brand-900"
 												: estadoPago === 1
 													? "bg-brand-700 text-paper"
@@ -167,27 +167,27 @@ const VerPagoModal = ({
 
 							{/* Información de precios */}
 							<div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-								<p className="mb-2 text-xs font-semibold text-emerald-900">Información de pago</p>
+								<p className="mb-2 text-sm font-semibold text-emerald-900">Información de pago</p>
 								<div className="grid gap-2 sm:grid-cols-2">
 									<div>
-										<p className="text-xs font-medium text-emerald-700">Precio del eco (USD)</p>
-										<p className="mt-0.5 text-sm font-bold text-emerald-900">
+										<p className="text-sm font-medium text-emerald-700">Precio del eco (USD)</p>
+										<p className="mt-0.5 text-base font-bold text-emerald-900">
 											{formatUSD(pago.eco_precio)}
 										</p>
 										{pago.eco_nombre && (
-											<p className="mt-0.5 text-xs text-emerald-600">{pago.eco_nombre}</p>
+											<p className="mt-0.5 text-sm text-emerald-600">{pago.eco_nombre}</p>
 										)}
 									</div>
 									<div>
-										<p className="text-xs font-medium text-emerald-700">Monto pagado (VES)</p>
-										<p className="mt-0.5 text-sm font-bold text-emerald-900">
+										<p className="text-sm font-medium text-emerald-700">Monto pagado (VES)</p>
+										<p className="mt-0.5 text-base font-bold text-emerald-900">
 											{formatMonto(pago.monto)}
 										</p>
-										<p className="mt-0.5 text-xs text-emerald-600">Monto recibido</p>
+										<p className="mt-0.5 text-sm text-emerald-600">Monto recibido</p>
 									</div>
 									<div>
-										<p className="text-xs font-medium text-emerald-700">Tasa del día</p>
-										<p className="mt-0.5 text-sm font-bold text-emerald-900">
+										<p className="text-sm font-medium text-emerald-700">Tasa del día</p>
+										<p className="mt-0.5 text-base font-bold text-emerald-900">
 											{pago.tasa_dia_bcv != null &&
 												pago.tasa_dia_bcv !== "" &&
 												Number(pago.tasa_dia_bcv) > 0
@@ -198,7 +198,7 @@ const VerPagoModal = ({
 												)
 												: "No registrada"}
 										</p>
-										<p className="mt-0.5 text-xs text-emerald-600">Tasa BCV al momento del pago</p>
+										<p className="mt-0.5 text-sm text-emerald-600">Tasa BCV al momento del pago</p>
 									</div>
 								</div>
 							</div>
@@ -206,43 +206,43 @@ const VerPagoModal = ({
 							{/* Información bancaria */}
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Banco origen</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.banco_origen}</p>
+									<p className="text-sm font-semibold text-brand-700">Banco origen</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.banco_origen}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Banco destino</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.banco_destino}</p>
+									<p className="text-sm font-semibold text-brand-700">Banco destino</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.banco_destino}</p>
 								</div>
 							</div>
 
 							{/* Información del pagador */}
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Cédula del pagador</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.cedula_pagador}</p>
+									<p className="text-sm font-semibold text-brand-700">Cédula del pagador</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.cedula_pagador}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">RIF del paciente</p>
-									<p className="mt-0.5 text-sm text-brand-900">
+									<p className="text-sm font-semibold text-brand-700">RIF del paciente</p>
+									<p className="mt-0.5 text-base text-brand-900">
 										{pago.paciente_rif || pago.paciente_cedula || "N/A"}
 									</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Teléfono del pagador</p>
-									<p className="mt-0.5 text-sm text-brand-900">{pago.telefono_pagador}</p>
+									<p className="text-sm font-semibold text-brand-700">Teléfono del pagador</p>
+									<p className="mt-0.5 text-base text-brand-900">{pago.telefono_pagador}</p>
 								</div>
 							</div>
 
 							{/* Fechas */}
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Fecha de pago</p>
-									<p className="mt-0.5 text-sm text-brand-900">{formatSoloFecha(pago.fecha_pago)}</p>
+									<p className="text-sm font-semibold text-brand-700">Fecha de pago</p>
+									<p className="mt-0.5 text-base text-brand-900">{formatSoloFecha(pago.fecha_pago)}</p>
 								</div>
 								{pago.fecha_validacion && (
 									<div>
-										<p className="text-xs font-semibold text-brand-700">Fecha de validación</p>
-										<p className="mt-0.5 text-sm text-brand-900">
+										<p className="text-sm font-semibold text-brand-700">Fecha de validación</p>
+										<p className="mt-0.5 text-base text-brand-900">
 											{formatFecha(pago.fecha_validacion)}
 										</p>
 									</div>
@@ -252,8 +252,8 @@ const VerPagoModal = ({
 							{/* Validado por */}
 							{pago.validado_por_nombre && (
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Validado por</p>
-									<p className="mt-0.5 text-sm text-brand-900">
+									<p className="text-sm font-semibold text-brand-700">Validado por</p>
+									<p className="mt-0.5 text-base text-brand-900">
 										{pago.validado_por_nombre} {pago.validado_por_apellido}
 									</p>
 								</div>
@@ -261,7 +261,7 @@ const VerPagoModal = ({
 
 							{/* Imagen del comprobante */}
 							<div>
-								<p className="text-xs font-semibold text-brand-700 mb-1.5">Comprobante de pago</p>
+								<p className="text-sm font-semibold text-brand-700 mb-1.5">Comprobante de pago</p>
 								<div className="rounded-lg border border-mist overflow-hidden">
 									<img
 										src={pago.imagen}
@@ -278,7 +278,7 @@ const VerPagoModal = ({
 									<button
 										type="button"
 										onClick={() => setIsPreviewOpen(true)}
-										className="rounded-lg border border-brand-700 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-cloud"
+										className="rounded-lg border border-brand-700 px-3 py-1 text-sm font-medium text-brand-700 hover:bg-cloud"
 									>
 										Ver en grande
 									</button>
@@ -296,7 +296,7 @@ const VerPagoModal = ({
 								type="button"
 								onClick={() => onAprobar(id_cita)}
 								disabled={isUpdating}
-								className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-paper hover:bg-brand-800 disabled:opacity-50"
+								className="rounded-lg bg-brand-700 px-4 py-1.5 text-base font-medium text-paper hover:bg-brand-800 disabled:opacity-50"
 							>
 								{isUpdating ? "Procesando..." : "Aprobar pago"}
 							</button>
@@ -304,7 +304,7 @@ const VerPagoModal = ({
 								type="button"
 								onClick={() => onRechazar(id_cita)}
 								disabled={isUpdating}
-								className="rounded-lg border border-red-500 bg-paper px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+								className="rounded-lg border border-red-500 bg-paper px-4 py-1.5 text-base font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
 							>
 								Rechazar
 							</button>
@@ -319,7 +319,7 @@ const VerPagoModal = ({
 									const doc = new jsPDF();
 									const pageWidth = doc.internal.pageSize.getWidth();
 									const pageHeight = doc.internal.pageSize.getHeight();
-									
+
 									// Colores
 									const brandColor: [number, number, number] = [17, 94, 89]; // #115e59 (Verde oscuro del sidebar)
 									const headerBgColor: [number, number, number] = [20, 110, 100]; // Verde tabla
@@ -337,7 +337,7 @@ const VerPagoModal = ({
 									doc.setFontSize(14);
 									doc.text("ULTRASONIDO", sidebarWidth / 2, 30, { align: "center" });
 									doc.text("GARBIS", sidebarWidth / 2, 36, { align: "center" });
-									
+
 									doc.setFont("helvetica", "normal");
 									doc.setFontSize(9);
 									doc.text("Centro Médico", sidebarWidth / 2, 44, { align: "center" });
@@ -347,7 +347,7 @@ const VerPagoModal = ({
 									doc.setFontSize(10);
 									doc.text("TÉRMINOS Y", 10, 160);
 									doc.text("CONDICIONES", 10, 165);
-									
+
 									doc.setFont("helvetica", "normal");
 									doc.setFontSize(8);
 									doc.text("Este recibo es un", 10, 175);
@@ -365,7 +365,7 @@ const VerPagoModal = ({
 									// ZONA DERECHA (Contenido Blanco)
 									// ==========================================
 									const contentX = sidebarWidth + 15;
-									
+
 									// HEADER DERECHO: Título INVOICE
 									doc.setTextColor(55, 65, 81);
 									doc.setFont("helvetica", "bold");
@@ -402,8 +402,8 @@ const VerPagoModal = ({
 										head: [["DESCRIPCIÓN", "BANCO", "TASA BCV", "ESTADO"]],
 										body: [
 											[
-												pago.eco_nombre || "Estudio Ecográfico", 
-												pago.banco_destino || pago.metodo || "N/A", 
+												pago.eco_nombre || "Estudio Ecográfico",
+												pago.banco_destino || pago.metodo || "N/A",
 												pago.tasa_dia_bcv ? formatMonto(pago.tasa_dia_bcv) : "N/A",
 												estadoStr
 											]
@@ -434,7 +434,7 @@ const VerPagoModal = ({
 									doc.text("TOTAL (VES)", contentX, finalY + 20);
 									doc.setFontSize(16);
 									doc.text(formatMonto(pago.monto), contentX, finalY + 28);
-									
+
 									doc.setFont("helvetica", "normal");
 									doc.setFontSize(9);
 									doc.text(`Precio Eco (USD): ${formatUSD(pago.eco_precio)}`, contentX, finalY + 35);
@@ -455,7 +455,7 @@ const VerPagoModal = ({
 									// FOOTER DERECHO
 									doc.setDrawColor(209, 213, 219);
 									doc.line(contentX, pageHeight - 35, pageWidth - 15, pageHeight - 35);
-									
+
 									doc.setFontSize(8);
 									doc.text("www.garbis.com", pageWidth - 15, pageHeight - 25, { align: "right" });
 									doc.text(`Reporte emitido el ${new Date().toLocaleDateString("es-VE")} a las ${new Date().toLocaleTimeString("es-VE")}`, pageWidth - 15, pageHeight - 20, { align: "right" });
@@ -464,13 +464,13 @@ const VerPagoModal = ({
 								});
 							});
 						}}
-						className="rounded-lg border border-brand-200 bg-paper px-4 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50"
+						className="rounded-lg border border-brand-200 bg-paper px-4 py-1.5 text-base font-medium text-brand-700 hover:bg-brand-50"
 					>
 						Descargar Recibo
 					</button>
 					<button
 						onClick={onClose}
-						className="rounded-lg bg-brand-700 px-4 py-1.5 text-sm font-medium text-paper hover:bg-brand-800"
+						className="rounded-lg bg-brand-700 px-4 py-1.5 text-base font-medium text-paper hover:bg-brand-800"
 					>
 						Cerrar
 					</button>

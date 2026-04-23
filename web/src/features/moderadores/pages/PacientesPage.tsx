@@ -351,7 +351,7 @@ const PacientesPage = () => {
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								placeholder="Buscar por nombre, apellido, cédula o correo..."
-								className="w-full rounded-xl border-none bg-white py-4 pl-12 pr-4 text-sm text-brand-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006965]/20"
+								className="w-full rounded-xl border-none bg-white py-4 pl-12 pr-4 text-base text-brand-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006965]/20"
 							/>
 						</div>
 						<div className="flex w-full flex-wrap items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white/50 p-1.5 md:w-auto">
@@ -360,7 +360,7 @@ const PacientesPage = () => {
 									key={option.id}
 									type="button"
 									onClick={() => setFilter(option.id)}
-									className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${filter === option.id
+									className={`rounded-full px-6 py-2.5 text-base font-medium transition-all ${filter === option.id
 										? "bg-[#006965] text-white shadow-md shadow-[#006965]/20"
 										: "text-slate-600 hover:bg-white/80"
 										}`}
@@ -374,7 +374,7 @@ const PacientesPage = () => {
 
 				<section className="space-y-6">
 					<div className="px-2 sm:flex sm:justify-end">
-						<p className="text-sm text-slate-500">
+						<p className="text-base text-slate-500">
 							{pacientesFiltrados.length === 0
 								? "Mostrando 0 de 0 registros"
 								: `Mostrando ${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, pacientesFiltrados.length)} de ${pacientesFiltrados.length.toLocaleString("es-VE")} registros`}
@@ -429,12 +429,12 @@ const PacientesPage = () => {
 												<h4 className="font-headline text-lg font-bold text-brand-900 transition-colors group-hover:text-[#006965] truncate">
 													{fullName}
 												</h4>
-												<p className="text-sm text-slate-500 truncate">
+												<p className="text-base text-slate-500 truncate">
 													C.I. {paciente.cedula}
 													{edad != null ? ` • ${edad} años` : ""}
 													{paciente.correo ? ` • ${paciente.correo}` : ""}
 												</p>
-												<p className="mt-1 text-xs text-slate-400 truncate">
+												<p className="mt-1 text-sm text-slate-400 truncate">
 													{totalCitas} cita{totalCitas !== 1 ? "s" : ""} en historial •{" "}
 													{citasConResultado} con resultado{citasConResultado !== 1 ? "s" : ""}
 												</p>
@@ -477,14 +477,14 @@ const PacientesPage = () => {
 															apellido: paciente.apellido,
 														})
 													}
-													className="flex-1 rounded-xl border border-[#006965]/20 px-4 py-3 text-sm font-semibold text-[#006965] transition-colors hover:bg-teal-50 active:scale-95 md:flex-none text-center whitespace-nowrap"
+													className="flex-1 rounded-xl border border-[#006965]/20 px-4 py-3 text-base font-semibold text-[#006965] transition-colors hover:bg-teal-50 active:scale-95 md:flex-none text-center whitespace-nowrap"
 												>
 													Ver historial
 												</button>
 												<button
 													type="button"
 													onClick={() => setSelectedPacienteForAsignar(pacienteParaModal)}
-													className="flex-1 rounded-xl bg-[#006965] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#006965]/10 transition-all hover:shadow-[#006965]/20 active:scale-95 md:flex-none text-center whitespace-nowrap"
+													className="flex-1 rounded-xl bg-[#006965] px-4 py-3 text-base font-semibold text-white shadow-lg shadow-[#006965]/10 transition-all hover:shadow-[#006965]/20 active:scale-95 md:flex-none text-center whitespace-nowrap"
 												>
 													Asignar cita
 												</button>
@@ -524,7 +524,7 @@ const PacientesPage = () => {
 										key={item}
 										type="button"
 										onClick={() => setCurrentPage(item)}
-										className={`flex h-10 w-10 items-center justify-center rounded-xl text-sm font-medium transition-colors ${currentPage === item
+										className={`flex h-10 w-10 items-center justify-center rounded-xl text-base font-medium transition-colors ${currentPage === item
 											? "bg-[#006965] font-bold text-white shadow-md shadow-[#006965]/20"
 											: "text-slate-600 hover:bg-[#eeeeed]"
 											}`}

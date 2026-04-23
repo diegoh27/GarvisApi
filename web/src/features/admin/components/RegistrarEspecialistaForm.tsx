@@ -286,7 +286,7 @@ const RegistrarEspecialistaForm = () => {
 	return (
 		<form className="mx-auto max-w-4xl space-y-6 pb-12" onSubmit={onSubmit}>
 			{error && (
-				<div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
+				<div className="rounded-xl border border-red-200 bg-red-50 p-4 text-base font-medium text-red-700 shadow-sm">
 					{error}
 				</div>
 			)}
@@ -298,39 +298,39 @@ const RegistrarEspecialistaForm = () => {
 				</h3>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Nombre <span className="text-red-500">*</span>
 						</label>
 						<input
 							type="text"
 							required
 							maxLength={36}
-							className={`h-11 w-full rounded-xl border bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.nombre ? "border-red-500 bg-red-50/30" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.nombre ? "border-red-500 bg-red-50/30" : "border-brand-200"}`}
 							value={form.nombre}
 							onChange={(e) => updateField("nombre", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 							onBlur={() => form.nombre && updateField("nombre", formatNombreApellido(form.nombre))}
 							placeholder="Ej. Juan Carlos"
 						/>
 						{fieldErrors.nombre && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.nombre}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.nombre}</p>
 						)}
 					</div>
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Apellido <span className="text-red-500">*</span>
 						</label>
 						<input
 							type="text"
 							required
 							maxLength={36}
-							className={`h-11 w-full rounded-xl border bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.apellido ? "border-red-500 bg-red-50/30" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.apellido ? "border-red-500 bg-red-50/30" : "border-brand-200"}`}
 							value={form.apellido}
 							onChange={(e) => updateField("apellido", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
 							onBlur={() => form.apellido && updateField("apellido", formatNombreApellido(form.apellido))}
 							placeholder="Ej. Salas"
 						/>
 						{fieldErrors.apellido && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.apellido}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.apellido}</p>
 						)}
 					</div>
 
@@ -349,18 +349,18 @@ const RegistrarEspecialistaForm = () => {
 							}}
 							error={fieldErrors.cedula}
 							required
-							inputClassName="h-11 rounded-xl bg-paper text-sm transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 border-brand-200"
-							selectClassName="h-11 rounded-xl bg-paper text-sm border-brand-200"
+							inputClassName="h-11 rounded-xl bg-paper text-base transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 border-brand-200"
+							selectClassName="h-11 rounded-xl bg-paper text-base border-brand-200"
 						/>
 					</div>
 
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Género <span className="text-red-500">*</span>
 						</label>
 						<select
 							required
-							className="h-11 w-full rounded-xl border border-brand-200 bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300"
+							className="h-11 w-full rounded-xl border border-brand-200 bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300"
 							value={form.genero}
 							onChange={(e) => updateField("genero", e.target.value as typeof form.genero)}
 						>
@@ -370,18 +370,18 @@ const RegistrarEspecialistaForm = () => {
 					</div>
 
 					<div className="sm:col-span-2 md:col-span-1">
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Fecha de nacimiento <span className="text-red-500">*</span>
 						</label>
 						<input
 							type="date"
 							required
-							className={`h-11 w-full rounded-xl border bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-200"}`}
 							value={form.fecha_nacimiento}
 							onChange={(e) => updateField("fecha_nacimiento", e.target.value)}
 						/>
 						{fieldErrors.fecha_nacimiento && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.fecha_nacimiento}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.fecha_nacimiento}</p>
 						)}
 					</div>
 				</div>
@@ -394,7 +394,7 @@ const RegistrarEspecialistaForm = () => {
 				</h3>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Correo electrónico <span className="text-red-500">*</span>
 						</label>
 						<input
@@ -402,13 +402,13 @@ const RegistrarEspecialistaForm = () => {
 							name="correo"
 							autoComplete="email"
 							required
-							className={`h-11 w-full rounded-xl border bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.correo ? "border-red-500" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.correo ? "border-red-500" : "border-brand-200"}`}
 							value={form.correo}
 							onChange={(e) => updateField("correo", e.target.value)}
 							placeholder="correo@ejemplo.com"
 						/>
 						{fieldErrors.correo && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.correo}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.correo}</p>
 						)}
 					</div>
 					<div>
@@ -426,8 +426,8 @@ const RegistrarEspecialistaForm = () => {
 							}}
 							error={fieldErrors.telefono_numero}
 							required
-							inputClassName="h-11 rounded-xl bg-paper text-sm transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 border-brand-200"
-							selectClassName="h-11 rounded-xl bg-paper text-sm border-brand-200"
+							inputClassName="h-11 rounded-xl bg-paper text-base transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 border-brand-200"
+							selectClassName="h-11 rounded-xl bg-paper text-base border-brand-200"
 						/>
 					</div>
 				</div>
@@ -440,33 +440,33 @@ const RegistrarEspecialistaForm = () => {
 				</h3>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Contraseña <span className="text-red-500">*</span>
 						</label>
 						<PasswordField
 							required
 							value={form.contrasena}
 							onChange={(value) => updateField("contrasena", value)}
-							className={`h-11 w-full rounded-xl border bg-paper px-4 pr-10 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 pr-10 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-200"}`}
 							placeholder="Crea una contraseña segura"
 						/>
 						{fieldErrors.contrasena && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.contrasena}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.contrasena}</p>
 						)}
 					</div>
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Confirmar contraseña <span className="text-red-500">*</span>
 						</label>
 						<PasswordField
 							required
 							value={form.confirmar_contrasena}
 							onChange={(value) => updateField("confirmar_contrasena", value)}
-							className={`h-11 w-full rounded-xl border bg-paper px-4 pr-10 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-200"}`}
+							className={`h-11 w-full rounded-xl border bg-paper px-4 pr-10 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-200"}`}
 							placeholder="Repite la contraseña"
 						/>
 						{fieldErrors.confirmar_contrasena && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.confirmar_contrasena}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.confirmar_contrasena}</p>
 						)}
 					</div>
 				</div>
@@ -479,13 +479,13 @@ const RegistrarEspecialistaForm = () => {
 				</h3>
 				<div className="grid gap-5 sm:grid-cols-2">
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Especialidad <span className="text-red-500">*</span>
 						</label>
 						<select
 							required
 							disabled={loadingEspecialidades}
-							className="h-11 w-full rounded-xl border border-brand-200 bg-paper px-4 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 disabled:opacity-50"
+							className="h-11 w-full rounded-xl border border-brand-200 bg-paper px-4 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 disabled:opacity-50"
 							value={form.id_especialidad}
 							onChange={(e) => updateField("id_especialidad", e.target.value)}
 						>
@@ -501,7 +501,7 @@ const RegistrarEspecialistaForm = () => {
 					</div>
 
 					<div>
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Porcentaje para especialista <span className="text-red-500">*</span>
 						</label>
 						<div className="relative">
@@ -511,20 +511,20 @@ const RegistrarEspecialistaForm = () => {
 								min={1}
 								max={100}
 								step="0.01"
-								className={`h-11 w-full rounded-xl border bg-paper px-4 pr-8 text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-200"}`}
+								className={`h-11 w-full rounded-xl border bg-paper px-4 pr-8 text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-200"}`}
 								value={form.porcentaje}
 								onChange={(e) => updateField("porcentaje", e.target.value)}
 								placeholder="Ej: 35"
 							/>
-							<span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-brand-500">%</span>
+							<span className="absolute right-4 top-1/2 -translate-y-1/2 text-base font-medium text-brand-500">%</span>
 						</div>
 						{fieldErrors.porcentaje && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.porcentaje}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.porcentaje}</p>
 						)}
 					</div>
 
 					<div className="sm:col-span-2">
-						<label className="mb-1.5 block text-sm font-medium text-brand-700">
+						<label className="mb-1.5 block text-base font-medium text-brand-700">
 							Estudios (Ecos) Asignados <span className="text-red-500">*</span>
 						</label>
 						<div className="relative" ref={ecosDropdownRef}>
@@ -533,7 +533,7 @@ const RegistrarEspecialistaForm = () => {
 								ref={ecosButtonRef}
 								onClick={handleToggleDropdown}
 								disabled={loadingEcos}
-								className={`flex h-11 w-full items-center justify-between rounded-xl border bg-paper px-4 text-left text-sm outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 disabled:opacity-50 ${fieldErrors.id_ecos ? "border-red-500" : "border-brand-200"}`}
+								className={`flex h-11 w-full items-center justify-between rounded-xl border bg-paper px-4 text-left text-base outline-none transition-all focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 hover:border-brand-300 disabled:opacity-50 ${fieldErrors.id_ecos ? "border-red-500" : "border-brand-200"}`}
 							>
 								<span className="truncate">
 									{loadingEcos
@@ -553,9 +553,9 @@ const RegistrarEspecialistaForm = () => {
 									className={`absolute z-50 w-full rounded-xl border border-brand-200 bg-paper shadow-xl max-h-60 overflow-auto ${dropdownPosition === "top" ? "bottom-full mb-1" : "top-full mt-1"}`}
 								>
 									{loadingEcos ? (
-										<div className="p-4 text-sm text-brand-600 font-medium">Cargando ecos...</div>
+										<div className="p-4 text-base text-brand-600 font-medium">Cargando ecos...</div>
 									) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
-										<div className="p-4 text-sm text-brand-600 font-medium">No hay ecos disponibles</div>
+										<div className="p-4 text-base text-brand-600 font-medium">No hay ecos disponibles</div>
 									) : (
 										<div className="p-2 space-y-1">
 											{ecos
@@ -567,7 +567,7 @@ const RegistrarEspecialistaForm = () => {
 															key={eco.id_eco}
 															type="button"
 															onClick={() => toggleEco(eco.id_eco)}
-															className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all hover:bg-brand-50 ${isSelected ? "bg-brand-50/50" : ""}`}
+															className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-base transition-all hover:bg-brand-50 ${isSelected ? "bg-brand-50/50" : ""}`}
 														>
 															<div
 																className={`flex h-5 w-5 items-center justify-center rounded border transition-colors ${isSelected
@@ -587,7 +587,7 @@ const RegistrarEspecialistaForm = () => {
 							)}
 						</div>
 						{fieldErrors.id_ecos && (
-							<p className="mt-1.5 text-xs font-medium text-red-500">{fieldErrors.id_ecos}</p>
+							<p className="mt-1.5 text-sm font-medium text-red-500">{fieldErrors.id_ecos}</p>
 						)}
 					</div>
 				</div>
@@ -598,14 +598,14 @@ const RegistrarEspecialistaForm = () => {
 				<button
 					type="button"
 					onClick={() => navigate("/especialistas")}
-					className="flex-1 rounded-xl border-2 border-brand-200 bg-transparent px-6 py-3.5 text-sm font-semibold text-brand-700 shadow-sm transition-all hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-brand-500/10 active:scale-[0.98]"
+					className="flex-1 rounded-xl border-2 border-brand-200 bg-transparent px-6 py-3.5 text-base font-semibold text-brand-700 shadow-sm transition-all hover:border-brand-300 hover:bg-brand-50 focus:outline-none focus:ring-4 focus:ring-brand-500/10 active:scale-[0.98]"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="flex-1 rounded-xl bg-brand-700 px-6 py-3.5 text-sm font-semibold text-paper shadow-md transition-all hover:bg-brand-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-brand-500/20 active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
+					className="flex-1 rounded-xl bg-brand-700 px-6 py-3.5 text-base font-semibold text-paper shadow-md transition-all hover:bg-brand-800 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-brand-500/20 active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
 				>
 					{isLoading ? "Creando registro..." : "Registrar Especialista"}
 				</button>

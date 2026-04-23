@@ -352,7 +352,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 			icon: "question",
 			title: "Confirmar monto a pagar",
 			html: `
-				<div class="text-left space-y-2 text-sm">
+				<div class="text-left space-y-2 text-base">
 					<p><strong>Precio del eco:</strong> $${precioUSD.toFixed(2)} USD</p>
 					${montoCalculadoBs !== null ? `<p><strong>Total en Bs (tasa BCV):</strong> ${montoCalculadoBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>` : ""}
 					<p><strong>Monto que ingresó:</strong> ${montoIngresado.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</p>
@@ -519,7 +519,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 											<p className="font-medium text-brand-900">
 												{paciente.nombre} {paciente.apellido}
 											</p>
-											<p className="text-sm text-brand-600 mt-1">
+											<p className="text-base text-brand-600 mt-1">
 												Cédula: {paciente.cedula} • Tel: {paciente.telefono}
 											</p>
 										</button>
@@ -538,7 +538,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 										setStep("paciente");
 										setSelectedEco(null);
 									}}
-									className="text-sm text-brand-600 hover:text-brand-800"
+									className="text-base text-brand-600 hover:text-brand-800"
 								>
 									← Volver
 								</button>
@@ -546,7 +546,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 							</div>
 							{selectedPaciente && (
 								<div className="rounded-lg border border-brand-200 bg-brand-50 p-3 mb-4">
-									<p className="text-sm font-medium text-brand-900">
+									<p className="text-base font-medium text-brand-900">
 										Paciente: {selectedPaciente.nombre} {selectedPaciente.apellido}
 									</p>
 								</div>
@@ -567,7 +567,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 											className="w-full rounded-lg border border-brand-200 bg-paper p-4 text-left hover:bg-cloud transition-colors"
 										>
 											<p className="font-medium text-brand-900">{eco.nombre}</p>
-											<p className="text-sm text-brand-600 mt-1">
+											<p className="text-base text-brand-600 mt-1">
 												Precio: {eco.precio} Bs • Duración: {eco.duracion_min} min
 											</p>
 										</button>
@@ -586,7 +586,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 										setStep("eco");
 										setSelectedEspecialista(null);
 									}}
-									className="text-sm text-brand-600 hover:text-brand-800"
+									className="text-base text-brand-600 hover:text-brand-800"
 								>
 									← Volver
 								</button>
@@ -594,7 +594,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 							</div>
 							{selectedEco && (
 								<div className="rounded-lg border border-brand-200 bg-brand-50 p-3 mb-4">
-									<p className="text-sm font-medium text-brand-900">
+									<p className="text-base font-medium text-brand-900">
 										Eco: {selectedEco.nombre} ({selectedEco.precio} Bs)
 									</p>
 								</div>
@@ -623,7 +623,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 											<p className="font-medium text-brand-900">
 												{especialista.nombre} {especialista.apellido}
 											</p>
-											<p className="text-sm text-brand-600 mt-1">
+											<p className="text-base text-brand-600 mt-1">
 												Especialidad: {especialista.especialidad}
 											</p>
 										</button>
@@ -642,17 +642,17 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 										setStep("especialista");
 										setSelectedDisponibilidad(null);
 									}}
-									className="text-sm text-brand-600 hover:text-brand-800"
+									className="text-base text-brand-600 hover:text-brand-800"
 								>
 									← Volver
 								</button>
 								<h3 className="text-base font-semibold text-brand-900">4. Seleccionar fecha y hora</h3>
 							</div>
 							<div className="rounded-lg border border-brand-200 bg-brand-50 p-3 mb-4 space-y-1">
-								<p className="text-sm font-medium text-brand-900">
+								<p className="text-base font-medium text-brand-900">
 									Especialista: {selectedEspecialista?.nombre} {selectedEspecialista?.apellido}
 								</p>
-								<p className="text-sm text-brand-600">Eco: {selectedEco?.nombre}</p>
+								<p className="text-base text-brand-600">Eco: {selectedEco?.nombre}</p>
 							</div>
 							{loadingDisponibilidades ? (
 								<div className="text-center py-8 text-brand-600">Cargando disponibilidades...</div>
@@ -687,12 +687,12 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 													</span>
 												</div>
 												{disp.estado === 0 && (
-													<span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
+													<span className="rounded-full bg-yellow-100 px-2 py-1 text-sm font-medium text-yellow-800">
 														Pendiente
 													</span>
 												)}
 												{disp.estado === 1 && (
-													<span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+													<span className="rounded-full bg-green-100 px-2 py-1 text-sm font-medium text-green-800">
 														Aprobada
 													</span>
 												)}
@@ -714,7 +714,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 										setStep("fecha");
 										setSelectedDisponibilidad(null);
 									}}
-									className="text-sm text-brand-600 hover:text-brand-800"
+									className="text-base text-brand-600 hover:text-brand-800"
 									disabled={isLoading}
 								>
 									← Volver
@@ -722,11 +722,11 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 								<h3 className="text-base font-semibold text-brand-900">5. Datos del pago</h3>
 							</div>
 							<div className="rounded-lg border border-brand-200 bg-brand-50 p-3 mb-4 space-y-1">
-								<p className="text-sm font-medium text-brand-900">
+								<p className="text-base font-medium text-brand-900">
 									{formatFecha(selectedDisponibilidad?.fecha || "")} a las{" "}
 									{formatHora(selectedDisponibilidad?.hora_inicio || "")}
 								</p>
-								<p className="text-sm text-brand-600">
+								<p className="text-base text-brand-600">
 									{selectedPaciente?.nombre} {selectedPaciente?.apellido} • {selectedEco?.nombre}
 								</p>
 							</div>
@@ -754,7 +754,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud"
+						className="rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-cloud"
 						disabled={isLoading || isSubmitting}
 					>
 						Cancelar
@@ -764,7 +764,7 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 							type="button"
 							onClick={handleAsignarCita}
 							disabled={isLoading || isSubmitting}
-							className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isLoading || isSubmitting ? "Asignando..." : "Asignar cita"}
 						</button>

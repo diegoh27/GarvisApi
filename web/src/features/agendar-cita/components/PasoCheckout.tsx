@@ -408,15 +408,15 @@ const PasoCheckout = ({
 				<p className="text-brand-600 text-base max-w-md mx-auto mb-2">
 					Tu cita para <span className="font-bold">{ecoNombre}</span> ha sido registrada.
 				</p>
-				<p className="text-sm text-slate-400 mb-8">
+				<p className="text-base text-slate-400 mb-8">
 					{formatFecha(fecha)} — {formatHora(hora)} con Dr./Dra. {especialistaNombre}
 				</p>
-				<p className="text-xs text-brand-600 bg-brand-100 px-4 py-2 rounded-full inline-block mb-8">
+				<p className="text-sm text-brand-600 bg-brand-100 px-4 py-2 rounded-full inline-block mb-8">
 					Tu pago será verificado por un administrador. Recibirás confirmación por notificación.
 				</p>
 				<a
 					href="/dashboard"
-					className="inline-flex items-center gap-2 bg-brand-800 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-brand-900 transition-colors"
+					className="inline-flex items-center gap-2 bg-brand-800 text-white px-8 py-3 rounded-xl font-bold text-base hover:bg-brand-900 transition-colors"
 				>
 					Volver al inicio
 				</a>
@@ -442,7 +442,7 @@ const PasoCheckout = ({
 						</div>
 						<div>
 							<h3 className="font-bold text-slate-900 text-base">Cuentas Guardadas</h3>
-							<p className="text-xs text-slate-400">{pagosGuardados.length} cuenta{pagosGuardados.length !== 1 ? "s" : ""} guardada{pagosGuardados.length !== 1 ? "s" : ""}</p>
+							<p className="text-sm text-slate-400">{pagosGuardados.length} cuenta{pagosGuardados.length !== 1 ? "s" : ""} guardada{pagosGuardados.length !== 1 ? "s" : ""}</p>
 						</div>
 					</div>
 					<button
@@ -459,8 +459,8 @@ const PasoCheckout = ({
 					{pagosGuardados.length === 0 ? (
 						<div className="text-center py-10">
 							<BookUser className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-							<p className="text-sm font-medium text-slate-400">No tienes cuentas guardadas</p>
-							<p className="text-xs text-slate-300 mt-1">Activa el toggle al pagar para guardar tus datos</p>
+							<p className="text-base font-medium text-slate-400">No tienes cuentas guardadas</p>
+							<p className="text-sm text-slate-300 mt-1">Activa el toggle al pagar para guardar tus datos</p>
 						</div>
 					) : (
 						pagosGuardados.map((cuenta) => (
@@ -474,11 +474,11 @@ const PasoCheckout = ({
 								</div>
 								<div className="flex-1 min-w-0">
 									{cuenta.alias && (
-										<p className="font-bold text-sm text-teal-800 truncate">{cuenta.alias}</p>
+										<p className="font-bold text-base text-teal-800 truncate">{cuenta.alias}</p>
 									)}
-									<p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">{cuenta.banco_origen}</p>
-									<p className="text-xs text-slate-400 font-mono mt-0.5">CI: {cuenta.cedula_pagador}</p>
-									<p className="text-xs text-slate-400 font-mono">Tel: {cuenta.telefono_pagador}</p>
+									<p className="text-sm font-semibold text-slate-700 mt-0.5 truncate">{cuenta.banco_origen}</p>
+									<p className="text-sm text-slate-400 font-mono mt-0.5">CI: {cuenta.cedula_pagador}</p>
+									<p className="text-sm text-slate-400 font-mono">Tel: {cuenta.telefono_pagador}</p>
 								</div>
 								<button
 									type="button"
@@ -497,7 +497,7 @@ const PasoCheckout = ({
 					<button
 						type="button"
 						onClick={() => setShowGuardadasModal(false)}
-						className="w-full py-3 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+						className="w-full py-3 rounded-xl text-base font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
 					>
 						Cerrar
 					</button>
@@ -517,7 +517,7 @@ const PasoCheckout = ({
 				<h2 className="font-headline text-3xl lg:text-4xl font-extrabold text-brand-900 tracking-tight">
 					Checkout y Pago
 				</h2>
-				<p className="text-brand-600 mt-2 text-sm lg:text-base">
+				<p className="text-brand-600 mt-2 text-base lg:text-base">
 					Paso 4 de 4: Confirma los detalles y procesa tu pago
 				</p>
 			</div>
@@ -530,7 +530,7 @@ const PasoCheckout = ({
 					{/* PASO A: Selector de Método de Pago */}
 					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
 						<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
-							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">1</span>
+							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-base">1</span>
 							Selecciona tu método de pago
 						</h3>
 
@@ -568,7 +568,7 @@ const PasoCheckout = ({
 					{selectedMetodo && (
 						<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20 transition-all duration-500 ease-in-out opacity-100 animate-in fade-in slide-in-from-top-4">
 							<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
-								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">2</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-base">2</span>
 								Realiza el pago a través de los siguientes datos
 							</h3>
 
@@ -589,7 +589,7 @@ const PasoCheckout = ({
 									<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 										<div className="min-w-0 flex-1">
 											<p className="text-[10px] text-slate-400 font-bold uppercase">Banco Destino</p>
-											<p className="font-bold text-brand-900 text-sm truncate">{displayBanco}</p>
+											<p className="font-bold text-brand-900 text-base truncate">{displayBanco}</p>
 										</div>
 									</div>
 
@@ -598,7 +598,7 @@ const PasoCheckout = ({
 										<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 											<div className="min-w-0 flex-1">
 												<p className="text-[10px] text-slate-400 font-bold uppercase">RIF / Cédula</p>
-												<p className="font-bold text-brand-900 text-sm">{displayIdentificacion}</p>
+												<p className="font-bold text-brand-900 text-base">{displayIdentificacion}</p>
 											</div>
 											{selectedMetodo?.titular_identificacion && (
 												<button
@@ -617,7 +617,7 @@ const PasoCheckout = ({
 										<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 											<div className="min-w-0 flex-1">
 												<p className="text-[10px] text-slate-400 font-bold uppercase">Teléfono</p>
-												<p className="font-bold text-brand-900 text-sm">{displayTelefono}</p>
+												<p className="font-bold text-brand-900 text-base">{displayTelefono}</p>
 											</div>
 											<button
 												type="button"
@@ -634,7 +634,7 @@ const PasoCheckout = ({
 										<div className="flex items-center justify-between p-4 bg-cloud rounded-2xl">
 											<div className="min-w-0 flex-1">
 												<p className="text-[10px] text-slate-400 font-bold uppercase">Nro. Cuenta</p>
-												<p className="font-bold text-brand-900 text-sm font-mono tracking-wide">{displayCuenta}</p>
+												<p className="font-bold text-brand-900 text-base font-mono tracking-wide">{displayCuenta}</p>
 											</div>
 											<button
 												type="button"
@@ -667,7 +667,7 @@ const PasoCheckout = ({
 					{selectedMetodo && (
 						<div className="bg-paper rounded-3xl p-8 lg:p-10 shadow-sm border border-brand-200/20 transition-all duration-500 ease-in-out opacity-100 animate-in fade-in slide-in-from-top-4">
 							<h3 className="text-xl font-bold text-brand-900 mb-8 flex items-center gap-3 font-headline">
-								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-sm">3</span>
+								<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-base">3</span>
 								{isCashTipo(tipoPagoSel) ? "Confirmación y Orden Médica" : "Reporta tu pago"}
 							</h3>
 
@@ -680,7 +680,7 @@ const PasoCheckout = ({
 											<button
 												type="button"
 												onClick={() => setShowGuardadasModal(true)}
-												className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-200 bg-brand-50 text-brand-800 text-xs font-bold hover:bg-brand-100 hover:border-brand-300 transition-all shadow-sm"
+												className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-200 bg-brand-50 text-brand-800 text-sm font-bold hover:bg-brand-100 hover:border-brand-300 transition-all shadow-sm"
 											>
 												<BookUser className="h-3.5 w-3.5" />
 												Cuentas guardadas
@@ -705,7 +705,7 @@ const PasoCheckout = ({
 													value={bancoOrigen}
 													onChange={(e) => setBancoOrigen(e.target.value)}
 													onBlur={() => setTouchedBanco(true)}
-													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
+													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-base focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-red-50" : ""}`}
 												>
 													<option value="">Seleccionar...</option>
 													<option value="Banesco">Banesco</option>
@@ -718,7 +718,7 @@ const PasoCheckout = ({
 													<option value="Bicentenario">Bicentenario</option>
 													<option value="Otro">Otro</option>
 												</select>
-												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorBanco}</p>}
+												{showError && <p className="text-sm text-red-500 font-medium ml-1">{errorBanco}</p>}
 												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 										);
@@ -748,9 +748,9 @@ const PasoCheckout = ({
 													onChange={(e) => setReferencia(e.target.value.replace(/\D/g, ""))}
 													onBlur={() => setTouchedReferencia(true)}
 													placeholder="Ej: 837462947163"
-													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-paper-50" : ""}`}
+													className={`w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-base focus:ring-2 focus:ring-brand-800/20 outline-none ${showError ? "border-red-500 bg-paper-50" : ""}`}
 												/>
-												{showError && <p className="text-xs text-red-500 font-medium ml-1">{errorReferencia}</p>}
+												{showError && <p className="text-sm text-red-500 font-medium ml-1">{errorReferencia}</p>}
 												<div className="absolute left-0 top-8 bottom-0 w-1 bg-brand-800 rounded-full h-8 my-auto pointer-events-none" />
 											</div>
 										);
@@ -816,7 +816,7 @@ const PasoCheckout = ({
 												value={fechaPago}
 												max={getTodayLocal()}
 												onChange={(e) => setFechaPago(e.target.value)}
-												className="w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-brand-800/20 outline-none text-brand-900 font-medium"
+												className="w-full bg-paper border border-transparent rounded-xl py-3 px-4 text-base focus:ring-2 focus:ring-brand-800/20 outline-none text-brand-900 font-medium"
 											/>
 											<p className="text-[10px] text-slate-400 ml-1">
 												Solo se permite hoy o fechas pasadas. El administrador verá esta fecha en el reporte.
@@ -857,14 +857,14 @@ const PasoCheckout = ({
 												</div>
 												{comprobanteFile ? (
 													<>
-														<p className="text-sm font-bold text-center text-emerald-800 line-clamp-1 break-all px-2 max-w-[200px]">{comprobanteFile.name}</p>
+														<p className="text-base font-bold text-center text-emerald-800 line-clamp-1 break-all px-2 max-w-[200px]">{comprobanteFile.name}</p>
 														<p className="text-[10px] text-emerald-600/80 mt-1 font-medium select-none">
 															{(comprobanteFile.size / 1024).toFixed(1)} KB — clic para cambiar
 														</p>
 													</>
 												) : (
 													<>
-														<p className={`text-sm font-bold text-center leading-snug select-none ${attemptedSubmit ? "text-red-600" : "text-brand-900"}`}>
+														<p className={`text-base font-bold text-center leading-snug select-none ${attemptedSubmit ? "text-red-600" : "text-brand-900"}`}>
 															Adjunta la captura aquí
 														</p>
 														<p className={`text-[10px] mt-2 uppercase font-bold text-center tracking-wider select-none ${attemptedSubmit ? "text-red-500" : "text-slate-400"}`}>
@@ -874,7 +874,7 @@ const PasoCheckout = ({
 												)}
 											</div>
 											{attemptedSubmit && !comprobanteFile && (
-												<p className="text-xs text-red-500 font-medium text-center mt-2">Debe adjuntar el comprobante.</p>
+												<p className="text-sm text-red-500 font-medium text-center mt-2">Debe adjuntar el comprobante.</p>
 											)}
 										</div>
 									)}
@@ -907,14 +907,14 @@ const PasoCheckout = ({
 											</div>
 											{ordenFile ? (
 												<>
-													<p className="text-sm font-bold text-center line-clamp-1 break-all px-2 max-w-[200px] text-brand-900">{ordenFile.name}</p>
+													<p className="text-base font-bold text-center line-clamp-1 break-all px-2 max-w-[200px] text-brand-900">{ordenFile.name}</p>
 													<p className="text-[10px] text-brand-600/80 mt-1 font-medium select-none">
 														{(ordenFile.size / 1024).toFixed(1)} KB — clic para cambiar
 													</p>
 												</>
 											) : (
 												<>
-													<p className="text-sm font-bold text-brand-900 text-center leading-snug select-none">
+													<p className="text-base font-bold text-brand-900 text-center leading-snug select-none">
 														Adjunta tu archivo aquí
 													</p>
 													<p className="text-[10px] text-slate-400 mt-2 uppercase font-bold text-center tracking-wider select-none">
@@ -939,10 +939,10 @@ const PasoCheckout = ({
 													: <ToggleLeft className="h-7 w-7 text-slate-400" />}
 											</div>
 											<div className="flex-1">
-												<p className={`text-sm font-bold ${guardarCuenta ? "text-teal-800" : "text-slate-600"}`}>
+												<p className={`text-base font-bold ${guardarCuenta ? "text-teal-800" : "text-slate-600"}`}>
 													Guardar datos de mi cuenta para futuros pagos
 												</p>
-												<p className="text-xs text-slate-400 mt-0.5">
+												<p className="text-sm text-slate-400 mt-0.5">
 													Banco, cédula y teléfono se guardarán de forma segura
 												</p>
 											</div>
@@ -960,7 +960,7 @@ const PasoCheckout = ({
 													value={aliasCuenta}
 													onChange={(e) => setAliasCuenta(e.target.value)}
 													placeholder="Ej: Mi Pago Móvil principal"
-													className="w-full bg-paper-500 border border-teal-800 rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-brand-100 outline-none text-teal-900 placeholder:text-black-300"
+													className="w-full bg-paper-500 border border-teal-800 rounded-xl py-2.5 px-4 text-base focus:ring-2 focus:ring-brand-100 outline-none text-teal-900 placeholder:text-black-300"
 												/>
 											</div>
 										)}
@@ -970,7 +970,7 @@ const PasoCheckout = ({
 								{/* Error message */}
 								{errorMsg && (
 									<div className="pt-2 pb-1">
-										<p className="text-sm font-bold text-red-500 text-center">{errorMsg}</p>
+										<p className="text-base font-bold text-red-500 text-center">{errorMsg}</p>
 									</div>
 								)}
 
@@ -1006,7 +1006,7 @@ const PasoCheckout = ({
 				<div className="order-1 lg:order-2 lg:col-span-5 lg:sticky lg:top-8">
 					<div className="bg-paper rounded-3xl p-8 shadow-[0_4px_24px_rgba(5,69,66,0.06)] border border-brand-200/20">
 						<div className="flex justify-between items-center mb-6">
-							<h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+							<h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
 								Resumen de la Cita
 							</h3>
 							<div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center shrink-0">
@@ -1019,29 +1019,29 @@ const PasoCheckout = ({
 						<div className="flex items-center gap-4 mb-6">
 							<div className="flex items-center gap-1.5 text-brand-600">
 								<Calendar className="h-4 w-4" />
-								<span className="text-xs font-medium">{formatFecha(fecha)}</span>
+								<span className="text-sm font-medium">{formatFecha(fecha)}</span>
 							</div>
 							<div className="flex items-center gap-1.5 text-brand-600">
 								<Clock className="h-4 w-4" />
-								<span className="text-xs font-medium">{formatHora(hora)}</span>
+								<span className="text-sm font-medium">{formatHora(hora)}</span>
 							</div>
 						</div>
 						<div className="flex items-center gap-2 mb-6">
 							<User className="h-4 w-4 text-brand-600 shrink-0" />
-							<span className="text-xs text-brand-600 truncate">
+							<span className="text-sm text-brand-600 truncate">
 								Dr./Dra. {especialistaNombre}
 							</span>
 						</div>
 
 						<div className="space-y-3 pt-6 border-t border-brand-200/30">
 							<div className="flex justify-between items-center">
-								<span className="text-sm text-slate-400">Precio Ecografía</span>
-								<span className="text-sm font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
+								<span className="text-base text-slate-400">Precio Ecografía</span>
+								<span className="text-base font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
 							</div>
 							{vistaBs && selectedMetodoId && (
 								<div className="flex justify-between items-center bg-slate-50 p-2 -mx-2 rounded-lg">
-									<span className="text-sm text-slate-400">Tasa BCV</span>
-									<span className="text-sm font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
+									<span className="text-base text-slate-400">Tasa BCV</span>
+									<span className="text-base font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
 								</div>
 							)}
 							<div className="mt-4 p-5 rounded-2xl bg-cloud border border-brand-200/40 flex items-center justify-between">
@@ -1067,7 +1067,7 @@ const PasoCheckout = ({
 						<button
 							type="button"
 							onClick={onBack}
-							className="flex w-full items-center justify-center gap-2 text-brand-700 font-bold hover:text-brand-900 transition-colors py-3 rounded-xl text-sm border border-transparent hover:border-brand-200 hover:shadow-sm hover:bg-white"
+							className="flex w-full items-center justify-center gap-2 text-brand-700 font-bold hover:text-brand-900 transition-colors py-3 rounded-xl text-base border border-transparent hover:border-brand-200 hover:shadow-sm hover:bg-white"
 						>
 							<ArrowLeft className="h-4 w-4" />
 							<span className="font-headline tracking-tight">Volver al paso anterior</span>

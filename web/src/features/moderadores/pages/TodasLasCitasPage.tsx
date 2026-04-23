@@ -616,7 +616,7 @@ const TodasLasCitasPage = () => {
 	};
 
 	const selectFilterClass =
-		"w-full cursor-pointer rounded-lg border-none bg-white py-2 pl-3 pr-8 text-xs text-brand-900 shadow-sm ring-1 ring-brand-200/50 focus:outline-none focus:ring-2 focus:ring-brand-700/25";
+		"w-full cursor-pointer rounded-lg border-none bg-white py-2 pl-3 pr-8 text-sm text-brand-900 shadow-sm ring-1 ring-brand-200/50 focus:outline-none focus:ring-2 focus:ring-brand-700/25";
 
 	return (
 		<PageShell title="Todas las citas" hideHeader>
@@ -628,7 +628,7 @@ const TodasLasCitasPage = () => {
 					<h2 className="font-headline text-3xl font-extrabold tracking-tight text-zinc-900">
 						Todas las citas
 					</h2>
-					<p className="mt-1 max-w-2xl text-sm text-zinc-500">
+					<p className="mt-1 max-w-2xl text-base text-zinc-500">
 						Gestione el flujo de pacientes, el estado de los informes médicos y el historial de pagos desde un
 						solo panel curado.
 					</p>
@@ -642,7 +642,7 @@ const TodasLasCitasPage = () => {
 							value={query}
 							onChange={(e) => setQuery(e.target.value)}
 							placeholder="Buscar pacientes, expedientes o estudios..."
-							className="h-11 w-full rounded-xl border-none bg-white pl-12 pr-4 text-sm text-brand-900 shadow-sm ring-1 ring-brand-200/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-700/25"
+							className="h-11 w-full rounded-xl border-none bg-white pl-12 pr-4 text-base text-brand-900 shadow-sm ring-1 ring-brand-200/50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-brand-700/25"
 						/>
 					</div>
 
@@ -852,14 +852,14 @@ const TodasLasCitasPage = () => {
 										<td className="px-4 py-4 align-top">
 											<div className="flex items-center gap-3">
 												<div
-													className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${getAvatarToneClass(fullName)}`}
+													className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${getAvatarToneClass(fullName)}`}
 												>
 													{getInitials(fullName)}
 												</div>
 												<div>
-													<p className="text-sm font-semibold text-zinc-900">{fullName}</p>
-													<p className="text-xs text-zinc-400">ID: {cita.paciente_cedula}</p>
-													<p className="text-xs text-zinc-400">Telf: {cita.paciente_telefono}</p>
+													<p className="text-base font-semibold text-zinc-900">{fullName}</p>
+													<p className="text-sm text-zinc-400">ID: {cita.paciente_cedula}</p>
+													<p className="text-sm text-zinc-400">Telf: {cita.paciente_telefono}</p>
 													<p className="font-mono text-[10px] text-zinc-400">
 														Ref. cita: {cita.id_cita.slice(0, 8)}…
 													</p>
@@ -868,21 +868,21 @@ const TodasLasCitasPage = () => {
 										</td>
 										<td className="px-4 py-4 align-top">
 											<div className="space-y-0.5">
-												<p className="text-sm font-medium text-zinc-700">{cita.eco_nombre}</p>
+												<p className="text-base font-medium text-zinc-700">{cita.eco_nombre}</p>
 												<p className="text-[11px] font-semibold text-brand-800">{especialistaFullName}</p>
 											</div>
 										</td>
 										<td className="px-4 py-4 align-top">
 											<div className="space-y-0.5">
-												<p className="text-sm text-zinc-700">{formatFecha(cita.fecha_cita)}</p>
-												<p className="text-xs text-zinc-400">{formatHora(cita.hora_cita)}</p>
+												<p className="text-base text-zinc-700">{formatFecha(cita.fecha_cita)}</p>
+												<p className="text-sm text-zinc-400">{formatHora(cita.hora_cita)}</p>
 											</div>
 										</td>
 										<td className="px-4 py-4 align-top">
 											<div className="flex flex-col gap-0.5">
 												{cita.pago_monto_usd && Number(cita.pago_monto_usd) > 0 ? (
 													<>
-														<p className="text-sm font-bold text-zinc-900">
+														<p className="text-base font-bold text-zinc-900">
 															${Number(cita.pago_monto_usd).toFixed(2)}
 														</p>
 														{(cita.pago_monto_bs && Number(cita.pago_monto_bs) > 0) || cita.pago_tasa_dia_bcv ? (
@@ -892,7 +892,7 @@ const TodasLasCitasPage = () => {
 														) : null}
 													</>
 												) : (
-													<p className="text-sm font-bold text-zinc-900">
+													<p className="text-base font-bold text-zinc-900">
 														{cita.pago_monto != null && cita.pago_monto !== ""
 															? formatMonto(cita.pago_monto)
 															: "—"}
@@ -985,7 +985,7 @@ const TodasLasCitasPage = () => {
 																setSelectedCitaIdForView(cita.id_cita);
 																setOpenAccionesCitaId(null);
 															}}
-															className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
+															className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-800 hover:bg-cloud"
 														>
 															Ver cita
 														</button>
@@ -996,7 +996,7 @@ const TodasLasCitasPage = () => {
 																	setSelectedCitaForPago(cita.id_cita);
 																	setOpenAccionesCitaId(null);
 																}}
-																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-800 hover:bg-cloud"
 															>
 																Ver pago
 															</button>
@@ -1011,7 +1011,7 @@ const TodasLasCitasPage = () => {
 																		setOpenAccionesCitaId(null);
 																	}}
 																	disabled={isUpdating || selectedCita === cita.id_cita}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud disabled:opacity-50"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-700 hover:bg-cloud disabled:opacity-50"
 																>
 																	{isUpdating && selectedCita === cita.id_cita ? "Procesando..." : "Aprobar pago"}
 																</button>
@@ -1023,7 +1023,7 @@ const TodasLasCitasPage = () => {
 																		setOpenAccionesCitaId(null);
 																	}}
 																	disabled={isUpdating || selectedCita === cita.id_cita}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-red-600 hover:bg-red-50 disabled:opacity-50"
 																>
 																	Rechazar
 																</button>
@@ -1043,7 +1043,7 @@ const TodasLasCitasPage = () => {
 																		});
 																		setOpenAccionesCitaId(null);
 																	}}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-800 hover:bg-cloud"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-800 hover:bg-cloud"
 																>
 																	Ver {totalResultados} resultado{totalResultados !== 1 ? "s" : ""}
 																</button>
@@ -1053,7 +1053,7 @@ const TodasLasCitasPage = () => {
 																		setSelectedCitaForUpload(cita);
 																		setOpenAccionesCitaId(null);
 																	}}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-700 hover:bg-cloud"
 																>
 																	Subir más archivos
 																</button>
@@ -1065,7 +1065,7 @@ const TodasLasCitasPage = () => {
 																	setSelectedCitaForUpload(cita);
 																	setOpenAccionesCitaId(null);
 																}}
-																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-brand-700 hover:bg-cloud"
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-brand-700 hover:bg-cloud"
 															>
 																Subir resultados
 															</button>
@@ -1077,13 +1077,13 @@ const TodasLasCitasPage = () => {
 																	handleViewInforme(cita.informe_pdf_url);
 																	setOpenAccionesCitaId(null);
 																}}
-																className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50"
+																className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-blue-600 hover:bg-blue-50"
 															>
 																<FileText className="h-4 w-4 shrink-0" />
 																Ver informe
 															</button>
 														) : (
-															<div className="w-full px-4 py-2 text-left text-sm text-brand-500">
+															<div className="w-full px-4 py-2 text-left text-base text-brand-500">
 																Sin informe
 															</div>
 														)}
@@ -1115,7 +1115,7 @@ const TodasLasCitasPage = () => {
 																		setSelectedCitaForPosponer(citaParaPosponer);
 																		setOpenAccionesCitaId(null);
 																	}}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-amber-600 hover:bg-amber-50"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-amber-600 hover:bg-amber-50"
 																>
 																	Posponer cita
 																</button>
@@ -1125,7 +1125,7 @@ const TodasLasCitasPage = () => {
 																		handleCancelarCita(cita.id_cita, fullName);
 																		setOpenAccionesCitaId(null);
 																	}}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-red-600 hover:bg-red-50"
 																>
 																	Cancelar cita
 																</button>
@@ -1136,7 +1136,7 @@ const TodasLasCitasPage = () => {
 																		setOpenAccionesCitaId(null);
 																	}}
 																	disabled={isMarkingAtendida}
-																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 disabled:opacity-50"
+																	className="flex w-full items-center gap-2 px-4 py-2 text-left text-base text-green-600 hover:bg-green-50 disabled:opacity-50"
 																>
 																	{isMarkingAtendida ? "Marcando..." : "Marcar atendida"}
 																</button>
@@ -1177,7 +1177,7 @@ const TodasLasCitasPage = () => {
 												key={page}
 												type="button"
 												onClick={() => setCurrentPage(page)}
-												className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+												className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold transition-colors ${
 													currentPage === page
 														? "bg-brand-800 text-white"
 														: "text-zinc-600 hover:bg-zinc-200"

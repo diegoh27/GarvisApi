@@ -23,24 +23,24 @@ export default function KardexPage() {
 		switch (tipo) {
 			case "ENTRADA":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-green-700">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-base font-medium text-green-700">
 						<ArrowUpRight className="w-3.5 h-3.5" /> Entrada
 					</span>
 				);
 			case "SALIDA":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-red-600">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-base font-medium text-red-600">
 						<ArrowDownRight className="w-3.5 h-3.5" /> Salida
 					</span>
 				);
 			case "AJUSTE":
 				return (
-					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium text-blue-600">
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-base font-medium text-blue-600">
 						<Settings2 className="w-3.5 h-3.5" /> Ajuste
 					</span>
 				);
 			default:
-				return <span className="text-gray-500 text-xs font-medium">{tipo}</span>;
+				return <span className="text-gray-500 text-base font-medium">{tipo}</span>;
 		}
 	};
 
@@ -48,8 +48,8 @@ export default function KardexPage() {
 		{
 			key: "fecha",
 			header: "Fecha",
-			headerClassName: "px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider",
-			cellClassName: "px-4 py-3 text-sm text-gray-900 whitespace-nowrap",
+			headerClassName: "px-4 py-3 text-left text-base font-semibold text-gray-500 uppercase tracking-wider",
+			cellClassName: "px-4 py-3 text-base text-gray-900 whitespace-nowrap",
 			render: (row: any) => new Date(row.creado_en).toLocaleString("es-ES", {
 				day: "2-digit",
 				month: "2-digit",
@@ -61,22 +61,22 @@ export default function KardexPage() {
 		{
 			key: "producto",
 			header: "Producto",
-			headerClassName: "px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider",
-			cellClassName: "px-4 py-3 text-sm font-medium text-gray-900",
+			headerClassName: "px-4 py-3 text-left text-base font-semibold text-gray-500 uppercase tracking-wider",
+			cellClassName: "px-4 py-3 text-base font-medium text-gray-900",
 			render: (row: any) => row.producto_nombre,
 		},
 		{
 			key: "tipo",
 			header: "Operación",
-			headerClassName: "px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider",
+			headerClassName: "px-4 py-3 text-center text-base font-semibold text-gray-500 uppercase tracking-wider",
 			cellClassName: "px-4 py-3 text-center",
 			render: (row: any) => getTipoBadge(row.tipo_movimiento),
 		},
 		{
 			key: "cantidades",
 			header: "Movimiento",
-			headerClassName: "px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider",
-			cellClassName: "px-4 py-3 text-sm text-center tabular-nums",
+			headerClassName: "px-4 py-3 text-center text-base font-semibold text-gray-500 uppercase tracking-wider",
+			cellClassName: "px-4 py-3 text-base text-center tabular-nums",
 			render: (row: any) => {
 				const isPos = row.tipo_movimiento === "ENTRADA" || (row.tipo_movimiento === "AJUSTE" && Number(row.stock_posterior) > Number(row.stock_anterior));
 				const sign = isPos ? "+" : "-";
@@ -91,15 +91,15 @@ export default function KardexPage() {
 		{
 			key: "saldo",
 			header: "Saldo Final",
-			headerClassName: "px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider",
-			cellClassName: "px-4 py-3 text-sm text-right tabular-nums text-gray-900 font-medium",
+			headerClassName: "px-4 py-3 text-right text-base font-semibold text-gray-500 uppercase tracking-wider",
+			cellClassName: "px-4 py-3 text-base text-right tabular-nums text-gray-900 font-medium",
 			render: (row: any) => `${Number(row.stock_posterior)} ${row.unidad_consumo || ""}`.trim(),
 		},
 		{
 			key: "referencia",
 			header: "Referencia / Observaciones",
-			headerClassName: "px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider",
-			cellClassName: "px-4 py-3 text-xs text-gray-600 max-w-xs truncate",
+			headerClassName: "px-4 py-3 text-left text-base font-semibold text-gray-500 uppercase tracking-wider",
+			cellClassName: "px-4 py-3 text-base text-gray-600 max-w-xs truncate",
 			render: (row: any) => row.observaciones || row.referencia_tipo || "S/N",
 		},
 	];
@@ -112,7 +112,7 @@ export default function KardexPage() {
 					<h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
 						<History className="text-teal-600 w-6 h-6" /> Movimientos de Inventario
 					</h1>
-					<p className="text-gray-500 mt-1 text-sm">
+					<p className="text-gray-500 mt-1 text-base">
 						Auditoría completa de entradas, salidas y ajustes de inventario.
 					</p>
 				</div>
@@ -127,7 +127,7 @@ export default function KardexPage() {
 					<select
 						value={filtroProducto}
 						onChange={(e) => setFiltroProducto(e.target.value)}
-						className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none bg-gray-50"
+						className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-teal-500 appearance-none bg-gray-50"
 					>
 						<option value="">Todos los productos</option>
 						{productos.map((p) => (
@@ -141,7 +141,7 @@ export default function KardexPage() {
 					<select
 						value={filtroTipo}
 						onChange={(e) => setFiltroTipo(e.target.value)}
-						className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50"
+						className="w-full px-3 py-2 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-teal-500 bg-gray-50"
 					>
 						<option value="">Cualquier Movimiento</option>
 						<option value="ENTRADA">Entradas</option>
@@ -149,7 +149,7 @@ export default function KardexPage() {
 						<option value="AJUSTE">Ajustes</option>
 					</select>
 				</div>
-				<div className="text-xs text-gray-400 flex-1 text-right">
+				<div className="text-base text-gray-400 flex-1 text-right">
 					Mostrando {filteredData.length} registros
 				</div>
 			</div>

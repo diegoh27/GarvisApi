@@ -73,7 +73,7 @@ const NotificationBellDropdown = ({
 					}`}
 				>
 					<div className="flex items-center justify-between border-b border-mist px-3 py-2">
-						<p className="text-xs font-semibold text-brand-900">Notificaciones</p>
+						<p className="text-sm font-semibold text-brand-900">Notificaciones</p>
 						<button
 							type="button"
 							onClick={() => markTodas()}
@@ -85,11 +85,11 @@ const NotificationBellDropdown = ({
 					</div>
 					<ul className="max-h-64 overflow-y-auto">
 						{isLoading ? (
-							<li className="px-3 py-6 text-center text-xs text-brand-600">
+							<li className="px-3 py-6 text-center text-sm text-brand-600">
 								Cargando…
 							</li>
 						) : items.length === 0 ? (
-							<li className="px-3 py-6 text-center text-xs text-brand-600">
+							<li className="px-3 py-6 text-center text-sm text-brand-600">
 								No hay notificaciones recientes.
 							</li>
 						) : (
@@ -117,7 +117,7 @@ const NotificationBellDropdown = ({
 											}}
 											className="block px-3 py-2.5 transition-colors hover:bg-cloud cursor-pointer"
 										>
-											<p className="line-clamp-2 text-xs font-medium text-brand-900">
+											<p className="line-clamp-2 text-sm font-medium text-brand-900">
 												{n.titulo}
 											</p>
 											<p className="mt-0.5 text-[10px] text-brand-600">
@@ -133,7 +133,7 @@ const NotificationBellDropdown = ({
 						<Link
 							to="/notificaciones"
 							onClick={() => setOpen(false)}
-							className="block w-full rounded-xl bg-teal-800 py-2 text-center text-xs font-semibold text-white transition hover:bg-teal-900"
+							className="block w-full rounded-xl bg-teal-800 py-2 text-center text-sm font-semibold text-white transition hover:bg-teal-900"
 						>
 							Mostrar todas las notificaciones
 						</Link>

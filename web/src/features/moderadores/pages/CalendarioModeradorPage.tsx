@@ -70,7 +70,7 @@ const CalendarioModeradorPage = () => {
 						/>
 					) : (
 						<div className="rounded-2xl bg-paper p-4 shadow-sm">
-							<p className="text-sm text-brand-800">
+							<p className="text-base text-brand-800">
 								Selecciona un día en el calendario para ver las disponibilidades y citas.
 							</p>
 						</div>

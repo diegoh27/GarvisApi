@@ -249,19 +249,19 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 	return (
 		<form className="space-y-4" onSubmit={onSubmit}>
 			{error && (
-				<div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+				<div className="rounded-lg bg-red-50 border border-red-200 p-3 text-base text-red-700">
 					{error}
 				</div>
 			)}
 
 			<div>
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label className="mb-1 block text-base font-medium text-brand-700">
 					Nombre <span className="text-red-500">*</span>
 				</label>
 				<input
 					type="text"
 					required
-					className={`h-11 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${nombreError || nombreExists
+					className={`h-11 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${nombreError || nombreExists
 						? "border-red-500 focus:border-red-500"
 						: "border-brand-300"
 						}`}
@@ -275,16 +275,16 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 					placeholder="Ej: Eco abdominal, Eco cardíaco..."
 				/>
 				{(nombreError || nombreExists) && (
-					<p className="mt-1 text-xs text-red-600">{nombreError || "Ya existe un eco con ese nombre."}</p>
+					<p className="mt-1 text-sm text-red-600">{nombreError || "Ya existe un eco con ese nombre."}</p>
 				)}
 			</div>
 
 			<div>
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label className="mb-1 block text-base font-medium text-brand-700">
 					Descripción
 				</label>
 				<textarea
-					className="w-full rounded-lg border border-brand-300 bg-paper p-3 text-sm outline-none focus:border-brand-500 min-h-[80px]"
+					className="w-full rounded-lg border border-brand-300 bg-paper p-3 text-base outline-none focus:border-brand-500 min-h-[80px]"
 					value={form.descripcion}
 					onChange={(e) => updateField("descripcion", e.target.value)}
 					placeholder="Breve explicación del estudio para el paciente..."
@@ -292,13 +292,13 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			</div>
 
 			<div>
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label className="mb-1 block text-base font-medium text-brand-700">
 					Etiqueta (Categoría)
 				</label>
 				<input
 					type="text"
 					list="etiquetas-list"
-					className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+					className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 					value={form.etiqueta}
 					onChange={(e) => updateField("etiqueta", e.target.value)}
 					placeholder="Ej: Abdominal, Pélvico, Doppler..."
@@ -313,7 +313,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 			{isEditing ? (
 				<div className="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Precio ($) <span className="text-red-500">*</span> (mín. 0,01)
 						</label>
 						<input
@@ -322,20 +322,20 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 							min={MONTO_MIN}
 							max={MONTO_MAX}
 							step="0.01"
-							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							value={form.precio}
 							onChange={(e) => updateField("precio", sanitizeMonto(e.target.value))}
 							placeholder="0.01"
 						/>
 					</div>
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Duración (minutos)
 						</label>
 						<input
 							type="number"
 							min="0"
-							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+							className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							value={form.duracion_min}
 							onChange={(e) => updateField("duracion_min", e.target.value)}
 							placeholder="0"
@@ -344,7 +344,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				</div>
 			) : (
 				<div>
-					<label className="mb-1 block text-sm font-medium text-brand-700">
+					<label className="mb-1 block text-base font-medium text-brand-700">
 						Precio ($) <span className="text-red-500">*</span> (mín. 0,01)
 					</label>
 					<input
@@ -353,7 +353,7 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 						min={MONTO_MIN}
 						max={MONTO_MAX}
 						step="0.01"
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 						value={form.precio}
 						onChange={(e) => updateField("precio", sanitizeMonto(e.target.value))}
 						placeholder="0.01"
@@ -363,11 +363,11 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 
 			{isEditing && (
 				<div>
-					<label className="mb-1 block text-sm font-medium text-brand-700">
+					<label className="mb-1 block text-base font-medium text-brand-700">
 						Estado
 					</label>
 					<select
-						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+						className="h-11 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 						value={form.activo}
 						onChange={(e) => updateField("activo", Number(e.target.value))}
 					>
@@ -379,14 +379,14 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 
 			<div className="pt-2 border-t border-brand-100">
 				<div className="flex items-center justify-between mb-2">
-					<label className="block text-sm font-bold text-brand-700">
+					<label className="block text-base font-bold text-brand-700">
 						Selecciona un Ícono
 					</label>
 					{prevCustomIcons.length > 0 && (
 						<button
 							type="button"
 							onClick={() => setIsEditingIcons(!isEditingIcons)}
-							className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-colors ${
+							className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium transition-colors ${
 								isEditingIcons
 									? "bg-brand-100 text-brand-800"
 									: "text-brand-900/40 hover:bg-brand-50 hover:text-brand-700"
@@ -482,14 +482,14 @@ const EcoForm = ({ eco, onSuccess, onCancel }: EcoFormProps) => {
 				<button
 					type="button"
 					onClick={onCancel}
-					className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+					className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+					className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
 				>
 					{isLoading
 						? isEditing

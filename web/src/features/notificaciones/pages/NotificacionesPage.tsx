@@ -102,7 +102,7 @@ const NotificacionesPage = () => {
              type="button"
              onClick={() => markTodas()}
              disabled={markingTodas || unreadCount === 0}
-             className="rounded-lg bg-brand-800 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-900 disabled:opacity-50 disabled:cursor-not-allowed"
+             className="rounded-lg bg-brand-800 px-4 py-2 text-base font-semibold text-white hover:bg-brand-900 disabled:opacity-50 disabled:cursor-not-allowed"
            >
              {markingTodas ? "Marcando..." : "Marcar todas como leídas"}
            </button>
@@ -110,14 +110,14 @@ const NotificacionesPage = () => {
 
         <div className="rounded-2xl bg-paper p-5 shadow-sm">
         {error ? (
-          <div className="flex items-center gap-2 text-sm text-red-700">
+          <div className="flex items-center gap-2 text-base text-red-700">
             <Bell className="h-4 w-4" />
             No se pudieron cargar las notificaciones.
           </div>
         ) : isLoading ? (
-          <p className="text-sm text-brand-800">Cargando notificaciones...</p>
+          <p className="text-base text-brand-800">Cargando notificaciones...</p>
         ) : notificaciones.length === 0 ? (
-          <div className="flex items-center gap-2 text-sm text-brand-800">
+          <div className="flex items-center gap-2 text-base text-brand-800">
             <Bell className="h-4 w-4" />
             Sin notificaciones por ahora.
           </div>
@@ -142,20 +142,20 @@ const NotificacionesPage = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         {meta.icon}
-                        <p className="text-sm font-semibold text-brand-900">
+                        <p className="text-base font-semibold text-brand-900">
                           {n.titulo}
                         </p>
                       </div>
-                      <p className="mt-1 text-sm text-brand-800">
+                      <p className="mt-1 text-base text-brand-800">
                         {n.mensaje}
                       </p>
-                      <p className="mt-2 text-xs text-brand-600">
+                      <p className="mt-2 text-sm text-brand-600">
                         {formatFecha(n.fecha_creacion)}
                       </p>
                     </div>
                     {/* The separate link below is removed as per requested to make the entire zone clickable like Facebook */}
                     {n.leida ? null : (
-                      <div className="shrink-0 rounded-lg border border-brand-200 bg-white px-2 py-1 text-[10px] sm:text-xs font-semibold text-brand-700 shadow-sm">
+                      <div className="shrink-0 rounded-lg border border-brand-200 bg-white px-2 py-1 text-[10px] sm:text-sm font-semibold text-brand-700 shadow-sm">
                         Nueva
                       </div>
                     )}

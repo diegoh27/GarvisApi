@@ -89,7 +89,7 @@ const HistorialCitasModal = ({
 							<h2 className="text-base font-semibold text-brand-900">
 								Historial de citas - {fullName}
 							</h2>
-							<p className="text-xs text-brand-600 mt-1">
+							<p className="text-sm text-brand-600 mt-1">
 								{citas.length} cita{citas.length !== 1 ? "s" : ""} registrada{citas.length !== 1 ? "s" : ""}
 							</p>
 						</div>
@@ -123,28 +123,28 @@ const HistorialCitasModal = ({
 											<div className="space-y-4">
 												<div className="flex items-center justify-between">
 													<div className="flex items-center gap-2 flex-wrap">
-														<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+														<span className="rounded-full bg-brand-700 px-2 py-0.5 text-sm font-medium text-paper">
 															{cita.eco_nombre}
 														</span>
 														{cita.id_representado ? (
-															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800" title="Representado">
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-sm font-medium text-emerald-800" title="Representado">
 																<Check className="h-3.5 w-3.5" />
 																Representado
 															</span>
 														) : (
-															<span className="inline-flex items-center gap-0.5 rounded-full bg-cloud px-2 py-0.5 text-xs font-medium text-brand-700" title="No representado">
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-cloud px-2 py-0.5 text-sm font-medium text-brand-700" title="No representado">
 																<X className="h-3.5 w-3.5" />
 																No representado
 															</span>
 														)}
 														{tieneResultado && (
-															<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-medium text-paper">
+															<span className="rounded-full bg-emerald-500 px-2 py-0.5 text-sm font-medium text-paper">
 																{archivos.length} archivo{archivos.length > 1 ? "s" : ""}
 															</span>
 														)}
 													</div>
 												</div>
-												<div className="grid gap-2 text-sm text-brand-600 sm:grid-cols-2">
+												<div className="grid gap-2 text-base text-brand-600 sm:grid-cols-2">
 													<div>
 														<span className="font-medium">Especialista:</span> {especialistaFullName}
 													</div>
@@ -157,7 +157,7 @@ const HistorialCitasModal = ({
 													<button
 														type="button"
 														onClick={() => setSelectedCitaIdForView(cita.id_cita)}
-														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+														className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
 													>
 														Ver cita
 													</button>
@@ -173,14 +173,14 @@ const HistorialCitasModal = ({
 																		idCita: cita.id_cita,
 																	});
 																}}
-																className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+																className="rounded-lg border border-brand-700 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
 															>
 																Ver {archivos.length} resultado{archivos.length > 1 ? "s" : ""}
 															</button>
 															<button
 																type="button"
 																onClick={() => setSelectedCitaForUpload(cita)}
-																className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+																className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800"
 															>
 																Subir más archivos
 															</button>
@@ -189,7 +189,7 @@ const HistorialCitasModal = ({
 														<button
 															type="button"
 															onClick={() => setSelectedCitaForUpload(cita)}
-															className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
+															className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800"
 														>
 															Subir resultados
 														</button>

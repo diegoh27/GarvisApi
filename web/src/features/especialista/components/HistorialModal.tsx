@@ -188,14 +188,14 @@ const HistorialModal = ({
 						<h3 className="text-base font-semibold text-brand-900">
 							Historial de {paciente.name}
 						</h3>
-						<p className="text-xs text-brand-800">
+						<p className="text-sm text-brand-800">
 							Registro completo de citas y resultados.
 						</p>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded-full border border-mist px-3 py-1 text-xs text-brand-800 transition-colors hover:bg-cloud"
+						className="rounded-full border border-mist px-3 py-1 text-sm text-brand-800 transition-colors hover:bg-cloud"
 					>
 						Cerrar
 					</button>
@@ -203,7 +203,7 @@ const HistorialModal = ({
 				<div className="max-h-[60vh] overflow-y-auto p-4 sm:p-6">
 					{citas.length ? (
 						<div className="overflow-x-auto">
-							<table className="w-full text-left text-xs text-brand-800 min-w-max">
+							<table className="w-full text-left text-sm text-brand-800 min-w-max">
 								<thead>
 									<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
 										<th className="px-3 py-2 whitespace-nowrap">Fecha y Hora</th>
@@ -379,7 +379,7 @@ const HistorialModal = ({
 						</table>
 						</div>
 					) : (
-						<p className="text-sm text-brand-800">
+						<p className="text-base text-brand-800">
 							No hay historial para este paciente.
 						</p>
 					)}

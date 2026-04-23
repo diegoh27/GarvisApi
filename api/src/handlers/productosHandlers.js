@@ -17,7 +17,7 @@ const {
 const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 const UNIDADES_MEDIDA = [
-	"Bulto", "Caja", "Galón", "Gramo", "Kilo", "Kit", 
+	"Bulto", "Caja", "Detal", "Galón", "Gramo", "Kilo", "Kit", 
 	"Litro", "Mililitro", "Paquete", "Par", "Pieza", "Sobre", "Unidad"
 ];
 

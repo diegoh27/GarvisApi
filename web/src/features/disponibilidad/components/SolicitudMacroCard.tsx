@@ -63,7 +63,7 @@ const SolicitudMacroCard = ({
 						<h3 className="font-bold tracking-tight text-zinc-800">
 							Dr./Dra. {solicitud.nombre} {solicitud.apellido}
 						</h3>
-						<p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+						<p className="text-sm font-semibold uppercase tracking-widest text-zinc-400">
 							{solicitud.especialidad}
 							{solicitud.es_manual ? " · Manual" : ""}
 						</p>
@@ -81,7 +81,7 @@ const SolicitudMacroCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<Calendar className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium capitalize text-zinc-600">
+					<span className="text-base font-medium capitalize text-zinc-600">
 						{formatRangoFechas(solicitud.fecha_desde, solicitud.fecha_hasta)}
 					</span>
 				</div>
@@ -89,7 +89,7 @@ const SolicitudMacroCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<Clock className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium text-zinc-600">
+					<span className="text-base font-medium text-zinc-600">
 						{formatHora(solicitud.hora_inicio)} — {formatHora(solicitud.hora_fin)} ({hrsLabel})
 					</span>
 				</div>
@@ -97,9 +97,9 @@ const SolicitudMacroCard = ({
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-50 text-zinc-400 transition-colors group-hover/item:text-[#006965]">
 						<MapPin className="h-4 w-4" />
 					</div>
-					<span className="text-sm font-medium text-zinc-600">{ubicacion}</span>
+					<span className="text-base font-medium text-zinc-600">{ubicacion}</span>
 				</div>
-				<p className="text-xs text-zinc-400">
+				<p className="text-sm text-zinc-400">
 					{previstos} bloques de 20 min · un solo turno (se generan al aprobar)
 				</p>
 			</div>
@@ -109,7 +109,7 @@ const SolicitudMacroCard = ({
 					type="button"
 					disabled={disabled || !puede}
 					onClick={() => onAprobar(solicitud.id_solicitud)}
-					className="flex-1 rounded-xl bg-emerald-50 py-3 text-sm font-bold text-emerald-700 transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
+					className="flex-1 rounded-xl bg-emerald-50 py-3 text-base font-bold text-emerald-700 transition-all hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					Aprobar Turno
 				</button>
@@ -117,7 +117,7 @@ const SolicitudMacroCard = ({
 					type="button"
 					disabled={disabled || !puede}
 					onClick={() => onArchivar(solicitud.id_solicitud)}
-					className="rounded-lg px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+					className="rounded-lg px-4 py-2 text-base font-medium text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
 				>
 					Rechazar
 				</button>

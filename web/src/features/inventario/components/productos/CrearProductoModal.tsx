@@ -103,9 +103,9 @@ export default function CrearProductoModal({
   if (!isOpen) return null;
 
   const inputClassName =
-    "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white placeholder-slate-400 transition-all";
+    "w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-base text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#006965] focus:bg-white placeholder-slate-400 transition-all";
   const labelClassName =
-    "block text-xs font-bold text-slate-600 mb-1.5";
+    "block text-base font-bold text-slate-600 mb-1.5";
 
   const UNIDADES_MEDIDA = [
     "Litro", "Mililitro", 
@@ -113,7 +113,7 @@ export default function CrearProductoModal({
   ].sort();
 
   const UNIDADES_MEDIDA_MAYOR = [
-    "Barril", "Galón  ", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet"
+    "Barril", "Galón  ", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet", "Detal"
   ].sort();
 
   return (
@@ -142,12 +142,12 @@ export default function CrearProductoModal({
           {(error || success) && (
             <div className="px-8 mt-2">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-base">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
+                <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-base">
                   {success}
                 </div>
               )}
@@ -156,7 +156,7 @@ export default function CrearProductoModal({
 
           {/* PASO 01 */}
           <div className="bg-white px-8 pb-6 pt-2">
-            <h3 className="text-sm font-bold text-slate-400 mb-5">
+            <h3 className="text-base font-bold text-slate-400 mb-5">
               PASO 01 <span className="text-slate-700 ml-1">Detalles Básicos</span>
             </h3>
             
@@ -197,10 +197,10 @@ export default function CrearProductoModal({
 
           {/* PASO 02 */}
           <div className="bg-slate-50 px-8 py-8 border-y border-slate-100">
-            <h3 className="text-sm font-bold text-slate-400 mb-1">
+            <h3 className="text-base font-bold text-slate-400 mb-1">
               PASO 02 <span className="text-slate-700 ml-1">Empaque y Consumo</span>
             </h3>
-            <p className="text-xs text-slate-500 mb-6 font-medium">
+            <p className="text-base text-slate-500 mb-6 font-medium">
               Configura cómo entra el producto al almacén y cómo se descuenta en cada cita médica.
             </p>
 
@@ -260,8 +260,8 @@ export default function CrearProductoModal({
                 <Info size={18} />
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-bold text-[#006965]">Ejemplo visual:</span>
-                <p className="text-xs font-medium text-teal-800/80 leading-relaxed">
+                <span className="text-base font-bold text-[#006965]">Ejemplo visual:</span>
+                <p className="text-base font-medium text-teal-800/80 leading-relaxed">
                   1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formatUnidad(Number(formData.factor_conversion) || 1, formData.unidad_consumo || 'Unidad')}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Unidad'}</span>" automáticamente.
                 </p>
               </div>
@@ -270,7 +270,7 @@ export default function CrearProductoModal({
 
           {/* PASO 03 */}
           <div className="bg-white px-8 pt-8 pb-6 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-400 mb-5">
+            <h3 className="text-base font-bold text-slate-400 mb-5">
               PASO 03 <span className="text-slate-700 ml-1">Stock y Alertas</span>
             </h3>
 
@@ -326,7 +326,7 @@ export default function CrearProductoModal({
                   }`}
                 />
               </button>
-              <span className="text-sm font-medium text-slate-600">Producto activo</span>
+              <span className="text-base font-medium text-slate-600">Producto activo</span>
             </div>
 
             {/* Right: Actions */}
@@ -335,14 +335,14 @@ export default function CrearProductoModal({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="px-6 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                className="px-6 py-2.5 text-base font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-6 py-2.5 flex items-center gap-2 bg-[#006965] text-white rounded-lg text-sm font-semibold hover:bg-teal-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 flex items-center gap-2 bg-[#006965] text-white rounded-lg text-base font-semibold hover:bg-teal-800 transition-colors shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
                 {isLoading ? "Guardando..." : "Guardar Insumo"}

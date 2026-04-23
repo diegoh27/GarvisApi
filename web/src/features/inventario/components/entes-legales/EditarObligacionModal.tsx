@@ -113,7 +113,7 @@ export default function EditarObligacionModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Ente Legal (select) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Ente Legal
             </label>
             <select
@@ -134,7 +134,7 @@ export default function EditarObligacionModal({
 
           {/* Concepto */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Concepto *
             </label>
             <input
@@ -152,7 +152,7 @@ export default function EditarObligacionModal({
 
           {/* Período */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Período
             </label>
             <select
@@ -172,7 +172,7 @@ export default function EditarObligacionModal({
 
           {/* Fecha de Vencimiento */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Vencimiento
             </label>
             <input
@@ -187,7 +187,7 @@ export default function EditarObligacionModal({
 
           {/* Estado (manual: Pendiente / Pagado / Vencido) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Estado
             </label>
             <select
@@ -206,17 +206,17 @@ export default function EditarObligacionModal({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-base text-gray-500 mt-1">
               Puede marcar manualmente como Pagado si ya registró el pago fuera del sistema.
             </p>
           </div>
 
           {/* Info: Monto y Fecha (solo lectura) */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800 font-medium mb-2">
+            <p className="text-base text-blue-800 font-medium mb-2">
               Información de pago:
             </p>
-            <div className="space-y-1 text-sm text-blue-700">
+            <div className="space-y-1 text-base text-blue-700">
               <p>
                 <strong>Monto:</strong>{" "}
                 {obligacion.monto !== null
@@ -234,7 +234,7 @@ export default function EditarObligacionModal({
               </p>
             </div>
             {(obligacion.monto === null || obligacion.fecha_vencimiento === null) && (
-              <p className="text-xs text-blue-600 mt-2 italic">
+              <p className="text-base text-blue-600 mt-2 italic">
                 * El monto y fecha se establecen al registrar un pago
               </p>
             )}
@@ -243,14 +243,14 @@ export default function EditarObligacionModal({
           {/* Error */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-base text-red-600">{error}</p>
             </div>
           )}
 
           {/* Success */}
           {success && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{success}</p>
+              <p className="text-base text-green-600">{success}</p>
             </div>
           )}
 

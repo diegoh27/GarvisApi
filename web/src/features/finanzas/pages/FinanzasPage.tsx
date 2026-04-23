@@ -114,7 +114,7 @@ export default function FinanzasPage() {
 										key={tab.id}
 										type="button"
 										onClick={() => setTab(tab.id)}
-										className={`px-6 py-4 font-medium text-sm transition-colors ${safeActiveTab === tab.id
+										className={`px-6 py-4 font-medium text-base transition-colors ${safeActiveTab === tab.id
 											? "text-teal-600 border-b-2 border-teal-600"
 											: "text-gray-600 hover:text-gray-900"
 											}`}
@@ -129,7 +129,7 @@ export default function FinanzasPage() {
 							type="button"
 							onClick={handleRefrescar}
 							disabled={isRefreshing}
-							className="flex items-center gap-2 shrink-0 px-4 py-2.5 text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+							className="flex items-center gap-2 shrink-0 px-4 py-2.5 text-base font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
 							title="Refrescar todos los datos de finanzas"
 						>
 							<RefreshCw

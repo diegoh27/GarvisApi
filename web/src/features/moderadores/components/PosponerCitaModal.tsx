@@ -343,11 +343,11 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 					<div className="space-y-4">
 						{/* Información de la cita actual */}
 						<div className="rounded-lg border border-brand-200 bg-brand-50 p-3">
-							<p className="mb-2 text-xs font-semibold text-brand-700">Cita actual</p>
-							<p className="text-sm font-medium text-brand-900">
+							<p className="mb-2 text-sm font-semibold text-brand-700">Cita actual</p>
+							<p className="text-base font-medium text-brand-900">
 								{cita.paciente_nombre} {cita.paciente_apellido}
 							</p>
-							<div className="mt-2 space-y-1 text-xs text-brand-600">
+							<div className="mt-2 space-y-1 text-sm text-brand-600">
 								<p>
 									<span className="font-medium">Especialista:</span> {cita.especialista_nombre}{" "}
 									{cita.especialista_apellido}
@@ -364,14 +364,14 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 
 						{/* Lista de disponibilidades */}
 						<div>
-							<label className="mb-2 block text-xs font-medium text-slate-500">
+							<label className="mb-2 block text-sm font-medium text-slate-500">
 								Ecografista
 							</label>
 							<select
 								value={selectedEspecialistaId}
 								onChange={(e) => setSelectedEspecialistaId(e.target.value)}
 								disabled={isLoading || isLoadingEspecialistas}
-								className="mb-3 h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm text-brand-900 outline-none focus:border-brand-700 disabled:opacity-50"
+								className="mb-3 h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base text-brand-900 outline-none focus:border-brand-700 disabled:opacity-50"
 							>
 								<option value="">Selecciona un ecografista</option>
 								{especialistas.map((esp) => (
@@ -381,26 +381,26 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 								))}
 							</select>
 
-							<label className="mb-2 block text-xs font-medium text-slate-500">
+							<label className="mb-2 block text-sm font-medium text-slate-500">
 								Selecciona un día
 							</label>
 							{!selectedEspecialistaId ? (
 								<div className="rounded-lg border border-brand-200 bg-paper p-4 text-center">
-									<p className="text-sm text-brand-600">
+									<p className="text-base text-brand-600">
 										Selecciona un ecografista para ver disponibilidades.
 									</p>
 								</div>
 							) : isLoadingDisponibilidades ? (
-								<div className="text-center py-8 text-brand-600 text-sm">
+								<div className="text-center py-8 text-brand-600 text-base">
 									Cargando disponibilidades...
 								</div>
 							) : disponibilidadesFiltradas.length === 0 ? (
 								<div className="rounded-lg border border-brand-200 bg-paper p-4 text-center">
-									<p className="text-sm text-brand-600">
+									<p className="text-base text-brand-600">
 										No hay disponibilidades disponibles para este ecografista y tipo de eco.
 									</p>
 									{disponibilidades.length > 0 && (
-										<p className="text-xs text-brand-500 mt-2">
+										<p className="text-sm text-brand-500 mt-2">
 											Se encontraron {disponibilidades.length} disponibilidades del especialista, pero ninguna coincide con el tipo de eco de la cita.
 										</p>
 									)}
@@ -412,7 +412,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 											type="button"
 											onClick={() => setDayOffset((prev) => Math.max(0, prev - 5))}
 											disabled={!canGoPrevDays}
-											className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-base font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											← Anteriores 5 días
 										</button>
@@ -426,13 +426,13 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 														key={dayKey}
 														type="button"
 														onClick={() => setSelectedDayKey(dayKey)}
-														className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${selected
+														className={`rounded-lg border px-3 py-1.5 text-base font-medium transition-colors ${selected
 																? "border-brand-700 bg-brand-700 text-paper"
 																: "border-brand-300 bg-paper text-brand-800 hover:bg-cloud"
 															}`}
 													>
 														{formatFechaConDia(dayKey)}
-														<span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs text-brand-800">
+														<span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-sm text-brand-800">
 															{count}
 														</span>
 													</button>
@@ -444,18 +444,18 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 											type="button"
 											onClick={() => setDayOffset((prev) => prev + 5)}
 											disabled={!canGoNextDays}
-											className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-base font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Siguientes 5 días →
 										</button>
 									</div>
 
-									<label className="mb-2 block text-xs font-medium text-slate-500">
+									<label className="mb-2 block text-sm font-medium text-slate-500">
 										Horarios disponibles del día
 									</label>
 									{disponibilidadesDelDia.length === 0 ? (
 										<div className="rounded-lg border border-brand-200 bg-paper p-4 text-center">
-											<p className="text-sm text-brand-600">
+											<p className="text-base text-brand-600">
 												No hay horarios para el día seleccionado.
 											</p>
 										</div>
@@ -481,12 +481,12 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 															<div className="flex items-center gap-3">
 																<Calendar className="h-4 w-4 text-brand-600" />
 																<div>
-																	<p className="text-sm font-medium text-brand-900">
+																	<p className="text-base font-medium text-brand-900">
 																		{formatDateKeyLocal(selectedDayKey)}
 																	</p>
 																	<div className="flex items-center gap-1 mt-0.5">
 																		<Clock className="h-3 w-3 text-brand-600" />
-																		<p className="text-xs text-brand-600">
+																		<p className="text-sm text-brand-600">
 																			{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
 																		</p>
 																	</div>
@@ -494,17 +494,17 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 															</div>
 															<div className="flex items-center gap-2">
 																{isSelected && (
-																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-sm font-medium text-paper">
 																		Seleccionada
 																	</span>
 																)}
 																{isPendiente && (
-																	<span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-medium text-brand-900">
+																	<span className="rounded-full bg-amber-400 px-2 py-0.5 text-sm font-medium text-brand-900">
 																		Pendiente
 																	</span>
 																)}
 																{isAprobada && (
-																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+																	<span className="rounded-full bg-brand-700 px-2 py-0.5 text-sm font-medium text-paper">
 																		Aprobada
 																	</span>
 																)}
@@ -515,7 +515,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 																		handleAceptarFecha(disp);
 																	}}
 																	disabled={isLoading}
-																	className="rounded-lg border border-brand-300 bg-paper px-3 py-1 text-xs font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+																	className="rounded-lg border border-brand-300 bg-paper px-3 py-1 text-sm font-medium text-brand-800 hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 																>
 																	{isPendiente ? "Aceptar fecha" : isSelected ? "Fecha aceptada" : "Seleccionar fecha"}
 																</button>
@@ -538,7 +538,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 						type="button"
 						onClick={handlePosponerCita}
 						disabled={isLoading || !selectedDisponibilidad || !selectedEspecialistaId || selectedDisponibilidad.estado === 0}
-						className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+						className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						Posponer cita
 					</button>
@@ -546,7 +546,7 @@ const PosponerCitaModal = ({ cita, onClose, onSuccess }: PosponerCitaModalProps)
 						type="button"
 						onClick={onClose}
 						disabled={isLoading}
-						className="rounded-lg border border-mist bg-paper px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50"
+						className="rounded-lg border border-mist bg-paper px-4 py-2 text-base font-medium text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50"
 					>
 						Cancelar
 					</button>

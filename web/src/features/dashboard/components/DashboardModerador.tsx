@@ -112,12 +112,12 @@ const DashboardModerador = () => {
 				<div className="relative z-10">
 					<div className="flex items-center gap-2 text-teal-200">
 						<ClipboardCheck className="h-5 w-5" />
-						<span className="text-sm font-medium">Panel de moderación</span>
+						<span className="text-base font-medium">Panel de moderación</span>
 					</div>
 					<h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
 						{welcomeTitle}
 					</h1>
-					<p className="mt-2 max-w-lg text-sm text-white/90 sm:text-base">
+					<p className="mt-2 max-w-lg text-base text-white/90 sm:text-base">
 						Gestiona pagos, disponibilidades, citas y resultados. Acceso rápido a
 						calendario, pacientes e inventario.
 					</p>
@@ -138,7 +138,7 @@ const DashboardModerador = () => {
 								<CalendarDays className="h-5 w-5" />
 							</div>
 							<div className="min-w-0">
-								<p className="text-xs font-medium text-brand-600">Citas hoy</p>
+								<p className="text-sm font-medium text-brand-600">Citas hoy</p>
 								<p className="text-xl font-bold text-brand-900">
 									{loadingCitasHoy ? "—" : citasHoy.length}
 								</p>
@@ -146,7 +146,7 @@ const DashboardModerador = () => {
 						</div>
 						<Link
 							to="/todas-las-citas"
-							className="mt-2 flex items-center gap-1 text-xs font-medium text-teal-600 hover:text-teal-800"
+							className="mt-2 flex items-center gap-1 text-sm font-medium text-teal-600 hover:text-teal-800"
 						>
 							Ver todas
 							<ChevronRight className="h-3 w-3" />
@@ -159,7 +159,7 @@ const DashboardModerador = () => {
 								<DollarSign className="h-5 w-5" />
 							</div>
 							<div className="min-w-0">
-								<p className="text-xs font-medium text-brand-600">Pendientes pago</p>
+								<p className="text-sm font-medium text-brand-600">Pendientes pago</p>
 								<p className="text-xl font-bold text-brand-900">
 									{loadingPagos ? "—" : citasPendientesPago.length}
 								</p>
@@ -167,7 +167,7 @@ const DashboardModerador = () => {
 						</div>
 						<Link
 							to="/pagos"
-							className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800"
+							className="mt-2 flex items-center gap-1 text-sm font-medium text-amber-600 hover:text-amber-800"
 						>
 							Ver pagos
 							<ChevronRight className="h-3 w-3" />
@@ -180,7 +180,7 @@ const DashboardModerador = () => {
 								<CalendarDays className="h-5 w-5" />
 							</div>
 							<div className="min-w-0">
-								<p className="text-xs font-medium text-brand-600">Disp. pendientes</p>
+								<p className="text-sm font-medium text-brand-600">Disp. pendientes</p>
 								<p className="text-xl font-bold text-brand-900">
 									{loadingDisp ? "—" : disponibilidadPendiente.length}
 								</p>
@@ -188,7 +188,7 @@ const DashboardModerador = () => {
 						</div>
 						<Link
 							to="/disponibilidad/pendientes"
-							className="mt-2 flex items-center gap-1 text-xs font-medium text-sky-600 hover:text-sky-800"
+							className="mt-2 flex items-center gap-1 text-sm font-medium text-sky-600 hover:text-sky-800"
 						>
 							Aprobar
 							<ChevronRight className="h-3 w-3" />
@@ -201,7 +201,7 @@ const DashboardModerador = () => {
 								<FileCheck className="h-5 w-5" />
 							</div>
 							<div className="min-w-0">
-								<p className="text-xs font-medium text-brand-600">Sin resultado</p>
+								<p className="text-sm font-medium text-brand-600">Sin resultado</p>
 								<p className="text-xl font-bold text-brand-900">
 									{loadingResultados ? "—" : citasSinResultado.length}
 								</p>
@@ -209,7 +209,7 @@ const DashboardModerador = () => {
 						</div>
 						<Link
 							to="/resultados"
-							className="mt-2 flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800"
+							className="mt-2 flex items-center gap-1 text-sm font-medium text-violet-600 hover:text-violet-800"
 						>
 							Resultados
 							<ChevronRight className="h-3 w-3" />
@@ -244,10 +244,10 @@ const DashboardModerador = () => {
 				) : citasHoyOrdenadas.length === 0 ? (
 					<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-brand-300 bg-cloud/30 py-10 text-center">
 						<CalendarDays className="mx-auto h-12 w-12 text-brand-400" />
-						<p className="mt-2 text-sm font-medium text-brand-800">No hay citas hoy</p>
+						<p className="mt-2 text-base font-medium text-brand-800">No hay citas hoy</p>
 						<Link
 							to="/calendario-moderador"
-							className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-800"
+							className="mt-3 inline-block text-base font-medium text-brand-600 hover:text-brand-800"
 						>
 							Ver calendario →
 						</Link>
@@ -262,10 +262,10 @@ const DashboardModerador = () => {
 										className="group flex items-center justify-between gap-2 rounded-xl border border-transparent bg-cloud/50 px-3 py-2.5 transition hover:border-brand-300 hover:bg-cloud"
 									>
 										<div className="min-w-0 flex-1">
-											<p className="text-sm font-medium text-brand-900">
+											<p className="text-base font-medium text-brand-900">
 												{cita.eco_nombre}
 											</p>
-											<p className="text-xs text-brand-700">
+											<p className="text-sm text-brand-700">
 												{cita.paciente_nombre} {cita.paciente_apellido} ·{" "}
 												{formatHora(cita.hora_cita)}
 											</p>
@@ -278,7 +278,7 @@ const DashboardModerador = () => {
 						{citasHoyOrdenadas.length > 5 && (
 							<Link
 								to="/todas-las-citas"
-								className="mt-3 flex items-center justify-center gap-1 border-t border-brand-100 pt-3 text-sm font-medium text-brand-600 hover:text-brand-800"
+								className="mt-3 flex items-center justify-center gap-1 border-t border-brand-100 pt-3 text-base font-medium text-brand-600 hover:text-brand-800"
 							>
 								Ver las {citasHoyOrdenadas.length} citas del día
 								<ChevronRight className="h-4 w-4" />
@@ -301,7 +301,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Pagos</p>
-							<p className="text-xs text-brand-600">Verificar y aprobar pagos</p>
+							<p className="text-sm text-brand-600">Verificar y aprobar pagos</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -315,7 +315,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Todas las citas</p>
-							<p className="text-xs text-brand-600">Listado completo</p>
+							<p className="text-sm text-brand-600">Listado completo</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -329,7 +329,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Calendario mostrador</p>
-							<p className="text-xs text-brand-600">Citas y disponibilidad</p>
+							<p className="text-sm text-brand-600">Citas y disponibilidad</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -343,7 +343,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Pacientes</p>
-							<p className="text-xs text-brand-600">Gestión de pacientes</p>
+							<p className="text-sm text-brand-600">Gestión de pacientes</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -357,7 +357,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Disponibilidades pendientes</p>
-							<p className="text-xs text-brand-600">
+							<p className="text-sm text-brand-600">
 								{disponibilidadPendiente.length} por aprobar
 							</p>
 						</div>
@@ -373,7 +373,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Resultados</p>
-							<p className="text-xs text-brand-600">
+							<p className="text-sm text-brand-600">
 								{citasSinResultado.length > 0
 									? `${citasSinResultado.length} pendiente(s)`
 									: "Subir resultados"}
@@ -391,7 +391,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Inventario</p>
-							<p className="text-xs text-brand-600">Visualizar inventario</p>
+							<p className="text-sm text-brand-600">Visualizar inventario</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -405,7 +405,7 @@ const DashboardModerador = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Informes</p>
-							<p className="text-xs text-brand-600">Informes médicos</p>
+							<p className="text-sm text-brand-600">Informes médicos</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -418,7 +418,7 @@ const DashboardModerador = () => {
 					<h2 className="text-lg font-semibold text-brand-900">Notificaciones</h2>
 					<Link
 						to="/notificaciones"
-						className="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-800"
+						className="flex items-center gap-1 text-base font-medium text-brand-600 hover:text-brand-800"
 					>
 						<Bell className="h-4 w-4" />
 						Ver todas
