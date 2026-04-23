@@ -90,7 +90,7 @@ export default function CrearObligacionModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Ente Legal */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Ente Legal *
             </label>
             <select
@@ -112,7 +112,7 @@ export default function CrearObligacionModal({
 
           {/* Concepto */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Concepto *
             </label>
             <input
@@ -130,7 +130,7 @@ export default function CrearObligacionModal({
 
           {/* Período */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Período
             </label>
             <select
@@ -151,14 +151,14 @@ export default function CrearObligacionModal({
           {/* Error */}
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-base text-red-600">{error}</p>
             </div>
           )}
 
           {/* Success */}
           {success && (
             <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm text-green-600">{success}</p>
+              <p className="text-base text-green-600">{success}</p>
             </div>
           )}
 

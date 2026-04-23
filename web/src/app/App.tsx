@@ -29,6 +29,7 @@ import {
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
 import CitaMostradorPage from "../features/inventario/pages/CitaMostradorPage";
+import CrearOrdenCompraPage from "../features/inventario/pages/CrearOrdenCompraPage";
 import { FinanzasPage } from "../features/finanzas";
 import { ModeradoresPage } from "../features/moderadores";
 import { NotFoundPage } from "../features/notfound";
@@ -298,6 +299,14 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["admin", "moderador"]}>
 								<InventarioPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="crear-orden-compra"
+						element={
+							<RoleRoute allowed={["admin", "moderador"]}>
+								<CrearOrdenCompraPage />
 							</RoleRoute>
 						}
 					/>

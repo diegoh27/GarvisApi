@@ -16,7 +16,7 @@ const HeroSection = () => {
 			<div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 md:grid-cols-2 lg:gap-16">
 				{/* Columna izquierda - Texto */}
 				<div className="order-2 space-y-6 md:order-1">
-					<div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1 text-xs font-medium text-[#1C837F] shadow-sm ring-1 ring-[#1C837F]/10">
+					<div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1 text-sm font-medium text-[#1C837F] shadow-sm ring-1 ring-[#1C837F]/10">
 						<span className="inline-block h-2 w-2 rounded-full bg-[#1C837F]" />
 						<span>Unidad de Ecografía Garbis · Maracay</span>
 					</div>
@@ -35,17 +35,17 @@ const HeroSection = () => {
 					<div className="flex flex-wrap items-center gap-4">
 						<Link
 							to="/disponibilidad"
-							className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#1C837F] to-[#1BB3A5] px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-teal-500/30 transition-transform hover:-translate-y-0.5 hover:shadow-xl"
+							className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#1C837F] to-[#1BB3A5] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-teal-500/30 transition-transform hover:-translate-y-0.5 hover:shadow-xl"
 						>
 							Agenda tu cita aquí
 						</Link>
-						<span className="text-xs text-slate-500 md:text-sm">
+						<span className="text-sm text-slate-500 md:text-base">
 							Resultados en minutos, atención cercana y profesional.
 						</span>
 					</div>
 
 					{/* Mini métricas */}
-					<div className="mt-4 grid grid-cols-2 gap-4 text-xs md:text-sm lg:max-w-md">
+					<div className="mt-4 grid grid-cols-2 gap-4 text-sm md:text-base lg:max-w-md">
 						<div className="rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-slate-100">
 							<p className="text-[10px] font-medium uppercase tracking-wide text-teal-600">
 								Experiencia
@@ -82,7 +82,7 @@ const HeroSection = () => {
 							<p className="text-[10px] font-medium uppercase tracking-wide text-teal-600">
 								Atención personalizada
 							</p>
-							<p className="mt-1 text-xs text-slate-700">
+							<p className="mt-1 text-sm text-slate-700">
 								Te guiamos en cada paso de tu estudio, desde la cita hasta el resultado.
 							</p>
 						</div>

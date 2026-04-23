@@ -151,11 +151,11 @@ const DolarFloatingWidget = () => {
 					</div>
 					<div className="min-w-0 pr-0.5">
 						{isLoading ? (
-							<p className="text-sm font-bold text-slate-400">BCV…</p>
+							<p className="text-base font-bold text-slate-400">BCV…</p>
 						) : error || !data ? (
-							<p className="text-sm font-bold text-amber-700">BCV: —</p>
+							<p className="text-base font-bold text-amber-700">BCV: —</p>
 						) : (
-							<p className="whitespace-nowrap text-sm font-bold tabular-nums text-brand-900">
+							<p className="whitespace-nowrap text-base font-bold tabular-nums text-brand-900">
 								BCV: {tasaText}
 							</p>
 						)}
@@ -169,7 +169,7 @@ const DolarFloatingWidget = () => {
 					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="mb-3 flex items-center justify-between gap-2">
-						<p className="text-xs font-semibold text-brand-900">Calculadora USD → Bs.</p>
+						<p className="text-sm font-semibold text-brand-900">Calculadora USD → Bs.</p>
 						<button
 							type="button"
 							onClick={() => void refetch()}
@@ -193,18 +193,18 @@ const DolarFloatingWidget = () => {
 							placeholder="0.00"
 							value={montoUSD}
 							onChange={(e) => setMontoUSD(e.target.value)}
-							className="h-9 w-28 rounded-lg border border-slate-200 px-2 text-sm font-semibold text-brand-900 outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+							className="h-9 w-28 rounded-lg border border-slate-200 px-2 text-base font-semibold text-brand-900 outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
 						/>
-						<span className="text-xs font-semibold text-slate-600">USD</span>
-						<span className="text-xs text-slate-400">=</span>
-						<span className="min-w-[100px] rounded-lg bg-slate-50 px-2 py-1.5 text-sm font-bold text-brand-900">
+						<span className="text-sm font-semibold text-slate-600">USD</span>
+						<span className="text-sm text-slate-400">=</span>
+						<span className="min-w-[100px] rounded-lg bg-slate-50 px-2 py-1.5 text-base font-bold text-brand-900">
 							{montoNumerico > 0 && data ? formatVES(montoVES) : "Bs. 0,00"}
 						</span>
 						{montoUSD ? (
 							<button
 								type="button"
 								onClick={() => setMontoUSD("")}
-								className="text-xs font-medium text-teal-700 hover:text-teal-900"
+								className="text-sm font-medium text-teal-700 hover:text-teal-900"
 							>
 								Limpiar
 							</button>

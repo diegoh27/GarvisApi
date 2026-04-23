@@ -108,8 +108,8 @@ export default function HistorialPagosTable({
       {
         key: "id",
         header: "ID",
-        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base font-medium text-gray-400 whitespace-nowrap",
         render: (_row: HistorialRow, index: number) => {
           return String(startIndex + index + 1).padStart(3, "0");
         },
@@ -117,30 +117,30 @@ export default function HistorialPagosTable({
       {
         key: "producto",
         header: "Producto",
-        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm font-bold text-gray-800 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base font-bold text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).nombre_producto,
       },
       {
         key: "fecha",
         header: "Fecha",
-        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) =>
           formatFechaCortaLocal((row as CompraProducto).fecha_ingreso),
       },
       {
         key: "cant",
         header: "Cant",
-        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm text-right font-medium text-gray-800 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base text-right font-medium text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).cantidad,
       },
       {
         key: "unit",
         header: "P.Unit.",
-        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm text-right text-gray-500 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base text-right text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) => {
           const compra = row as CompraProducto;
           return `$${Number(compra.precio_unitario).toFixed(2)}`;
@@ -149,8 +149,8 @@ export default function HistorialPagosTable({
       {
         key: "total",
         header: "P.Total",
-        headerClassName: "px-3 md:px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm text-right font-bold text-gray-800 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-right text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base text-right font-bold text-gray-800 whitespace-nowrap",
         render: (row: HistorialRow) => {
           const compra = row as CompraProducto;
           return `$${Number(compra.precio_total).toFixed(2)}`;
@@ -159,8 +159,8 @@ export default function HistorialPagosTable({
       {
         key: "prov",
         header: "Prov.",
-        headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-        cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
+        headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+        cellClassName: "px-3 md:px-6 py-5 text-base text-gray-500 whitespace-nowrap",
         render: (row: HistorialRow) => (row as CompraProducto).proveedor || "-",
       },
       ...(onEditar || onEliminar
@@ -169,7 +169,7 @@ export default function HistorialPagosTable({
             key: "actions",
             header: "Acciones",
             headerClassName:
-              "px-3 md:px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+              "px-3 md:px-6 py-4 text-center text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
             cellClassName: "px-3 md:px-6 py-5 text-center",
             render: (row: HistorialRow) => (
               <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
@@ -202,8 +202,8 @@ export default function HistorialPagosTable({
         {
           key: "id",
           header: "ID",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-400 whitespace-nowrap",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base font-medium text-gray-400 whitespace-nowrap",
           render: (_row: HistorialRow, index: number) => {
             return String(startIndex + index + 1).padStart(3, "0");
           },
@@ -211,8 +211,8 @@ export default function HistorialPagosTable({
         {
           key: "numero_cita",
           header: "Nº Cita",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm font-medium text-gray-800 whitespace-nowrap",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base font-medium text-gray-800 whitespace-nowrap",
           render: (row: HistorialRow) => {
             const consumo = row as ConsumoProducto;
             if (consumo.origen === 'manual') return "Manual";
@@ -222,16 +222,16 @@ export default function HistorialPagosTable({
         {
           key: "fecha",
           header: "Fecha Cita",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-500 whitespace-nowrap",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base text-gray-500 whitespace-nowrap",
           render: (row: HistorialRow) =>
             formatFechaCortaLocal((row as ConsumoProducto).fecha_consumo),
         },
         {
           key: "paciente",
           header: "Paciente",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm font-bold text-gray-800 whitespace-nowrap",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base font-bold text-gray-800 whitespace-nowrap",
           render: (row: HistorialRow) => {
             const consumo = row as ConsumoProducto;
             if (consumo.origen === 'manual') return <span className="text-gray-400 font-normal">-</span>;
@@ -241,8 +241,8 @@ export default function HistorialPagosTable({
         {
           key: "especialista",
           header: "Especialista",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-700 whitespace-nowrap",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base text-gray-700 whitespace-nowrap",
           render: (row: HistorialRow) => {
             const consumo = row as ConsumoProducto;
             if (consumo.origen === 'manual') return <span className="text-gray-400">-</span>;
@@ -252,15 +252,15 @@ export default function HistorialPagosTable({
         {
           key: "productos",
           header: "Productos usados",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm text-teal-600 font-medium",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base text-teal-600 font-medium",
           render: (row: HistorialRow) => (row as ConsumoProducto).nombre_producto,
         },
         {
           key: "descripcion",
           header: "Descripción",
-          headerClassName: "px-3 md:px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
-          cellClassName: "px-3 md:px-6 py-5 text-sm text-gray-600 whitespace-normal max-w-[200px]",
+          headerClassName: "px-3 md:px-6 py-4 text-left text-base font-bold text-gray-400 uppercase tracking-wider bg-white border-b-0",
+          cellClassName: "px-3 md:px-6 py-5 text-base text-gray-600 whitespace-normal max-w-[200px]",
           render: (row: HistorialRow) => {
             const consumo = row as ConsumoProducto;
             if (consumo.origen === 'manual') return consumo.descripcion || <span className="italic text-gray-400">Sin descripción</span>;
@@ -273,8 +273,8 @@ export default function HistorialPagosTable({
         {
           key: "id_pago",
           header: "ID",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (_row: HistorialRow, index: number) => {
             return String(startIndex + index + 1).padStart(3, "0");
           },
@@ -282,8 +282,8 @@ export default function HistorialPagosTable({
         {
           key: "empleado",
           header: "Empleado",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (row: HistorialRow) => {
             const pago = row as NominaPago;
             return `${pago.nombre_empleado} ${pago.apellido || ""}`;
@@ -292,23 +292,23 @@ export default function HistorialPagosTable({
         {
           key: "cargo",
           header: "Cargo",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (row: HistorialRow) => (row as NominaPago).cargo || "-",
         },
         {
           key: "fecha_pago",
           header: "Fecha de Pago",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (row: HistorialRow) =>
             formatFechaLocal((row as NominaPago).fecha_pago),
         },
         {
           key: "monto",
           header: "Monto ($)",
-          headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900 font-semibold",
+          headerClassName: "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900 font-semibold",
           render: (row: HistorialRow) => {
             const pago = row as NominaPago;
             return `$${Number(pago.monto).toFixed(2)}`;
@@ -317,8 +317,8 @@ export default function HistorialPagosTable({
         {
           key: "metodo",
           header: "Método",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (row: HistorialRow) => {
             const pago = row as NominaPago;
             return pago.metodo.charAt(0).toUpperCase() + pago.metodo.slice(1);
@@ -327,8 +327,8 @@ export default function HistorialPagosTable({
         {
           key: "referencia",
           header: "Referencia",
-          headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-          cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+          headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+          cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
           render: (row: HistorialRow) => (row as NominaPago).referencia || "-",
         },
         ...(onEditar || onEliminar
@@ -337,7 +337,7 @@ export default function HistorialPagosTable({
               key: "actions",
               header: "Acciones",
               headerClassName:
-                "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+                "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
               cellClassName: "px-3 md:px-6 py-4 text-center",
               render: (row: HistorialRow) => (
                 <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
@@ -371,8 +371,8 @@ export default function HistorialPagosTable({
             key: "id_pago",
             header: "ID",
             headerClassName:
-              "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+              "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (_row: HistorialRow, index: number) => {
               return String(startIndex + index + 1).padStart(3, "0");
             },
@@ -381,8 +381,8 @@ export default function HistorialPagosTable({
             key: "contrato",
             header: "Contrato",
             headerClassName:
-              "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+              "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) => {
               const pago = row as AlquilerPago;
               return pago.nombre_contrato || pago.id_contrato || "-";
@@ -392,8 +392,8 @@ export default function HistorialPagosTable({
             key: "fecha_pago",
             header: "Fecha de Pago",
             headerClassName:
-              "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+              "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) =>
               formatFechaLocal((row as AlquilerPago).fecha_pago),
           },
@@ -401,9 +401,9 @@ export default function HistorialPagosTable({
             key: "monto",
             header: "Monto ($)",
             headerClassName:
-              "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+              "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
             cellClassName:
-              "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900 font-semibold",
+              "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900 font-semibold",
             render: (row: HistorialRow) => {
               const pago = row as AlquilerPago;
               return `$${Number(pago.monto).toFixed(2)}`;
@@ -413,8 +413,8 @@ export default function HistorialPagosTable({
             key: "metodo",
             header: "Método",
             headerClassName:
-              "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+              "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) => {
               const pago = row as AlquilerPago;
               return pago.metodo.charAt(0).toUpperCase() + pago.metodo.slice(1);
@@ -424,8 +424,8 @@ export default function HistorialPagosTable({
             key: "referencia",
             header: "Referencia",
             headerClassName:
-              "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+              "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) => (row as AlquilerPago).referencia || "-",
           },
           ...(onEditar || onEliminar
@@ -434,7 +434,7 @@ export default function HistorialPagosTable({
                 key: "actions",
                 header: "Acciones",
                 headerClassName:
-                  "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+                  "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
                 cellClassName: "px-3 md:px-6 py-4 text-center",
                 render: (row: HistorialRow) => (
                   <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
@@ -466,8 +466,8 @@ export default function HistorialPagosTable({
           {
             key: "id",
             header: "ID",
-            headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (_row: HistorialRow, index: number) => {
               return String(startIndex + index + 1).padStart(3, "0");
             },
@@ -475,30 +475,30 @@ export default function HistorialPagosTable({
           {
             key: "ente",
             header: "Ente",
-            headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base font-medium text-gray-900",
             render: (row: HistorialRow) => (row as HistorialEnteLegal).nombre_ente || "-",
           },
           {
             key: "concepto",
             header: "Concepto",
-            headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base font-medium text-gray-900",
             render: (row: HistorialRow) => (row as HistorialEnteLegal).concepto || "-",
           },
           {
             key: "fecha",
             header: "Fecha",
-            headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) =>
               formatFechaCortaLocal((row as HistorialEnteLegal).fecha_ingreso),
           },
           {
             key: "valor",
             header: "Valor",
-            headerClassName: "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
             render: (row: HistorialRow) => {
               const pago = row as HistorialEnteLegal;
               return `$${Number(pago.precio_unitario).toFixed(2)}`;
@@ -507,8 +507,8 @@ export default function HistorialPagosTable({
           {
             key: "creado",
             header: "Registrado",
-            headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-            cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+            headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+            cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
             render: (row: HistorialRow) =>
               formatFechaHoraLocal((row as HistorialEnteLegal).creado_en),
           },
@@ -518,7 +518,7 @@ export default function HistorialPagosTable({
                 key: "actions",
                 header: "Acciones",
                 headerClassName:
-                  "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+                  "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
                 cellClassName: "px-3 md:px-6 py-4 text-center",
                 render: (row: HistorialRow) => (
                   <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
@@ -683,7 +683,7 @@ export default function HistorialPagosTable({
               {onRegistrarConsumo && (
                 <button
                   onClick={onRegistrarConsumo}
-                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 text-nowrap"
+                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors hover:bg-emerald-700 text-nowrap"
                 >
                   <Plus size={16} />
                   Registrar consumo manual
@@ -692,7 +692,7 @@ export default function HistorialPagosTable({
               {filteredHistorial.length > 0 && isCompras && (
                 <button
                   onClick={handlePrint}
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:border-gray-300 text-nowrap"
+                  className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-base font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:border-gray-300 text-nowrap"
                   title="Imprimir historial de compras"
                 >
                   <Printer size={16} />
@@ -702,7 +702,7 @@ export default function HistorialPagosTable({
               {filteredHistorial.length > 0 && (
                 <button
                   onClick={handleDownloadReport}
-                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 text-nowrap"
+                  className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700 text-nowrap"
                 >
                   <FileDown size={16} />
                   Descargar Reporte
@@ -722,7 +722,7 @@ export default function HistorialPagosTable({
                   key={opt.value}
                   onClick={() => setDateFilter(opt.value)}
                   className={`
-                    inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium
+                    inline-flex items-center px-3 py-1.5 rounded-full text-base font-medium
                     border transition-all duration-150 whitespace-nowrap
                     ${isActive
                       ? "bg-teal-600 border-teal-600 text-white shadow-sm"
@@ -748,7 +748,7 @@ export default function HistorialPagosTable({
                 ? (row as NominaPago).id_pago
                 : (row as HistorialEnteLegal).id_historial
           }
-          tableClassName="w-full min-w-full text-sm"
+          tableClassName="w-full min-w-full text-base"
           theadClassName="bg-white border-b border-gray-100"
           getRowClassName={() => "bg-white border-b border-gray-50 hover:bg-gray-50/50 transition-colors"}
           isLoading={isLoading}

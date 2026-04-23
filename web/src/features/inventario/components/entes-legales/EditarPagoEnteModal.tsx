@@ -96,7 +96,7 @@ export default function EditarPagoEnteModal({
             <h2 className="text-xl md:text-2xl font-bold text-gray-800">
               Editar Pago
             </h2>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-base text-gray-600 mt-1">
               {pago?.nombre_ente || "Ente Legal"} - {pago?.concepto}
             </p>
           </div>
@@ -125,7 +125,7 @@ export default function EditarPagoEnteModal({
 
           {/* Fecha de Pago */}
           <div>
-            <label htmlFor="fecha_pago" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="fecha_pago" className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Pago *
             </label>
             <input
@@ -142,7 +142,7 @@ export default function EditarPagoEnteModal({
 
           {/* Monto */}
           <div>
-            <label htmlFor="monto" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="monto" className="block text-base font-medium text-gray-700 mb-1">
               Monto ($) *
             </label>
             <input
@@ -163,7 +163,7 @@ export default function EditarPagoEnteModal({
 
           {/* Método de Pago */}
           <div>
-            <label htmlFor="metodo" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="metodo" className="block text-base font-medium text-gray-700 mb-1">
               Método de Pago
             </label>
             <select
@@ -184,7 +184,7 @@ export default function EditarPagoEnteModal({
 
           {/* Referencia */}
           <div>
-            <label htmlFor="referencia" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="referencia" className="block text-base font-medium text-gray-700 mb-1">
               Referencia
             </label>
             <input

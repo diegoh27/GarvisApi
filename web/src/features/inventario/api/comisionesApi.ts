@@ -167,6 +167,18 @@ export const comisionesApi = baseApi.injectEndpoints({
 			invalidatesTags: ["EspecialistaComision", "Citas"],
 		}),
 
+		// Crear o vincular paciente real desde mostrador
+		crearPacienteMostrador: builder.mutation<
+			{ ok: boolean; data: { id_paciente: string; existente: boolean; citaActiva: boolean; correo?: string } },
+			{ cedula: string; nombre: string; apellido: string; telefono?: string; tipo_cedula?: string }
+		>({
+			query: (body) => ({
+				url: "/citas/mostrador/crear-paciente",
+				method: "POST",
+				body,
+			}),
+		}),
+
 		// Último paciente de mostrador por cédula (para rellenar nombre/apellido/rif en otra cita)
 		getUltimoPacienteMostrador: builder.query<
 			{ nombre: string; apellido: string; cedula: string; rif: string } | null,
@@ -212,9 +224,10 @@ export const comisionesApi = baseApi.injectEndpoints({
 		// Datos por cédula: paciente registrado, representado y/o última cita de mostrador
 		getDatosPorCedula: builder.query<
 			{
-				paciente: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+				paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; rif: string } | null;
 				representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
 				mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+				citaActiva: boolean;
 			},
 			string
 		>({
@@ -224,9 +237,10 @@ export const comisionesApi = baseApi.injectEndpoints({
 				response: {
 					ok: boolean;
 					data: {
-						paciente: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+						paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; rif: string } | null;
 						representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
 						mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
+						citaActiva: boolean;
 					};
 				},
 			) => response.data,
@@ -234,12 +248,12 @@ export const comisionesApi = baseApi.injectEndpoints({
 
 		// Horas ocupadas por un especialista en una fecha (bloques 20 min; para mostrador)
 		getOcupacionEspecialista: builder.query<
-			{ ocupados: string[] },
+			{ ocupados: string[]; libres: string[] },
 			{ id_especialista: string; fecha: string }
 		>({
 			query: ({ id_especialista, fecha }) =>
 				`/citas/ocupacion-especialista?id_especialista=${encodeURIComponent(id_especialista)}&fecha=${encodeURIComponent(fecha)}`,
-			transformResponse: (response: { ok: boolean; data: { ocupados: string[] } }) =>
+			transformResponse: (response: { ok: boolean; data: { ocupados: string[]; libres: string[] } }) =>
 				response.data,
 		}),
 
@@ -316,4 +330,5 @@ export const {
 	useLazyBuscarRepresentadoPorNombreQuery,
 	useGetOcupacionEspecialistaQuery,
 	useCrearRepresentadoPorCedulaTitularMutation,
+	useCrearPacienteMostradorMutation,
 } = comisionesApi;

@@ -16,14 +16,13 @@ pdfmake.setFonts({
 // Desactivar warnings de URL policy (no usamos URLs externos)
 pdfmake.setUrlAccessPolicy(() => false);
 
-// ─── Logo ─── Extraer imagen PNG embebida en el SVG ─────────────────────
-const logoPath = path.join(__dirname, "../../../web/public/logo.svg");
+// ─── Logo ─── Extraer imagen PNG ─────────────────────
+const logoPath = path.join(__dirname, "../../../web/public/logo.png");
 let logoDataUri = null;
 try {
 	if (fs.existsSync(logoPath)) {
-		const svg = fs.readFileSync(logoPath, "utf8");
-		const m = svg.match(/xlink:href="(data:image\/png;base64,[^"]+)"/);
-		if (m) logoDataUri = m[1];
+		const base64 = fs.readFileSync(logoPath).toString("base64");
+		logoDataUri = "data:image/png;base64," + base64;
 	}
 } catch (_) {
 	/* logo no disponible */
@@ -63,33 +62,26 @@ const generateInformePDF = async (datos) => {
 	const content = [];
 
 	// ── MEMBRETE INSTITUCIONAL ──────────────────────────────────────
-	// Columna izquierda: logo + nombre corporativo + separador
-	const membreteLeft = {
-		width: "*",
+	content.push({
 		columns: [
-			// Logo (si está disponible)
-			...(logoDataUri
-				? [{ image: logoDataUri, width: 64, margin: [0, -15, 100, 0] }]
-				: []),
 			{
+				width: "*",
 				stack: [
-					{ text: "ULTRASONIDO INTEGRAL GARBIS", fontSize: 16, bold: true, color: BRAND, font: "Helvetica", margin: [20, 0, 0, 0], },
+					{ text: "ULTRASONIDO INTEGRAL GARBIS", fontSize: 16, bold: true, color: BRAND, font: "Helvetica", margin: [0, 0, 0, 0], },
 					{
 						columns: [
-							{ text: "CENTRO MÉDICO ESPECIALIZADO", fontSize: 8, bold: true, color: TEXT, width: "auto", margin: [20, 0, 0, 0] },
-							{ text: "", width: "auto", margin: [20, 0, 0, 0] },
+							{ text: "CENTRO MÉDICO ESPECIALIZADO", fontSize: 8, bold: true, color: TEXT, width: "auto" },
 						],
 						margin: [0, 3, 0, 0],
 					},
-					{ text: "  Rif: V-15890040-0", fontSize: 8, color: SUB_TEXT, width: "auto", margin: [20, 0, 0, 0] },
+					{ text: "Rif: V-15890040-0", fontSize: 8, color: SUB_TEXT, width: "auto" },
 				],
 				margin: [0, 4, 0, 0],
 			},
+			...(logoDataUri
+				? [{ image: logoDataUri, width: 80, alignment: "right", margin: [0, -10, 0, 0] }]
+				: []),
 		],
-	};
-
-	content.push({
-		columns: [membreteLeft],
 		margin: [0, 0, 0, 4],
 	});
 

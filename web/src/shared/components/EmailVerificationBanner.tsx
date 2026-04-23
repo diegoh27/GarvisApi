@@ -38,13 +38,13 @@ const EmailVerificationBanner = () => {
   if (!isPaciente || isEmailVerified) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-base text-yellow-900">
       <span>Debe verificar su correo para poder reservar una cita y desbloquear todas las funcionalidades.</span>
       <button
         type="button"
         onClick={handleResend}
         disabled={isResending || resendCooldown > 0}
-        className="rounded-lg border border-yellow-400 bg-yellow-200 px-3 py-1.5 text-xs font-semibold text-yellow-900 transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-70"
+        className="rounded-lg border border-yellow-400 bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-900 transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {resendCooldown > 0
           ? `Reenviar (${resendCooldown}s)`

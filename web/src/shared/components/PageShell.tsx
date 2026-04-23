@@ -15,7 +15,7 @@ const PageShell = ({ title, description, children, hideHeader }: PageShellProps)
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold text-brand-900">{title}</h1>
 					{description ? (
-						<p className="text-sm text-brand-800">{description}</p>
+						<p className="text-base text-brand-800">{description}</p>
 					) : null}
 				</div>
 			) : null}

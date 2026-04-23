@@ -66,7 +66,7 @@ const RechazarPagoModal = ({
           <div className="p-6 space-y-4">
             {nombrePaciente && (
               <div className="rounded-md bg-yellow-50 border border-yellow-200 p-3">
-                <p className="text-sm text-yellow-800">
+                <p className="text-base text-yellow-800">
                   Está por rechazar el pago de{" "}
                   <span className="font-semibold">{nombrePaciente}</span>.
                   El paciente recibirá una notificación con el motivo del rechazo.
@@ -77,7 +77,7 @@ const RechazarPagoModal = ({
             <div>
               <label
                 htmlFor="motivo"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-base font-medium text-gray-700 mb-2"
               >
                 Motivo del rechazo <span className="text-red-500">*</span>
               </label>
@@ -96,16 +96,16 @@ const RechazarPagoModal = ({
               />
               <div className="flex items-center justify-between mt-1">
                 {error && (
-                  <p className="text-sm text-red-600">{error}</p>
+                  <p className="text-base text-red-600">{error}</p>
                 )}
-                <p className="text-xs text-gray-500 ml-auto">
+                <p className="text-sm text-gray-500 ml-auto">
                   {motivo.length}/255 caracteres
                 </p>
               </div>
             </div>
 
             <div className="rounded-md bg-gray-50 border border-gray-200 p-3">
-              <p className="text-xs text-gray-600">
+              <p className="text-sm text-gray-600">
                 <strong>Nota:</strong> El paciente podrá corregir y volver a enviar
                 el comprobante de pago desde su panel de citas.
               </p>
@@ -118,14 +118,14 @@ const RechazarPagoModal = ({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading || !motivo.trim()}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-red-600 px-4 py-2 text-base font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? "Rechazando..." : "Rechazar Pago"}
             </button>

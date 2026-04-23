@@ -105,7 +105,7 @@ const InformeFormModal = ({
 							<h2 className="text-xl font-semibold text-brand-900">
 								{informeExistente ? "Editar informe" : "Crear informe"}
 							</h2>
-							<p className="mt-1 text-sm text-brand-800">
+							<p className="mt-1 text-base text-brand-800">
 								{fullName} · {cita.eco_nombre}
 							</p>
 						</div>
@@ -146,11 +146,11 @@ const InformeFormModal = ({
 							<div>
 								<label
 									htmlFor="reseña"
-									className="block text-sm font-semibold text-brand-900"
+									className="block text-base font-semibold text-brand-900"
 								>
 									Reseña <span className="text-red-500">*</span>
 								</label>
-								<p className="mt-1 text-xs text-brand-700">
+								<p className="mt-1 text-sm text-brand-700">
 									Describe lo que observaste en el estudio
 								</p>
 								<textarea
@@ -159,7 +159,7 @@ const InformeFormModal = ({
 									onChange={(e) => setReseña(e.target.value)}
 									rows={5}
 									required
-									className="mt-2 w-full resize-y rounded-lg border border-mist bg-cloud px-4 py-3 text-sm text-brand-900 placeholder:text-brand-600 outline-none transition-colors focus:border-brand-700 focus:bg-white"
+									className="mt-2 w-full resize-y rounded-lg border border-mist bg-cloud px-4 py-3 text-base text-brand-900 placeholder:text-brand-600 outline-none transition-colors focus:border-brand-700 focus:bg-white"
 									placeholder="Escribe aquí la reseña del estudio..."
 								/>
 							</div>
@@ -168,11 +168,11 @@ const InformeFormModal = ({
 							<div>
 								<label
 									htmlFor="recomendaciones"
-									className="block text-sm font-semibold text-brand-900"
+									className="block text-base font-semibold text-brand-900"
 								>
 									Recomendaciones
 								</label>
-								<p className="mt-1 text-xs text-brand-700">
+								<p className="mt-1 text-sm text-brand-700">
 									Indica las recomendaciones para el paciente
 								</p>
 								<textarea
@@ -180,7 +180,7 @@ const InformeFormModal = ({
 									value={recomendaciones}
 									onChange={(e) => setRecomendaciones(e.target.value)}
 									rows={4}
-									className="mt-2 w-full resize-y rounded-lg border border-mist bg-cloud px-4 py-3 text-sm text-brand-900 placeholder:text-brand-600 outline-none transition-colors focus:border-brand-700 focus:bg-white"
+									className="mt-2 w-full resize-y rounded-lg border border-mist bg-cloud px-4 py-3 text-base text-brand-900 placeholder:text-brand-600 outline-none transition-colors focus:border-brand-700 focus:bg-white"
 									placeholder="Escribe aquí las recomendaciones..."
 								/>
 							</div>
@@ -190,10 +190,10 @@ const InformeFormModal = ({
 								<div className="rounded-lg border border-mint bg-mint/10 p-4">
 									<div className="flex items-center justify-between">
 										<div>
-											<p className="text-sm font-semibold text-brand-900">
+											<p className="text-base font-semibold text-brand-900">
 												PDF generado
 											</p>
-											<p className="mt-1 text-xs text-brand-700">
+											<p className="mt-1 text-sm text-brand-700">
 												El informe PDF está disponible para descargar
 											</p>
 										</div>
@@ -205,7 +205,7 @@ const InformeFormModal = ({
 												setPdfFileName(fileName);
 												setShowPDFViewer(true);
 											}}
-											className="rounded-full bg-brand-700 px-4 py-2 text-xs font-medium text-paper transition-colors hover:bg-brand-800"
+											className="rounded-full bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
 										>
 											Ver PDF
 										</button>
@@ -220,7 +220,7 @@ const InformeFormModal = ({
 								<button
 									type="button"
 									onClick={onClose}
-									className="rounded-full border border-mist bg-cloud px-6 py-2.5 text-sm font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
+									className="rounded-full border border-mist bg-cloud px-6 py-2.5 text-base font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
 									disabled={saving}
 								>
 									Cancelar
@@ -228,7 +228,7 @@ const InformeFormModal = ({
 								<button
 									type="submit"
 									disabled={saving || !reseña.trim()}
-									className="rounded-full bg-brand-700 px-6 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+									className="rounded-full bg-brand-700 px-6 py-2.5 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
 								>
 									{saving
 										? "Generando PDF..."

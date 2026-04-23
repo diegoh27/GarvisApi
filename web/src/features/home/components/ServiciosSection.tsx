@@ -50,7 +50,7 @@ const ServiciosSection = () => {
 			<div className="mx-auto w-full max-w-7xl">
 				{/* Título */}
 				<div className="mb-10 overflow-visible text-center md:mb-14">
-					<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
+					<p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-[#1C837F]/80">
 						Especialidades
 					</p>
 					<div className="overflow-visible py-1">
@@ -61,7 +61,7 @@ const ServiciosSection = () => {
 							Nuestros servicios
 						</h2>
 					</div>
-					<p className="mx-auto mt-3 max-w-2xl text-sm text-[#4A5568] md:text-base">
+					<p className="mx-auto mt-3 max-w-2xl text-base text-[#4A5568] md:text-base">
 						Estudios ecográficos diseñados para evaluar diferentes partes del cuerpo con el máximo
 						detalle y seguridad para el paciente.
 					</p>
@@ -101,7 +101,7 @@ const ServiciosSection = () => {
 							<div className="mx-auto mb-3 h-0.5 w-12 rounded-full bg-gradient-to-r from-transparent via-[#14B8A6] to-transparent opacity-80" />
 
 							{/* Descripción */}
-							<p className="flex-1 text-center text-sm leading-relaxed text-slate-600 md:text-base">
+							<p className="flex-1 text-center text-base leading-relaxed text-slate-600 md:text-base">
 								{servicio.descripcion}
 							</p>
 

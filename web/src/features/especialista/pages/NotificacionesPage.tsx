@@ -20,9 +20,9 @@ const NotificacionesPage = () => {
 		>
 			<div className="rounded-2xl bg-paper p-5 shadow-sm">
 				{isLoading ? (
-					<p className="text-sm text-brand-800">Cargando notificaciones...</p>
+					<p className="text-base text-brand-800">Cargando notificaciones...</p>
 				) : notificaciones.length === 0 ? (
-					<div className="flex items-center gap-2 text-sm text-brand-800">
+					<div className="flex items-center gap-2 text-base text-brand-800">
 						<Bell className="h-4 w-4" />
 						Sin notificaciones por ahora.
 					</div>
@@ -44,14 +44,14 @@ const NotificacionesPage = () => {
 											) : (
 												<CheckCircle className="h-4 w-4 text-emerald-600" />
 											)}
-											<p className="text-sm font-semibold text-brand-900">
+											<p className="text-base font-semibold text-brand-900">
 												{n.titulo}
 											</p>
 										</div>
-										<p className="mt-1 text-sm text-brand-800">
+										<p className="mt-1 text-base text-brand-800">
 											{n.mensaje}
 										</p>
-										<p className="mt-2 text-xs text-brand-600">
+										<p className="mt-2 text-sm text-brand-600">
 											{formatFecha(n.fecha_creacion)}
 										</p>
 									</div>
@@ -60,7 +60,7 @@ const NotificacionesPage = () => {
 											type="button"
 											onClick={() => markLeida({ id: n.id_notificacion })}
 											disabled={marking}
-											className="rounded-lg border border-brand-600 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-lg border border-brand-600 bg-white px-3 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Marcar como leida
 										</button>

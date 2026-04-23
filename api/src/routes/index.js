@@ -19,6 +19,7 @@ const informesRoutes = require("./informesRoutes");
 const pagosRoutes = require("./pagosRoutes");
 const metodosPagoRoutes = require("./metodosPagoRoutes");
 const notificacionesRoutes = require("./notificacionesRoutes");
+const pagosGuardadosRoutes = require("./pagosGuardadosRoutes");
 
 const inventarioRoutes = require("./inventarioRoutes");
 const productosRoutes = require("./productosRoutes");
@@ -31,6 +32,7 @@ const espComisionRoutes = require("./espComisionRoutes");
 const facturacionRoutes = require("./facturacionRoutes");
 const proveedoresRoutes = require("./proveedoresRoutes");
 const notaCompraRoutes = require("./notaCompraRoutes");
+const ordenesCompraRoutes = require("./ordenesCompraRoutes");
 const ecoInsumosRoutes = require("./ecoInsumosRoutes");
 const kardexRoutes = require("./kardexRoutes");
 
@@ -55,6 +57,7 @@ router.use("/informes", informesRoutes);
 router.use("/pagos", pagosRoutes);
 router.use("/metodos-pago", metodosPagoRoutes);
 router.use("/notificaciones", notificacionesRoutes);
+router.use("/pagos-guardados", pagosGuardadosRoutes);
 
 router.use("/inventario", inventarioRoutes);
 router.use("/productos", productosRoutes);
@@ -67,6 +70,7 @@ router.use("/comisiones-especialistas", espComisionRoutes);
 router.use("/facturacion", facturacionRoutes);
 router.use("/proveedores", proveedoresRoutes);
 router.use("/notas-compra", notaCompraRoutes);
+router.use("/ordenes-compra", ordenesCompraRoutes);
 router.use("/eco-insumos", ecoInsumosRoutes);
 router.use("/kardex", kardexRoutes);
 

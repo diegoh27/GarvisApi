@@ -69,8 +69,8 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 			key: "fecha",
 			header: "Fecha",
 			headerClassName:
-				"px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-			cellClassName: "px-3 md:px-6 py-3 text-xs md:text-sm text-gray-900",
+				"px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+			cellClassName: "px-3 md:px-6 py-3 text-base md:text-base text-gray-900",
 			render: (row: { fecha: string }) =>
 				formatFechaHoraLocal(row.fecha) ?? "—",
 		},
@@ -82,8 +82,8 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 					key: "modulo" as const,
 					header: "Módulo",
 					headerClassName:
-						"px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-					cellClassName: "px-3 md:px-6 py-3 text-xs md:text-sm text-gray-900",
+						"px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+					cellClassName: "px-3 md:px-6 py-3 text-base md:text-base text-gray-900",
 					render: (row: { modulo: string | null }) => formatModulo(row.modulo),
 				},
 			]),
@@ -91,9 +91,9 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 			key: "accion",
 			header: "Acción",
 			headerClassName:
-				"px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+				"px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
 			cellClassName:
-				"px-3 md:px-6 py-3 text-xs md:text-sm text-gray-900 min-w-[200px]",
+				"px-3 md:px-6 py-3 text-base md:text-base text-gray-900 min-w-[200px]",
 			render: (row: { accion: string }) => (
 				<span title={row.accion || undefined}>{row.accion || "—"}</span>
 			),
@@ -102,8 +102,8 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 			key: "usuario",
 			header: "Usuario",
 			headerClassName:
-				"px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-			cellClassName: "px-3 md:px-6 py-3 text-xs md:text-sm text-gray-900",
+				"px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+			cellClassName: "px-3 md:px-6 py-3 text-base md:text-base text-gray-900",
 			render: (row: {
 				usuario_nombre: string | null;
 				usuario_rol: string | null;
@@ -114,7 +114,7 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 					<span title={`${nombre} (${rol})`}>
 						{nombre}
 						{rol !== "—" && (
-							<span className="text-gray-500 text-xs ml-1">({rol})</span>
+							<span className="text-gray-500 text-base ml-1">({rol})</span>
 						)}
 					</span>
 				);
@@ -125,10 +125,10 @@ export default function AuditoriaInventarioTable({ modulo }: AuditoriaInventario
 	return (
 		<div className="mt-8 bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
 			<div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-				<h3 className="text-sm font-semibold text-gray-800">
+				<h3 className="text-base font-semibold text-gray-800">
 					Registro de auditoría – Inventario
 				</h3>
-				<p className="text-xs text-gray-600 mt-0.5">
+				<p className="text-base text-gray-600 mt-0.5">
 					Historial de acciones realizadas en {MODULO_LABELS[modulo] ?? modulo}
 				</p>
 			</div>

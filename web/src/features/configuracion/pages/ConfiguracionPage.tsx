@@ -364,7 +364,7 @@ const ConfiguracionPage = () => {
       <EmailVerificationBanner />
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold text-brand-900">Configuración</h1>
-        <p className="text-sm text-brand-800">
+        <p className="text-base text-brand-800">
           Visualiza tu perfil y actualiza los datos permitidos.
         </p>
       </div>
@@ -374,53 +374,53 @@ const ConfiguracionPage = () => {
           <h2 className="text-base font-semibold text-brand-900">
             Información personal
           </h2>
-          <p className="mt-1 text-xs text-brand-800">
+          <p className="mt-1 text-sm text-brand-800">
             Estos datos son de solo lectura.
           </p>
 
           {loading ? (
-            <p className="mt-4 text-sm text-brand-800">Cargando...</p>
+            <p className="mt-4 text-base text-brand-800">Cargando...</p>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1 text-xs text-brand-800">
+              <div className="space-y-1 text-sm text-brand-800">
                 <label className="font-semibold">Nombre</label>
                 <input
                   value={perfil?.nombre ?? ""}
                   disabled
-                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                 />
               </div>
-              <div className="space-y-1 text-xs text-brand-800">
+              <div className="space-y-1 text-sm text-brand-800">
                 <label className="font-semibold">Apellido</label>
                 <input
                   value={perfil?.apellido ?? ""}
                   disabled
-                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                 />
               </div>
-              <div className="space-y-1 text-xs text-brand-800">
+              <div className="space-y-1 text-sm text-brand-800">
                 <label className="font-semibold">Correo</label>
                 <input
                   value={perfil?.correo ?? ""}
                   disabled
-                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                 />
               </div>
-              <div className="space-y-1 text-xs text-brand-800">
+              <div className="space-y-1 text-sm text-brand-800">
                 <label className="font-semibold">Cédula</label>
                 <input
                   value={perfil?.cedula ?? ""}
                   disabled
-                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                 />
               </div>
               {perfil?.especialidad ? (
-                <div className="space-y-1 text-xs text-brand-800">
+                <div className="space-y-1 text-sm text-brand-800">
                   <label className="font-semibold">Especialidad</label>
                   <input
                     value={perfil.especialidad}
                     disabled
-                    className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                    className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                   />
                 </div>
               ) : null}
@@ -432,7 +432,7 @@ const ConfiguracionPage = () => {
           <h2 className="text-base font-semibold text-brand-900">
             Datos actualizables
           </h2>
-          <p className="mt-1 text-xs text-brand-800">
+          <p className="mt-1 text-sm text-brand-800">
             Puedes editar teléfono y contraseña. Si eres paciente, también puedes actualizar tu información clínica y de contacto.
           </p>
 
@@ -440,7 +440,7 @@ const ConfiguracionPage = () => {
             {isAdmin && (
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Nombre</label>
                     <input
                       value={nombre}
@@ -448,11 +448,11 @@ const ConfiguracionPage = () => {
                         clearFieldError("nombre");
                         setNombre(event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""));
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.nombre ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.nombre ? "border-red-500" : "border-mist"}`}
                     />
-                    {fieldErrors.nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>}
+                    {fieldErrors.nombre && <p className="mt-1 text-sm text-red-500">{fieldErrors.nombre}</p>}
                   </div>
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Apellido</label>
                     <input
                       value={apellido}
@@ -460,13 +460,13 @@ const ConfiguracionPage = () => {
                         clearFieldError("apellido");
                         setApellido(event.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""));
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.apellido ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.apellido ? "border-red-500" : "border-mist"}`}
                     />
-                    {fieldErrors.apellido && <p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>}
+                    {fieldErrors.apellido && <p className="mt-1 text-sm text-red-500">{fieldErrors.apellido}</p>}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <CedulaField
                       label={<span className="font-semibold">Cédula</span>}
                       value={`${tipoCedula}${cedula}`}
@@ -476,11 +476,11 @@ const ConfiguracionPage = () => {
                         setCedula(numero);
                       }}
                       error={fieldErrors.cedula}
-                      inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
-                      selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
+                      inputClassName="rounded-xl border-mist bg-paper py-2 text-sm focus:border-brand-700"
+                      selectClassName="rounded-xl border-mist bg-paper py-2 text-sm"
                     />
                   </div>
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Correo</label>
                     <input
                       value={correo}
@@ -488,13 +488,13 @@ const ConfiguracionPage = () => {
                         clearFieldError("correo");
                         setCorreo(event.target.value);
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.correo ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.correo ? "border-red-500" : "border-mist"}`}
                     />
-                    {fieldErrors.correo && <p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>}
+                    {fieldErrors.correo && <p className="mt-1 text-sm text-red-500">{fieldErrors.correo}</p>}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Género</label>
                     <select
                       value={genero}
@@ -502,15 +502,15 @@ const ConfiguracionPage = () => {
                         clearFieldError("genero");
                         setGenero(event.target.value);
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.genero ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.genero ? "border-red-500" : "border-mist"}`}
                     >
                       <option value="">Selecciona</option>
                       <option value="Masculino">Masculino</option>
                       <option value="Femenino">Femenino</option>
                     </select>
-                    {fieldErrors.genero && <p className="mt-1 text-xs text-red-500">{fieldErrors.genero}</p>}
+                    {fieldErrors.genero && <p className="mt-1 text-sm text-red-500">{fieldErrors.genero}</p>}
                   </div>
-                  <div className="space-y-1 text-xs text-brand-800">
+                  <div className="space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Fecha nacimiento</label>
                     <input
                       type="date"
@@ -519,14 +519,14 @@ const ConfiguracionPage = () => {
                         clearFieldError("fecha_nacimiento");
                         setFechaNacimiento(event.target.value);
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-mist"}`}
                     />
-                    {fieldErrors.fecha_nacimiento && <p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>}
+                    {fieldErrors.fecha_nacimiento && <p className="mt-1 text-sm text-red-500">{fieldErrors.fecha_nacimiento}</p>}
                   </div>
                 </div>
               </div>
             )}
-            <div className="space-y-2 text-xs text-brand-800">
+            <div className="space-y-2 text-sm text-brand-800">
               <div className="flex items-center justify-between">
                 <label className="font-semibold">Teléfono</label>
                 {!isAdmin && (
@@ -548,18 +548,18 @@ const ConfiguracionPage = () => {
                   }}
                   label={null}
                   error={fieldErrors.telefono}
-                  inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
-                  selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
+                  inputClassName="rounded-xl border-mist bg-paper py-2 text-sm focus:border-brand-700"
+                  selectClassName="rounded-xl border-mist bg-paper py-2 text-sm"
                 />
               ) : (
                 <input
                   value={telefono || perfil?.telefono || ""}
                   disabled
-                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-xs text-brand-900"
+                  className="w-full rounded-xl border border-mist bg-cloud px-3 py-2 text-sm text-brand-900"
                 />
               )}
             </div>
-            <div className="space-y-1 text-xs text-brand-800">
+            <div className="space-y-1 text-sm text-brand-800">
               <label className="font-semibold">Nueva contraseña</label>
               <PasswordField
                 value={contrasena}
@@ -568,11 +568,11 @@ const ConfiguracionPage = () => {
 					setContrasena(v);
 				}}
                 placeholder="••••••••"
-                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contrasena ? "border-red-500" : "border-mist"}`}
+                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contrasena ? "border-red-500" : "border-mist"}`}
               />
-              {fieldErrors.contrasena && <p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>}
+              {fieldErrors.contrasena && <p className="mt-1 text-sm text-red-500">{fieldErrors.contrasena}</p>}
             </div>
-            <div className="space-y-1 text-xs text-brand-800">
+            <div className="space-y-1 text-sm text-brand-800">
               <label className="font-semibold">Confirmar contraseña</label>
               <PasswordField
                 value={confirmar}
@@ -581,13 +581,13 @@ const ConfiguracionPage = () => {
 					setConfirmar(v);
 				}}
                 placeholder="••••••••"
-                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.confirmar ? "border-red-500" : "border-mist"}`}
+                className={`w-full rounded-xl border bg-paper px-3 py-2 pr-10 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.confirmar ? "border-red-500" : "border-mist"}`}
               />
-              {fieldErrors.confirmar && <p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar}</p>}
+              {fieldErrors.confirmar && <p className="mt-1 text-sm text-red-500">{fieldErrors.confirmar}</p>}
             </div>
             {isPaciente && (
               <div className="space-y-3">
-                <div className="space-y-1 text-xs text-brand-800">
+                <div className="space-y-1 text-sm text-brand-800">
                   <label className="font-semibold">Tipo de sangre</label>
                   <select
                     value={tipoSangre}
@@ -595,7 +595,7 @@ const ConfiguracionPage = () => {
                       clearFieldError("tipo_sangre");
                       setTipoSangre(event.target.value);
                     }}
-                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-mist"}`}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.tipo_sangre ? "border-red-500" : "border-mist"}`}
                   >
                     <option value="">Selecciona tipo de sangre</option>
                     {TIPOS_SANGRE.map((t) => (
@@ -604,9 +604,9 @@ const ConfiguracionPage = () => {
                       </option>
                     ))}
                   </select>
-                  {fieldErrors.tipo_sangre && <p className="mt-1 text-xs text-red-500">{fieldErrors.tipo_sangre}</p>}
+                  {fieldErrors.tipo_sangre && <p className="mt-1 text-sm text-red-500">{fieldErrors.tipo_sangre}</p>}
                 </div>
-                <div className="space-y-1 text-xs text-brand-800">
+                <div className="space-y-1 text-sm text-brand-800">
                   <label className="font-semibold">Descripción</label>
                   <textarea
                     value={descripcion}
@@ -614,13 +614,13 @@ const ConfiguracionPage = () => {
                       clearFieldError("descripcion");
                       setDescripcion(event.target.value);
                     }}
-                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.descripcion ? "border-red-500" : "border-mist"}`}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.descripcion ? "border-red-500" : "border-mist"}`}
                     rows={3}
                     placeholder="Notas o condiciones relevantes"
                   />
-                  {fieldErrors.descripcion && <p className="mt-1 text-xs text-red-500">{fieldErrors.descripcion}</p>}
+                  {fieldErrors.descripcion && <p className="mt-1 text-sm text-red-500">{fieldErrors.descripcion}</p>}
                 </div>
-                <div className="space-y-1 text-xs text-brand-800">
+                <div className="space-y-1 text-sm text-brand-800">
                   <label className="font-semibold">Dirección</label>
                   <input
                     value={direccion}
@@ -628,13 +628,13 @@ const ConfiguracionPage = () => {
                       clearFieldError("direccion");
                       setDireccion(event.target.value);
                     }}
-                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.direccion ? "border-red-500" : "border-mist"}`}
+                    className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.direccion ? "border-red-500" : "border-mist"}`}
                     placeholder="Dirección"
                   />
-                  {fieldErrors.direccion && <p className="mt-1 text-xs text-red-500">{fieldErrors.direccion}</p>}
+                  {fieldErrors.direccion && <p className="mt-1 text-sm text-red-500">{fieldErrors.direccion}</p>}
                 </div>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="min-w-0 space-y-1 text-xs text-brand-800">
+                  <div className="min-w-0 space-y-1 text-sm text-brand-800">
                     <label className="font-semibold">Contacto emergencia (nombre)</label>
                     <input
                       value={contactoNombre}
@@ -642,12 +642,12 @@ const ConfiguracionPage = () => {
                         clearFieldError("contacto_emergencia_nombre");
                         setContactoNombre(event.target.value);
                       }}
-                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contacto_emergencia_nombre ? "border-red-500" : "border-mist"}`}
+                      className={`w-full rounded-xl border bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-700 ${fieldErrors.contacto_emergencia_nombre ? "border-red-500" : "border-mist"}`}
                       placeholder="Nombre"
                     />
-                    {fieldErrors.contacto_emergencia_nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.contacto_emergencia_nombre}</p>}
+                    {fieldErrors.contacto_emergencia_nombre && <p className="mt-1 text-sm text-red-500">{fieldErrors.contacto_emergencia_nombre}</p>}
                   </div>
-                  <div className="min-w-0 space-y-1 text-xs text-brand-800">
+                  <div className="min-w-0 space-y-1 text-sm text-brand-800">
                     <TelefonoField
                       label={<span className="font-semibold">Teléfono emergencia</span>}
                       value={contactoTelefono}
@@ -657,8 +657,8 @@ const ConfiguracionPage = () => {
                       }}
                       error={fieldErrors.contacto_emergencia_telefono}
                       required
-                      inputClassName="rounded-xl border-mist bg-paper py-2 text-xs focus:border-brand-700"
-                      selectClassName="rounded-xl border-mist bg-paper py-2 text-xs"
+                      inputClassName="rounded-xl border-mist bg-paper py-2 text-sm focus:border-brand-700"
+                      selectClassName="rounded-xl border-mist bg-paper py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -671,7 +671,7 @@ const ConfiguracionPage = () => {
               <button
                 type="submit"
                 disabled={saving || loading || !hasChanges}
-                className="flex-1 rounded-full bg-brand-700 px-3 py-2 text-xs font-semibold text-paper disabled:opacity-60"
+                className="flex-1 rounded-full bg-brand-700 px-3 py-2 text-sm font-semibold text-paper disabled:opacity-60"
               >
                 {saving ? "Guardando..." : "Guardar cambios"}
               </button>
@@ -679,7 +679,7 @@ const ConfiguracionPage = () => {
                 type="button"
                 onClick={handleCancelChanges}
                 disabled={saving || loading}
-                className="flex-1 rounded-full border border-mint px-3 py-2 text-xs font-semibold text-brand-800 disabled:opacity-60"
+                className="flex-1 rounded-full border border-mint px-3 py-2 text-sm font-semibold text-brand-800 disabled:opacity-60"
               >
                 Cancelar cambios
               </button>

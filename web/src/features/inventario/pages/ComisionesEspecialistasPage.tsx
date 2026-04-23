@@ -411,7 +411,7 @@ export default function ComisionesEspecialistasPage() {
                 setFiltroEstado("Pendiente");
                 setCurrentPageComisiones(1);
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pendiente"
+              className={`rounded-full px-3 py-1.5 text-base font-medium transition-colors ${filtroEstado === "Pendiente"
                 ? "bg-teal-500 text-white"
                 : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
@@ -424,7 +424,7 @@ export default function ComisionesEspecialistasPage() {
                 setFiltroEstado("Pagada");
                 setCurrentPageComisiones(1);
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Pagada"
+              className={`rounded-full px-3 py-1.5 text-base font-medium transition-colors ${filtroEstado === "Pagada"
                 ? "bg-teal-500 text-white"
                 : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
@@ -437,7 +437,7 @@ export default function ComisionesEspecialistasPage() {
                 setFiltroEstado("Todas");
                 setCurrentPageComisiones(1);
               }}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${filtroEstado === "Todas"
+              className={`rounded-full px-3 py-1.5 text-base font-medium transition-colors ${filtroEstado === "Todas"
                 ? "bg-teal-500 text-white"
                 : "border border-brand-300 bg-white text-brand-700 hover:bg-brand-50"
                 }`}
@@ -481,7 +481,7 @@ export default function ComisionesEspecialistasPage() {
                     });
                   });
                 }}
-                className="flex items-center gap-1.5 rounded-full bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-teal-700 ml-auto md:ml-2"
+                className="flex items-center gap-1.5 rounded-full bg-teal-600 px-3 py-1.5 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700 ml-auto md:ml-2"
               >
                 <FileDown size={14} />
                 <span className="hidden sm:inline">Descargar</span>

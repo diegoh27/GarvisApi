@@ -351,7 +351,7 @@ const MetodosPagoPage = () => {
           <h2 className="mb-4 text-lg font-semibold text-brand-900">Agregar método</h2>
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-brand-700">Moneda</label>
+              <label className="mb-1 block text-base font-medium text-brand-700">Moneda</label>
               <select
                 value={form.moneda}
                 onChange={(e) =>
@@ -365,7 +365,7 @@ const MetodosPagoPage = () => {
                     numero_cuenta: "",
                   }))
                 }
-                className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
               >
                 <option value="BS">Bolívares (BS)</option>
                 <option value="USD">Dólares (USD)</option>
@@ -373,7 +373,7 @@ const MetodosPagoPage = () => {
             </div>
 
             <div id="field-nombre">
-              <label className="mb-1 block text-sm font-medium text-brand-700">
+              <label className="mb-1 block text-base font-medium text-brand-700">
                 Nombre <span className="text-red-500">*</span>
               </label>
               <input
@@ -384,14 +384,14 @@ const MetodosPagoPage = () => {
                   clearError("nombre");
                 }}
                 placeholder="Ej: Banco de Venezuela Pago Móvil"
-                className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                   errors.nombre ? "border-red-500" : "border-brand-300"
                 }`}
                 aria-invalid={!!errors.nombre}
                 aria-describedby={errors.nombre ? "error-nombre" : undefined}
               />
               {errors.nombre ? (
-                <p id="error-nombre" className="mt-1 text-xs text-red-600" role="alert">
+                <p id="error-nombre" className="mt-1 text-sm text-red-600" role="alert">
                   {errors.nombre}
                 </p>
               ) : null}
@@ -400,7 +400,7 @@ const MetodosPagoPage = () => {
             {form.moneda === "BS" ? (
               <>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-brand-700">
+                  <label className="mb-1 block text-base font-medium text-brand-700">
                     Tipo de pago
                   </label>
                   <select
@@ -415,7 +415,7 @@ const MetodosPagoPage = () => {
                         numero_cuenta: "",
                       }))
                     }
-                    className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                    className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
                   >
                     {bsTipoOptions.map((option) => (
                       <option key={option} value={option}>
@@ -427,7 +427,7 @@ const MetodosPagoPage = () => {
                 {form.tipo_pago_bs !== "EfectivoBs" && (
                   <>
                   <div id="field-banco_codigo">
-                  <label className="mb-1 block text-sm font-medium text-brand-700">
+                  <label className="mb-1 block text-base font-medium text-brand-700">
                     Banco <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -436,7 +436,7 @@ const MetodosPagoPage = () => {
                       setForm((prev) => ({ ...prev, banco_codigo: e.target.value }));
                       clearError("banco_codigo");
                     }}
-                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                       errors.banco_codigo ? "border-red-500" : "border-brand-300"
                     }`}
                     aria-invalid={!!errors.banco_codigo}
@@ -450,13 +450,13 @@ const MetodosPagoPage = () => {
                     ))}
                   </select>
                   {errors.banco_codigo ? (
-                    <p id="error-banco_codigo" className="mt-1 text-xs text-red-600" role="alert">
+                    <p id="error-banco_codigo" className="mt-1 text-sm text-red-600" role="alert">
                       {errors.banco_codigo}
                     </p>
                   ) : null}
                 </div>
                 <div id="field-titular_identificacion_numero">
-                  <label className="mb-1 block text-sm font-medium text-brand-700">
+                  <label className="mb-1 block text-base font-medium text-brand-700">
                     Identificación <span className="text-red-500">*</span>
                   </label>
                   <div className="grid grid-cols-[88px_1fr] gap-2">
@@ -469,7 +469,7 @@ const MetodosPagoPage = () => {
                             .value as "V" | "E" | "J",
                         }))
                       }
-                      className="h-10 rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+                      className="h-10 rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
                     >
                       <option value="V">V</option>
                       <option value="E">E</option>
@@ -489,7 +489,7 @@ const MetodosPagoPage = () => {
                         clearError("titular_identificacion_numero");
                       }}
                       placeholder="Ej: 28025174"
-                      className={`h-10 rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      className={`h-10 rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                         errors.titular_identificacion_numero ? "border-red-500" : "border-brand-300"
                       }`}
                       aria-invalid={!!errors.titular_identificacion_numero}
@@ -497,7 +497,7 @@ const MetodosPagoPage = () => {
                     />
                   </div>
                   {errors.titular_identificacion_numero ? (
-                    <p id="error-titular_identificacion_numero" className="mt-1 text-xs text-red-600" role="alert">
+                    <p id="error-titular_identificacion_numero" className="mt-1 text-sm text-red-600" role="alert">
                       {errors.titular_identificacion_numero}
                     </p>
                   ) : null}
@@ -513,18 +513,18 @@ const MetodosPagoPage = () => {
                       }}
                       required
                       error={errors.telefono}
-                      inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
-                      selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-sm"
+                      inputClassName="h-10 rounded-lg border-brand-300 bg-paper text-base"
+                      selectClassName="h-10 rounded-lg border-brand-300 bg-paper text-base"
                     />
                   </div>
                 ) : null}
                 {form.tipo_pago_bs === "Transferencia" ? (
                   <div id="field-numero_cuenta">
                     <div className="flex items-center justify-between">
-                      <label className="mb-1 block text-sm font-medium text-brand-700">
+                      <label className="mb-1 block text-base font-medium text-brand-700">
                         Número de cuenta <span className="text-red-500">*</span>
                       </label>
-                      <span className="text-xs text-brand-600" aria-live="polite">
+                      <span className="text-sm text-brand-600" aria-live="polite">
                         {form.numero_cuenta.replace(/\D/g, "").length} dígitos
                       </span>
                     </div>
@@ -539,14 +539,14 @@ const MetodosPagoPage = () => {
                         clearError("numero_cuenta");
                       }}
                       placeholder="Ej: 01021234123412341234"
-                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                         errors.numero_cuenta ? "border-red-500" : "border-brand-300"
                       }`}
                       aria-invalid={!!errors.numero_cuenta}
                       aria-describedby={errors.numero_cuenta ? "error-numero_cuenta" : undefined}
                     />
                     {errors.numero_cuenta ? (
-                      <p id="error-numero_cuenta" className="mt-1 text-xs text-red-600" role="alert">
+                      <p id="error-numero_cuenta" className="mt-1 text-sm text-red-600" role="alert">
                         {errors.numero_cuenta}
                       </p>
                     ) : null}
@@ -558,7 +558,7 @@ const MetodosPagoPage = () => {
             ) : (
               <>
                 <div id="field-tipo_pago_usd">
-                  <label className="mb-1 block text-sm font-medium text-brand-700">
+                  <label className="mb-1 block text-base font-medium text-brand-700">
                     Tipo de pago <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -567,7 +567,7 @@ const MetodosPagoPage = () => {
                       setForm((prev) => ({ ...prev, tipo_pago_usd: e.target.value }));
                       clearError("tipo_pago_usd");
                     }}
-                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                    className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                       errors.tipo_pago_usd ? "border-red-500" : "border-brand-300"
                     }`}
                     aria-invalid={!!errors.tipo_pago_usd}
@@ -581,14 +581,14 @@ const MetodosPagoPage = () => {
                     <option value="Otro">Otro</option>
                   </select>
                   {errors.tipo_pago_usd ? (
-                    <p id="error-tipo_pago_usd" className="mt-1 text-xs text-red-600" role="alert">
+                    <p id="error-tipo_pago_usd" className="mt-1 text-sm text-red-600" role="alert">
                       {errors.tipo_pago_usd}
                     </p>
                   ) : null}
                 </div>
                 {form.tipo_pago_usd !== "EfectivoUSD" && (
                   <div id="field-correo">
-                    <label className="mb-1 block text-sm font-medium text-brand-700">
+                    <label className="mb-1 block text-base font-medium text-brand-700">
                       Correo <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -599,14 +599,14 @@ const MetodosPagoPage = () => {
                         clearError("correo");
                       }}
                       placeholder="correo@ejemplo.com"
-                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${
+                      className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${
                         errors.correo ? "border-red-500" : "border-brand-300"
                       }`}
                       aria-invalid={!!errors.correo}
                       aria-describedby={errors.correo ? "error-correo" : undefined}
                     />
                     {errors.correo ? (
-                      <p id="error-correo" className="mt-1 text-xs text-red-600" role="alert">
+                      <p id="error-correo" className="mt-1 text-sm text-red-600" role="alert">
                         {errors.correo}
                       </p>
                     ) : null}
@@ -617,7 +617,7 @@ const MetodosPagoPage = () => {
 
             {form.tipo_pago_bs !== "EfectivoBs" && form.tipo_pago_usd !== "EfectivoUSD" && (
               <div id="field-imagen">
-                <label className="mb-1 block text-sm font-medium text-brand-700">
+                <label className="mb-1 block text-base font-medium text-brand-700">
                   Imagen <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -627,18 +627,18 @@ const MetodosPagoPage = () => {
                     onFileChange(e);
                     clearError("imagen");
                   }}
-                  className="block w-full text-sm text-brand-800 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-brand-900 hover:file:bg-brand-200"
+                  className="block w-full text-base text-brand-800 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-100 file:px-3 file:py-2 file:text-base file:font-medium file:text-brand-900 hover:file:bg-brand-200"
                   aria-invalid={!!errors.imagen}
                   aria-describedby={errors.imagen ? "error-imagen" : undefined}
                 />
                 {errors.imagen ? (
-                  <p id="error-imagen" className="mt-1 text-xs text-red-600" role="alert">
+                  <p id="error-imagen" className="mt-1 text-sm text-red-600" role="alert">
                     {errors.imagen}
                   </p>
                 ) : null}
                 {previewImagenFinal ? (
                   <div className="mt-3 rounded-lg border border-brand-200 p-2">
-                    <p className="mb-2 text-xs text-brand-700">Previsualización</p>
+                    <p className="mb-2 text-sm text-brand-700">Previsualización</p>
                     <img
                       src={previewImagenFinal}
                       alt="Previsualización método de pago"
@@ -653,7 +653,7 @@ const MetodosPagoPage = () => {
               <button
                 type="submit"
                 disabled={isCreating || isEditing}
-                className="w-full rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+                className="w-full rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
               >
                 {isEditing
                   ? "Actualizando..."
@@ -667,7 +667,7 @@ const MetodosPagoPage = () => {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="rounded-lg border border-brand-300 px-4 py-2 text-sm font-medium text-brand-800"
+                  className="rounded-lg border border-brand-300 px-4 py-2 text-base font-medium text-brand-800"
                 >
                   Cancelar
                 </button>
@@ -679,9 +679,9 @@ const MetodosPagoPage = () => {
         <div className="rounded-2xl border border-brand-200 bg-paper p-5 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-brand-900">Métodos registrados</h2>
           {isLoading ? (
-            <p className="text-sm text-brand-700">Cargando métodos...</p>
+            <p className="text-base text-brand-700">Cargando métodos...</p>
           ) : metodos.length === 0 ? (
-            <p className="text-sm text-brand-700">No hay métodos de pago registrados.</p>
+            <p className="text-base text-brand-700">No hay métodos de pago registrados.</p>
           ) : (
             <div className="space-y-3">
               {metodos.map((metodo) => (
@@ -701,23 +701,23 @@ const MetodosPagoPage = () => {
                     </div>
                   )}
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-brand-900">{metodo.nombre}</p>
-                    <p className="text-xs text-brand-700">
+                    <p className="text-base font-semibold text-brand-900">{metodo.nombre}</p>
+                    <p className="text-sm text-brand-700">
                       {`${metodo.banco_codigo} - ${metodo.banco_nombre}`} · {metodo.tipo_pago} · {metodo.moneda}
                     </p>
                     {metodo.correo ? (
-                      <p className="text-xs text-brand-700">Correo: {metodo.correo}</p>
+                      <p className="text-sm text-brand-700">Correo: {metodo.correo}</p>
                     ) : null}
                     {metodo.titular_identificacion ? (
-                      <p className="text-xs text-brand-700">
+                      <p className="text-sm text-brand-700">
                         Identificación: {metodo.titular_identificacion}
                       </p>
                     ) : null}
                     {metodo.telefono ? (
-                      <p className="text-xs text-brand-700">Teléfono: {metodo.telefono}</p>
+                      <p className="text-sm text-brand-700">Teléfono: {metodo.telefono}</p>
                     ) : null}
                     {metodo.numero_cuenta ? (
-                      <p className="text-xs text-brand-700">
+                      <p className="text-sm text-brand-700">
                         Cuenta: {metodo.numero_cuenta}
                       </p>
                     ) : null}
@@ -757,7 +757,7 @@ const MetodosPagoPage = () => {
                     <button
                       type="button"
                       onClick={() => onEdit(metodo)}
-                      className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
+                      className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700"
                     >
                       Editar
                     </button>
@@ -765,7 +765,7 @@ const MetodosPagoPage = () => {
                       type="button"
                       onClick={() => onDelete(metodo.id_metodo_pago)}
                       disabled={isDeleting}
-                      className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700"
+                      className="rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700"
                     >
                       Eliminar
                     </button>

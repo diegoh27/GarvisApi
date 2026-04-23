@@ -180,12 +180,12 @@ const DashboardEspecialista = () => {
 				<div className="relative z-10">
 					<div className="flex items-center gap-2 text-teal-200">
 						<Stethoscope className="h-5 w-5" />
-						<span className="text-sm font-medium">Panel del especialista</span>
+						<span className="text-base font-medium">Panel del especialista</span>
 					</div>
 					<h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
 						{welcomeTitle}
 					</h1>
-					<p className="mt-2 max-w-lg text-sm text-white/90 sm:text-base">
+					<p className="mt-2 max-w-lg text-base text-white/90 sm:text-base">
 						Aquí tienes las citas del día, el resumen y el acceso rápido a calendario, resultados e informes.
 					</p>
 				</div>
@@ -205,17 +205,17 @@ const DashboardEspecialista = () => {
 						) : citasDelDiaOrdenadas.length === 0 ? (
 							<div className="flex flex-1 flex-col justify-center rounded-2xl border border-dashed border-brand-300 bg-cloud/30 p-6 text-center">
 								<CalendarDays className="mx-auto h-12 w-12 text-brand-400" />
-								<p className="mt-2 text-sm font-medium text-brand-800">No hay citas hoy</p>
+								<p className="mt-2 text-base font-medium text-brand-800">No hay citas hoy</p>
 								<Link
 									to="/calendario"
-									className="mt-3 inline-block text-sm font-medium text-brand-600 hover:text-brand-800"
+									className="mt-3 inline-block text-base font-medium text-brand-600 hover:text-brand-800"
 								>
 									Ver calendario →
 								</Link>
 							</div>
 						) : (
 							<div className="flex flex-1 flex-col rounded-2xl border border-brand-200 bg-paper p-4 shadow-sm">
-								<h3 className="text-sm font-semibold text-brand-900">Citas de hoy</h3>
+								<h3 className="text-base font-semibold text-brand-900">Citas de hoy</h3>
 								<ul className="mt-3 space-y-2">
 									{citasDelDiaPaginadas.map((cita) => {
 										const esPendienteResultado =
@@ -227,10 +227,10 @@ const DashboardEspecialista = () => {
 													className="group flex items-center justify-between gap-2 rounded-xl border border-transparent bg-cloud/50 px-3 py-2.5 transition hover:border-brand-300 hover:bg-cloud"
 												>
 													<div className="min-w-0 flex-1">
-														<p className="text-sm font-medium text-brand-900">
+														<p className="text-base font-medium text-brand-900">
 															{cita.eco_nombre}
 														</p>
-														<p className="text-xs text-brand-700">
+														<p className="text-sm text-brand-700">
 															{cita.paciente_nombre} {cita.paciente_apellido} · {formatHora(cita.hora_cita)}
 														</p>
 														{esPendienteResultado ? (
@@ -259,7 +259,7 @@ const DashboardEspecialista = () => {
 								</ul>
 								{totalPaginasCitasDelDia > 1 && (
 									<div className="mt-3 flex items-center justify-between border-t border-brand-100 pt-3">
-										<span className="text-xs text-brand-600">
+										<span className="text-sm text-brand-600">
 											{(paginaActual - 1) * CITAS_DEL_DIA_POR_PAGINA + 1}–
 											{Math.min(
 												paginaActual * CITAS_DEL_DIA_POR_PAGINA,
@@ -277,7 +277,7 @@ const DashboardEspecialista = () => {
 											>
 												<ChevronLeft className="h-4 w-4" />
 											</button>
-											<span className="px-2 text-xs font-medium text-brand-700">
+											<span className="px-2 text-sm font-medium text-brand-700">
 												{paginaActual} / {totalPaginasCitasDelDia}
 											</span>
 											<button
@@ -318,7 +318,7 @@ const DashboardEspecialista = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Calendario</p>
-							<p className="text-xs text-brand-600">Ver tu agenda</p>
+							<p className="text-sm text-brand-600">Ver tu agenda</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -332,7 +332,7 @@ const DashboardEspecialista = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Pacientes</p>
-							<p className="text-xs text-brand-600">Citas y historial</p>
+							<p className="text-sm text-brand-600">Citas y historial</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -346,7 +346,7 @@ const DashboardEspecialista = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Subir resultados</p>
-							<p className="text-xs text-brand-600">
+							<p className="text-sm text-brand-600">
 								{citasSinResultado.length > 0
 									? `${citasSinResultado.length} pendiente(s)`
 									: "Cargar archivos"}
@@ -364,7 +364,7 @@ const DashboardEspecialista = () => {
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="font-semibold text-brand-900">Informes</p>
-							<p className="text-xs text-brand-600">Informes médicos</p>
+							<p className="text-sm text-brand-600">Informes médicos</p>
 						</div>
 						<ChevronRight className="h-4 w-4 shrink-0 text-brand-400" />
 					</Link>
@@ -391,7 +391,7 @@ const DashboardEspecialista = () => {
 					<h2 className="text-lg font-semibold text-brand-900">Notificaciones</h2>
 					<Link
 						to="/notificaciones"
-						className="flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-800"
+						className="flex items-center gap-1 text-base font-medium text-brand-600 hover:text-brand-800"
 					>
 						<Bell className="h-4 w-4" />
 						Ver todas

@@ -68,19 +68,19 @@ export default function EditarEspecialistaModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-4">
-          <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+          <div className="rounded-lg bg-gray-50 p-3 text-base text-gray-700">
             {especialista.nombre} {especialista.apellido}
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Especialidad</label>
+            <label className="mb-1 block text-base font-medium text-gray-700">Especialidad</label>
             <select
               value={idEspecialidad}
               onChange={(e) => {
                 setIdEspecialidad(e.target.value);
                 setError("");
               }}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-teal-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-base outline-none focus:border-teal-500"
               disabled={isSaving}
             >
               <option value="">Selecciona una especialidad</option>
@@ -93,7 +93,7 @@ export default function EditarEspecialistaModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Porcentaje de comisión</label>
+            <label className="mb-1 block text-base font-medium text-gray-700">Porcentaje de comisión</label>
             <input
               type="number"
               min={1}
@@ -104,13 +104,13 @@ export default function EditarEspecialistaModal({
                 setPorcentaje(e.target.value);
                 setError("");
               }}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-teal-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-base outline-none focus:border-teal-500"
               disabled={isSaving}
             />
           </div>
 
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+            <div className="rounded-md border border-red-200 bg-red-50 p-2 text-base text-red-700">
               {error}
             </div>
           )}
@@ -120,14 +120,14 @@ export default function EditarEspecialistaModal({
               type="button"
               onClick={onClose}
               disabled={isSaving}
-              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-base text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+              className="flex-1 rounded-md bg-teal-600 px-4 py-2 text-base font-medium text-white hover:bg-teal-700 disabled:opacity-50"
             >
               {isSaving ? "Guardando..." : "Guardar cambios"}
             </button>

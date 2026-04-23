@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { PageShell, CedulaField, validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared";
 import { useGetEspecialistasInventarioQuery } from "../api/especialistasApi";
-import { useCrearCitaMostradorMutation } from "../api/comisionesApi";
+import { useCrearCitaMostradorMutation, useCrearPacienteMostradorMutation } from "../api/comisionesApi";
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useCitaMostradorForm } from "../hooks/useCitaMostradorForm";
 import { METODO_UI_OPTIONS, isMorningSlot, idsCoinciden } from "../utils/citaMostradorUtils";
@@ -65,7 +65,9 @@ export default function CitaMostradorPage() {
 	} = useGetEspecialistasInventarioQuery();
 	const { data: especialidades = [] } = useGetEspecialidadesQuery();
 	const [crearCitaMostrador, { isLoading: isSaving }] = useCrearCitaMostradorMutation();
+	const [crearPacienteMostrador, { isLoading: isCreatingPatient }] = useCrearPacienteMostradorMutation();
 
+	const [paso, setPaso] = useState(1);
 	const [idEspecialidad, setIdEspecialidad] = useState("");
 	const [repAccordionOpen, setRepAccordionOpen] = useState(false);
 	/** Texto libre para "Nombre completo" (permite espacios); se parte en nombre/apellido al blur y al enviar. */
@@ -78,6 +80,8 @@ export default function CitaMostradorPage() {
 		error,
 		mensajeCargaAnterior,
 		pacienteIdentificadoEnSistema,
+		citaActivaError,
+		setCitaActivaError,
 		vincularRepresentado,
 		vincularCitaAlTitular,
 		setVincularCitaAlTitular,
@@ -103,6 +107,7 @@ export default function CitaMostradorPage() {
 		loadingEcos,
 		loadingOcupacion,
 		horaOcupada,
+		ocupados,
 		selectedEco,
 		isMetodoEnBs,
 		monedaRegistro,
@@ -132,11 +137,18 @@ export default function CitaMostradorPage() {
 					showConfirmButton: false,
 				});
 			} catch (err: unknown) {
-				const msg =
-					typeof err === "object" && err !== null && "data" in err
-						? (err as { data?: { message?: string } }).data?.message
-						: "No se pudo registrar la cita.";
-				await Swal.fire({ icon: "error", title: "Error", text: msg || "No se pudo registrar la cita." });
+				const apiErr = typeof err === "object" && err !== null && "data" in err
+					? (err as { data?: { message?: string; code?: string } }).data
+					: null;
+				// R2: cita activa — mostrar alerta inline, no SweetAlert
+				if (apiErr?.code === "CITA_ACTIVA") {
+					setCitaActivaError(
+						apiErr.message || "Este paciente ya tiene una cita en proceso en el sistema.",
+					);
+					return; // no re-lanzar ni SweetAlert
+				}
+				const msg = apiErr?.message || "No se pudo registrar la cita.";
+				await Swal.fire({ icon: "error", title: "Error", text: msg });
 				throw err;
 			}
 		},
@@ -250,8 +262,8 @@ export default function CitaMostradorPage() {
 	const afternoonSlots = HORA_OPTIONS.filter((o) => !isMorningSlot(o.value));
 
 	const inputBase =
-		"w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-sm focus:border-[#006965] focus:outline-none focus:ring-2 focus:ring-[#006965]/20";
-	const labelBase = "mb-2 ml-1 block text-xs font-bold uppercase tracking-wider text-neutral-500";
+		"w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-medium text-slate-800 shadow-sm focus:border-[#006965] focus:outline-none focus:ring-2 focus:ring-[#006965]/20";
+	const labelBase = "mb-2 ml-1 block text-base font-bold uppercase tracking-wider text-neutral-500";
 
 	const cedulaNumeroInvalida =
 		form.cedula.trim().length >= 5 && !validarRangoCedula(form.cedula.trim());
@@ -270,6 +282,64 @@ export default function CitaMostradorPage() {
 		handleSubmit(e);
 	};
 
+	// === Wizard: validación por paso ===
+	const PASO_LABELS = ["Paciente", "Servicios", "Fecha y Hora", "Pago"];
+
+	const validatePaso = async (p: number): Promise<boolean> => {
+		if (p === 1) {
+			aplicarNombreCompletoAlForm();
+			const n = form.nombre.trim() || splitNombreCompleto(nombreCompletoDraft).nombre.trim();
+			const a = form.apellido.trim() || splitNombreCompleto(nombreCompletoDraft).apellido.trim();
+			if (!form.cedula.trim() || !n || !a) {
+				await Swal.fire({ icon: "warning", title: "Datos incompletos", text: "Ingresa la cédula y nombre del paciente." });
+				return false;
+			}
+			if (!pacienteIdentificadoEnSistema) {
+				try {
+					const result = await crearPacienteMostrador({
+						cedula: form.cedula.trim(),
+						nombre: n,
+						apellido: a,
+						telefono: form.telefono?.trim() || undefined,
+						tipo_cedula: form.tipo_cedula,
+					}).unwrap();
+					if (result.data.citaActiva) {
+						setCitaActivaError("Este paciente ya tiene una cita activa en el sistema.");
+						return false;
+					}
+					setForm((prev) => ({ ...prev, id_paciente_resolved: result.data.id_paciente }));
+				} catch {
+					await Swal.fire({ icon: "error", title: "Error", text: "No se pudo registrar al paciente." });
+					return false;
+				}
+			} else if (citaActivaError) {
+				return false;
+			}
+			return true;
+		}
+		if (p === 2) {
+			if (!form.id_especialista || !form.id_eco) {
+				await Swal.fire({ icon: "warning", title: "Selecciona servicio", text: "Elige un médico y un estudio." });
+				return false;
+			}
+			return true;
+		}
+		if (p === 3) {
+			if (!form.fecha_cita || !form.hora_cita) {
+				await Swal.fire({ icon: "warning", title: "Selecciona horario", text: "Elige una fecha y hora para la cita." });
+				return false;
+			}
+			return true;
+		}
+		return true;
+	};
+
+	const handleNext = async () => {
+		const ok = await validatePaso(paso);
+		if (ok && paso < 4) setPaso((p) => p + 1);
+	};
+	const handlePrev = () => { if (paso > 1) setPaso((p) => p - 1); };
+
 	return (
 		<div className="relative pb-36 bg-slate-50 min-h-screen">
 			<PageShell
@@ -285,12 +355,45 @@ export default function CitaMostradorPage() {
 					<p className="text-lg text-slate-600">Registro rápido de pacientes presenciales en el sistema Garvis.</p>
 				</div>
 
+				{/* === STEPPER === */}
+				<div className="flex items-center justify-center gap-0 px-4 sm:px-0">
+					{PASO_LABELS.map((label, idx) => {
+						const n = idx + 1;
+						const done = paso > n;
+						const active = paso === n;
+						return (
+							<div key={label} className="flex items-center">
+								<div className="flex flex-col items-center">
+									<div
+										className={`flex h-10 w-10 items-center justify-center rounded-full text-base font-bold transition-all duration-300 ${
+											done
+												? "bg-[#006965] text-white shadow-md"
+												: active
+													? "border-2 border-[#006965] bg-white text-[#006965] shadow-sm"
+													: "border border-slate-300 bg-slate-100 text-slate-400"
+										}`}
+									>
+										{done ? <CheckCircle2 className="h-5 w-5" /> : n}
+									</div>
+									<span className={`mt-1 text-[11px] font-semibold ${active ? "text-[#006965]" : done ? "text-slate-700" : "text-slate-400"}`}>
+										{label}
+									</span>
+								</div>
+								{idx < 3 && (
+									<div className={`mx-2 h-0.5 w-8 sm:w-16 transition-all duration-300 ${done ? "bg-[#006965]" : "bg-slate-200"}`} />
+								)}
+							</div>
+						);
+					})}
+				</div>
+
 				<form id="form-cita-mostrador" onSubmit={onFormSubmit} className="flex flex-col gap-6 px-4 sm:px-0">
 					{/* 1 Paciente */}
+					{paso === 1 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-base font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								1
@@ -308,11 +411,12 @@ export default function CitaMostradorPage() {
 									<input
 										type="search"
 										className={`${inputBase} h-14 pl-12 text-lg ${cedulaNumeroInvalida ? "border-red-400 focus:border-red-500 focus:ring-red-200" : ""}`}
-										placeholder="Ej. 12.345.678"
+										placeholder="Ej. 12345678"
 										value={form.cedula}
+										maxLength={8}
 										onChange={(e) =>
 											handleChange({
-												target: { name: "cedula", value: e.target.value.replace(/\D/g, "") },
+												target: { name: "cedula", value: e.target.value.replace(/\D/g, "").slice(0, 8) },
 											} as React.ChangeEvent<HTMLInputElement>)
 										}
 										onKeyDown={(e) => {
@@ -329,14 +433,14 @@ export default function CitaMostradorPage() {
 									type="button"
 									onClick={() => void handleCargarDatosAnteriores()}
 									disabled={!puedeCargarAnterior || loadingDatosPorCedula}
-									className="flex h-14 shrink-0 items-center justify-center gap-2 rounded-2xl border border-[#006965]/10 bg-slate-100 px-6 text-sm font-bold text-[#006965] transition hover:bg-[#1c837f] hover:text-white disabled:opacity-50"
+									className="flex h-14 shrink-0 items-center justify-center gap-2 rounded-2xl border border-[#006965]/10 bg-slate-100 px-6 text-base font-bold text-[#006965] transition hover:bg-[#1c837f] hover:text-white disabled:opacity-50"
 								>
 									<UserPlus className="h-5 w-5" />
 									{loadingDatosPorCedula ? "Buscando…" : "Cargar Paciente"}
 								</button>
 							</div>
 							{cedulaNumeroInvalida && (
-								<p id="cedula-busqueda-error" className="mt-2 text-sm text-red-600" role="alert">
+								<p id="cedula-busqueda-error" className="mt-2 text-base text-red-600" role="alert">
 									{MENSAJE_RANGO_CEDULA}
 								</p>
 							)}
@@ -354,7 +458,7 @@ export default function CitaMostradorPage() {
 												target: { name: "tipo_cedula", value: tipo },
 											} as React.ChangeEvent<HTMLSelectElement>);
 											handleChange({
-												target: { name: "cedula", value: numero },
+												target: { name: "cedula", value: numero.replace(/\D/g, "").slice(0, 8) },
 											} as React.ChangeEvent<HTMLInputElement>);
 										}}
 										error={cedulaErrorText}
@@ -398,31 +502,77 @@ export default function CitaMostradorPage() {
 										/>
 									</div>
 									{(fieldErrors.nombre || fieldErrors.apellido) && (
-										<p className="mt-1 text-xs text-red-500">{fieldErrors.nombre || fieldErrors.apellido}</p>
+										<p className="mt-1 text-base text-red-500">{fieldErrors.nombre || fieldErrors.apellido}</p>
 									)}
 								</div>
 							</div>
 
-							{!pacienteIdentificadoEnSistema &&
-								(form.cedula.length >= 6 || form.nombre || nombreCompletoDraft.trim()) && (
-								<div className="flex justify-end">
-									<button
-										type="button"
-										className="inline-flex h-12 items-center gap-2 rounded-2xl px-6 text-sm font-bold text-white shadow-md transition hover:opacity-95"
-										style={{ backgroundColor: PRIMARY }}
-										onClick={() => document.getElementById("paso-pago")?.scrollIntoView({ behavior: "smooth" })}
+							{/* Teléfono (opcional) */}
+							<div className="flex flex-col">
+								<label className={labelBase}>Teléfono (opcional)</label>
+								<div
+									className={`flex h-14 items-stretch overflow-hidden rounded-2xl border bg-white shadow-sm transition-all focus-within:border-[#006965] focus-within:ring-2 focus-within:ring-[#006965]/20 ${
+										pacienteIdentificadoEnSistema ? "bg-slate-100 border-neutral-200" : fieldErrors.telefono ? "border-red-400" : "border-neutral-200"
+									}`}
+								>
+									<select
+										className={`w-[5.5rem] shrink-0 border-r border-neutral-200 bg-transparent px-3 text-lg font-bold text-[#006965] focus:outline-none ${
+											pacienteIdentificadoEnSistema ? "cursor-not-allowed opacity-70" : "cursor-pointer"
+										}`}
+										value={form.telefono ? form.telefono.substring(0, 4) : "0412"}
+										disabled={pacienteIdentificadoEnSistema}
+										onChange={(e) => {
+											const currentNum = form.telefono ? form.telefono.substring(4) : "";
+											handleChange({
+												target: { name: "telefono", value: currentNum ? e.target.value + currentNum : e.target.value }
+											} as any);
+										}}
 									>
-										<CheckCircle2 className="h-4 w-4" />
-										Crear Paciente
-									</button>
+										<option value="0412">0412</option>
+										<option value="0414">0414</option>
+										<option value="0416">0416</option>
+										<option value="0422">0422</option>
+										<option value="0424">0424</option>
+										<option value="0426">0426</option>
+									</select>
+									<input
+										type="tel"
+										value={form.telefono ? form.telefono.substring(4) : ""}
+										onChange={(e) => {
+											const val = e.target.value.replace(/\D/g, "").slice(0, 7);
+											const prefix = form.telefono ? form.telefono.substring(0, 4) : "0412";
+											if (val) {
+												handleChange({
+													target: { name: "telefono", value: prefix + val }
+												} as any);
+											} else {
+												handleChange({
+													target: { name: "telefono", value: "" }
+												} as any);
+											}
+										}}
+										readOnly={pacienteIdentificadoEnSistema}
+										className="flex-1 border-none bg-transparent px-4 font-medium text-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"
+										placeholder="000 0000"
+										maxLength={7}
+									/>
 								</div>
-							)}
+								{fieldErrors.telefono && (
+									<p className="mt-1 text-base text-red-500">{fieldErrors.telefono}</p>
+								)}
+							</div>
 						</div>
 
 						{mensajeCargaAnterior && (
-							<p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+							<p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-700">
 								{mensajeCargaAnterior}
 							</p>
+						)}
+
+						{citaActivaError && (
+							<div className="rounded-2xl border border-red-400 bg-red-50 px-4 py-3 text-base font-semibold text-red-700" role="alert">
+								⚠️ {citaActivaError}
+							</div>
 						)}
 
 						{/* Representado accordion */}
@@ -430,12 +580,12 @@ export default function CitaMostradorPage() {
 							<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 								<div>
 									<h3 className="font-headline font-bold text-slate-800">Representado (opcional)</h3>
-									<p className="text-xs text-slate-500">Menor de edad o dependiente de un titular.</p>
+									<p className="text-base text-slate-500">Menor de edad o dependiente de un titular.</p>
 								</div>
 								<button
 									type="button"
 									onClick={() => setRepAccordionOpen((o) => !o)}
-									className="inline-flex items-center gap-2 rounded-full border border-[#006965]/10 bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#006965] transition hover:bg-slate-100"
+									className="inline-flex items-center gap-2 rounded-full border border-[#006965]/10 bg-slate-50 px-4 py-2 text-base font-bold uppercase tracking-widest text-[#006965] transition hover:bg-slate-100"
 								>
 									<span className="text-lg leading-none">+</span>
 									{repAccordionOpen ? "Cerrar registro" : "Abrir registro"}
@@ -445,21 +595,21 @@ export default function CitaMostradorPage() {
 							{repAccordionOpen && (
 								<div className="space-y-6 rounded-3xl border border-dashed border-neutral-200 bg-slate-50/50 p-6">
 									<div className="rounded-xl border border-teal-200 bg-teal-50/50 p-4">
-										<p className="text-sm font-medium text-teal-900">¿Representado nuevo o menor sin cédula?</p>
-										<p className="mt-1 text-xs text-teal-800">
+										<p className="text-base font-medium text-teal-900">¿Representado nuevo o menor sin cédula?</p>
+										<p className="mt-1 text-base text-teal-800">
 											Crea el representado con el titular o búscalo por nombre.
 										</p>
 										{!showCrearRepresentadoForm ? (
 											<button
 												type="button"
 												onClick={handleAbrirCrearRepresentado}
-												className="mt-2 text-sm font-semibold text-teal-700 underline"
+												className="mt-2 text-base font-semibold text-teal-700 underline"
 											>
 												Crear representado nuevo y asignarlo al titular
 											</button>
 										) : (
 											<div className="mt-3 space-y-3">
-												{repFormErrors._form && <p className="text-sm text-red-600">{repFormErrors._form}</p>}
+												{repFormErrors._form && <p className="text-base text-red-600">{repFormErrors._form}</p>}
 												<CedulaField
 													label="Cédula del titular (paciente) *"
 													value={repForm.cedula_titular}
@@ -469,134 +619,134 @@ export default function CitaMostradorPage() {
 													}}
 													error={repFormErrors.cedula_titular}
 													required
-													inputClassName={`h-10 rounded border px-2 text-sm ${repFormErrors.cedula_titular ? "border-red-500" : "border-teal-300"}`}
-													selectClassName="h-10 rounded border-teal-300 text-sm"
+													inputClassName={`h-10 rounded border px-2 text-base ${repFormErrors.cedula_titular ? "border-red-500" : "border-teal-300"}`}
+													selectClassName="h-10 rounded border-teal-300 text-base"
 												/>
 												<button
 													type="button"
 													onClick={() => void handleVerificarTitular()}
 													disabled={loadingDatosPorCedula || repForm.cedula_titular.replace(/\D/g, "").length < 6}
-													className="text-sm text-teal-700 underline disabled:opacity-50"
+													className="text-base text-teal-700 underline disabled:opacity-50"
 												>
 													{loadingDatosPorCedula ? "Verificando…" : "Verificar titular en sistema"}
 												</button>
 												{titularYaRegistrado && (
-													<p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+													<p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-base text-green-800">
 														Titular ya registrado: {titularYaRegistrado.nombre} {titularYaRegistrado.apellido}
 													</p>
 												)}
 												<div className="space-y-2 border-b border-teal-200 pb-3">
-													<p className="text-sm font-semibold text-teal-900">Datos del titular</p>
-													<p className="text-xs text-teal-800">
+													<p className="text-base font-semibold text-teal-900">Datos del titular</p>
+													<p className="text-base text-teal-800">
 														Si el titular no está registrado, completa nombre, apellido, género y fecha de nacimiento.
 													</p>
 													<div className="grid gap-3 sm:grid-cols-2">
 														<div>
-															<label className="text-xs text-teal-900">Nombre del titular *</label>
+															<label className="text-base text-teal-900">Nombre del titular *</label>
 															<input
 																value={repForm.nombre_titular}
 																onChange={(e) => setRepForm((p) => ({ ...p, nombre_titular: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.nombre_titular ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.nombre_titular ? "border-red-500" : "border-teal-300"}`}
 															/>
 															{repFormErrors.nombre_titular && (
-																<p className="text-xs text-red-500">{repFormErrors.nombre_titular}</p>
+																<p className="text-base text-red-500">{repFormErrors.nombre_titular}</p>
 															)}
 														</div>
 														<div>
-															<label className="text-xs text-teal-900">Apellido del titular *</label>
+															<label className="text-base text-teal-900">Apellido del titular *</label>
 															<input
 																value={repForm.apellido_titular}
 																onChange={(e) => setRepForm((p) => ({ ...p, apellido_titular: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.apellido_titular ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.apellido_titular ? "border-red-500" : "border-teal-300"}`}
 															/>
 															{repFormErrors.apellido_titular && (
-																<p className="text-xs text-red-500">{repFormErrors.apellido_titular}</p>
+																<p className="text-base text-red-500">{repFormErrors.apellido_titular}</p>
 															)}
 														</div>
 														<div>
-															<label className="text-xs text-teal-900">Género del titular *</label>
+															<label className="text-base text-teal-900">Género del titular *</label>
 															<select
 																value={repForm.genero_titular}
 																onChange={(e) =>
 																	setRepForm((p) => ({ ...p, genero_titular: e.target.value as typeof repForm.genero_titular }))
 																}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.genero_titular ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.genero_titular ? "border-red-500" : "border-teal-300"}`}
 															>
 																<option value="">Selecciona</option>
 																<option value="Masculino">Masculino</option>
 																<option value="Femenino">Femenino</option>
 															</select>
 															{repFormErrors.genero_titular && (
-																<p className="text-xs text-red-500">{repFormErrors.genero_titular}</p>
+																<p className="text-base text-red-500">{repFormErrors.genero_titular}</p>
 															)}
 														</div>
 														<div>
-															<label className="text-xs text-teal-900">Fecha nac. titular *</label>
+															<label className="text-base text-teal-900">Fecha nac. titular *</label>
 															<input
 																type="date"
 																value={repForm.fecha_nacimiento_titular}
 																onChange={(e) => setRepForm((p) => ({ ...p, fecha_nacimiento_titular: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.fecha_nacimiento_titular ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.fecha_nacimiento_titular ? "border-red-500" : "border-teal-300"}`}
 															/>
 															{repFormErrors.fecha_nacimiento_titular && (
-																<p className="text-xs text-red-500">{repFormErrors.fecha_nacimiento_titular}</p>
+																<p className="text-base text-red-500">{repFormErrors.fecha_nacimiento_titular}</p>
 															)}
 														</div>
 													</div>
 												</div>
 												<div className="space-y-2 pt-2">
-													<p className="text-sm font-semibold text-teal-900">Datos del representado</p>
+													<p className="text-base font-semibold text-teal-900">Datos del representado</p>
 													<div className="grid gap-3 sm:grid-cols-2">
 														<div>
-															<label className="text-xs font-medium text-teal-900">Nombre *</label>
+															<label className="text-base font-medium text-teal-900">Nombre *</label>
 															<input
 																value={repForm.nombre}
 																onChange={(e) => setRepForm((p) => ({ ...p, nombre: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.nombre ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.nombre ? "border-red-500" : "border-teal-300"}`}
 															/>
-															{repFormErrors.nombre && <p className="text-xs text-red-500">{repFormErrors.nombre}</p>}
+															{repFormErrors.nombre && <p className="text-base text-red-500">{repFormErrors.nombre}</p>}
 														</div>
 														<div>
-															<label className="text-xs font-medium text-teal-900">Apellido *</label>
+															<label className="text-base font-medium text-teal-900">Apellido *</label>
 															<input
 																value={repForm.apellido}
 																onChange={(e) => setRepForm((p) => ({ ...p, apellido: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.apellido ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.apellido ? "border-red-500" : "border-teal-300"}`}
 															/>
-															{repFormErrors.apellido && <p className="text-xs text-red-500">{repFormErrors.apellido}</p>}
+															{repFormErrors.apellido && <p className="text-base text-red-500">{repFormErrors.apellido}</p>}
 														</div>
 														<div>
-															<label className="text-xs font-medium text-teal-900">Fecha nacimiento *</label>
+															<label className="text-base font-medium text-teal-900">Fecha nacimiento *</label>
 															<input
 																type="date"
 																value={repForm.fecha_nacimiento}
 																onChange={(e) => setRepForm((p) => ({ ...p, fecha_nacimiento: e.target.value }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.fecha_nacimiento ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.fecha_nacimiento ? "border-red-500" : "border-teal-300"}`}
 															/>
 															{repFormErrors.fecha_nacimiento && (
-																<p className="text-xs text-red-500">{repFormErrors.fecha_nacimiento}</p>
+																<p className="text-base text-red-500">{repFormErrors.fecha_nacimiento}</p>
 															)}
 														</div>
 														<div>
-															<label className="text-xs font-medium text-teal-900">Género *</label>
+															<label className="text-base font-medium text-teal-900">Género *</label>
 															<select
 																value={repForm.genero}
 																onChange={(e) => setRepForm((p) => ({ ...p, genero: e.target.value as typeof repForm.genero }))}
-																className={`mt-1 w-full rounded border px-2 py-2 text-sm ${repFormErrors.genero ? "border-red-500" : "border-teal-300"}`}
+																className={`mt-1 w-full rounded border px-2 py-2 text-base ${repFormErrors.genero ? "border-red-500" : "border-teal-300"}`}
 															>
 																<option value="">Selecciona</option>
 																<option value="Masculino">Masculino</option>
 																<option value="Femenino">Femenino</option>
 															</select>
-															{repFormErrors.genero && <p className="text-xs text-red-500">{repFormErrors.genero}</p>}
+															{repFormErrors.genero && <p className="text-base text-red-500">{repFormErrors.genero}</p>}
 														</div>
 														<div>
-															<label className="text-xs font-medium text-teal-900">Parentesco (opcional)</label>
+															<label className="text-base font-medium text-teal-900">Parentesco (opcional)</label>
 															<input
 																value={repForm.parentesco}
 																onChange={(e) => setRepForm((p) => ({ ...p, parentesco: e.target.value }))}
 																placeholder="Ej. Hijo/a"
-																className="mt-1 w-full rounded border border-teal-300 px-2 py-2 text-sm"
+																className="mt-1 w-full rounded border border-teal-300 px-2 py-2 text-base"
 															/>
 														</div>
 														<div className="sm:col-span-2">
@@ -606,8 +756,8 @@ export default function CitaMostradorPage() {
 																onChange={(tipo, numero) => setRepForm((p) => ({ ...p, tipo_cedula_rep: tipo, cedula_rep: numero }))}
 																error={repFormErrors.cedula_rep}
 																required={false}
-																inputClassName={`h-10 rounded border px-2 text-sm ${repFormErrors.cedula_rep ? "border-red-500" : "border-teal-300"}`}
-																selectClassName="h-10 rounded border-teal-300 text-sm"
+																inputClassName={`h-10 rounded border px-2 text-base ${repFormErrors.cedula_rep ? "border-red-500" : "border-teal-300"}`}
+																selectClassName="h-10 rounded border-teal-300 text-base"
 															/>
 														</div>
 													</div>
@@ -621,7 +771,7 @@ export default function CitaMostradorPage() {
 															if (validateRepForm() && !loadingCrearRep)
 																void handleCrearRepresentadoSubmit(e as unknown as React.FormEvent);
 														}}
-														className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+														className="rounded-lg bg-teal-600 px-4 py-2 text-base font-medium text-white hover:bg-teal-700 disabled:opacity-50"
 													>
 														{loadingCrearRep ? "Creando…" : "Crear representado"}
 													</button>
@@ -631,7 +781,7 @@ export default function CitaMostradorPage() {
 															setShowCrearRepresentadoForm(false);
 															setRepFormErrors({});
 														}}
-														className="rounded-lg border border-teal-300 px-4 py-2 text-sm text-teal-800"
+														className="rounded-lg border border-teal-300 px-4 py-2 text-base text-teal-800"
 													>
 														Cancelar
 													</button>
@@ -641,25 +791,25 @@ export default function CitaMostradorPage() {
 									</div>
 
 									<div className="rounded-xl border border-amber-200 bg-amber-50/80 p-4">
-										<p className="text-sm font-medium text-amber-900">Buscar representado por nombre</p>
+										<p className="text-base font-medium text-amber-900">Buscar representado por nombre</p>
 										<div className="mt-2 flex flex-wrap gap-2">
 											<input
 												placeholder="Nombre"
 												value={searchRepNombre}
 												onChange={(e) => setSearchRepNombre(e.target.value)}
-												className="min-w-[8rem] flex-1 rounded-lg border border-amber-300 px-3 py-2 text-sm"
+												className="min-w-[8rem] flex-1 rounded-lg border border-amber-300 px-3 py-2 text-base"
 											/>
 											<input
 												placeholder="Apellido"
 												value={searchRepApellido}
 												onChange={(e) => setSearchRepApellido(e.target.value)}
-												className="min-w-[8rem] flex-1 rounded-lg border border-amber-300 px-3 py-2 text-sm"
+												className="min-w-[8rem] flex-1 rounded-lg border border-amber-300 px-3 py-2 text-base"
 											/>
 											<button
 												type="button"
 												onClick={() => void handleBuscarRepresentadoPorNombre()}
 												disabled={loadingBuscarRep || (!searchRepNombre.trim() && !searchRepApellido.trim())}
-												className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+												className="rounded-lg bg-amber-600 px-4 py-2 text-base font-medium text-white disabled:opacity-50"
 											>
 												{loadingBuscarRep ? "…" : "Buscar"}
 											</button>
@@ -670,7 +820,7 @@ export default function CitaMostradorPage() {
 													<li key={rep.id_representado}>
 														<button
 															type="button"
-															className="w-full px-3 py-2 text-left text-sm hover:bg-amber-100"
+															className="w-full px-3 py-2 text-left text-base hover:bg-amber-100"
 															onClick={() => handleSeleccionarRepresentado(rep)}
 														>
 															{rep.nombre} {rep.apellido}{" "}
@@ -685,7 +835,7 @@ export default function CitaMostradorPage() {
 									</div>
 
 									{vincularRepresentado && (
-										<label className="flex items-start gap-2 text-sm text-slate-700">
+										<label className="flex items-start gap-2 text-base text-slate-700">
 											<input
 												type="checkbox"
 												checked={vincularCitaAlTitular}
@@ -699,12 +849,14 @@ export default function CitaMostradorPage() {
 							)}
 						</div>
 					</section>
+					)}
 
 					{/* 2 Servicios */}
+					{paso === 2 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-base font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
 								2
@@ -748,7 +900,7 @@ export default function CitaMostradorPage() {
 									))}
 								</select>
 								{errorCargaEspecialistas && (
-									<p className="mt-1 text-xs text-amber-800">
+									<p className="mt-1 text-base text-amber-800">
 										No se pudieron cargar los médicos. Comprueba la API o vuelve a cargar la página.
 									</p>
 								)}
@@ -756,13 +908,13 @@ export default function CitaMostradorPage() {
 									idEspecialidad &&
 									!loadingEsp &&
 									especialistasFiltrados.length === 0 && (
-										<p className="mt-1 text-xs text-slate-600">
+										<p className="mt-1 text-base text-slate-600">
 											No hay médicos registrados para esta especialidad. Prueba otra especialidad o revisa en
 											Finanzas → Comisiones que existan especialistas con esa especialidad.
 										</p>
 									)}
 								{fieldErrors.id_especialista && (
-									<p className="mt-1 text-xs text-red-500">{fieldErrors.id_especialista}</p>
+									<p className="mt-1 text-base text-red-500">{fieldErrors.id_especialista}</p>
 								)}
 							</div>
 							<div>
@@ -781,19 +933,21 @@ export default function CitaMostradorPage() {
 										</option>
 									))}
 								</select>
-								{fieldErrors.id_eco && <p className="mt-1 text-xs text-red-500">{fieldErrors.id_eco}</p>}
+								{fieldErrors.id_eco && <p className="mt-1 text-base text-red-500">{fieldErrors.id_eco}</p>}
 							</div>
 						</div>
 					</section>
+					)}
 
-					{/* 3 Pago */}
+					{/* Pago (paso 4) */}
+					{paso === 4 && (
 					<section id="paso-pago" className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-base font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
-								3
+								4
 							</div>
 							<h2 className="font-headline text-xl font-bold" style={{ color: PRIMARY }}>
 								Información de Pago
@@ -801,14 +955,14 @@ export default function CitaMostradorPage() {
 						</div>
 						{!isMetodoEnBs && (
 							<div className="mb-4 flex flex-col gap-2 rounded-2xl border border-neutral-200 bg-slate-50/90 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-								<span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+								<span className="text-base font-bold uppercase tracking-wider text-neutral-500">
 									Registrar monto en
 								</span>
 								<div className="flex gap-2">
 									<button
 										type="button"
 										onClick={() => setMonedaRegistro("usd")}
-										className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+										className={`rounded-xl px-4 py-2 text-base font-semibold transition ${
 											monedaRegistro === "usd"
 												? "bg-[#006965] text-white shadow-sm"
 												: "bg-white text-slate-700 ring-1 ring-neutral-200 hover:bg-slate-100"
@@ -819,7 +973,7 @@ export default function CitaMostradorPage() {
 									<button
 										type="button"
 										onClick={() => setMonedaRegistro("bs")}
-										className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+										className={`rounded-xl px-4 py-2 text-base font-semibold transition ${
 											monedaRegistro === "bs"
 												? "bg-[#006965] text-white shadow-sm"
 												: "bg-white text-slate-700 ring-1 ring-neutral-200 hover:bg-slate-100"
@@ -828,7 +982,7 @@ export default function CitaMostradorPage() {
 										Bolívares (Bs)
 									</button>
 								</div>
-								<p className="text-xs text-slate-600 sm:ml-auto sm:max-w-md">
+								<p className="text-base text-slate-600 sm:ml-auto sm:max-w-md">
 									El backend guarda USD/Bs según la tasa BCV. Puedes capturar primero en la moneda que uses en caja.
 								</p>
 							</div>
@@ -919,7 +1073,7 @@ export default function CitaMostradorPage() {
 										className={`${inputBase} font-bold bg-white text-[#006965] ${fieldErrors.monto ? inputError : ""} disabled:opacity-50`}
 									/>
 								)}
-								{fieldErrors.monto && <p className="mt-1 text-xs text-red-500">{fieldErrors.monto}</p>}
+								{fieldErrors.monto && <p className="mt-1 text-base text-red-500">{fieldErrors.monto}</p>}
 							</div>
 							<div>
 								<label className={labelBase}>{equivalentePagoLabel}</label>
@@ -932,25 +1086,27 @@ export default function CitaMostradorPage() {
 							</div>
 						</div>
 					</section>
+					)}
 
-					{/* 4 Agenda */}
+					{/* Agenda (paso 3) */}
+					{paso === 3 && (
 					<section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col gap-6">
 						<div className="flex items-center gap-3 border-b border-slate-100 pb-4">
 							<div
-								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+								className="flex shrink-0 h-8 w-8 items-center justify-center rounded-full text-base font-bold text-white"
 								style={{ backgroundColor: PRIMARY }}
 							>
-								4
+								3
 							</div>
 							<h2 className="font-headline text-xl font-bold" style={{ color: PRIMARY }}>
-								Agenda
+								Fecha y Hora
 							</h2>
 						</div>
 
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 							<div className="w-full lg:col-span-4 rounded-2xl border border-slate-100 bg-slate-50 p-6">
 								<div className="mb-4 flex items-center justify-between">
-									<h3 className="text-sm font-bold text-slate-800">
+									<h3 className="text-base font-bold text-slate-800">
 										{MESES[calMonth]} {calYear}
 									</h3>
 									<div className="flex gap-1">
@@ -985,7 +1141,7 @@ export default function CitaMostradorPage() {
 										<div key={d}>{d}</div>
 									))}
 								</div>
-								<div className="grid grid-cols-7 gap-y-1 text-center text-sm">
+								<div className="grid grid-cols-7 gap-y-1 text-center text-base">
 									{calendarCells.map((cell, idx) => {
 										if (!cell.inMonth) {
 											return (
@@ -1016,13 +1172,32 @@ export default function CitaMostradorPage() {
 								</div>
 							</div>
 
-							<div className="lg:col-span-8 flex-1 space-y-8">
-								<div>
-									<div className="mb-3 flex items-center gap-2 text-neutral-500">
-										<Sun className="h-4 w-4" />
-										<span className="text-xs font-bold uppercase tracking-widest">Horarios de mañana</span>
-										{loadingOcupacion && <span className="text-[10px] text-slate-400">cargando…</span>}
-									</div>
+					<div className="lg:col-span-8 flex-1 space-y-8">
+					{/* Leyenda de disponibilidad */}
+					{form.id_especialista && (
+						<div className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-base text-slate-600">
+							<span className="flex items-center gap-1.5">
+								<span className="inline-block h-3 w-3 rounded-sm bg-[#006965]" />
+								Disponible
+							</span>
+							<span className="flex items-center gap-1.5">
+								<span className="inline-block h-3 w-3 rounded-sm bg-slate-300" />
+								Ocupado (no disponible)
+							</span>
+							{loadingOcupacion ? (
+								<span className="ml-auto text-slate-400">Cargando disponibilidad…</span>
+							) : ocupados.length > 0 ? (
+								<span className="ml-auto font-semibold text-red-500">{ocupados.length} horario{ocupados.length !== 1 ? "s" : ""} ocupado{ocupados.length !== 1 ? "s" : ""}</span>
+							) : form.fecha_cita ? (
+								<span className="ml-auto text-emerald-600 font-semibold">Todos los horarios disponibles</span>
+							) : null}
+						</div>
+					)}
+					<div>
+						<div className="mb-3 flex items-center gap-2 text-neutral-500">
+							<Sun className="h-4 w-4" />
+							<span className="text-base font-bold uppercase tracking-widest">Horarios de mañana</span>
+						</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
 										{morningSlots.map((opt) => {
 											const occ = horaOcupada(opt.value);
@@ -1032,15 +1207,16 @@ export default function CitaMostradorPage() {
 													key={opt.value}
 													type="button"
 													disabled={occ}
+													title={occ ? "Horario ocupado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
 															hora_cita: opt.value,
 														}))
 													}
-													className={`rounded-2xl py-3 text-sm font-semibold transition ${
+													className={`rounded-2xl py-3 text-base font-semibold transition ${
 														occ
-															? "cursor-not-allowed bg-slate-100 text-slate-400 line-through opacity-50"
+															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
 																: "bg-slate-100 text-slate-800 hover:bg-[#1c837f] hover:text-white"
@@ -1052,7 +1228,7 @@ export default function CitaMostradorPage() {
 										})}
 									</div>
 									{!form.id_especialista && (
-										<p className="mt-2 text-xs text-slate-500">
+										<p className="mt-2 text-base text-slate-500">
 											Selecciona médico y eco para marcar horarios ya ocupados en esta fecha.
 										</p>
 									)}
@@ -1060,7 +1236,7 @@ export default function CitaMostradorPage() {
 								<div>
 									<div className="mb-3 flex items-center gap-2 text-neutral-500">
 										<Sunset className="h-4 w-4" />
-										<span className="text-xs font-bold uppercase tracking-widest">Horarios de tarde</span>
+										<span className="text-base font-bold uppercase tracking-widest">Horarios de tarde</span>
 									</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
 										{afternoonSlots.map((opt) => {
@@ -1071,15 +1247,16 @@ export default function CitaMostradorPage() {
 													key={opt.value}
 													type="button"
 													disabled={occ}
+													title={occ ? "Horario ocupado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
 															hora_cita: opt.value,
 														}))
 													}
-													className={`rounded-2xl py-3 text-sm font-semibold transition ${
+													className={`rounded-2xl py-3 text-base font-semibold transition ${
 														occ
-															? "cursor-not-allowed bg-slate-100 text-slate-400 line-through opacity-50"
+															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
 																: "bg-slate-100 text-slate-800 hover:bg-[#1c837f] hover:text-white"
@@ -1091,21 +1268,30 @@ export default function CitaMostradorPage() {
 										})}
 									</div>
 								</div>
-								{fieldErrors.hora_cita && <p className="text-xs text-red-500">{fieldErrors.hora_cita}</p>}
-								{fieldErrors.fecha_cita && <p className="text-xs text-red-500">{fieldErrors.fecha_cita}</p>}
+								{fieldErrors.hora_cita && <p className="text-base text-red-500">{fieldErrors.hora_cita}</p>}
+								{fieldErrors.fecha_cita && <p className="text-base text-red-500">{fieldErrors.fecha_cita}</p>}
 							</div>
 						</div>
 					</section>
+					)}
 
 					{error && (
-						<div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+						<div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-base text-red-700">{error}</div>
 					)}
 				</form>
 			</div>
 
 			<div className="pointer-events-none fixed bottom-0 left-0 right-0 z-30 flex border-t border-slate-200/90 bg-white/95 px-4 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md lg:left-56">
-				<div className="pointer-events-auto mx-auto flex w-full max-w-5xl flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-					<div className="flex min-w-0 items-start gap-2 text-sm text-slate-600">
+				<div className="pointer-events-auto mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+					<button
+						type="button"
+						onClick={handlePrev}
+						disabled={paso === 1}
+						className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-40"
+					>
+						<ChevronLeft className="h-4 w-4" /> Anterior
+					</button>
+					<div className="flex min-w-0 items-start gap-2 text-base text-slate-600 max-sm:hidden">
 						<Info className="mt-0.5 h-5 w-5 shrink-0 text-[#006965]" />
 						<p className="min-w-0">
 							<span className="font-semibold text-slate-500">Resumen:</span>{" "}
@@ -1113,15 +1299,27 @@ export default function CitaMostradorPage() {
 							· {resumenTexto.fecha} {resumenTexto.hora}
 						</p>
 					</div>
-					<button
-						type="submit"
-						form="form-cita-mostrador"
-						disabled={isSaving}
-						className="shrink-0 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-60"
-						style={{ backgroundColor: PRIMARY }}
-					>
-						{isSaving ? "Guardando…" : "Confirmar cita ✓"}
-					</button>
+					{paso < 4 ? (
+						<button
+							type="button"
+							onClick={() => void handleNext()}
+							disabled={isCreatingPatient || (paso === 1 && !!citaActivaError)}
+							className="flex items-center gap-2 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md transition disabled:opacity-60"
+							style={{ backgroundColor: PRIMARY }}
+						>
+							{isCreatingPatient ? "Procesando…" : "Siguiente"} <ChevronRight className="h-4 w-4" />
+						</button>
+					) : (
+						<button
+							type="submit"
+							form="form-cita-mostrador"
+							disabled={isSaving || !!citaActivaError}
+							className="shrink-0 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-md disabled:opacity-60"
+							style={{ backgroundColor: PRIMARY }}
+						>
+							{isSaving ? "Guardando…" : "Confirmar cita ✓"}
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

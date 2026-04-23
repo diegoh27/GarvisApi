@@ -197,7 +197,7 @@ const DayCalendarGrid = ({
 		if (canceling) {
 			return (
 				<div className="flex min-h-[56px] items-center rounded-2xl border border-dashed border-slate-300 bg-slate-100 px-4 py-2">
-					<span className="w-12 text-right text-xs font-bold text-slate-400">
+					<span className="w-12 text-right text-sm font-bold text-slate-400">
 						{slotTimeLabel(hv)}
 					</span>
 					<div className="ml-4 flex flex-1 items-center justify-center text-[10px] text-slate-500">
@@ -219,7 +219,7 @@ const DayCalendarGrid = ({
 						title={titleStr}
 						className="flex h-full w-full min-h-[44px] flex-1 items-center justify-start overflow-hidden rounded bg-[#006965] px-3 text-white shadow-sm"
 					>
-						<span className="truncate whitespace-nowrap text-sm font-semibold leading-none flex items-center gap-2">
+						<span className="truncate whitespace-nowrap text-base font-semibold leading-none flex items-center gap-2">
 							<User className="h-4 w-4 shrink-0" strokeWidth={2.5} />
 							{rangeFull}
 						</span>
@@ -324,7 +324,7 @@ const DayCalendarGrid = ({
 					});
 				}}
 			>
-				<span className="w-12 shrink-0 text-right text-xs font-bold text-slate-400 group-hover:text-[#006965]">
+				<span className="w-12 shrink-0 text-right text-sm font-bold text-slate-400 group-hover:text-[#006965]">
 					{slotTimeLabel(hv)}
 				</span>
 				{inner}
@@ -361,10 +361,10 @@ const DayCalendarGrid = ({
 						<Clock className="h-5 w-5" strokeWidth={2} />
 					</div>
 					<div>
-						<h4 className="font-headline text-sm font-bold text-slate-900 sm:text-base">
+						<h4 className="font-headline text-base font-bold text-slate-900 sm:text-base">
 							Horario de Atención
 						</h4>
-						<p className="text-[11px] text-slate-500 sm:text-xs">
+						<p className="text-[11px] text-slate-500 sm:text-sm">
 							Bloques de 20 minutos establecidos
 						</p>
 					</div>
@@ -415,7 +415,7 @@ const DayCalendarGrid = ({
 								}`}
 							>
 								<span
-									className={`w-12 shrink-0 text-right text-xs font-bold ${
+									className={`w-12 shrink-0 text-right text-sm font-bold ${
 										isPast ? "text-slate-300" : "text-slate-400 group-hover:text-[#006965]"
 									}`}
 								>
@@ -451,7 +451,7 @@ const DayCalendarGrid = ({
 
 			{dragging && dragPreview && (
 				<div className="pointer-events-none border-t border-slate-100 bg-[#006965]/95 px-4 py-2 text-center sm:hidden">
-					<span className="text-xs font-semibold text-white">{dragSelectionTimeLabel}</span>
+					<span className="text-sm font-semibold text-white">{dragSelectionTimeLabel}</span>
 				</div>
 			)}
 

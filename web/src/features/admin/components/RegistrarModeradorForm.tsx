@@ -160,7 +160,7 @@ const RegistrarModeradorForm = () => {
 				</h2>
 
 				{error && (
-					<div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+					<div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-base text-red-700">
 						{error}
 					</div>
 				)}
@@ -168,7 +168,7 @@ const RegistrarModeradorForm = () => {
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Nombre <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -182,17 +182,17 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, nombre: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.nombre ? "border-red-500" : "border-brand-300"
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.nombre ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Ingresa el nombre"
 							/>
 							{fieldErrors.nombre && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.nombre}</p>
 							)}
 						</div>
 
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Apellido <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -206,12 +206,12 @@ const RegistrarModeradorForm = () => {
 										setFieldErrors((prev) => ({ ...prev, apellido: error }));
 									}
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.apellido ? "border-red-500" : "border-brand-300"
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.apellido ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Ingresa el apellido"
 							/>
 							{fieldErrors.apellido && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.apellido}</p>
 							)}
 						</div>
 					</div>
@@ -230,8 +230,8 @@ const RegistrarModeradorForm = () => {
 							}}
 							error={fieldErrors.cedula}
 							required
-							inputClassName="h-10 rounded-lg bg-paper text-sm"
-							selectClassName="h-10 rounded-lg bg-paper text-sm"
+							inputClassName="h-10 rounded-lg bg-paper text-base"
+							selectClassName="h-10 rounded-lg bg-paper text-base"
 						/>
 					</div>
 
@@ -246,14 +246,14 @@ const RegistrarModeradorForm = () => {
 							onChange={(prefijo, numero) => updateField("telefono", prefijo + numero)}
 							error={fieldErrors.telefono}
 							required
-							inputClassName="h-10 rounded-lg bg-paper text-sm"
-							selectClassName="h-10 rounded-lg bg-paper text-sm"
+							inputClassName="h-10 rounded-lg bg-paper text-base"
+							selectClassName="h-10 rounded-lg bg-paper text-base"
 						/>
 					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Género <span className="text-red-500">*</span>
 							</label>
 							<select
@@ -261,14 +261,14 @@ const RegistrarModeradorForm = () => {
 								onChange={(e) =>
 									updateField("genero", e.target.value as typeof form.genero)
 								}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							>
 								<option value="Masculino">Masculino</option>
 								<option value="Femenino">Femenino</option>
 							</select>
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Fecha de nacimiento <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -279,16 +279,16 @@ const RegistrarModeradorForm = () => {
 									const err = validateField("fecha_nacimiento", e.target.value);
 									if (err) setFieldErrors((prev) => ({ ...prev, fecha_nacimiento: err }));
 								}}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
 							/>
 							{fieldErrors.fecha_nacimiento && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.fecha_nacimiento}</p>
 							)}
 						</div>
 					</div>
 
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Correo electrónico <span className="text-red-500">*</span>
 						</label>
 						<input
@@ -302,45 +302,45 @@ const RegistrarModeradorForm = () => {
 									setFieldErrors((prev) => ({ ...prev, correo: error }));
 								}
 							}}
-							className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.correo ? "border-red-500" : "border-brand-300"
+							className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.correo ? "border-red-500" : "border-brand-300"
 								}`}
 							placeholder="correo@ejemplo.com"
 						/>
 						{fieldErrors.correo && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.correo}</p>
 						)}
 					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Contraseña <span className="text-red-500">*</span>
 							</label>
 							<PasswordField
 								value={form.contrasena}
 								onChange={(value) => updateField("contrasena", value)}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.contrasena ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Mínimo 6 caracteres"
 							/>
 							{fieldErrors.contrasena && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.contrasena}</p>
 							)}
 						</div>
 
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Confirmar contraseña <span className="text-red-500">*</span>
 							</label>
 							<PasswordField
 								value={form.confirmar_contrasena}
 								onChange={(value) => updateField("confirmar_contrasena", value)}
-								className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
+								className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-brand-300"
 									}`}
 								placeholder="Repite la contraseña"
 							/>
 							{fieldErrors.confirmar_contrasena && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.confirmar_contrasena}</p>
 							)}
 						</div>
 					</div>
@@ -349,14 +349,14 @@ const RegistrarModeradorForm = () => {
 						<button
 							type="button"
 							onClick={() => navigate("/usuarios")}
-							className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+							className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+							className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
 						>
 							{isLoading ? "Creando..." : "Crear moderador"}
 						</button>

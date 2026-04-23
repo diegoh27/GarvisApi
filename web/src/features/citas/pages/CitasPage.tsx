@@ -90,7 +90,7 @@ const CitasPage = () => {
 		<div className="space-y-6">
 			<div className="space-y-1">
 				<h1 className="text-2xl font-semibold text-brand-900">Mis citas</h1>
-				<p className="text-sm text-brand-800">
+				<p className="text-base text-brand-800">
 					Consulta el estado de tus citas, pagos y documentos (resultados, informe y orden médica).
 				</p>
 			</div>
@@ -99,9 +99,9 @@ const CitasPage = () => {
 			<div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4">
 				<div className="flex items-center gap-2 text-brand-800">
 					<Link2 className="h-5 w-5 shrink-0" />
-					<h2 className="text-sm font-semibold">¿Viniste antes por mostrador?</h2>
+					<h2 className="text-base font-semibold">¿Viniste antes por mostrador?</h2>
 				</div>
-				<p className="mt-1 text-xs text-brand-700">
+				<p className="mt-1 text-sm text-brand-700">
 					Si te atendieron en mostrador, puedes asociar esas citas a tu cuenta con tu cédula para verlas aquí y que te suban los resultados.
 				</p>
 				<div className="mt-3 flex flex-wrap items-end gap-2">
@@ -117,7 +117,7 @@ const CitasPage = () => {
 								setMensajeVinculacion(null);
 							}}
 							placeholder="Ej: V28025174"
-							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 placeholder:text-brand-500 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-[140px]"
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 placeholder:text-brand-500 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500 min-w-[140px]"
 						/>
 					</div>
 					<button
@@ -129,7 +129,7 @@ const CitasPage = () => {
 							setDisponibles(Array.isArray(result.data) ? result.data : []);
 						}}
 						disabled={buscandoDisponibles || !cedulaMostrador.trim()}
-						className="rounded-lg bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:opacity-50"
+						className="rounded-lg bg-brand-800 px-3 py-2 text-base font-medium text-white hover:bg-brand-900 disabled:opacity-50"
 					>
 						{buscandoDisponibles ? "Buscando…" : "Buscar citas"}
 					</button>
@@ -137,15 +137,15 @@ const CitasPage = () => {
 				{disponibles !== null && (
 					<div className="mt-3">
 						{disponibles.length === 0 ? (
-							<p className="text-sm text-brand-700">
+							<p className="text-base text-brand-700">
 								No hay citas de mostrador sin asociar con esa cédula. Si ya las asociaste, aparecen en la lista de abajo.
 							</p>
 						) : (
 							<>
-								<p className="text-sm font-medium text-brand-800">
+								<p className="text-base font-medium text-brand-800">
 									{disponibles.length} {disponibles.length === 1 ? "cita encontrada" : "citas encontradas"} con esa cédula:
 								</p>
-								<ul className="mt-2 space-y-1 rounded-lg border border-brand-200 bg-paper p-2 text-sm text-brand-900">
+								<ul className="mt-2 space-y-1 rounded-lg border border-brand-200 bg-paper p-2 text-base text-brand-900">
 									{disponibles.map((c) => (
 										<li key={c.id_cita} className="flex flex-wrap items-center gap-2">
 											<span>{formatFechaCitaPaciente(c.fecha_cita)}</span>
@@ -179,14 +179,14 @@ const CitasPage = () => {
 										}
 									}}
 									disabled={vinculando}
-									className="mt-2 rounded-lg bg-brand-800 px-3 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:opacity-50"
+									className="mt-2 rounded-lg bg-brand-800 px-3 py-2 text-base font-medium text-white hover:bg-brand-900 disabled:opacity-50"
 								>
 									{vinculando ? "Asociando…" : "Asociar todas a mi cuenta"}
 								</button>
 							</>
 						)}
 						{mensajeVinculacion && (
-							<p className={`mt-2 text-sm ${mensajeVinculacion.startsWith("Se asociaron") ? "text-emerald-700" : "text-amber-800"}`}>
+							<p className={`mt-2 text-base ${mensajeVinculacion.startsWith("Se asociaron") ? "text-emerald-700" : "text-amber-800"}`}>
 								{mensajeVinculacion}
 							</p>
 						)}
@@ -197,14 +197,14 @@ const CitasPage = () => {
 			{/* Filtros */}
 			<div className="flex flex-wrap items-center gap-4 rounded-xl border border-mist bg-paper p-4">
 				<div className="flex items-center gap-2">
-					<span className="text-sm font-medium text-brand-800">Estado del pago:</span>
+					<span className="text-base font-medium text-brand-800">Estado del pago:</span>
 					<select
 						value={filterEstadoPago}
 						onChange={(e) => {
 							setFilterEstadoPago(e.target.value as FilterEstadoPago);
 							setPage(1);
 						}}
-						className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm text-brand-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+						className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-base text-brand-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
 					>
 						<option value="todos">Todos</option>
 						<option value="pendiente">Pendientes</option>
@@ -213,21 +213,21 @@ const CitasPage = () => {
 					</select>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className="text-sm font-medium text-brand-800">Resultados:</span>
+					<span className="text-base font-medium text-brand-800">Resultados:</span>
 					<select
 						value={filterResultados}
 						onChange={(e) => {
 							setFilterResultados(e.target.value as FilterResultados);
 							setPage(1);
 						}}
-						className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-sm text-brand-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
+						className="rounded-lg border border-brand-300 bg-paper px-3 py-1.5 text-base text-brand-900 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
 					>
 						<option value="todos">Todos</option>
 						<option value="con_resultados">Con resultados</option>
 						<option value="sin_resultados">Sin resultados</option>
 					</select>
 				</div>
-				<div className="ml-auto text-sm text-brand-700">
+				<div className="ml-auto text-base text-brand-700">
 					{filtered.length} {filtered.length === 1 ? "cita" : "citas"}
 				</div>
 			</div>
@@ -239,14 +239,14 @@ const CitasPage = () => {
 						<div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" />
 					</div>
 				) : isError ? (
-					<div className="py-8 text-center text-sm text-red-600">
+					<div className="py-8 text-center text-base text-red-600">
 						No se pudo cargar la lista de citas. Intenta de nuevo más tarde.
 					</div>
 				) : paginated.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-brand-700">
 						<CalendarDays className="mb-3 h-12 w-12 text-brand-400" />
-						<p className="text-sm font-medium">No hay citas que coincidan con los filtros</p>
-						<p className="mt-1 text-xs">Cambia los filtros o agenda una cita desde Disponibilidad.</p>
+						<p className="text-base font-medium">No hay citas que coincidan con los filtros</p>
+						<p className="mt-1 text-sm">Cambia los filtros o agenda una cita desde Disponibilidad.</p>
 					</div>
 				) : (
 					<>
@@ -259,7 +259,7 @@ const CitasPage = () => {
 						{/* Paginación */}
 						{totalPages > 1 && (
 							<div className="flex items-center justify-between border-t border-mist bg-cloud/30 px-4 py-3">
-								<p className="text-xs text-brand-700">
+								<p className="text-sm text-brand-700">
 									Página {page} de {totalPages}
 								</p>
 								<div className="flex items-center gap-2">

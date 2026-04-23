@@ -52,7 +52,7 @@ const VerRepresentadoModal = ({ isOpen, onClose, representado }: ModalsProps) =>
 							<p className="font-bold text-brand-900 text-lg truncate">
 								{representado.nombre} {representado.apellido}
 							</p>
-							<p className="text-brand-600 text-xs font-medium uppercase tracking-wider truncate">
+							<p className="text-brand-600 text-sm font-medium uppercase tracking-wider truncate">
 								{representado.parentesco ?? "Familiar"}
 							</p>
 						</div>
@@ -62,21 +62,21 @@ const VerRepresentadoModal = ({ isOpen, onClose, representado }: ModalsProps) =>
 						<div className="bg-cloud p-4 rounded-2xl flex flex-col gap-1">
 							<Hash className="h-5 w-5 text-brand-600 mb-1" />
 							<p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cédula</p>
-							<p className="font-semibold text-brand-900 text-sm truncate" title={cedulaFormat}>{cedulaFormat}</p>
+							<p className="font-semibold text-brand-900 text-base truncate" title={cedulaFormat}>{cedulaFormat}</p>
 						</div>
 						
 						<div className="bg-cloud p-4 rounded-2xl flex flex-col gap-1">
 							<Calendar className="h-5 w-5 text-brand-600 mb-1" />
 							<p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Nacimiento</p>
-							<p className="font-semibold text-brand-900 text-sm">{formatFechaCortaLocal(representado.fecha_nacimiento)}</p>
-							<p className="text-xs text-brand-600 font-medium">{edad} años</p>
+							<p className="font-semibold text-brand-900 text-base">{formatFechaCortaLocal(representado.fecha_nacimiento)}</p>
+							<p className="text-sm text-brand-600 font-medium">{edad} años</p>
 						</div>
 
 						<div className="col-span-2 bg-cloud p-4 rounded-2xl flex items-center gap-3">
 							<UserRound className="h-5 w-5 text-brand-600 shrink-0" />
 							<div>
 								<p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Género</p>
-								<p className="font-semibold text-brand-900 text-sm">{representado.genero}</p>
+								<p className="font-semibold text-brand-900 text-base">{representado.genero}</p>
 							</div>
 						</div>
 					</div>

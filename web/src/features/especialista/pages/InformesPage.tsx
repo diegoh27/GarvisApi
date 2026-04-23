@@ -205,7 +205,7 @@ const InformesPage = () => {
 			<div className="space-y-6">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold text-brand-900">Informes</h1>
-					<p className="text-sm text-brand-800">
+					<p className="text-base text-brand-800">
 						Visualiza todos los informes completados por los especialistas.
 					</p>
 				</div>
@@ -213,7 +213,7 @@ const InformesPage = () => {
 				{/* Resumen */}
 				<div className="grid gap-4 md:grid-cols-3">
 					<div className="rounded-2xl bg-paper p-4 shadow-sm">
-						<p className="text-xs font-semibold text-brand-800">
+						<p className="text-sm font-semibold text-brand-800">
 							Total de informes completados
 						</p>
 						<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -221,7 +221,7 @@ const InformesPage = () => {
 						</p>
 					</div>
 					<div className="rounded-2xl bg-paper p-4 shadow-sm">
-						<p className="text-xs font-semibold text-brand-800">
+						<p className="text-sm font-semibold text-brand-800">
 							Citas pendientes de informe
 						</p>
 						<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -229,7 +229,7 @@ const InformesPage = () => {
 						</p>
 					</div>
 					<div className="rounded-2xl bg-paper p-4 shadow-sm">
-						<p className="text-xs font-semibold text-brand-800">
+						<p className="text-sm font-semibold text-brand-800">
 							Total
 						</p>
 						<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -244,7 +244,7 @@ const InformesPage = () => {
 						value={query}
 						onChange={(event) => setQuery(event.target.value)}
 						placeholder="Buscar por nombre, cédula, especialista..."
-						className="h-10 w-full rounded-full border border-mist bg-paper px-4 text-xs text-brand-900 outline-none focus:border-brand-700 shadow-sm sm:max-w-xs"
+						className="h-10 w-full rounded-full border border-mist bg-paper px-4 text-sm text-brand-900 outline-none focus:border-brand-700 shadow-sm sm:max-w-xs"
 					/>
 				</div>
 
@@ -255,7 +255,7 @@ const InformesPage = () => {
 					</h2>
 
 					{loadingCitasPendientes ? (
-						<p className="mt-4 text-sm text-brand-800">Cargando citas pendientes...</p>
+						<p className="mt-4 text-base text-brand-800">Cargando citas pendientes...</p>
 					) : (
 						<>
 							<div className="space-y-3">
@@ -276,7 +276,7 @@ const InformesPage = () => {
 																{pacienteFullName}
 															</h3>
 															{(item as any).paciente_cedula && (
-																<span className="text-xs text-brand-600">
+																<span className="text-sm text-brand-600">
 																	({(item as any).paciente_cedula})
 																</span>
 															)}
@@ -284,15 +284,15 @@ const InformesPage = () => {
 													</div>
 													<div className="flex flex-col">
 														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Especialista</span>
-														<p className="mt-1 text-sm text-brand-900">
+														<p className="mt-1 text-base text-brand-900">
 															{especialistaFullName}
 														</p>
 													</div>
 													<div className="flex flex-col">
 														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Estudio y Fecha</span>
-														<p className="mt-1 text-sm text-brand-900">
+														<p className="mt-1 text-base text-brand-900">
 															{item.eco_nombre} <br />
-															<span className="text-xs text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
+															<span className="text-sm text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
 														</p>
 													</div>
 													<div className="flex md:justify-center">
@@ -332,7 +332,7 @@ const InformesPage = () => {
 										);
 									})
 								) : (
-									<p className="py-6 text-center text-sm text-brand-800">
+									<p className="py-6 text-center text-base text-brand-800">
 										{query.trim()
 											? "No se encontraron citas pendientes con ese criterio."
 											: "No hay citas pendientes de informe."}
@@ -342,7 +342,7 @@ const InformesPage = () => {
 
 							{filteredModPendientes.length > itemsPerPage && (
 								<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
-									<p className="text-xs text-brand-800">
+									<p className="text-sm text-brand-800">
 										Mostrando {paginatedModPendientes.length > 0 ? (currentPageModPendientes - 1) * itemsPerPage + 1 : 0} -{" "}
 										{Math.min(currentPageModPendientes * itemsPerPage, filteredModPendientes.length)} de{" "}
 										{filteredModPendientes.length}
@@ -352,18 +352,18 @@ const InformesPage = () => {
 											type="button"
 											onClick={() => setCurrentPageModPendientes((prev) => Math.max(1, prev - 1))}
 											disabled={currentPageModPendientes === 1}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Anterior
 										</button>
-										<span className="text-xs text-brand-800">
+										<span className="text-sm text-brand-800">
 											Página {currentPageModPendientes} de {totalPagesModPendientes}
 										</span>
 										<button
 											type="button"
 											onClick={() => setCurrentPageModPendientes((prev) => Math.min(totalPagesModPendientes, prev + 1))}
 											disabled={currentPageModPendientes >= totalPagesModPendientes}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Siguiente
 										</button>
@@ -381,7 +381,7 @@ const InformesPage = () => {
 					</h2>
 
 					{loadingAllInformes ? (
-						<p className="mt-4 text-sm text-brand-800">Cargando informes completados...</p>
+						<p className="mt-4 text-base text-brand-800">Cargando informes completados...</p>
 					) : (
 						<>
 							<div className="space-y-3">
@@ -403,7 +403,7 @@ const InformesPage = () => {
 																{pacienteFullName}
 															</h3>
 															{(item as any).paciente_cedula && (
-																<span className="text-xs text-brand-600">
+																<span className="text-sm text-brand-600">
 																	({(item as any).paciente_cedula})
 																</span>
 															)}
@@ -411,15 +411,15 @@ const InformesPage = () => {
 													</div>
 													<div className="flex flex-col">
 														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Especialista</span>
-														<p className="mt-1 text-sm text-brand-900">
+														<p className="mt-1 text-base text-brand-900">
 															{especialistaFullName}
 														</p>
 													</div>
 													<div className="flex flex-col">
 														<span className="text-[10px] font-semibold text-brand-600 uppercase tracking-wider">Estudio y Fecha</span>
-														<p className="mt-1 text-sm text-brand-900">
+														<p className="mt-1 text-base text-brand-900">
 															{item.eco_nombre} <br />
-															<span className="text-xs text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
+															<span className="text-sm text-brand-800">{formatFecha(item.fecha_cita)} · {formatHora(item.hora_cita)}</span>
 														</p>
 													</div>
 													<div className="flex md:justify-center">
@@ -436,7 +436,7 @@ const InformesPage = () => {
 																	setPdfFileName(fileName);
 																	setPdfViewerUrl(informe.informe_pdf_url!);
 																}}
-																className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50"
+																className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
 															>
 																Ver PDF
 															</button>
@@ -447,7 +447,7 @@ const InformesPage = () => {
 										);
 									})
 								) : (
-									<p className="py-6 text-center text-sm text-brand-800">
+									<p className="py-6 text-center text-base text-brand-800">
 										{query.trim()
 											? "No se encontraron informes completados con ese criterio."
 											: "No hay informes completados."}
@@ -457,7 +457,7 @@ const InformesPage = () => {
 
 							{filteredModCompletados.length > itemsPerPage && (
 								<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
-									<p className="text-xs text-brand-800">
+									<p className="text-sm text-brand-800">
 										Mostrando {paginatedModCompletados.length > 0 ? (currentPageModCompletados - 1) * itemsPerPage + 1 : 0} -{" "}
 										{Math.min(currentPageModCompletados * itemsPerPage, filteredModCompletados.length)} de{" "}
 										{filteredModCompletados.length}
@@ -467,18 +467,18 @@ const InformesPage = () => {
 											type="button"
 											onClick={() => setCurrentPageModCompletados((prev) => Math.max(1, prev - 1))}
 											disabled={currentPageModCompletados === 1}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Anterior
 										</button>
-										<span className="text-xs text-brand-800">
+										<span className="text-sm text-brand-800">
 											Página {currentPageModCompletados} de {totalPagesModCompletados}
 										</span>
 										<button
 											type="button"
 											onClick={() => setCurrentPageModCompletados((prev) => Math.min(totalPagesModCompletados, prev + 1))}
 											disabled={currentPageModCompletados >= totalPagesModCompletados}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Siguiente
 										</button>
@@ -508,7 +508,7 @@ const InformesPage = () => {
 			<div className="space-y-6">
 				<div className="space-y-1">
 					<h1 className="text-2xl font-semibold text-brand-900">Informes</h1>
-					<p className="text-sm text-brand-800">
+					<p className="text-base text-brand-800">
 						Gestión de informes disponible para especialistas y moderadores.
 					</p>
 				</div>
@@ -528,7 +528,7 @@ const InformesPage = () => {
 			{/* Resumen */}
 			<div className="grid gap-4 md:grid-cols-3">
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">
+					<p className="text-sm font-semibold text-brand-800">
 						Citas atendidas
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -536,7 +536,7 @@ const InformesPage = () => {
 					</p>
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">
+					<p className="text-sm font-semibold text-brand-800">
 						Informes completados
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -544,7 +544,7 @@ const InformesPage = () => {
 					</p>
 				</div>
 				<div className="rounded-2xl bg-paper p-4 shadow-sm">
-					<p className="text-xs font-semibold text-brand-800">
+					<p className="text-sm font-semibold text-brand-800">
 						Pendientes de informe
 					</p>
 					<p className="mt-2 text-2xl font-semibold text-brand-900">
@@ -560,7 +560,7 @@ const InformesPage = () => {
 						<h2 className="text-base font-semibold text-brand-900">
 							Listado de citas atendidas
 						</h2>
-						<p className="text-xs text-brand-800">
+						<p className="text-sm text-brand-800">
 							Busca por nombre, cédula, eco o fecha. Haz click en una cita para crear o ver su informe.
 						</p>
 					</div>
@@ -568,7 +568,7 @@ const InformesPage = () => {
 						<select
 							value={filtroEstado}
 							onChange={(e) => setFiltroEstado(e.target.value as "todos" | "completado" | "pendiente")}
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 						>
 							<option value="todos">Todos</option>
 							<option value="completado">Completados</option>
@@ -578,13 +578,13 @@ const InformesPage = () => {
 							value={query}
 							onChange={(event) => setQuery(event.target.value)}
 							placeholder="Buscar por nombre, cédula..."
-							className="h-10 rounded-full border border-mist bg-cloud px-4 text-xs text-brand-900 outline-none focus:border-brand-700"
+							className="h-10 rounded-full border border-mist bg-cloud px-4 text-sm text-brand-900 outline-none focus:border-brand-700"
 						/>
 					</div>
 				</div>
 
 				{loadingCitas || loadingInformes ? (
-					<p className="mt-4 text-sm text-brand-800">Cargando citas...</p>
+					<p className="mt-4 text-base text-brand-800">Cargando citas...</p>
 				) : (
 					<>
 						<div className="mt-4 space-y-3">
@@ -605,11 +605,11 @@ const InformesPage = () => {
 															{fullName}
 														</h3>
 														{cita.id_representado ? (
-															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700" title="Representado">
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-sm font-medium text-emerald-700" title="Representado">
 																<Check className="h-3 w-3" /> Representado
 															</span>
 														) : (
-															<span className="inline-flex items-center gap-0.5 rounded-full bg-brand-200 px-2 py-0.5 text-xs font-medium text-brand-600" title="No representado">
+															<span className="inline-flex items-center gap-0.5 rounded-full bg-brand-200 px-2 py-0.5 text-sm font-medium text-brand-600" title="No representado">
 																<X className="h-3 w-3" /> No representado
 															</span>
 														)}
@@ -623,7 +623,7 @@ const InformesPage = () => {
 															</span>
 														)}
 													</div>
-													<p className="mt-1 text-xs text-brand-800">
+													<p className="mt-1 text-sm text-brand-800">
 														{cita.eco_nombre} · {formatFecha(cita.fecha_cita)} ·{" "}
 														{formatHora(cita.hora_cita)}
 													</p>
@@ -639,7 +639,7 @@ const InformesPage = () => {
 																pacienteName: fullName,
 															});
 														}}
-														className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50"
+														className="rounded-full border border-brand-700 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
 													>
 														Ver cita
 													</button>
@@ -652,7 +652,7 @@ const InformesPage = () => {
 																setPdfFileName(fileName);
 																setPdfViewerUrl(cita.informe!.informe_pdf_url!);
 															}}
-															className="rounded-full bg-brand-700 px-4 py-2 text-xs font-medium text-paper transition-colors hover:bg-brand-800"
+															className="rounded-full bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800"
 														>
 															Ver PDF
 														</button>
@@ -663,7 +663,7 @@ const InformesPage = () => {
 															e.stopPropagation();
 															setSelectedCitaId(cita.id_cita);
 														}}
-														className="rounded-full border border-mint px-4 py-2 text-xs font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
+														className="rounded-full border border-mint px-4 py-2 text-sm font-medium text-brand-800 transition-colors hover:border-brand-700 hover:bg-mint/20"
 													>
 														{tieneInforme ? "Editar informe" : "Crear informe"}
 													</button>
@@ -673,7 +673,7 @@ const InformesPage = () => {
 									);
 								})
 							) : (
-								<p className="py-6 text-center text-sm text-brand-800">
+								<p className="py-6 text-center text-base text-brand-800">
 									{query.trim() || filtroEstado !== "todos"
 										? "No se encontraron resultados con ese criterio."
 										: "No hay citas para mostrar."}
@@ -684,7 +684,7 @@ const InformesPage = () => {
 						{/* Paginación */}
 						{filteredCitas.length > itemsPerPage && (
 							<div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-mist pt-4 sm:flex-row">
-								<p className="text-xs text-brand-800">
+								<p className="text-sm text-brand-800">
 									Mostrando {paginatedCitas.length > 0 ? (currentPageEspecialista - 1) * itemsPerPage + 1 : 0} -{" "}
 									{Math.min(currentPageEspecialista * itemsPerPage, filteredCitas.length)} de{" "}
 									{filteredCitas.length} items
@@ -694,18 +694,18 @@ const InformesPage = () => {
 										type="button"
 										onClick={() => setCurrentPageEspecialista((prev) => Math.max(1, prev - 1))}
 										disabled={currentPageEspecialista === 1}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										Anterior
 									</button>
-									<span className="text-xs text-brand-800">
+									<span className="text-sm text-brand-800">
 										Página {currentPageEspecialista} de {totalPagesEspecialista}
 									</span>
 									<button
 										type="button"
 										onClick={() => setCurrentPageEspecialista((prev) => Math.min(totalPagesEspecialista, prev + 1))}
 										disabled={currentPageEspecialista >= totalPagesEspecialista}
-										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
+										className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm text-brand-800 transition-colors hover:bg-cloud disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										Siguiente
 									</button>

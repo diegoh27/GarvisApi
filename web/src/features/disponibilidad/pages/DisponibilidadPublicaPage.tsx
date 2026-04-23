@@ -156,7 +156,7 @@ const DisponibilidadPublicaPage = () => {
 				{isPaciente && tienePagoPendiente && (
 					<div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
 						<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-						<div className="min-w-0 flex-1 text-sm">
+						<div className="min-w-0 flex-1 text-base">
 							<p className="font-semibold">Tiene una cita con pago pendiente de verificación</p>
 							<p className="mt-1">
 								No puede agendar otra cita hasta que un moderador apruebe o rechace el pago de su cita actual. Puede revisar el estado en <strong>Mis citas</strong>.
@@ -168,7 +168,7 @@ const DisponibilidadPublicaPage = () => {
 				{/* Aviso: orden médica y asesoría */}
 				<div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
 					<AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-					<div className="min-w-0 flex-1 text-sm">
+					<div className="min-w-0 flex-1 text-base">
 						<p>
 							La <strong>orden médica</strong> (puede ser una foto) es solicitada para dejar registro de que su médico indicó este estudio. Si tiene dudas, puede ponerse en contacto con nosotros para asesoría.
 						</p>
@@ -188,21 +188,21 @@ const DisponibilidadPublicaPage = () => {
 							</div>
 							<div>
 								<h2 className="text-xl font-bold sm:text-2xl">Agenda tu ecografía</h2>
-								<p className="mt-1 text-sm text-white/90">
+								<p className="mt-1 text-base text-white/90">
 									En 3 pasos: elige el estudio, la fecha y confirma tu cita.
 								</p>
 							</div>
 						</div>
 						<div className="flex flex-wrap items-center gap-2 sm:gap-3">
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-sm font-medium sm:text-base">
 								<Stethoscope className="h-3.5 w-3.5" />
 								Paso 1: Tipo de eco
 							</span>
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-sm font-medium sm:text-base">
 								<Calendar className="h-3.5 w-3.5" />
 								Paso 2: Fecha y hora
 							</span>
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium sm:text-sm">
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-sm font-medium sm:text-base">
 								<CheckCircle2 className="h-3.5 w-3.5" />
 								Paso 3: Confirmar
 							</span>
@@ -213,7 +213,7 @@ const DisponibilidadPublicaPage = () => {
 				{/* Paso 1: Tipo de eco (tarjetas) */}
 				<section className="space-y-4">
 					<div className="flex items-center gap-2">
-						<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-paper">
+						<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-base font-bold text-paper">
 							1
 						</span>
 						<h3 className="text-lg font-semibold text-brand-900">Elige el tipo de ecografía</h3>
@@ -256,7 +256,7 @@ const DisponibilidadPublicaPage = () => {
 										<div className="min-w-0 flex-1 pr-8">
 											<p className="font-semibold text-brand-900">{eco.nombre}</p>
 											{precio != null && (
-												<p className="mt-1 text-sm font-medium text-brand-700">
+												<p className="mt-1 text-base font-medium text-brand-700">
 													${precio.toLocaleString("es-VE")} USD
 												</p>
 											)}
@@ -267,7 +267,7 @@ const DisponibilidadPublicaPage = () => {
 						</div>
 					)}
 					{!idEco && ecos.length > 0 && (
-						<p className="text-sm text-brand-600">
+						<p className="text-base text-brand-600">
 							Selecciona un tipo de eco para ver fechas y horarios disponibles.
 						</p>
 					)}
@@ -276,14 +276,14 @@ const DisponibilidadPublicaPage = () => {
 				{/* Filtro por especialista (cuando hay eco elegido) */}
 				{idEco && especialistas.length > 0 && (
 					<div className="flex flex-wrap items-center gap-3 rounded-xl border border-mist bg-paper p-4">
-						<label htmlFor="especialista-select" className="text-sm font-medium text-brand-800">
+						<label htmlFor="especialista-select" className="text-base font-medium text-brand-800">
 							Filtrar por especialista (opcional):
 						</label>
 						<select
 							id="especialista-select"
 							value={selectedEspecialista}
 							onChange={(e) => setSelectedEspecialista(e.target.value)}
-							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+							className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base text-brand-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
 							disabled={loadingBloques}
 						>
 							<option value="">Todos los especialistas</option>
@@ -307,7 +307,7 @@ const DisponibilidadPublicaPage = () => {
 					<div className="rounded-xl border border-brand-200 bg-paper p-8 text-center shadow-sm">
 						<Calendar className="mx-auto h-12 w-12 text-brand-300" />
 						<p className="mt-3 font-medium text-brand-800">Sin disponibilidad por ahora</p>
-						<p className="mt-1 text-sm text-brand-600">
+						<p className="mt-1 text-base text-brand-600">
 							No hay bloques aprobados para este eco en fechas futuras. Prueba otro tipo de eco o vuelve más tarde.
 						</p>
 					</div>
@@ -317,7 +317,7 @@ const DisponibilidadPublicaPage = () => {
 				{idEco && !loadingBloques && bloques.length > 0 && (
 					<section className="space-y-4">
 						<div className="flex items-center gap-2">
-							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-sm font-bold text-paper">
+							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-base font-bold text-paper">
 								2
 							</span>
 							<h3 className="text-lg font-semibold text-brand-900">Elige fecha y horario</h3>
@@ -326,7 +326,7 @@ const DisponibilidadPublicaPage = () => {
 							<button
 								type="button"
 								onClick={() => setDayOffset((prev) => Math.max(0, prev - 5))}
-								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud disabled:opacity-50"
+								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud disabled:opacity-50"
 								disabled={dayOffset === 0}
 							>
 								<ChevronLeft className="inline h-4 w-4" /> Anteriores
@@ -340,7 +340,7 @@ const DisponibilidadPublicaPage = () => {
 											key={key}
 											type="button"
 											onClick={() => setSelectedDate(key)}
-											className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-sm font-medium transition-all ${
+											className={`flex items-center gap-2 rounded-xl border-2 px-4 py-2 text-base font-medium transition-all ${
 												isActive
 													? "border-brand-700 bg-brand-700 text-paper shadow"
 													: "border-mist bg-paper text-brand-800 hover:border-brand-300 hover:bg-cloud/50"
@@ -348,7 +348,7 @@ const DisponibilidadPublicaPage = () => {
 										>
 											<Clock className="h-4 w-4 shrink-0" />
 											{formatFecha(key)}
-											<span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-800">
+											<span className="rounded-full bg-brand-100 px-2 py-0.5 text-sm font-medium text-brand-800">
 												{count}
 											</span>
 										</button>
@@ -358,7 +358,7 @@ const DisponibilidadPublicaPage = () => {
 							<button
 								type="button"
 								onClick={() => setDayOffset((prev) => prev + 5)}
-								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-sm font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud"
+								className="rounded-lg border border-brand-300 bg-paper px-3 py-2 text-base font-medium text-brand-800 shadow-sm transition-colors hover:bg-cloud"
 							>
 								Siguientes <ChevronRight className="inline h-4 w-4" />
 							</button>
@@ -392,11 +392,11 @@ const DisponibilidadPublicaPage = () => {
 														<p className="font-medium text-brand-900">
 															{b.especialista_nombre} {b.especialista_apellido}
 														</p>
-														<p className="text-xs text-brand-600">{b.especialidad_nombre}</p>
+														<p className="text-sm text-brand-600">{b.especialidad_nombre}</p>
 													</div>
 												</div>
 												<div className="flex items-center gap-3">
-													<span className="text-sm font-medium text-brand-700">
+													<span className="text-base font-medium text-brand-700">
 														{formatHora(b.hora_inicio)} – {formatHora(b.hora_fin)}
 													</span>
 													<button
@@ -410,7 +410,7 @@ const DisponibilidadPublicaPage = () => {
 																	? "Solo se puede reservar con al menos 2 horas de anticipación"
 																	: undefined
 														}
-														className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+														className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-base font-semibold transition-all ${
 															deshabilitar
 																? "cursor-not-allowed bg-brand-200 text-paper/80"
 																: "bg-brand-700 text-paper shadow hover:bg-brand-800 hover:shadow-md"
@@ -425,7 +425,7 @@ const DisponibilidadPublicaPage = () => {
 									})}
 								</ul>
 								<div className="flex items-center justify-between border-t border-mist bg-cloud/40 px-4 py-3">
-									<p className="text-xs font-medium text-brand-700">
+									<p className="text-sm font-medium text-brand-700">
 										Página {slotPage} de {totalSlotPages}
 									</p>
 									<div className="flex items-center gap-2">

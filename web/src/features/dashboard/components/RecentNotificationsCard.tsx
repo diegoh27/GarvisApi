@@ -15,14 +15,14 @@ const RecentNotificationsCard = ({
 }: RecentNotificationsCardProps) => {
 	return (
 		<div className="rounded-2xl bg-paper p-5 shadow-sm">
-			<h3 className="text-sm font-semibold text-brand-900">
+			<h3 className="text-base font-semibold text-brand-900">
 				Notificaciones recientes
 			</h3>
 			{notifications.length ? (
 				<div className="mt-4 space-y-3">
 					{notifications.map((notification) => (
 						<div key={notification.id} className="rounded-xl bg-cloud p-3">
-							<p className="text-xs font-semibold text-brand-900">
+							<p className="text-sm font-semibold text-brand-900">
 								{notification.title}
 							</p>
 							<p className="text-[11px] text-brand-800">
@@ -32,7 +32,7 @@ const RecentNotificationsCard = ({
 					))}
 				</div>
 			) : (
-				<p className="mt-4 text-xs text-brand-800">
+				<p className="mt-4 text-sm text-brand-800">
 					{emptyMessage ?? "Sin notificaciones recientes."}
 				</p>
 			)}

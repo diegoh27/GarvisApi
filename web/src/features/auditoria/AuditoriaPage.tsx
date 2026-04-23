@@ -110,7 +110,7 @@ const AuditoriaPage = () => {
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<div className="flex items-center gap-2">
 						<ShieldAlert className="h-5 w-5 text-indigo-600" />
-						<span className="text-sm font-medium text-gray-700">
+						<span className="text-base font-medium text-gray-700">
 							{total.toLocaleString("es-VE")} evento{total !== 1 ? "s" : ""} registrado{total !== 1 ? "s" : ""}
 						</span>
 					</div>
@@ -118,7 +118,7 @@ const AuditoriaPage = () => {
 						type="button"
 						onClick={() => refetch()}
 						disabled={isFetching}
-						className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+						className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-base font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors"
 					>
 						<RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
 						Recargar Registros
@@ -127,7 +127,7 @@ const AuditoriaPage = () => {
 
 				{/* ── Filtros ─────────────────────────────────────────────── */}
 				<div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-					<p className="mb-3 text-sm font-semibold text-gray-700">Filtro y Acciones</p>
+					<p className="mb-3 text-base font-semibold text-gray-700">Filtro y Acciones</p>
 					<div className="flex flex-wrap gap-3">
 						{/* Búsqueda rápida */}
 						<div className="relative flex-1 min-w-[200px]">
@@ -137,7 +137,7 @@ const AuditoriaPage = () => {
 								placeholder="Buscar acción, usuario, ruta..."
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
-								className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+								className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-base focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 							/>
 						</div>
 
@@ -145,7 +145,7 @@ const AuditoriaPage = () => {
 						<select
 							value={filtroUsuario}
 							onChange={(e) => { setFiltroUsuario(e.target.value); handleFiltroChange(); }}
-							className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+							className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 						>
 							<option value="">Mostrar todos los usuarios</option>
 							{(usuariosData?.data ?? []).map((u) => (
@@ -159,7 +159,7 @@ const AuditoriaPage = () => {
 						<select
 							value={filtroMetodo}
 							onChange={(e) => { setFiltroMetodo(e.target.value); handleFiltroChange(); }}
-							className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+							className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 						>
 							<option value="">Todos los métodos</option>
 							{METODOS.map((m) => (
@@ -171,7 +171,7 @@ const AuditoriaPage = () => {
 						<select
 							value={filtroEstado}
 							onChange={(e) => { setFiltroEstado(e.target.value); handleFiltroChange(); }}
-							className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+							className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 						>
 							<option value="">Todos los estados</option>
 							<option value="exito">Éxito</option>
@@ -183,7 +183,7 @@ const AuditoriaPage = () => {
 							type="date"
 							value={filtroFechaDesde}
 							onChange={(e) => { setFiltroFechaDesde(e.target.value); handleFiltroChange(); }}
-							className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+							className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 						/>
 
 						{/* Filtro hasta */}
@@ -191,14 +191,14 @@ const AuditoriaPage = () => {
 							type="date"
 							value={filtroFechaHasta}
 							onChange={(e) => { setFiltroFechaHasta(e.target.value); handleFiltroChange(); }}
-							className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+							className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
 						/>
 
 						{hayFiltros && (
 							<button
 								type="button"
 								onClick={limpiarFiltros}
-								className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+								className="rounded-lg border border-gray-200 px-3 py-2 text-base text-gray-500 hover:bg-gray-50 transition-colors"
 							>
 								Limpiar filtros
 							</button>
@@ -209,7 +209,7 @@ const AuditoriaPage = () => {
 				{/* ── Tabla ───────────────────────────────────────────────── */}
 				<div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 					<div className="overflow-x-auto">
-						<table className="min-w-full divide-y divide-gray-100 text-sm">
+						<table className="min-w-full divide-y divide-gray-100 text-base">
 							<thead className="bg-gray-50">
 								<tr>
 									<th className="whitespace-nowrap px-4 py-3 text-left font-semibold text-gray-600">
@@ -267,14 +267,14 @@ const AuditoriaPage = () => {
 												className="transition-colors hover:bg-gray-50/60"
 											>
 												{/* ID */}
-												<td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
+												<td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-gray-500">
 													#{ev.id}
 												</td>
 
 												{/* Usuario */}
 												<td className="px-4 py-3">
 													<div className="flex items-center gap-2">
-														<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">
+														<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
 															{nombreUsuario.charAt(0).toUpperCase()}
 														</div>
 														<div className="min-w-0">
@@ -282,7 +282,7 @@ const AuditoriaPage = () => {
 																{nombreUsuario}
 															</p>
 															{ev.usuario_rol && (
-																<p className="truncate text-xs text-gray-400 capitalize">
+																<p className="truncate text-sm text-gray-400 capitalize">
 																	{ev.usuario_rol}
 																</p>
 															)}
@@ -301,21 +301,21 @@ const AuditoriaPage = () => {
 												{/* Método */}
 												<td className="whitespace-nowrap px-4 py-3">
 													<span
-														className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tracking-wide ${METODO_COLOR[ev.metodo] ?? "bg-gray-100 text-gray-600"}`}
+														className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-bold tracking-wide ${METODO_COLOR[ev.metodo] ?? "bg-gray-100 text-gray-600"}`}
 													>
 														{ev.metodo}
 													</span>
 												</td>
 
 												{/* Fecha */}
-												<td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500">
+												<td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
 													{formatFecha(ev.fecha)}
 												</td>
 
 												{/* Estado */}
 												<td className="whitespace-nowrap px-4 py-3">
 													<span
-														className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+														className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold ${
 															esExito
 																? "bg-green-100 text-green-700"
 																: "bg-red-100 text-red-700"
@@ -340,7 +340,7 @@ const AuditoriaPage = () => {
 					{/* ── Paginación (estilo Todas las citas) ───────────────── */}
 					{total > ITEMS_PER_PAGE && (
 						<div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
-							<p className="text-sm text-gray-600">
+							<p className="text-base text-gray-600">
 								Mostrando {(page - 1) * ITEMS_PER_PAGE + 1} -{" "}
 								{Math.min(page * ITEMS_PER_PAGE, total)} de {total.toLocaleString("es-VE")} eventos
 							</p>
@@ -349,18 +349,18 @@ const AuditoriaPage = () => {
 									type="button"
 									onClick={() => setPage((p) => Math.max(1, p - 1))}
 									disabled={page === 1 || isFetching}
-									className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+									className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Anterior
 								</button>
-								<span className="text-xs text-gray-600">
+								<span className="text-sm text-gray-600">
 									Página {page} de {totalPgs}
 								</span>
 								<button
 									type="button"
 									onClick={() => setPage((p) => Math.min(totalPgs, p + 1))}
 									disabled={page >= totalPgs || isFetching}
-									className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+									className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Siguiente
 								</button>

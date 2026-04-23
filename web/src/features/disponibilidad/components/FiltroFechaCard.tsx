@@ -20,7 +20,7 @@ const FiltroFechaCard = ({ fechaDesde, fechaHasta }: FiltroFechaCardProps) => {
 			<div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700">
 				<Calendar className="h-4 w-4" />
 			</div>
-			<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-brand-800">
+			<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-brand-800">
 				{tieneDesde && (
 					<span>
 						<strong className="text-brand-900">Desde:</strong>{" "}

@@ -201,7 +201,7 @@ const UsuariosPage = () => {
 						<h2 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">
 							Gestión de Usuarios
 						</h2>
-						<p className="mt-2 max-w-2xl text-sm text-brand-800 sm:text-base">
+						<p className="mt-2 max-w-2xl text-base text-brand-800 sm:text-base">
 							Administra el acceso al sistema: personal, especialistas, moderadores y pacientes. Busca por
 							cédula, nombre, apellido o correo y filtra por estado.
 						</p>
@@ -214,7 +214,7 @@ const UsuariosPage = () => {
 								value={query}
 								onChange={(e) => setQuery(e.target.value)}
 								placeholder="Buscar por cédula, nombre, apellido o correo..."
-								className="h-11 w-full rounded-full border border-mist bg-paper pl-10 pr-4 text-sm text-brand-900 shadow-sm outline-none transition-shadow placeholder:text-brand-600/70 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
+								className="h-11 w-full rounded-full border border-mist bg-paper pl-10 pr-4 text-base text-brand-900 shadow-sm outline-none transition-shadow placeholder:text-brand-600/70 focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
 							/>
 						</div>
 						<div className="flex flex-wrap items-center gap-3">
@@ -225,7 +225,7 @@ const UsuariosPage = () => {
 								id="filtro-estado-usuarios"
 								value={filtroEstado}
 								onChange={(e) => setFiltroEstado(e.target.value)}
-								className="h-11 rounded-xl border border-mist bg-paper px-4 text-sm font-medium text-brand-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
+								className="h-11 rounded-xl border border-mist bg-paper px-4 text-base font-medium text-brand-900 shadow-sm outline-none focus:border-brand-700 focus:ring-2 focus:ring-brand-700/25"
 							>
 								<option value="todos">Todos los estados</option>
 								<option value="1">Activos</option>
@@ -245,7 +245,7 @@ const UsuariosPage = () => {
 									key={tab.value}
 									type="button"
 									onClick={() => setFiltroRol(tab.value)}
-									className={`flex-1 rounded-xl px-4 py-2.5 text-center text-xs font-semibold transition-all sm:flex-none sm:px-6 sm:text-sm ${active
+									className={`flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-semibold transition-all sm:flex-none sm:px-6 sm:text-base ${active
 										? "bg-paper text-brand-800 shadow-sm"
 										: "text-white/75 hover:bg-paper/60 hover:text-brand-900"
 										}`}
@@ -259,7 +259,7 @@ const UsuariosPage = () => {
 						<button
 							type="button"
 							onClick={() => setFiltroRol("todos")}
-							className="text-sm font-semibold text-white underline-offset-2 hover:text-white hover:underline bg-brand-700 px-4 py-2 rounded-xl"
+							className="text-base font-semibold text-white underline-offset-2 hover:text-white hover:underline bg-brand-700 px-4 py-2 rounded-xl"
 						>
 							Ver todos los roles
 						</button>
@@ -279,11 +279,11 @@ const UsuariosPage = () => {
 					</div>
 
 					{isLoading ? (
-						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-sm font-medium text-brand-800">
+						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-base font-medium text-brand-800">
 							Cargando usuarios...
 						</div>
 					) : filteredUsuarios.length === 0 ? (
-						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-sm font-medium text-brand-800">
+						<div className="rounded-2xl border border-mist bg-cloud/40 px-6 py-16 text-center text-base font-medium text-brand-800">
 							No se encontraron usuarios con los filtros seleccionados.
 						</div>
 					) : (
@@ -311,7 +311,7 @@ const UsuariosPage = () => {
 											<div className="hidden items-center gap-2 lg:grid lg:grid-cols-12 lg:px-2">
 												<div className="col-span-3 flex min-w-0 items-center gap-3">
 													<div
-														className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ${ring}`}
+														className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${ring}`}
 													>
 														{userInitials(usuario.nombre, usuario.apellido)}
 													</div>
@@ -319,17 +319,17 @@ const UsuariosPage = () => {
 														<p className="truncate font-bold text-brand-900">
 															{usuario.nombre} {usuario.apellido}
 														</p>
-														<p className="truncate text-xs text-brand-800/70">{rolLabel}</p>
+														<p className="truncate text-sm text-brand-800/70">{rolLabel}</p>
 													</div>
 												</div>
-												<div className="col-span-2 font-mono text-sm text-brand-800">
+												<div className="col-span-2 font-mono text-base text-brand-800">
 													{usuario.cedula}
 												</div>
-												<div className="col-span-2 truncate text-sm text-brand-800" title={usuario.correo}>
+												<div className="col-span-2 truncate text-base text-brand-800" title={usuario.correo}>
 													{usuario.correo}
 												</div>
 												<div className="col-span-1">
-													<span className={`text-xs font-bold ${getRolColor(usuario.rol)}`}>
+													<span className={`text-sm font-bold ${getRolColor(usuario.rol)}`}>
 														{rolLabel}
 													</span>
 												</div>
@@ -346,7 +346,7 @@ const UsuariosPage = () => {
 														</span>
 													)}
 												</div>
-												<div className="col-span-2 text-sm text-brand-800">
+												<div className="col-span-2 text-base text-brand-800">
 													{formatFecha(usuario.fecha_registro)}
 												</div>
 												<div className="col-span-1 flex justify-end gap-1">
@@ -377,7 +377,7 @@ const UsuariosPage = () => {
 											<div className="flex flex-col gap-3 lg:hidden">
 												<div className="flex items-start gap-3">
 													<div
-														className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold ${ring}`}
+														className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold ${ring}`}
 													>
 														{userInitials(usuario.nombre, usuario.apellido)}
 													</div>
@@ -385,8 +385,8 @@ const UsuariosPage = () => {
 														<p className="font-bold text-brand-900">
 															{usuario.nombre} {usuario.apellido}
 														</p>
-														<p className="text-xs text-brand-800/80">Cédula: {usuario.cedula}</p>
-														<p className="break-all text-xs text-brand-800">{usuario.correo}</p>
+														<p className="text-sm text-brand-800/80">Cédula: {usuario.cedula}</p>
+														<p className="break-all text-sm text-brand-800">{usuario.correo}</p>
 														<div className="mt-2 flex flex-wrap items-center gap-2">
 															<span className={`text-[11px] font-bold ${getRolColor(usuario.rol)}`}>
 																{rolLabel}
@@ -437,7 +437,7 @@ const UsuariosPage = () => {
 							</div>
 
 							{filteredUsuarios.length > itemsPerPage ? (
-								<div className="mt-8 flex flex-col gap-3 border-t border-mist pt-6 text-xs text-brand-800 sm:flex-row sm:items-center sm:justify-between">
+								<div className="mt-8 flex flex-col gap-3 border-t border-mist pt-6 text-sm text-brand-800 sm:flex-row sm:items-center sm:justify-between">
 									<p>
 										Mostrando{" "}
 										{paginatedUsuarios.length > 0
@@ -451,7 +451,7 @@ const UsuariosPage = () => {
 											type="button"
 											onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
 											disabled={currentPage === 1}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Anterior
 										</button>
@@ -462,7 +462,7 @@ const UsuariosPage = () => {
 											type="button"
 											onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
 											disabled={currentPage >= totalPages}
-											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-xs font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
+											className="rounded-full border border-mist bg-paper px-3 py-1.5 text-sm font-medium text-brand-900 transition-colors hover:bg-cloud disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											Siguiente
 										</button>
@@ -733,7 +733,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 				<form onSubmit={handleSubmit} className="p-3 space-y-4 sm:p-4">
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Nombre <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -741,11 +741,11 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								required
 								value={form.nombre}
 								onChange={(e) => setForm({ ...form, nombre: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							/>
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Apellido <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -753,7 +753,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								required
 								value={form.apellido}
 								onChange={(e) => setForm({ ...form, apellido: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "") })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							/>
 						</div>
 					</div>
@@ -776,15 +776,15 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 									}));
 								}}
 								required
-								inputClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
-								selectClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
+								inputClassName={`h-10 rounded-lg bg-paper text-base ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
+								selectClassName={`h-10 rounded-lg bg-paper text-base ${fieldErrors.cedula ? "border-red-500" : "border-brand-300"}`}
 							/>
 							{fieldErrors.cedula && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.cedula}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.cedula}</p>
 							)}
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Género <span className="text-red-500">*</span>
 							</label>
 							<select
@@ -793,7 +793,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								onChange={(e) =>
 									setForm({ ...form, genero: e.target.value as typeof form.genero })
 								}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							>
 								<option value="Masculino">Masculino</option>
 								<option value="Femenino">Femenino</option>
@@ -802,7 +802,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 					</div>
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Correo <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -810,7 +810,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								required
 								value={form.correo}
 								onChange={(e) => setForm({ ...form, correo: e.target.value })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 							/>
 						</div>
 						<div>
@@ -825,30 +825,30 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 									setForm((f) => ({ ...f, telefono: prefijo + numero }))
 								}
 								required
-								inputClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
-								selectClassName={`h-10 rounded-lg bg-paper text-sm ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
+								inputClassName={`h-10 rounded-lg bg-paper text-base ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
+								selectClassName={`h-10 rounded-lg bg-paper text-base ${fieldErrors.telefono ? "border-red-500" : "border-brand-300"}`}
 							/>
 							{fieldErrors.telefono && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.telefono}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.telefono}</p>
 							)}
 						</div>
 					</div>
 					{isPaciente && (
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								RIF
 							</label>
 							<input
 								type="text"
 								value={form.rif}
 								onChange={(e) => setForm({ ...form, rif: e.target.value })}
-								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500"
+								className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500"
 								placeholder="Ej: J-12345678-9"
 							/>
 						</div>
 					)}
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Fecha de nacimiento <span className="text-red-500">*</span>
 						</label>
 						<input
@@ -859,10 +859,10 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								setForm({ ...form, fecha_nacimiento: e.target.value });
 								if (fieldErrors.fecha_nacimiento) setFieldErrors((p) => ({ ...p, fecha_nacimiento: undefined }));
 							}}
-							className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
+							className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
 						/>
 						{fieldErrors.fecha_nacimiento && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.fecha_nacimiento}</p>
 						)}
 					</div>
 
@@ -872,7 +872,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 						<>
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div>
-									<label className="mb-1 block text-sm font-medium text-brand-700">
+									<label className="mb-1 block text-base font-medium text-brand-700">
 										Especialidad <span className="text-red-500">*</span>
 									</label>
 									<select
@@ -880,7 +880,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 										disabled={loadingEspecialidades || loadingEspecialista}
 										value={form.id_especialidad}
 										onChange={(e) => setForm({ ...form, id_especialidad: e.target.value })}
-										className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-sm outline-none focus:border-brand-500 disabled:opacity-50"
+										className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-base outline-none focus:border-brand-500 disabled:opacity-50"
 									>
 										<option value="">
 											{loadingEspecialidades || loadingEspecialista
@@ -896,7 +896,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 								</div>
 							</div>
 							<div>
-								<label className="mb-1 block text-sm font-medium text-brand-700">
+								<label className="mb-1 block text-base font-medium text-brand-700">
 									Porcentaje para especialista <span className="text-red-500">*</span>
 								</label>
 								<input
@@ -909,15 +909,15 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 										setForm({ ...form, porcentaje: e.target.value });
 										if (fieldErrors.porcentaje) setFieldErrors((p) => ({ ...p, porcentaje: undefined }));
 									}}
-									className={`h-10 w-full rounded-lg border bg-paper px-3 text-sm outline-none focus:border-brand-500 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-300"}`}
+									className={`h-10 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.porcentaje ? "border-red-500" : "border-brand-300"}`}
 									placeholder="Ej: 35"
 								/>
 								{fieldErrors.porcentaje && (
-									<p className="mt-1 text-xs text-red-500">{fieldErrors.porcentaje}</p>
+									<p className="mt-1 text-sm text-red-500">{fieldErrors.porcentaje}</p>
 								)}
 							</div>
 							<div>
-								<label className="mb-1 block text-sm font-medium text-brand-700">
+								<label className="mb-1 block text-base font-medium text-brand-700">
 									Ecos <span className="text-red-500">*</span>
 								</label>
 								<div className="relative" ref={ecosDropdownRef}>
@@ -926,7 +926,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 										ref={ecosButtonRef}
 										onClick={handleToggleDropdown}
 										disabled={loadingEcos}
-										className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-left text-sm outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between"
+										className="h-10 w-full rounded-lg border border-brand-300 bg-paper px-3 text-left text-base outline-none focus:border-brand-500 disabled:opacity-50 flex items-center justify-between"
 									>
 										<span className="truncate">
 											{loadingEcos
@@ -948,9 +948,9 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 												}`}
 										>
 											{loadingEcos ? (
-												<div className="p-3 text-sm text-brand-600">Cargando ecos...</div>
+												<div className="p-3 text-base text-brand-600">Cargando ecos...</div>
 											) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
-												<div className="p-3 text-sm text-brand-600">No hay ecos disponibles</div>
+												<div className="p-3 text-base text-brand-600">No hay ecos disponibles</div>
 											) : (
 												<div className="p-1">
 													{ecos
@@ -962,7 +962,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 																	key={eco.id_eco}
 																	type="button"
 																	onClick={() => toggleEco(eco.id_eco)}
-																	className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
+																	className={`w-full flex items-center gap-2 px-3 py-2 text-base rounded-md hover:bg-brand-50 transition-colors ${isSelected ? "bg-brand-50" : ""
 																		}`}
 																>
 																	<div
@@ -990,14 +990,14 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 						<button
 							type="button"
 							onClick={onClose}
-							className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:bg-brand-50"
+							className="flex-1 rounded-lg border border-brand-300 bg-paper px-4 py-2 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
+							className="flex-1 rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper transition-colors hover:bg-brand-800 disabled:opacity-50"
 						>
 							{isLoading ? "Guardando..." : "Guardar cambios"}
 						</button>

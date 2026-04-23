@@ -258,7 +258,7 @@ const DisponibilidadForm = ({
 					{modoRango ? (
 						<>
 							<div className="space-y-2">
-								<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+								<label className="px-1 text-sm font-bold uppercase tracking-widest text-slate-400">
 									Rango de fechas
 								</label>
 								<div className="grid grid-cols-2 gap-3">
@@ -275,7 +275,7 @@ const DisponibilidadForm = ({
 												min={minFecha}
 												max={maxFecha}
 												onChange={(e) => onFechaDesdeChange(e.target.value)}
-												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
+												className="w-full border-none bg-transparent p-0 text-base font-semibold text-brand-900 outline-none focus:ring-0"
 											/>
 										</div>
 									</div>
@@ -291,7 +291,7 @@ const DisponibilidadForm = ({
 												min={minFecha}
 												max={maxFecha}
 												onChange={(e) => onFechaHastaChange(e.target.value)}
-												className="w-full border-none bg-transparent p-0 text-sm font-semibold text-brand-900 outline-none focus:ring-0"
+												className="w-full border-none bg-transparent p-0 text-base font-semibold text-brand-900 outline-none focus:ring-0"
 											/>
 										</div>
 									</div>
@@ -301,7 +301,7 @@ const DisponibilidadForm = ({
 								</p>
 							</div>
 							<div className="space-y-2">
-								<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+								<label className="px-1 text-sm font-bold uppercase tracking-widest text-slate-400">
 									Horario
 								</label>
 								<div className="grid grid-cols-2 gap-3">
@@ -309,7 +309,7 @@ const DisponibilidadForm = ({
 										<span className="mb-1 block text-[10px] font-bold text-slate-400">
 											Inicio
 										</span>
-										<div className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+										<div className="flex items-center gap-2 text-base font-semibold text-brand-900">
 											<Clock className="h-5 w-5 shrink-0 text-slate-400" />
 											<select
 												value={horaInicioRango}
@@ -338,7 +338,7 @@ const DisponibilidadForm = ({
 										<span className="mb-1 block text-[10px] font-bold text-slate-400">
 											Fin
 										</span>
-										<div className="flex items-center gap-2 text-sm font-semibold text-brand-900">
+										<div className="flex items-center gap-2 text-base font-semibold text-brand-900">
 											<Clock className="h-5 w-5 shrink-0 text-slate-400" />
 											<select
 												value={horaFinRango}
@@ -360,7 +360,7 @@ const DisponibilidadForm = ({
 								<p className="text-[11px] font-semibold text-red-600">{rangeError}</p>
 							)}
 							{!rangeError && slotsPrevia.length > 0 && (
-								<div className="rounded-xl border border-brand-200 bg-brand-100/40 p-3 text-xs text-brand-800">
+								<div className="rounded-xl border border-brand-200 bg-brand-100/40 p-3 text-sm text-brand-800">
 									<p className="font-semibold">
 										{slotsPrevia.length} bloque{slotsPrevia.length !== 1 ? "s" : ""} de 20 min ·{" "}
 										{rangeDays} día{rangeDays !== 1 ? "s" : ""}
@@ -370,22 +370,22 @@ const DisponibilidadForm = ({
 						</>
 					) : (
 						<>
-							<div className="space-y-1 text-xs text-brand-800">
+							<div className="space-y-1 text-sm text-brand-800">
 								<label className="font-semibold">Fecha</label>
 								<input
 									type="date"
 									value={fecha}
 									onChange={(event) => onFechaChange(event.target.value)}
 									min={minFecha}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-800"
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-800"
 								/>
 							</div>
-							<div className="space-y-1 text-xs text-brand-800">
+							<div className="space-y-1 text-sm text-brand-800">
 								<label className="font-semibold">Hora inicio</label>
 								<select
 									value={horaInicio}
 									onChange={(event) => onHoraInicioChange(event.target.value)}
-									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-xs text-brand-900 outline-none focus:border-brand-800"
+									className="w-full rounded-xl border border-mist bg-paper px-3 py-2 text-sm text-brand-900 outline-none focus:border-brand-800"
 								>
 									<option value="">Selecciona hora</option>
 									{timeOptions.map((option) => (
@@ -398,7 +398,7 @@ const DisponibilidadForm = ({
 						</>
 					)}
 					<div className="space-y-2">
-						<label className="px-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+						<label className="px-1 text-sm font-bold uppercase tracking-widest text-slate-400">
 							Servicios (ecos)
 						</label>
 						<div className="flex flex-wrap items-center gap-2">
@@ -408,7 +408,7 @@ const DisponibilidadForm = ({
 								return (
 									<span
 										key={id}
-										className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-1.5 text-xs font-bold text-brand-800"
+										className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-3 py-1.5 text-sm font-bold text-brand-800"
 									>
 										{eco.nombre}
 										<button
@@ -428,7 +428,7 @@ const DisponibilidadForm = ({
 									ref={ecosButtonRef}
 									onClick={handleToggleDropdown}
 									disabled={loadingEcos}
-									className="rounded-full border border-dashed border-slate-300 bg-cloud/50 px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-cloud disabled:opacity-50"
+									className="rounded-full border border-dashed border-slate-300 bg-cloud/50 px-3 py-1.5 text-sm font-bold text-slate-500 hover:bg-cloud disabled:opacity-50"
 								>
 									+ Añadir
 								</button>
@@ -439,9 +439,9 @@ const DisponibilidadForm = ({
 										}`}
 									>
 										{loadingEcos ? (
-											<div className="p-3 text-xs text-brand-600">Cargando ecos...</div>
+											<div className="p-3 text-sm text-brand-600">Cargando ecos...</div>
 										) : ecos.filter((eco) => eco.activo === 1).length === 0 ? (
-											<div className="p-3 text-xs text-brand-600">No hay ecos disponibles</div>
+											<div className="p-3 text-sm text-brand-600">No hay ecos disponibles</div>
 										) : (
 											<div className="p-1">
 												{ecos
@@ -453,7 +453,7 @@ const DisponibilidadForm = ({
 																key={eco.id_eco}
 																type="button"
 																onClick={() => toggleEco(eco.id_eco)}
-																className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors hover:bg-brand-100/60 ${
+																className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-brand-100/60 ${
 																	isSelected ? "bg-brand-100/50" : ""
 																}`}
 															>
@@ -476,7 +476,7 @@ const DisponibilidadForm = ({
 							<button
 								type="button"
 								onClick={onCancel}
-								className="rounded-2xl border border-mist px-4 py-3 text-sm font-semibold text-brand-800 hover:bg-cloud"
+								className="rounded-2xl border border-mist px-4 py-3 text-base font-semibold text-brand-800 hover:bg-cloud"
 							>
 								Limpiar
 							</button>
@@ -484,7 +484,7 @@ const DisponibilidadForm = ({
 						<button
 							type="submit"
 							disabled={submitStatus === "loading"}
-							className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-800 py-4 text-sm font-bold text-paper shadow-lg shadow-brand-800/20 transition hover:scale-[0.98] active:scale-95 disabled:opacity-60"
+							className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-800 py-4 text-base font-bold text-paper shadow-lg shadow-brand-800/20 transition hover:scale-[0.98] active:scale-95 disabled:opacity-60"
 						>
 							{submitStatus === "loading" ? "Enviando..." : "Enviar solicitud al administrador"}
 							<Send className="h-4 w-4" />
@@ -494,7 +494,7 @@ const DisponibilidadForm = ({
 						<button
 							type="button"
 							onClick={onClearSelection}
-							className="w-full text-center text-xs font-medium text-brand-700 underline-offset-2 hover:underline"
+							className="w-full text-center text-sm font-medium text-brand-700 underline-offset-2 hover:underline"
 						>
 							Limpiar selección en el calendario
 						</button>
@@ -507,13 +507,13 @@ const DisponibilidadForm = ({
 				</form>
 			</div>
 			<div className="rounded-3xl border border-brand-800/10 bg-brand-100/30 p-6">
-				<h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-brand-800">
-					<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-200/50 text-xs">
+				<h4 className="mb-2 flex items-center gap-2 text-base font-bold text-brand-800">
+					<span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-200/50 text-sm">
 						i
 					</span>
 					Estado de solicitudes
 				</h4>
-				<p className="text-xs leading-relaxed text-slate-600">
+				<p className="text-sm leading-relaxed text-slate-600">
 					Las solicitudes enviadas suelen ser procesadas por administración en un plazo máximo de 24
 					horas hábiles. Recibirás una notificación cuando se aprueben.
 				</p>

@@ -31,7 +31,7 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+    <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-base text-gray-500">
       <span>
         Mostrando {totalItems === 0 ? "0 de 0" : `${startItem} a ${endItem} de ${totalItems}`} {label}
       </span>

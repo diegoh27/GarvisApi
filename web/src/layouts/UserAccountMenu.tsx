@@ -65,7 +65,7 @@ const UserAccountMenu = ({
 						}`}
 					>
 						{initials ? (
-							<span className="text-sm font-bold">{initials}</span>
+							<span className="text-base font-bold">{initials}</span>
 						) : (
 							<UserCircle className={compact ? "h-5 w-5" : "h-6 w-6"} />
 						)}
@@ -79,7 +79,7 @@ const UserAccountMenu = ({
 						className={`hidden min-w-0 text-left sm:block ${compact ? "max-w-[140px]" : ""}`}
 					>
 						<p
-							className={`font-semibold text-brand-900 ${compact ? "text-xs" : "text-xs"}`}
+							className={`font-semibold text-brand-900 ${compact ? "text-sm" : "text-sm"}`}
 						>
 							{fullName}
 						</p>
@@ -95,7 +95,7 @@ const UserAccountMenu = ({
 					<Link
 						to="/configuracion"
 						onClick={() => setOpen(false)}
-						className="flex items-center gap-2 px-3 py-2.5 text-sm text-brand-900 transition hover:bg-cloud"
+						className="flex items-center gap-2 px-3 py-2.5 text-base text-brand-900 transition hover:bg-cloud"
 					>
 						<Settings className="h-4 w-4 shrink-0 text-brand-700" />
 						Configuración de usuario
@@ -107,7 +107,7 @@ const UserAccountMenu = ({
 								setOpen(false);
 								onLogout();
 							}}
-							className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-700 transition hover:bg-red-50"
+							className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-base text-red-700 transition hover:bg-red-50"
 						>
 							<LogOut className="h-4 w-4 shrink-0" />
 							Salir / Cerrar sesión

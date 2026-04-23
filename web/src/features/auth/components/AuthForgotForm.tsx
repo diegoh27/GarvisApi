@@ -51,7 +51,7 @@ const AuthForgotForm = () => {
 			<h1 className="text-2xl font-semibold text-emerald-700">
 				Recuperar contraseña
 			</h1>
-			<p className="mt-2 text-sm text-slate-500">
+			<p className="mt-2 text-base text-slate-500">
 				Escribe tu correo electrónico y revisa tu bandeja para recuperar tu
 				contraseña.
 			</p>
@@ -59,21 +59,21 @@ const AuthForgotForm = () => {
 				<input
 					type="email"
 					placeholder="Correo electrónico"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-sm outline-none focus:border-emerald-500"
+					className="h-11 w-full rounded-full border border-emerald-200 px-4 text-base outline-none focus:border-emerald-500"
 					value={correo}
 					onChange={(event) => setCorreo(event.target.value)}
 					disabled={cooldownRemaining > 0}
 				/>
 				{message ? (
 					<p
-						className={`text-sm ${isError ? "text-rose-500" : "text-emerald-600"}`}
+						className={`text-base ${isError ? "text-rose-500" : "text-emerald-600"}`}
 					>
 						{message}
 					</p>
 				) : null}
 				<button
 					type="submit"
-					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
+					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-base font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
 					disabled={cooldownRemaining > 0}
 				>
 					{cooldownRemaining > 0

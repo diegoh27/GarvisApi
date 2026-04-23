@@ -63,10 +63,85 @@ const registerPaciente = async (payload) => {
 
 		// 2. Verificar cédula duplicada
 		const [cedulaExists] = await conn.execute(
-			"SELECT id_usuario FROM usuario WHERE cedula = ? LIMIT 1",
+			"SELECT id_usuario, correo FROM usuario WHERE cedula = ? LIMIT 1",
 			[payload.cedula],
 		);
 		if (cedulaExists.length > 0) {
+			const existingUser = cedulaExists[0];
+			// Si el usuario existente tiene email @mostrador.com, "upgradearlo" al correo real
+			if (existingUser.correo && existingUser.correo.endsWith("@mostrador.com")) {
+				const hashedPw = await bcrypt.hash(payload.contrasena, 10);
+				await conn.execute(
+					`UPDATE usuario SET correo = ?, contrasena = ?, telefono = ?, nombre = ?, apellido = ?, genero = ?, fecha_nacimiento = ? WHERE id_usuario = ?`,
+					[
+						payload.correo,
+						hashedPw,
+						payload.telefono,
+						payload.nombre,
+						payload.apellido,
+						payload.genero,
+						payload.fecha_nacimiento,
+						existingUser.id_usuario,
+					],
+				);
+				// Actualizar paciente también
+				const rifFinal = payload.rif || payload.cedula;
+				await conn.execute(
+					`UPDATE paciente SET tipo_sangre = ?, descripcion = ?, direccion = ?, rif = ? WHERE id_paciente = ?`,
+					[
+						payload.tipo_sangre,
+						payload.descripcion,
+						payload.direccion ?? null,
+						rifFinal,
+						existingUser.id_usuario,
+					],
+				);
+
+				// Crear verificación de email
+				const { token, tokenHash } = createTokenPair();
+				await conn.execute(
+					`INSERT INTO email_verificacion
+						(id_verificacion, id_paciente, token_hash, expires_at)
+					 VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))`,
+					[
+						crypto.randomUUID(),
+						existingUser.id_usuario,
+						tokenHash,
+						EMAIL_VERIFICATION_TTL_HOURS,
+					],
+				);
+
+				await conn.commit();
+
+				const verifyLink = buildVerifyEmailLink(token);
+				const subject = "¡Bienvenido a Garbis! Verifica tu correo";
+				const html = getVerificationEmailHtml({
+					tipo: "welcome",
+					nombre: payload.nombre,
+					verifyLink,
+					ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+				});
+				const text = getVerificationEmailText({
+					tipo: "welcome",
+					nombre: payload.nombre,
+					verifyLink,
+					ttlHours: EMAIL_VERIFICATION_TTL_HOURS,
+				});
+				try {
+					await sendEmail({ to: payload.correo, subject, html, text });
+				} catch (emailErr) {
+					console.error("Error enviando verificacion de correo (upgrade mostrador):", emailErr);
+				}
+
+				return {
+					id_usuario: existingUser.id_usuario,
+					id_paciente: existingUser.id_usuario,
+					nombre: payload.nombre,
+					apellido: payload.apellido,
+					correo: payload.correo,
+					telefono: payload.telefono,
+				};
+			}
 			const err = new Error("Ya existe un usuario con esta cédula");
 			err.code = "DUPLICATE_CEDULA";
 			throw err;

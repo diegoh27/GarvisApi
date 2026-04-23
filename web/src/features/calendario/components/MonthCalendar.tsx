@@ -242,7 +242,7 @@ const MonthCalendar = ({
 							aria-current={isToday && isCurrentMonth ? "date" : undefined}
 						>
 							<span
-								className={`text-xs font-bold ${
+								className={`text-sm font-bold ${
 									!isCurrentMonth
 										? "text-slate-300"
 										: isToday

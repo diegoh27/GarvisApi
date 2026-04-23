@@ -19,7 +19,7 @@ const AuthReset = () => {
 					<div className="relative flex flex-col justify-center px-8 py-10 sm:px-12">
 						<Link
 							to="/auth/login"
-							className="absolute left-8 top-6 text-sm font-semibold text-emerald-700"
+							className="absolute left-8 top-6 text-base font-semibold text-emerald-700"
 						>
 							← Regresar al inicio de sesión
 						</Link>

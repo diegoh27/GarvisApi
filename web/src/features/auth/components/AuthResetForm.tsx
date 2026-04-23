@@ -82,13 +82,13 @@ const AuthResetForm = () => {
 				<h1 className="text-2xl font-semibold text-emerald-700">
 					Restablecer contraseña
 				</h1>
-				<p className="mt-4 text-sm text-rose-600">
+				<p className="mt-4 text-base text-rose-600">
 					Enlace inválido o faltante. Por favor, solicita un nuevo correo de
 					recuperación.
 				</p>
 				<Link
 					to="/auth/forgot"
-					className="mt-4 inline-block text-sm font-semibold text-emerald-700 hover:underline"
+					className="mt-4 inline-block text-base font-semibold text-emerald-700 hover:underline"
 				>
 					Solicitar correo de recuperación
 				</Link>
@@ -101,7 +101,7 @@ const AuthResetForm = () => {
 			<h1 className="text-2xl font-semibold text-emerald-700">
 				Restablecer contraseña
 			</h1>
-			<p className="mt-2 text-sm text-slate-500">
+			<p className="mt-2 text-base text-slate-500">
 				Ingresa tu nueva contraseña. Debe tener al menos 6 caracteres, una
 				mayúscula, un número y un carácter especial.
 			</p>
@@ -110,32 +110,32 @@ const AuthResetForm = () => {
 					value={contrasena}
 					onChange={setContrasena}
 					placeholder="Nueva contraseña"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-sm outline-none focus:border-emerald-500"
+					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-base outline-none focus:border-emerald-500"
 				/>
 				{fieldErrors.contrasena && (
-					<p className="text-sm text-rose-500">{fieldErrors.contrasena}</p>
+					<p className="text-base text-rose-500">{fieldErrors.contrasena}</p>
 				)}
 				<PasswordField
 					value={confirmarContrasena}
 					onChange={setConfirmarContrasena}
 					placeholder="Confirmar contraseña"
-					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-sm outline-none focus:border-emerald-500"
+					className="h-11 w-full rounded-full border border-emerald-200 px-4 pr-10 text-base outline-none focus:border-emerald-500"
 				/>
 				{fieldErrors.confirmar && (
-					<p className="text-sm text-rose-500">{fieldErrors.confirmar}</p>
+					<p className="text-base text-rose-500">{fieldErrors.confirmar}</p>
 				)}
-				{error && <p className="text-sm text-rose-500">{error}</p>}
+				{error && <p className="text-base text-rose-500">{error}</p>}
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-sm font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-70"
+					className="h-11 w-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 text-base font-semibold text-white shadow-md transition hover:from-emerald-500 hover:to-emerald-600 disabled:opacity-70"
 				>
 					{isLoading ? "Actualizando..." : "Actualizar contraseña"}
 				</button>
 			</form>
 			<Link
 				to="/auth/login"
-				className="mt-6 inline-block text-sm font-semibold text-emerald-700 hover:underline"
+				className="mt-6 inline-block text-base font-semibold text-emerald-700 hover:underline"
 			>
 				← Volver al inicio de sesión
 			</Link>

@@ -19,7 +19,7 @@ type SidebarProps = {
 };
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-	`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-brand-700 text-paper" : "text-brand-900 hover:bg-cloud"
+	`flex items-center gap-3 rounded-lg px-3 py-2 text-base ${isActive ? "bg-brand-700 text-paper" : "text-brand-900 hover:bg-cloud"
 	}`;
 
 const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
@@ -29,21 +29,21 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 				}`}
 		>
 			<div className="flex h-full flex-col">
-				<div className="flex items-center justify-between px-5 py-6">
+				<div className="relative flex items-center justify-center px-3 py-5">
 					<img
 						src="/logo.png"
 						alt="Logo"
-						className="h-10 w-auto object-contain"
+						className="h-16 w-full object-contain"
 					/>
 					<button
 						onClick={onClose}
-						className="lg:hidden rounded-lg p-1 text-brand-800 hover:bg-cloud"
+						className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-brand-800 hover:bg-cloud"
 						aria-label="Cerrar menú"
 					>
 						<X className="h-5 w-5" />
 					</button>
 				</div>
-				<nav className="flex-1 overflow-y-auto px-3 pb-4 text-sm">
+				<nav className="flex-1 overflow-y-auto px-3 pb-4 text-base">
 					{navItems.map((item) =>
 						item.disabled ? (
 							<span
@@ -58,7 +58,7 @@ const Sidebar = ({ navItems, isOpen, onClose }: SidebarProps) => {
 										});
 									}
 								}}
-								className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-brand-500 opacity-60 cursor-pointer hover:bg-cloud"
+								className="flex items-center gap-3 rounded-lg px-3 py-2 text-base text-brand-500 opacity-60 cursor-pointer hover:bg-cloud"
 							>
 								<item.icon className="h-4 w-4" />
 								<span className="flex-1">{item.label}</span>

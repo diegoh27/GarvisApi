@@ -40,15 +40,15 @@ const CitaCard = ({ item, onClick, compact = true }: CitaCardProps) => {
 			className={`${baseClass} ${interactiveClass} ${paddingClass}`}
 		>
 			<div className="flex flex-wrap items-center gap-2">
-				<span className="text-sm font-semibold text-brand-900">
+				<span className="text-base font-semibold text-brand-900">
 					{item.patientName}
 				</span>
-				<span className="rounded-full bg-brand-700 px-2 py-0.5 text-xs font-medium text-paper">
+				<span className="rounded-full bg-brand-700 px-2 py-0.5 text-sm font-medium text-paper">
 					{item.ecoNombre}
 				</span>
 				{item.badge && (
 					<span
-						className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+						className={`rounded-full px-2 py-0.5 text-sm font-medium ${
 							item.badgeVariant ? badgeClasses[item.badgeVariant] : badgeClasses.neutral
 						}`}
 					>
@@ -56,7 +56,7 @@ const CitaCard = ({ item, onClick, compact = true }: CitaCardProps) => {
 					</span>
 				)}
 			</div>
-			<p className="mt-1 text-xs text-brand-600">
+			<p className="mt-1 text-sm text-brand-600">
 				{item.dateLabel} · {item.timeLabel}
 			</p>
 		</div>

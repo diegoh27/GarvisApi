@@ -256,14 +256,14 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 
 				<form onSubmit={handleSubmit} className="space-y-4 px-5 py-4">
 					{error && (
-						<div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+						<div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-base text-red-700">
 							{error}
 						</div>
 					)}
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Nombre <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -271,12 +271,12 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 								required
 								value={form.nombre}
 								onChange={(e) => updateField("nombre", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.nombre ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.nombre ? "border-red-500" : "border-slate-200"}`}
 							/>
-							{fieldErrors.nombre && <p className="mt-1 text-xs text-red-500">{fieldErrors.nombre}</p>}
+							{fieldErrors.nombre && <p className="mt-1 text-sm text-red-500">{fieldErrors.nombre}</p>}
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Apellido <span className="text-red-500">*</span>
 							</label>
 							<input
@@ -284,9 +284,9 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 								required
 								value={form.apellido}
 								onChange={(e) => updateField("apellido", e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ""))}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.apellido ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.apellido ? "border-red-500" : "border-slate-200"}`}
 							/>
-							{fieldErrors.apellido && <p className="mt-1 text-xs text-red-500">{fieldErrors.apellido}</p>}
+							{fieldErrors.apellido && <p className="mt-1 text-sm text-red-500">{fieldErrors.apellido}</p>}
 						</div>
 					</div>
 
@@ -300,13 +300,13 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 						onChange={(tipo, numero) => updateField("cedula", tipo + numero)}
 						error={fieldErrors.cedula}
 						required
-						inputClassName="h-10 rounded-lg bg-white text-sm"
-						selectClassName="h-10 rounded-lg bg-white text-sm"
+						inputClassName="h-10 rounded-lg bg-white text-base"
+						selectClassName="h-10 rounded-lg bg-white text-base"
 					/>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Género <span className="text-red-500">*</span>
 							</label>
 							<select
@@ -314,7 +314,7 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 								onChange={(e) =>
 									updateField("genero", e.target.value as FormState["genero"])
 								}
-								className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#006965]"
+								className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-base outline-none focus:border-[#006965]"
 							>
 								<option value="Masculino">Masculino</option>
 								<option value="Femenino">Femenino</option>
@@ -322,23 +322,23 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 							</select>
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Fecha de nacimiento <span className="text-red-500">*</span>
 							</label>
 							<input
 								type="date"
 								value={form.fecha_nacimiento}
 								onChange={(e) => updateField("fecha_nacimiento", e.target.value)}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-slate-200"}`}
 							/>
 							{fieldErrors.fecha_nacimiento && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.fecha_nacimiento}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.fecha_nacimiento}</p>
 							)}
 						</div>
 					</div>
 
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Correo electrónico <span className="text-red-500">*</span>
 						</label>
 						<input
@@ -346,10 +346,10 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 							required
 							value={form.correo}
 							onChange={(e) => updateField("correo", e.target.value)}
-							className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.correo ? "border-red-500" : "border-slate-200"}`}
+							className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.correo ? "border-red-500" : "border-slate-200"}`}
 							placeholder="correo@ejemplo.com"
 						/>
-						{fieldErrors.correo && <p className="mt-1 text-xs text-red-500">{fieldErrors.correo}</p>}
+						{fieldErrors.correo && <p className="mt-1 text-sm text-red-500">{fieldErrors.correo}</p>}
 					</div>
 
 					<TelefonoField
@@ -364,18 +364,18 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 						}}
 						error={fieldErrors.telefono}
 						required
-						inputClassName="h-10 rounded-lg bg-white text-sm"
-						selectClassName="h-10 rounded-lg bg-white text-sm"
+						inputClassName="h-10 rounded-lg bg-white text-base"
+						selectClassName="h-10 rounded-lg bg-white text-base"
 					/>
 
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Tipo de sangre <span className="text-red-500">*</span>
 						</label>
 						<select
 							value={form.tipo_sangre}
 							onChange={(e) => updateField("tipo_sangre", e.target.value)}
-							className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.tipo_sangre ? "border-red-500" : "border-slate-200"}`}
+							className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.tipo_sangre ? "border-red-500" : "border-slate-200"}`}
 						>
 							<option value="">Seleccione…</option>
 							{TIPOS_SANGRE.map((t) => (
@@ -385,94 +385,94 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 							))}
 						</select>
 						{fieldErrors.tipo_sangre && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.tipo_sangre}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.tipo_sangre}</p>
 						)}
 					</div>
 
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">
+						<label className="mb-1 block text-base font-medium text-brand-700">
 							Descripción / motivo de consulta <span className="text-red-500">*</span>
 						</label>
 						<textarea
 							value={form.descripcion}
 							onChange={(e) => updateField("descripcion", e.target.value)}
 							rows={3}
-							className={`w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-[#006965] ${fieldErrors.descripcion ? "border-red-500" : "border-slate-200"}`}
+							className={`w-full rounded-lg border bg-white px-3 py-2 text-base outline-none focus:border-[#006965] ${fieldErrors.descripcion ? "border-red-500" : "border-slate-200"}`}
 							placeholder="Breve descripción clínica o motivo de registro"
 						/>
 						{fieldErrors.descripcion && (
-							<p className="mt-1 text-xs text-red-500">{fieldErrors.descripcion}</p>
+							<p className="mt-1 text-sm text-red-500">{fieldErrors.descripcion}</p>
 						)}
 					</div>
 
 					<div>
-						<label className="mb-1 block text-sm font-medium text-brand-700">Dirección</label>
+						<label className="mb-1 block text-base font-medium text-brand-700">Dirección</label>
 						<input
 							type="text"
 							value={form.direccion}
 							onChange={(e) => updateField("direccion", e.target.value)}
-							className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#006965]"
+							className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-base outline-none focus:border-[#006965]"
 							placeholder="Opcional"
 						/>
 					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Contacto de emergencia (nombre)
 							</label>
 							<input
 								type="text"
 								value={form.contacto_emergencia_nombre}
 								onChange={(e) => updateField("contacto_emergencia_nombre", e.target.value)}
-								className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-[#006965]"
+								className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-base outline-none focus:border-[#006965]"
 								placeholder="Opcional"
 							/>
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Contacto de emergencia (teléfono)
 							</label>
 							<input
 								type="text"
 								value={form.contacto_emergencia_telefono}
 								onChange={(e) => updateField("contacto_emergencia_telefono", e.target.value)}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.contacto_emergencia_telefono ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.contacto_emergencia_telefono ? "border-red-500" : "border-slate-200"}`}
 								placeholder="Opcional (0412…)"
 							/>
 							{fieldErrors.contacto_emergencia_telefono && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.contacto_emergencia_telefono}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.contacto_emergencia_telefono}</p>
 							)}
 						</div>
 					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Contraseña de acceso <span className="text-red-500">*</span>
 							</label>
 							<PasswordField
 								value={form.contrasena}
 								onChange={(v) => updateField("contrasena", v)}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.contrasena ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.contrasena ? "border-red-500" : "border-slate-200"}`}
 								placeholder="Mín. 6 caracteres, mayúscula, número y especial"
 							/>
 							{fieldErrors.contrasena && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.contrasena}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.contrasena}</p>
 							)}
 						</div>
 						<div>
-							<label className="mb-1 block text-sm font-medium text-brand-700">
+							<label className="mb-1 block text-base font-medium text-brand-700">
 								Confirmar contraseña <span className="text-red-500">*</span>
 							</label>
 							<PasswordField
 								value={form.confirmar_contrasena}
 								onChange={(v) => updateField("confirmar_contrasena", v)}
-								className={`h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none focus:border-[#006965] ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-slate-200"}`}
+								className={`h-10 w-full rounded-lg border bg-white px-3 text-base outline-none focus:border-[#006965] ${fieldErrors.confirmar_contrasena ? "border-red-500" : "border-slate-200"}`}
 								placeholder="Repite la contraseña"
 							/>
 							{fieldErrors.confirmar_contrasena && (
-								<p className="mt-1 text-xs text-red-500">{fieldErrors.confirmar_contrasena}</p>
+								<p className="mt-1 text-sm text-red-500">{fieldErrors.confirmar_contrasena}</p>
 							)}
 						</div>
 					</div>
@@ -482,14 +482,14 @@ const CrearPacienteModal = ({ isOpen, onClose, onSuccess }: CrearPacienteModalPr
 							type="button"
 							onClick={handleClose}
 							disabled={isLoading}
-							className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+							className="rounded-xl border border-slate-200 px-5 py-2.5 text-base font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="rounded-xl bg-[#006965] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#005752] disabled:opacity-50"
+							className="rounded-xl bg-[#006965] px-5 py-2.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-[#005752] disabled:opacity-50"
 						>
 							{isLoading ? "Guardando…" : "Crear paciente"}
 						</button>

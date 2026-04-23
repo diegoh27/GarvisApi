@@ -140,46 +140,46 @@ export default function PagarComisionModal({
         <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
           {/* Información de la comisión */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-base">
               <span className="text-gray-600">Especialista:</span>
               <span className="font-medium text-gray-900">
                 {comision.especialista_nombre}{" "}
                 {comision.especialista_apellido}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-base">
               <span className="text-gray-600">Especialidad:</span>
               <span className="font-medium text-gray-900">
                 {comision.eco_nombre || "-"}
               </span>
             </div>
             <div className="bg-white p-3 rounded border border-teal-100 space-y-1">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Costo total del eco:</span>
                 <span className="font-semibold text-teal-600">
                   ${ecoTotalUsd.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Parte especialista ({Number(comision.porcentaje).toFixed(1)}%):</span>
                 <span className="font-semibold text-orange-600">
                   ${parteEspecialistaUsd.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-base">
                 <span className="text-gray-600">Parte negocio:</span>
                 <span className="font-semibold text-brand-700">
                   ${parteNegocioUsd.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm border-t pt-1">
+              <div className="flex justify-between text-base border-t pt-1">
                 <span className="text-gray-600 font-medium">Total a pagar:</span>
                 <span className="font-bold text-emerald-600">
                   ${parteEspecialistaUsd.toFixed(2)}
                 </span>
               </div>
             </div>
-            <div className="flex justify-between text-sm border-t pt-2">
+            <div className="flex justify-between text-base border-t pt-2">
               <span className="text-gray-600">Tasa BCV:</span>
               <span className="font-medium text-gray-900">
                 {loadingDolar ? (
@@ -194,7 +194,7 @@ export default function PagarComisionModal({
                 )}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-base">
               <span className="text-gray-600">Total en Bs:</span>
               <span className="font-bold text-blue-600">
                 {loadingDolar ? (
@@ -209,7 +209,7 @@ export default function PagarComisionModal({
                 )}
               </span>
             </div>
-            <div className="flex justify-between text-sm border-t pt-2">
+            <div className="flex justify-between text-base border-t pt-2">
               <span className="text-gray-600">Fecha de Cita:</span>
               <span className="font-medium text-gray-900">
                 {comision.fecha_cita ? formatFechaLocal(comision.fecha_cita) : "-"}
@@ -221,7 +221,7 @@ export default function PagarComisionModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Fecha de pago */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-base font-medium text-gray-700 mb-1">
                 Fecha de Pago
               </label>
               <input
@@ -236,7 +236,7 @@ export default function PagarComisionModal({
 
             {/* Monto en Bs */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-base font-medium text-gray-700 mb-1">
                 Monto en Bs *
               </label>
               <input
@@ -252,10 +252,10 @@ export default function PagarComisionModal({
                 required
               />
               {loadingDolar && (
-                <p className="text-xs text-teal-500 mt-1">Calculando monto en Bs...</p>
+                <p className="text-base text-teal-500 mt-1">Calculando monto en Bs...</p>
               )}
               {montoCalculadoBs !== null && dolarOficial && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-base text-gray-500 mt-1">
                   Calculado: <strong>{montoCalculadoBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs</strong>
                   {" "}
                   (Tasa BCV: {dolarOficial.promedio.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs/$)
@@ -265,7 +265,7 @@ export default function PagarComisionModal({
 
             {/* Método de pago */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-base font-medium text-gray-700 mb-1">
                 Método de Pago
               </label>
               <select
@@ -284,7 +284,7 @@ export default function PagarComisionModal({
 
             {/* Referencia (opcional) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-base font-medium text-gray-700 mb-1">
                 Referencia (opcional)
               </label>
               <input
@@ -301,7 +301,7 @@ export default function PagarComisionModal({
             {/* Error */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-base text-red-700">{error}</p>
               </div>
             )}
           </form>

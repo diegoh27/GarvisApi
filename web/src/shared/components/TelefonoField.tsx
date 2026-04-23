@@ -49,13 +49,13 @@ export function TelefonoField({
 	};
 
 	const baseInput =
-		"rounded-lg border px-3 py-2 text-sm outline-none focus:border-brand-500";
+		"rounded-lg border px-3 py-2 text-base outline-none focus:border-brand-500";
 	const errorInput = error ? "border-red-500" : "border-brand-300 bg-paper";
 
 	return (
 		<div className="min-w-0">
 			{label != null && (
-				<label className="mb-1 block text-sm font-medium text-brand-700">
+				<label className="mb-1 block text-base font-medium text-brand-700">
 					{label}
 				</label>
 			)}
@@ -88,7 +88,7 @@ export function TelefonoField({
 					aria-label="Número de teléfono (7 dígitos)"
 				/>
 			</div>
-			{error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+			{error && <p className="mt-1 text-sm text-red-500">{error}</p>}
 		</div>
 	);
 }

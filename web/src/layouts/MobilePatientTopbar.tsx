@@ -19,7 +19,7 @@ const MobilePatientTopbar = ({
 			<div className="flex w-full items-center justify-between px-4 py-3 sm:px-5">
 				<div className="flex min-w-0 items-center gap-3">
 					<img
-						src="/logo.svg"
+						src="/logo.png"
 						alt="Garvis"
 						className="h-8 w-auto max-w-[160px] object-contain object-left"
 					/>

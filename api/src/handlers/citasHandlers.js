@@ -22,8 +22,10 @@ const {
 	getUltimoPacienteMostradorPorCedulaController,
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
+	crearPacienteMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
+const { savePagoGuardadoController } = require("../controllers/pagosGuardadosControllers");
 
 /** Alineado con pagos.metodo ENUM y métodos expuestos en /metodos-pago/disponibles */
 const METODOS_ASIGNAR_CITA = new Set([
@@ -670,6 +672,9 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			cedula_pagador,
 			telefono_pagador,
 			referencia,
+			fecha_pago,      // ← NUEVO: Fecha de la transferencia (YYYY-MM-DD)
+			guardar_cuenta,  // ← NUEVO: boolean - guardar datos de pago
+			alias_cuenta,    // ← NUEVO: alias opcional para la cuenta guardada
 		} = req.body;
 
 		const metodoStr = String(metodo || "").trim();
@@ -743,6 +748,23 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			});
 		}
 
+		// Validar y normalizar fecha_pago: debe ser YYYY-MM-DD y no puede ser futura
+		let fechaPagoFinal = null;
+		if (fecha_pago) {
+			const fpStr = String(fecha_pago).trim();
+			if (/^\d{4}-\d{2}-\d{2}$/.test(fpStr)) {
+				const hoy = new Date().toISOString().slice(0, 10);
+				if (fpStr <= hoy) {
+					fechaPagoFinal = fpStr;
+				} else {
+					return res.status(400).json({
+						ok: false,
+						message: "La fecha de pago no puede ser en el futuro",
+					});
+				}
+			}
+		}
+
 		const data = await asignarCitaCompletaController({
 			id_paciente,
 			id_representado,
@@ -760,7 +782,24 @@ const asignarCitaCompletaHandler = async (req, res) => {
 			cedula_pagador: String(cedula_pagador).trim(),
 			telefono_pagador: String(telefono_pagador).trim(),
 			referencia: referencia != null ? String(referencia) : "",
+			fecha_pago: fechaPagoFinal, // ← NUEVO
 		});
+
+		// ← NUEVO: Guardar cuenta si el paciente lo solicitó
+		if (guardar_cuenta && req.user.rol === "paciente" && !isCashPaymentMethodAsignar(metodoStr)) {
+			try {
+				await savePagoGuardadoController({
+					id_paciente: req.user.id,
+					alias: alias_cuenta || null,
+					banco_origen: banco_origen ? String(banco_origen).trim() : "",
+					cedula_pagador: String(cedula_pagador).trim(),
+					telefono_pagador: String(telefono_pagador).trim(),
+				});
+			} catch (saveErr) {
+				// No abortar el flujo principal si falla el guardado
+				console.error("[pagos-guardados] No se pudo guardar la cuenta:", saveErr.message);
+			}
+		}
 
 		return res.status(201).json({
 			ok: true,
@@ -798,6 +837,17 @@ const asignarCitaCompletaHandler = async (req, res) => {
 				ok: false,
 				message: err.message,
 				code: "PAGO_PENDIENTE",
+			});
+		}
+		if (err.code === "ER_DUP_ENTRY") {
+			// MySQL incluye el nombre de la key en el mensaje: 'Duplicate entry ... for key 'uk_pagos_referencia''
+			const isRefDup = err.message && err.message.includes("uk_pagos_referencia");
+			return res.status(409).json({
+				ok: false,
+				message: isRefDup
+					? "Ese número de referencia ya fue registrado. Por favor ingresa un número diferente."
+					: "Ya existe una cita registrada con esos datos. Si crees que es un error, contáctanos.",
+				code: "DUPLICATE_ENTRY",
 			});
 		}
 		console.error("Error al asignar cita completa:", err);
@@ -895,6 +945,13 @@ const createCitaMostradorHandler = async (req, res) => {
 			data,
 		});
 	} catch (err) {
+		if (err?.code === "CITA_ACTIVA") {
+			return res.status(409).json({
+				ok: false,
+				message: err.message,
+				code: "CITA_ACTIVA",
+			});
+		}
 		if (
 			err?.code === "NOT_FOUND" ||
 			err?.code === "INVALID_AMOUNT" ||
@@ -1115,6 +1172,49 @@ const vincularCitasMostradorHandler = async (req, res) => {
 	}
 };
 
+// =====================================================
+// POST /citas/mostrador/crear-paciente (admin/moderador)
+// =====================================================
+const crearPacienteMostradorHandler = async (req, res) => {
+	try {
+		const { cedula, nombre, apellido, telefono, tipo_cedula } = req.body;
+		if (!cedula || !nombre || !apellido) {
+			return res.status(400).json({
+				ok: false,
+				message: "Cédula, nombre y apellido son obligatorios.",
+			});
+		}
+
+		const result = await crearPacienteMostradorController({
+			cedula,
+			nombre,
+			apellido,
+			telefono,
+			tipo_cedula,
+		});
+
+		return res.status(result.existente ? 200 : 201).json({
+			ok: true,
+			data: result,
+		});
+	} catch (err) {
+		console.error("crearPacienteMostradorHandler error:", err);
+		if (err.code === "VALIDATION_ERROR") {
+			return res.status(400).json({ ok: false, message: err.message });
+		}
+		if (err.code === "ER_DUP_ENTRY") {
+			return res.status(409).json({
+				ok: false,
+				message: "Ya existe un registro con estos datos (cédula o RIF duplicado).",
+			});
+		}
+		return res.status(500).json({
+			ok: false,
+			message: "Error interno al crear paciente de mostrador.",
+		});
+	}
+};
+
 module.exports = {
 	createCitaHandler,
 	asignarCitaCompletaHandler,
@@ -1140,4 +1240,5 @@ module.exports = {
 	getUltimoPacienteMostradorHandler,
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
+	crearPacienteMostradorHandler,
 };

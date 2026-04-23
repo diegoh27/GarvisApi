@@ -33,20 +33,20 @@ export default function ObligacionesTable({
     const estadoLower = estado.toLowerCase();
     if (estadoLower === "pagado") {
       return (
-        <span className="text-xs font-medium text-emerald-600">
+        <span className="text-base font-medium text-emerald-600">
           Pagado
         </span>
       );
     }
     if (estadoLower === "vencido") {
       return (
-        <span className="text-xs font-medium text-red-600">
+        <span className="text-base font-medium text-red-600">
           Vencido
         </span>
       );
     }
     return (
-      <span className="text-xs font-medium text-amber-500">
+      <span className="text-base font-medium text-amber-500">
         Pendiente
       </span>
     );
@@ -56,45 +56,45 @@ export default function ObligacionesTable({
     {
       key: "id_obligacion",
       header: "ID",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: Obligacion, index: number) =>
         String(startIndex + index + 1).padStart(3, "0"),
     },
     {
       key: "nombre_ente",
       header: "Ente",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Obligacion) => row.nombre_ente,
     },
     {
       key: "concepto",
       header: "Concepto",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Obligacion) => row.concepto,
     },
     {
       key: "periodo",
       header: "Período",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Obligacion) => row.periodo,
     },
     {
       key: "estado",
       header: "Estado",
-      headerClassName: "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+      headerClassName: "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: Obligacion) => getEstadoBadge(row.estado),
     },
     {
       key: "fecha_vencimiento",
       header: "Fecha de vencimiento",
-      headerClassName: "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+      headerClassName: "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: Obligacion) =>
         row.fecha_vencimiento !== null
           ? new Date(row.fecha_vencimiento).toLocaleDateString("es-VE")
@@ -103,8 +103,8 @@ export default function ObligacionesTable({
     {
       key: "acciones",
       header: "Acciones",
-      headerClassName: "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm text-center",
+      headerClassName: "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base text-center",
       render: (row: Obligacion) => (
         <div className="flex gap-1 md:gap-2 justify-center flex-wrap">
           <button
@@ -151,7 +151,7 @@ export default function ObligacionesTable({
           columns={columns}
           rows={obligaciones}
           rowKey={(row) => row.id_obligacion}
-          tableClassName="w-full min-w-full text-sm"
+          tableClassName="w-full min-w-full text-base"
           theadClassName="bg-teal-500 text-white"
           getRowClassName={(_row, index) => (index % 2 === 0 ? "bg-gray-50" : "bg-white")}
           emptyState="No hay obligaciones registradas"

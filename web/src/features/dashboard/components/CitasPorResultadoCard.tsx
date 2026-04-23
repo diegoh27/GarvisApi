@@ -16,11 +16,11 @@ const CitasPorResultadoCard = ({
 }: CitasPorResultadoCardProps) => {
 	return (
 		<div className="rounded-2xl bg-paper p-5 shadow-sm">
-			<h3 className="text-sm font-semibold text-brand-900">
+			<h3 className="text-base font-semibold text-brand-900">
 				Citas por Resultado (faltantes)
 			</h3>
 			{isLoading ? (
-				<p className="mt-4 text-xs text-brand-600">Cargando...</p>
+				<p className="mt-4 text-sm text-brand-600">Cargando...</p>
 			) : citas.length ? (
 				<div className="mt-4 space-y-2">
 					{citas.map((item) => (
@@ -33,7 +33,7 @@ const CitasPorResultadoCard = ({
 					))}
 				</div>
 			) : (
-				<p className="mt-4 text-xs text-brand-800">{emptyMessage}</p>
+				<p className="mt-4 text-sm text-brand-800">{emptyMessage}</p>
 			)}
 		</div>
 	);

@@ -40,7 +40,7 @@ const FiltrosDisponibilidadPendientes = ({
 	return (
 		<div className="rounded-xl border border-brand-200 bg-paper p-4 space-y-5 shadow-sm">
 			<div className="flex items-center justify-between pb-3 border-b border-brand-100">
-				<h3 className="font-semibold text-brand-900 text-sm">Filtros</h3>
+				<h3 className="font-semibold text-brand-900 text-base">Filtros</h3>
 				<button
 					type="button"
 					onClick={onReset}
@@ -64,7 +64,7 @@ const FiltrosDisponibilidadPendientes = ({
 							value={value.query}
 							onChange={(e) => update({ query: e.target.value })}
 							placeholder="Médico o eco..."
-							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud pl-9 pr-3 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud pl-9 pr-3 text-base text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 						/>
 					</div>
 				</div>
@@ -80,14 +80,14 @@ const FiltrosDisponibilidadPendientes = ({
 							value={value.fechaDesde}
 							onChange={(e) => update({ fechaDesde: e.target.value })}
 							title="Fecha Desde"
-							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-xs text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 						/>
 						<input
 							type="date"
 							value={value.fechaHasta}
 							onChange={(e) => update({ fechaHasta: e.target.value })}
 							title="Fecha Hasta"
-							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-xs text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 						/>
 					</div>
 				</div>
@@ -103,14 +103,14 @@ const FiltrosDisponibilidadPendientes = ({
 							value={value.horaDesde}
 							onChange={(e) => update({ horaDesde: e.target.value })}
 							title="Hora Desde"
-							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-xs text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 						/>
 						<input
 							type="time"
 							value={value.horaHasta}
 							onChange={(e) => update({ horaHasta: e.target.value })}
 							title="Hora Hasta"
-							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-xs text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+							className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-2 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 						/>
 					</div>
 				</div>
@@ -123,7 +123,7 @@ const FiltrosDisponibilidadPendientes = ({
 					<select
 						value={value.estado}
 						onChange={(e) => update({ estado: e.target.value as EstadoFiltro })}
-						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-3 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-3 text-base text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 					>
 						<option value="todas">Mostrar todos</option>
 						<option value="pendientes">Pendientes</option>
@@ -143,7 +143,7 @@ const FiltrosDisponibilidadPendientes = ({
 					<select
 						value={value.ecoId}
 						onChange={(e) => update({ ecoId: e.target.value })}
-						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-3 text-sm text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
+						className="h-10 w-full rounded-lg border border-brand-300 bg-cloud px-3 text-base text-brand-900 outline-none focus:border-brand-700 focus:bg-paper transition-colors"
 					>
 						<option value="">Cualquier Eco</option>
 						{ecoOptions.map((opt) => (
@@ -159,7 +159,7 @@ const FiltrosDisponibilidadPendientes = ({
 					<label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-brand-500">
 						Ordenación
 					</label>
-					<div className="flex w-full rounded-lg border border-brand-300 bg-cloud overflow-hidden text-xs">
+					<div className="flex w-full rounded-lg border border-brand-300 bg-cloud overflow-hidden text-sm">
 						<button
 							type="button"
 							onClick={() => update({ ordenFecha: "reciente" })}

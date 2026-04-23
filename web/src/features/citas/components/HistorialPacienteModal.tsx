@@ -58,19 +58,19 @@ const HistorialPacienteModal = ({
 					<div className="flex items-center justify-between border-b border-mist px-6 py-4">
 						<div>
 							<h3 className="text-base font-semibold text-brand-900">Historial de citas</h3>
-							<p className="text-xs text-brand-800">Orden médica, resultados e informes.</p>
+							<p className="text-sm text-brand-800">Orden médica, resultados e informes.</p>
 						</div>
 						<button
 							type="button"
 							onClick={onClose}
-							className="rounded-full border border-mist px-3 py-1 text-xs text-brand-800 hover:bg-cloud"
+							className="rounded-full border border-mist px-3 py-1 text-sm text-brand-800 hover:bg-cloud"
 						>
 							Cerrar
 						</button>
 					</div>
 					<div className="max-h-[60vh] overflow-y-auto p-6">
 						{citas.length ? (
-							<table className="w-full text-left text-xs text-brand-800">
+							<table className="w-full text-left text-sm text-brand-800">
 								<thead>
 									<tr className="border-b border-mist text-[11px] uppercase text-brand-700">
 										<th className="px-3 py-2">Fecha</th>
@@ -156,7 +156,7 @@ const HistorialPacienteModal = ({
 								</tbody>
 							</table>
 						) : (
-							<p className="text-sm text-brand-800">No hay citas en tu historial.</p>
+							<p className="text-base text-brand-800">No hay citas en tu historial.</p>
 						)}
 					</div>
 				</div>

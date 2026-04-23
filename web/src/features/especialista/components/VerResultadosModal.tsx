@@ -8,6 +8,8 @@ import {
 	Trash2,
 	Stethoscope,
 	Monitor,
+	ChevronLeft,
+	ChevronRight,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import {
@@ -50,6 +52,7 @@ const VerResultadosModal = ({
 		studyUidInicial,
 	);
 	const [showOhifViewer, setShowOhifViewer] = useState(false);
+	const [previewImageIndex, setPreviewImageIndex] = useState<number | null>(null);
 
 	const [deleteArchivo, { isLoading: isDeletingFile }] =
 		useDeleteArchivoFromResultadoMutation();
@@ -88,6 +91,8 @@ const VerResultadosModal = ({
 		if (/\.(mp4|avi|mov|mkv)(\?|$)/.test(lowerUrl)) return "video";
 		return "unknown";
 	};
+
+	const imageFiles = archivos.filter((url) => getFileType(url) === "image");
 
 	const normalizeUrl = (url: string): string => {
 		let v = url.trim();
@@ -333,7 +338,7 @@ const VerResultadosModal = ({
 							<h2 className="text-base font-semibold text-brand-900 leading-tight">
 								Resultados disponibles
 							</h2>
-							<p className="text-xs text-brand-600 mt-0.5 truncate">
+							<p className="text-sm text-brand-600 mt-0.5 truncate">
 								{pacienteNombre} — {ecoNombre}
 							</p>
 						</div>
@@ -347,7 +352,7 @@ const VerResultadosModal = ({
 
 					{/* Content */}
 					<div className="flex-1 overflow-y-auto px-5 py-4">
-						<p className="text-xs text-brand-600 mb-3">
+						<p className="text-sm text-brand-600 mb-3">
 							Se encontraron{" "}
 							<span className="font-semibold text-brand-900">{totalItems}</span>{" "}
 							resultado{totalItems !== 1 ? "s" : ""}.
@@ -363,7 +368,7 @@ const VerResultadosModal = ({
 											<Stethoscope className="h-5 w-5 text-purple-600" />
 										</div>
 										<div className="flex-1 min-w-0">
-											<p className="text-sm font-semibold text-purple-900 leading-tight">
+											<p className="text-base font-semibold text-purple-900 leading-tight">
 												Estudio DICOM — Visor OHIF
 											</p>
 											<p className="text-[11px] text-purple-500 font-mono truncate mt-0.5">
@@ -376,7 +381,7 @@ const VerResultadosModal = ({
 										<button
 											type="button"
 											onClick={() => setShowOhifViewer(true)}
-											className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition-colors"
+											className="flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-base font-semibold text-white hover:bg-purple-700 transition-colors"
 										>
 											<Monitor className="h-4 w-4" />
 											Abrir visor
@@ -384,7 +389,7 @@ const VerResultadosModal = ({
 										<button
 											type="button"
 											onClick={handleDownloadDicom}
-											className="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-white px-4 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors"
+											className="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-white px-4 py-2 text-base font-medium text-purple-600 hover:bg-purple-50 transition-colors"
 										>
 											<Download className="h-4 w-4" />
 											Descargar
@@ -395,7 +400,7 @@ const VerResultadosModal = ({
 												target="_blank"
 												rel="noopener noreferrer"
 												title="Abrir en nueva pestaña"
-												className="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 transition-colors"
+												className="flex items-center gap-1.5 rounded-lg border border-purple-300 bg-white px-3 py-2 text-base font-medium text-purple-600 hover:bg-purple-50 transition-colors"
 											>
 												<ExternalLink className="h-4 w-4" />
 											</a>
@@ -405,7 +410,7 @@ const VerResultadosModal = ({
 												type="button"
 												onClick={handleQuitarStudy}
 												disabled={isDeleting}
-												className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+												className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
 											>
 												<Trash2 className="h-4 w-4" />
 												Quitar
@@ -444,7 +449,7 @@ const VerResultadosModal = ({
 												)}
 											</div>
 											<p
-												className="flex-1 text-sm font-medium text-brand-900 truncate"
+												className="flex-1 text-base font-medium text-brand-900 truncate"
 												title={fileName}
 											>
 												{fileName}
@@ -454,16 +459,27 @@ const VerResultadosModal = ({
 										<div className="flex flex-wrap gap-2">
 											<button
 												type="button"
-												onClick={() => handleOpenFile(url)}
-												className="flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800 transition-colors"
+												onClick={() => {
+													if (fileType === "image") {
+														const idx = imageFiles.indexOf(url);
+														if (idx !== -1) {
+															setPreviewImageIndex(idx);
+														} else {
+															handleOpenFile(url);
+														}
+													} else {
+														handleOpenFile(url);
+													}
+												}}
+												className="flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800 transition-colors"
 											>
 												<ExternalLink className="h-4 w-4" />
-												Abrir
+												{fileType === "image" ? "Vista Previa" : "Abrir"}
 											</button>
 											<button
 												type="button"
 												onClick={() => handleDownloadFile(url, index)}
-												className="flex items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 transition-colors"
+												className="flex items-center gap-1.5 rounded-lg border border-brand-300 bg-white px-4 py-2 text-base font-medium text-brand-700 hover:bg-brand-50 transition-colors"
 											>
 												<Download className="h-4 w-4" />
 												Descargar
@@ -473,7 +489,7 @@ const VerResultadosModal = ({
 													type="button"
 													onClick={() => handleQuitarArchivo(url)}
 													disabled={isDeleting}
-													className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+													className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
 												>
 													<Trash2 className="h-4 w-4" />
 													Quitar
@@ -494,7 +510,7 @@ const VerResultadosModal = ({
 									type="button"
 									onClick={handleEliminarTodos}
 									disabled={isDeleting}
-									className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+									className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-4 py-2 text-base font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
 								>
 									<Trash2 className="h-4 w-4" />
 									Eliminar todos
@@ -503,7 +519,7 @@ const VerResultadosModal = ({
 						</div>
 						<button
 							onClick={onClose}
-							className="rounded-lg border border-mist bg-paper px-4 py-2 text-sm font-medium text-brand-700 hover:bg-cloud transition-colors"
+							className="rounded-lg border border-mist bg-paper px-4 py-2 text-base font-medium text-brand-700 hover:bg-cloud transition-colors"
 						>
 							Cerrar
 						</button>
@@ -517,10 +533,10 @@ const VerResultadosModal = ({
 					<div className="flex items-center justify-between bg-gray-900 px-4 py-3 shrink-0">
 						<div className="flex items-center gap-2 text-white min-w-0">
 							<Stethoscope className="h-4 w-4 text-purple-400 shrink-0" />
-							<span className="text-sm font-semibold truncate">
+							<span className="text-base font-semibold truncate">
 								{ecoNombre}
 							</span>
-							<span className="text-xs text-gray-400 font-mono ml-1 hidden sm:block truncate max-w-xs">
+							<span className="text-sm text-gray-400 font-mono ml-1 hidden sm:block truncate max-w-xs">
 								{studyUid}
 							</span>
 						</div>
@@ -529,7 +545,7 @@ const VerResultadosModal = ({
 								href={ohifViewerUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+								className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
 							>
 								<ExternalLink className="h-4 w-4" />
 								<span className="hidden sm:inline">Nueva pestaña</span>
@@ -548,6 +564,69 @@ const VerResultadosModal = ({
 						className="flex-1 w-full border-0"
 						allow="fullscreen *"
 					/>
+				</div>
+			)}
+
+			{/* ── Overlay Carrusel de Imágenes ─────────────────────────────────────── */}
+			{previewImageIndex !== null && imageFiles.length > 0 && (
+				<div className="fixed inset-0 z-[70] flex flex-col bg-black/50 backdrop-blur-md transition-opacity">
+					<div className="flex items-center justify-between p-4 shrink-0">
+						<div className="text-white min-w-0">
+							<p className="text-sm font-medium opacity-70">
+								Imagen {previewImageIndex + 1} de {imageFiles.length}
+							</p>
+						</div>
+						<div className="flex items-center gap-3">
+							<button
+								onClick={() => handleDownloadFile(imageFiles[previewImageIndex], previewImageIndex)}
+								className="rounded-full p-2 bg-white/10 text-white hover:bg-white/20 transition-colors"
+								title="Descargar imagen"
+							>
+								<Download className="h-5 w-5" />
+							</button>
+							<button
+								onClick={() => setPreviewImageIndex(null)}
+								className="rounded-full p-2 bg-white/10 text-white hover:bg-white/20 transition-colors"
+								title="Cerrar vista previa"
+							>
+								<X className="h-6 w-6" />
+							</button>
+						</div>
+					</div>
+
+					<div className="flex-1 overflow-hidden relative flex items-center justify-center p-4">
+						<img
+							src={normalizeUrl(imageFiles[previewImageIndex])}
+							alt={`Vista previa ${previewImageIndex + 1}`}
+							className="max-w-full max-h-full object-contain"
+						/>
+						
+						{imageFiles.length > 1 && (
+							<button
+								onClick={(e) => {
+									e.stopPropagation();
+									setPreviewImageIndex(prev => prev! > 0 ? prev! - 1 : imageFiles.length - 1);
+								}}
+								className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all backdrop-blur-sm"
+								aria-label="Imagen anterior"
+							>
+								<ChevronLeft className="h-8 w-8" />
+							</button>
+						)}
+
+						{imageFiles.length > 1 && (
+							<button
+								onClick={(e) => {
+									e.stopPropagation();
+									setPreviewImageIndex(prev => prev! < imageFiles.length - 1 ? prev! + 1 : 0);
+								}}
+								className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all backdrop-blur-sm"
+								aria-label="Siguiente imagen"
+							>
+								<ChevronRight className="h-8 w-8" />
+							</button>
+						)}
+					</div>
 				</div>
 			)}
 		</>

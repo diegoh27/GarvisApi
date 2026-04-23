@@ -88,9 +88,9 @@ export default function MovimientosTable({
       key: "id",
       header: "ID",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (_row: FacturacionMovimiento, index: number) =>
         String(startIndex + index + 1).padStart(3, "0"),
     },
@@ -98,33 +98,33 @@ export default function MovimientosTable({
       key: "fecha",
       header: "Fecha",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: FacturacionMovimiento) => formatDate(row.fecha),
     },
     {
       key: "codigo_item",
       header: "Código",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-mono",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 font-mono",
       render: (row: FacturacionMovimiento) => buildItemCode(row),
     },
     {
       key: "tipo",
       header: "Tipo",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
-      cellClassName: "px-3 md:px-6 py-4 text-xs md:text-sm",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
+      cellClassName: "px-3 md:px-6 py-4 text-base md:text-base",
       render: (row: FacturacionMovimiento) =>
         row.tipo === "Ingreso" ? (
-          <span className="text-xs font-medium text-emerald-600">
+          <span className="text-base font-medium text-emerald-600">
             Ingreso
           </span>
         ) : (
-          <span className="text-xs font-medium text-red-600">
+          <span className="text-base font-medium text-red-600">
             Egreso
           </span>
         ),
@@ -133,9 +133,9 @@ export default function MovimientosTable({
       key: "monto_total_dol",
       header: "Monto $",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right font-semibold",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right font-semibold",
       render: (row: FacturacionMovimiento) => (
         <span
           className={
@@ -150,9 +150,9 @@ export default function MovimientosTable({
       key: "monto_total_bs",
       header: "Monto Bs",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right font-semibold text-slate-700",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right font-semibold text-slate-700",
       render: (row: FacturacionMovimiento) => (
         <span>{formatBs(row.monto_total_bs || row.monto_bs || 0)}</span>
       ),
@@ -161,9 +161,9 @@ export default function MovimientosTable({
       key: "tasa_dia",
       header: "Tasa día",
       headerClassName:
-        "px-3 md:px-6 py-3 text-right text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-right text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-right text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-right text-gray-900",
       render: (row: FacturacionMovimiento) =>
         Number(row.tasa_dia || row.tasa_dia_bcv || 0).toLocaleString("es-VE", {
           minimumFractionDigits: 2,
@@ -174,27 +174,27 @@ export default function MovimientosTable({
       key: "origen",
       header: "Origen",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: FacturacionMovimiento) => origenLabelMap[row.origen_modulo] || row.origen_modulo,
     },
     {
       key: "descripcion",
       header: "Descripción",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 max-w-[300px]",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900 max-w-[300px]",
       render: (row: FacturacionMovimiento) => buildDetailedDescription(row),
     },
     {
       key: "referencia",
       header: "Referencia",
       headerClassName:
-        "px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-700",
+        "px-3 md:px-6 py-3 text-left text-base md:text-base font-medium text-gray-700",
       cellClassName:
-        "px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900",
+        "px-3 md:px-6 py-4 text-base md:text-base text-gray-900",
       render: (row: FacturacionMovimiento) => row.referencia || "-",
     },
     ...(onEliminar
@@ -203,7 +203,7 @@ export default function MovimientosTable({
             key: "actions",
             header: "Acciones",
             headerClassName:
-              "px-3 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-700",
+              "px-3 md:px-6 py-3 text-center text-base md:text-base font-medium text-gray-700",
             cellClassName: "px-3 md:px-6 py-4 text-center",
             render: (row: FacturacionMovimiento) => (
               <button
@@ -262,7 +262,7 @@ export default function MovimientosTable({
         {movimientos.length > 0 && (
           <button
             onClick={handleDownloadReport}
-            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
+            className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-base font-medium text-white shadow-sm transition-colors hover:bg-teal-700"
           >
             <FileDown size={18} />
             Descargar Reporte

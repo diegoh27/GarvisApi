@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, Building2, TrendingUp, Package, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Plus, Search, Building2, TrendingUp, Package, ChevronLeft, ChevronRight, Trash2, PackagePlus } from "lucide-react";
 import Swal from "sweetalert2";
 import { useGetProveedoresQuery, useUpdateProveedorMutation, useDeleteProveedorMutation } from "../api";
 import type { Proveedor } from "../api";
 import CrearProveedorModal from "../components/CrearProveedorModal";
+import CatalogoProveedorModal from "../components/CatalogoProveedorModal";
 
 /* ── Componente ────────────────────────────────────── */
 export default function ProveedoresPage() {
@@ -13,6 +14,7 @@ export default function ProveedoresPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [showCrearModal, setShowCrearModal] = useState(false);
+	const [catalogoProveedorActivo, setCatalogoProveedorActivo] = useState<Proveedor | null>(null);
 	const itemsPerPage = 10;
 
 	/* ── Filtrado y paginación ── */
@@ -114,7 +116,7 @@ export default function ProveedoresPage() {
 					<h1 className="text-2xl md:text-3xl font-bold text-gray-900">
 						Directorio de Proveedores
 					</h1>
-					<p className="text-gray-500 mt-1 text-sm">
+					<p className="text-gray-500 mt-1 text-base">
 						Gestión centralizada de socios estratégicos y logística de suministros
 						críticos para la red hospitalaria Garvis.
 					</p>
@@ -135,7 +137,7 @@ export default function ProveedoresPage() {
 						<Building2 className="h-5 w-5 text-teal-600" />
 					</div>
 					<div>
-						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Proveedores Activos</p>
+						<p className="text-base font-semibold text-gray-500 uppercase tracking-wider">Proveedores Activos</p>
 						<p className="text-2xl font-bold text-gray-900">{activos}</p>
 					</div>
 				</div>
@@ -144,7 +146,7 @@ export default function ProveedoresPage() {
 						<TrendingUp className="h-5 w-5 text-amber-600" />
 					</div>
 					<div>
-						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Registrados</p>
+						<p className="text-base font-semibold text-gray-500 uppercase tracking-wider">Total Registrados</p>
 						<p className="text-2xl font-bold text-gray-900">{proveedores.length}</p>
 					</div>
 				</div>
@@ -153,7 +155,7 @@ export default function ProveedoresPage() {
 						<Package className="h-5 w-5 text-blue-600" />
 					</div>
 					<div>
-						<p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Inactivos</p>
+						<p className="text-base font-semibold text-gray-500 uppercase tracking-wider">Inactivos</p>
 						<p className="text-2xl font-bold text-gray-900">{proveedores.length - activos}</p>
 					</div>
 				</div>
@@ -172,7 +174,7 @@ export default function ProveedoresPage() {
 								setSearchQuery(e.target.value);
 								setCurrentPage(1);
 							}}
-							className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+							className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
 						/>
 					</div>
 				</div>
@@ -181,14 +183,14 @@ export default function ProveedoresPage() {
 			{/* ── Tabla ── */}
 			<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 				<div className="overflow-x-auto">
-					<table className="w-full text-sm">
+					<table className="w-full text-base">
 						<thead>
 							<tr className="bg-gray-50 border-b border-gray-200">
-								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Razón Social</th>
-								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">RIF / ID Fiscal</th>
-								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Teléfono</th>
-								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Estado</th>
-								<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider">Acciones</th>
+								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Razón Social</th>
+								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">RIF / ID Fiscal</th>
+								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Teléfono</th>
+								<th className="text-left px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Estado</th>
+								<th className="text-right px-6 py-3 font-semibold text-gray-500 uppercase text-base tracking-wider">Acciones</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-gray-100">
@@ -203,12 +205,12 @@ export default function ProveedoresPage() {
 								<tr key={prov.id_proveedor} className="hover:bg-gray-50 transition-colors">
 									<td className="px-6 py-4">
 										<div className="flex items-center gap-3">
-											<span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold ${initialsColors[idx % initialsColors.length]}`}>
+											<span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-base font-bold ${initialsColors[idx % initialsColors.length]}`}>
 												{getInitials(prov.nombre)}
 											</span>
 											<div>
 												<p className="font-semibold text-gray-900">{prov.nombre}</p>
-												<p className="text-xs text-gray-500">{prov.contacto_nombre || "Sin contacto"}</p>
+												<p className="text-base text-gray-500">{prov.contacto_nombre || "Sin contacto"}</p>
 											</div>
 										</div>
 									</td>
@@ -217,13 +219,20 @@ export default function ProveedoresPage() {
 									<td className="px-6 py-4">
 										<button
 											onClick={() => handleToggleActivo(prov)}
-											className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer ${prov.activo ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+											className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-base font-medium cursor-pointer ${prov.activo ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
 										>
 											{prov.activo ? "Activo" : "Inactivo"}
 										</button>
 									</td>
 									<td className="px-6 py-4 text-right">
 										<div className="flex justify-end gap-2">
+											<button
+												onClick={() => setCatalogoProveedorActivo(prov)}
+												className="text-teal-600 hover:text-teal-800 p-1.5 rounded hover:bg-teal-50 transition-colors"
+												title="Ver/Agregar Productos (Catálogo)"
+											>
+												<PackagePlus className="h-4 w-4" />
+											</button>
 											<button
 												onClick={() => handleEliminar(prov)}
 												className="text-red-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors"
@@ -241,7 +250,7 @@ export default function ProveedoresPage() {
 
 				{/* ── Paginación ── */}
 				{filteredProveedores.length > 0 && (
-					<div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-500">
+					<div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 text-base text-gray-500">
 						<span>Mostrando {currentProveedores.length} de {filteredProveedores.length} proveedores</span>
 						<div className="flex items-center gap-1">
 							<button
@@ -275,6 +284,12 @@ export default function ProveedoresPage() {
 			<CrearProveedorModal
 				isOpen={showCrearModal}
 				onClose={() => setShowCrearModal(false)}
+			/>
+
+			<CatalogoProveedorModal
+				isOpen={!!catalogoProveedorActivo}
+				onClose={() => setCatalogoProveedorActivo(null)}
+				proveedor={catalogoProveedorActivo}
 			/>
 		</div>
 	);

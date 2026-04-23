@@ -21,19 +21,19 @@ const ContactoModal = ({ contactoPaciente, onClose }: ContactoModalProps) => (
 					<h3 className="text-base font-semibold text-brand-900">
 						Contacto de {contactoPaciente.name}
 					</h3>
-					<p className="text-xs text-brand-800">
+					<p className="text-sm text-brand-800">
 						Información clínica y de emergencia.
 					</p>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
-					className="rounded-full border border-mist px-3 py-1 text-xs text-brand-800"
+					className="rounded-full border border-mist px-3 py-1 text-sm text-brand-800"
 				>
 					Cerrar
 				</button>
 			</div>
-			<div className="space-y-3 p-6 text-xs text-brand-800">
+			<div className="space-y-3 p-6 text-sm text-brand-800">
 				<div className="rounded-xl bg-cloud p-3">
 					<p className="font-semibold text-brand-900">Teléfono</p>
 					<p>{contactoPaciente.telefono || "No disponible"}</p>

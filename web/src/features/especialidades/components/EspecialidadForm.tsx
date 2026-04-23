@@ -81,7 +81,7 @@ const EspecialidadForm = ({
 		<form className="space-y-5" onSubmit={onSubmit}>
 			{error && (
 				<div
-					className="rounded-2xl border border-red-100 bg-red-50/90 px-4 py-3 text-sm text-red-800"
+					className="rounded-2xl border border-red-100 bg-red-50/90 px-4 py-3 text-base text-red-800"
 					role="alert"
 				>
 					{error}
@@ -91,7 +91,7 @@ const EspecialidadForm = ({
 			<div>
 				<label
 					htmlFor="especialidad-nombre"
-					className="mb-2 block text-sm font-semibold text-brand-900"
+					className="mb-2 block text-base font-semibold text-brand-900"
 				>
 					Nombre <span className="text-red-500">*</span>
 				</label>
@@ -105,13 +105,13 @@ const EspecialidadForm = ({
 						required
 						autoComplete="off"
 						autoFocus
-						className="h-12 w-full rounded-2xl border border-brand-200 bg-cloud/50 pl-11 pr-4 text-sm text-brand-900 outline-none ring-brand-800/0 transition placeholder:text-brand-700/50 focus:border-brand-400 focus:bg-paper focus:ring-4 focus:ring-brand-500/20"
+						className="h-12 w-full rounded-2xl border border-brand-200 bg-cloud/50 pl-11 pr-4 text-base text-brand-900 outline-none ring-brand-800/0 transition placeholder:text-brand-700/50 focus:border-brand-400 focus:bg-paper focus:ring-4 focus:ring-brand-500/20"
 						value={nombre}
 						onChange={(e) => setNombre(e.target.value)}
 						placeholder="Ej: Cardiología, Neurología…"
 					/>
 				</div>
-				<p className="mt-2 text-xs text-brand-700/85">
+				<p className="mt-2 text-sm text-brand-700/85">
 					Así aparecerá en fichas de especialistas y en los listados del sistema.
 				</p>
 			</div>
@@ -120,14 +120,14 @@ const EspecialidadForm = ({
 				<button
 					type="button"
 					onClick={onCancel}
-					className="inline-flex h-11 items-center justify-center rounded-2xl border border-brand-200 bg-paper px-5 text-sm font-semibold text-brand-800 transition hover:bg-cloud"
+					className="inline-flex h-11 items-center justify-center rounded-2xl border border-brand-200 bg-paper px-5 text-base font-semibold text-brand-800 transition hover:bg-cloud"
 				>
 					Cancelar
 				</button>
 				<button
 					type="submit"
 					disabled={isLoading}
-					className="inline-flex h-11 min-w-[160px] items-center justify-center rounded-2xl bg-brand-800 px-6 text-sm font-bold text-paper shadow-lg shadow-brand-900/20 transition hover:bg-brand-900 disabled:opacity-50"
+					className="inline-flex h-11 min-w-[160px] items-center justify-center rounded-2xl bg-brand-800 px-6 text-base font-bold text-paper shadow-lg shadow-brand-900/20 transition hover:bg-brand-900 disabled:opacity-50"
 				>
 					{isLoading
 						? isEditing

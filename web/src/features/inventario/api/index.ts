@@ -8,3 +8,4 @@ export * from "./alquilerApi";
 export * from "./especialistasApi";
 export * from "./facturacionApi";
 export * from "./kardexApi";
+export * from "./ordenesCompraApi";

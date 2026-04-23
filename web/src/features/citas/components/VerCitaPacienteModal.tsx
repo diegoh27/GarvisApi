@@ -160,7 +160,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 
 	if (!cita) {
 		return (
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+			<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
 				<div className="rounded-2xl bg-paper p-6 shadow-lg">
 					<p className="text-brand-800">Cargando...</p>
 				</div>
@@ -172,8 +172,8 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 
 	return (
 		<>
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-				<div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-paper shadow-lg">
+			<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 sm:p-6">
+				<div className="relative w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] overflow-y-auto rounded-2xl bg-paper shadow-2xl">
 					<div className="sticky top-0 z-10 flex items-center justify-between border-b border-mist bg-paper p-4">
 						<h2 className="text-lg font-semibold text-brand-900">Detalles de la cita</h2>
 						<button
@@ -188,20 +188,20 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 					<div className="p-6 space-y-6">
 						{/* Info básica */}
 						<div>
-							<h3 className="mb-3 text-sm font-semibold text-brand-900">Información de la cita</h3>
+							<h3 className="mb-3 text-base font-semibold text-brand-900">Información de la cita</h3>
 							<div className="grid gap-4 sm:grid-cols-2">
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Fecha</p>
-									<p className="mt-1 text-sm text-brand-900">{formatFechaLocal(cita.fecha_cita)}</p>
+									<p className="text-sm font-semibold text-brand-700">Fecha</p>
+									<p className="mt-1 text-base text-brand-900">{formatFechaLocal(cita.fecha_cita)}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Hora</p>
-									<p className="mt-1 text-sm text-brand-900">{formatHora(cita.hora_cita)}</p>
+									<p className="text-sm font-semibold text-brand-700">Hora</p>
+									<p className="mt-1 text-base text-brand-900">{formatHora(cita.hora_cita)}</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Estado de la cita</p>
+									<p className="text-sm font-semibold text-brand-700">Estado de la cita</p>
 									<span
-										className={`inline-flex rounded-full px-2 py-1 text-xs ${cita.estado_cita === 0
+										className={`inline-flex rounded-full px-2 py-1 text-sm ${cita.estado_cita === 0
 											? "bg-amber-400 text-brand-900"
 											: cita.estado_cita === 1
 												? "bg-brand-700 text-paper"
@@ -214,9 +214,9 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									</span>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Estado del pago</p>
+									<p className="text-sm font-semibold text-brand-700">Estado del pago</p>
 									<span
-										className={`inline-flex rounded-full px-2 py-1 text-xs ${estadoPago === 0
+										className={`inline-flex rounded-full px-2 py-1 text-sm ${estadoPago === 0
 											? "bg-amber-400 text-brand-900"
 											: estadoPago === 1
 												? "bg-emerald-600 text-paper"
@@ -227,20 +227,20 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									</span>
 								</div>
 								<div className="sm:col-span-2">
-									<p className="text-xs font-semibold text-brand-700">Especialista</p>
-									<p className="mt-1 text-sm text-brand-900">
+									<p className="text-sm font-semibold text-brand-700">Especialista</p>
+									<p className="mt-1 text-base text-brand-900">
 										{cita.especialista_nombre} {cita.especialista_apellido}
 									</p>
 								</div>
 								<div>
-									<p className="text-xs font-semibold text-brand-700">Estudio / Eco</p>
-									<p className="mt-1 text-sm text-brand-900">{cita.eco_nombre}</p>
+									<p className="text-sm font-semibold text-brand-700">Estudio / Eco</p>
+									<p className="mt-1 text-base text-brand-900">{cita.eco_nombre}</p>
 								</div>
 								<div className="sm:col-span-2">
-									<p className="text-xs font-semibold text-brand-700">Representado</p>
+									<p className="text-sm font-semibold text-brand-700">Representado</p>
 									{cita.id_representado &&
 										(cita.representado_nombre ?? cita.representado_apellido) ? (
-										<div className="mt-1 rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-sm text-brand-900 space-y-1">
+										<div className="mt-1 rounded-lg border border-brand-200 bg-brand-50/50 p-3 text-base text-brand-900 space-y-1">
 											<p>
 												<strong>Nombre:</strong>{" "}
 												{[cita.representado_nombre, cita.representado_apellido]
@@ -270,7 +270,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 											)}
 										</div>
 									) : (
-										<p className="mt-1 text-sm text-brand-600">Representado: NO</p>
+										<p className="mt-1 text-base text-brand-600">Representado: NO</p>
 									)}
 								</div>
 							</div>
@@ -282,16 +282,16 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 								<div className="flex items-start gap-3">
 									<AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
 									<div className="flex-1">
-										<h4 className="text-sm font-semibold text-red-900 mb-1">
+										<h4 className="text-base font-semibold text-red-900 mb-1">
 											Pago rechazado
 										</h4>
-										<p className="text-xs text-red-700 mb-3">
+										<p className="text-sm text-red-700 mb-3">
 											Tu comprobante de pago fue rechazado. Por favor, corrige la información y vuelve a enviarlo.
 										</p>
 										<button
 											type="button"
 											onClick={handleCorregirPago}
-											className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
+											className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
 										>
 											<Edit className="h-4 w-4" />
 											Corregir pago
@@ -304,7 +304,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 						{/* Formulario de corrección de pago */}
 						{isEditingPago && (
 							<div className="rounded-lg border border-brand-200 bg-brand-50/50 p-4">
-								<h4 className="text-sm font-semibold text-brand-900 mb-3">
+								<h4 className="text-base font-semibold text-brand-900 mb-3">
 									Corregir comprobante de pago
 								</h4>
 								<FormularioPago
@@ -320,7 +320,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 										type="button"
 										onClick={handleCancelarEdicion}
 										disabled={isUpdatingPago}
-										className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+										className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										Cancelar
 									</button>
@@ -328,7 +328,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 										type="button"
 										onClick={handleSubmitCorreccion}
 										disabled={isUpdatingPago || !pagoFormData.imagen}
-										className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+										className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-white hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
 									>
 										{isUpdatingPago ? "Actualizando..." : "Guardar corrección"}
 									</button>
@@ -338,19 +338,19 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 
 						{/* Documentos: pago, orden médica, informe médico y resultados (igual que admin/moderador) */}
 						<div>
-							<h3 className="mb-3 text-sm font-semibold text-brand-900">Documentos</h3>
+							<h3 className="mb-3 text-base font-semibold text-brand-900">Documentos</h3>
 							<div className="flex flex-wrap gap-3">
 								{cita.id_pago ? (
 									<button
 										type="button"
 										onClick={() => setShowVerPago(true)}
-										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 									>
 										<Banknote className="h-4 w-4" />
 										Ver pago
 									</button>
 								) : (
-									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 										<Banknote className="h-4 w-4" />
 										Pago no disponible
 									</span>
@@ -362,13 +362,13 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 											const url = isLikelyUrl(cita.orden!) ? cita.orden! : cita.orden!.startsWith("http") ? cita.orden! : `https://${cita.orden!}`;
 											window.open(url, "_blank", "noopener,noreferrer");
 										}}
-										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 									>
 										<FileCheck className="h-4 w-4" />
 										Ver orden médica
 									</button>
 								) : (
-									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 										<FileCheck className="h-4 w-4" />
 										Orden médica no disponible
 									</span>
@@ -377,13 +377,13 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									<button
 										type="button"
 										onClick={() => openPdf(cita.informe_pdf_url!, "Informe médico")}
-										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 									>
 										<FileText className="h-4 w-4" />
 										Ver informe médico
 									</button>
 								) : (
-									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 										<FileText className="h-4 w-4" />
 										Informe no disponible
 									</span>
@@ -396,13 +396,13 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 									<button
 										type="button"
 										onClick={() => setShowResultados(true)}
-										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-800 hover:bg-brand-100"
+										className="inline-flex items-center gap-2 rounded-lg border border-brand-600 bg-brand-50 px-4 py-2 text-base font-medium text-brand-800 hover:bg-brand-100"
 									>
 										<Images className="h-4 w-4" />
 										{total === 1 ? "Ver resultado" : `Ver ${total} resultados`}
 									</button>
 								) : (
-									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-sm text-brand-600">
+									<span className="inline-flex items-center gap-2 rounded-lg border border-mist bg-cloud px-4 py-2 text-base text-brand-600">
 										<Images className="h-4 w-4" />
 										Resultados no disponibles
 									</span>
@@ -415,7 +415,7 @@ const VerCitaPacienteModal = ({ cita, onClose }: VerCitaPacienteModalProps) => {
 					<div className="sticky bottom-0 border-t border-mist bg-paper p-4 flex justify-end">
 						<button
 							onClick={onClose}
-							className="rounded-lg bg-brand-700 px-4 py-2 text-sm font-medium text-paper hover:bg-brand-800"
+							className="rounded-lg bg-brand-700 px-4 py-2 text-base font-medium text-paper hover:bg-brand-800"
 						>
 							Cerrar
 						</button>

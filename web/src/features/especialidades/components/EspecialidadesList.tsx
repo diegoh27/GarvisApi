@@ -129,7 +129,7 @@ const EspecialidadesList = () => {
 					<h1 className="font-headline text-3xl font-extrabold tracking-tight text-brand-900 sm:text-4xl">
 						Especialidades
 					</h1>
-					<p className="mt-3 max-w-xl text-sm leading-relaxed text-brand-800/90">
+					<p className="mt-3 max-w-xl text-base leading-relaxed text-brand-800/90">
 						Administra el catálogo clínico del sistema. Define las áreas disponibles
 						para el registro de especialistas y la coordinación operativa.
 					</p>
@@ -137,7 +137,7 @@ const EspecialidadesList = () => {
 				<button
 					type="button"
 					onClick={handleNew}
-					className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-brand-800 px-6 py-3 text-sm font-bold text-paper shadow-lg shadow-brand-900/20 transition hover:bg-brand-900 active:scale-[0.98]"
+					className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-brand-800 px-6 py-3 text-base font-bold text-paper shadow-lg shadow-brand-900/20 transition hover:bg-brand-900 active:scale-[0.98]"
 				>
 					<Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden />
 					Nueva especialidad
@@ -164,7 +164,7 @@ const EspecialidadesList = () => {
 						Catálogo activo
 					</p>
 					<div className="flex items-center justify-between gap-4">
-						<span className="text-sm font-semibold leading-snug text-brand-800">
+						<span className="text-base font-semibold leading-snug text-brand-800">
 							{isLoading
 								? "Cargando…"
 								: total === 0
@@ -179,7 +179,7 @@ const EspecialidadesList = () => {
 			</div>
 
 			{isLoading ? (
-				<div className="rounded-3xl border border-brand-200/50 bg-paper py-20 text-center text-sm font-medium text-brand-700 shadow-sm">
+				<div className="rounded-3xl border border-brand-200/50 bg-paper py-20 text-center text-base font-medium text-brand-700 shadow-sm">
 					Cargando especialidades…
 				</div>
 			) : especialidades.length === 0 ? (
@@ -191,7 +191,7 @@ const EspecialidadesList = () => {
 					<button
 						type="button"
 						onClick={handleNew}
-						className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-800 px-5 py-2.5 text-sm font-semibold text-paper shadow-md shadow-brand-900/15 transition hover:bg-brand-900"
+						className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-800 px-5 py-2.5 text-base font-semibold text-paper shadow-md shadow-brand-900/15 transition hover:bg-brand-900"
 					>
 						<Plus className="h-4 w-4" aria-hidden />
 						Crear la primera especialidad
@@ -218,7 +218,7 @@ const EspecialidadesList = () => {
 									<h3 className="mb-1 text-xl font-bold text-brand-900">
 										{esp.nombre}
 									</h3>
-									<p className="mb-4 text-xs text-brand-700/85">
+									<p className="mb-4 text-sm text-brand-700/85">
 										Especialidad médica · catálogo Garvis
 									</p>
 									<div className="flex flex-wrap items-center gap-2">
@@ -265,7 +265,7 @@ const EspecialidadesList = () => {
 						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-cloud text-brand-500 transition group-hover:bg-brand-200/60 group-hover:text-brand-800">
 							<Plus className="h-9 w-9" strokeWidth={2} aria-hidden />
 						</div>
-						<p className="text-sm font-bold text-brand-600 transition group-hover:text-brand-900">
+						<p className="text-base font-bold text-brand-600 transition group-hover:text-brand-900">
 							Añadir especialidad
 						</p>
 					</button>
@@ -301,7 +301,7 @@ const EspecialidadesList = () => {
 										? "Editar especialidad"
 										: "Nueva especialidad"}
 								</h2>
-								<p className="mt-1 text-sm leading-relaxed text-brand-800/90">
+								<p className="mt-1 text-base leading-relaxed text-brand-800/90">
 									{editingEspecialidad
 										? "Actualiza el nombre que verán especialistas y administradores."
 										: "Añade un área clínica al catálogo para asignarla a especialistas."}

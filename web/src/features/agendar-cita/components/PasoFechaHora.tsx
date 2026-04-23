@@ -259,7 +259,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 				<h2 className="font-headline text-3xl lg:text-4xl font-extrabold text-brand-900 tracking-tight mb-2">
 					Selecciona la Fecha y Hora
 				</h2>
-				<p className="text-brand-600 text-sm lg:text-base max-w-xl leading-relaxed">
+				<p className="text-brand-600 text-base lg:text-base max-w-xl leading-relaxed">
 					Elija la hora adecuada para realizarte el {" "}
 					<span className="font-semibold text-brand-800">{ecoNombre}</span>.
 				</p>
@@ -352,7 +352,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 							>
 								<div className="flex items-center gap-3 mb-5">
 									<PeriodIcon type={group.icon} />
-									<h4 className="text-xs font-black font-headline uppercase tracking-widest text-slate-500">
+									<h4 className="text-sm font-black font-headline uppercase tracking-widest text-slate-500">
 										{group.label}
 									</h4>
 									<span className="ml-auto text-[10px] font-bold text-brand-600 bg-brand-100 px-2 py-0.5 rounded-full">
@@ -367,7 +367,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 												key={slot.startMin}
 												type="button"
 												onClick={() => handleSelectSlot(slot)}
-												className={`py-3 px-3 rounded-xl text-sm font-semibold text-center transition-all duration-200 ${isActive
+												className={`py-3 px-3 rounded-xl text-base font-semibold text-center transition-all duration-200 ${isActive
 													? "bg-brand-800 text-white shadow-lg shadow-brand-800/20"
 													: "bg-white/80 hover:bg-brand-800 hover:text-white border border-brand-200/20 text-brand-900"
 													}`}
@@ -386,7 +386,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 						<p className="text-lg font-bold text-brand-900 font-headline mb-2">
 							No hay horarios disponibles
 						</p>
-						<p className="text-sm text-brand-600 max-w-sm mx-auto">
+						<p className="text-base text-brand-600 max-w-sm mx-auto">
 							No hay turnos para esta ecografía en el día seleccionado.
 							Prueba con otra fecha.
 						</p>
@@ -401,12 +401,12 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 						<Info className="h-5 w-5 text-brand-600" />
 					</div>
 					<div>
-						<p className="text-sm font-medium text-brand-900">
+						<p className="text-base font-medium text-brand-900">
 							Turno seleccionado:{" "}
 							<span className="font-bold">{selectedSlot.label}</span> — Duración:{" "}
 							<span className="font-bold text-brand-800">20 minutos</span>
 						</p>
-						<p className="text-xs text-brand-600 mt-1">
+						<p className="text-sm text-brand-600 mt-1">
 							Especialista: Dr./Dra. {selectedSlot.especialistaNombre}
 						</p>
 					</div>
@@ -418,7 +418,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 				<button
 					type="button"
 					onClick={onBack}
-					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-sm"
+					className="flex items-center gap-2 text-slate-400 font-bold hover:text-brand-900 transition-colors px-6 py-3 rounded-xl text-base"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					<span className="font-headline tracking-tight">Volver</span>
@@ -427,7 +427,7 @@ const PasoFechaHora = ({ idEco, ecoNombre, fechaInicial, onNext, onBack }: PasoF
 					type="button"
 					onClick={handleContinue}
 					disabled={!canContinue}
-					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm"
+					className="bg-gradient-to-br from-brand-900 to-brand-800 text-white px-10 py-4 rounded-2xl font-headline font-extrabold tracking-tight shadow-xl shadow-brand-800/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 text-base"
 				>
 					Continuar
 					<ArrowRight className="h-4 w-4" />

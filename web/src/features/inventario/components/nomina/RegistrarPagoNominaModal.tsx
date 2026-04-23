@@ -174,13 +174,13 @@ export default function RegistrarPagoNominaModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-sm">
+            <div className="px-4 py-2 rounded-lg bg-red-50 text-red-700 text-base">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Empleado
             </label>
             <input
@@ -192,7 +192,7 @@ export default function RegistrarPagoNominaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Pago *
             </label>
             <input
@@ -205,7 +205,7 @@ export default function RegistrarPagoNominaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha Proxima *
             </label>
             <input
@@ -218,7 +218,7 @@ export default function RegistrarPagoNominaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Monto ($) *
             </label>
             <input
@@ -235,7 +235,7 @@ export default function RegistrarPagoNominaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Método de Pago *
             </label>
             <select
@@ -253,7 +253,7 @@ export default function RegistrarPagoNominaModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Referencia
             </label>
             <input

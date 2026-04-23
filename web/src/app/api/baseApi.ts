@@ -97,6 +97,8 @@ const baseApi = createApi({
 		"HistorialAjustes",
 		// Inventario - Proveedores
 		"Proveedores",
+		"ProveedorCatalogo",
+		"OrdenesCompra",
 		"NotasCompra",
 		"EcoInsumos",
 		"Kardex",
@@ -125,6 +127,8 @@ const baseApi = createApi({
 		"PermisosMenuModerador",
 		// Auditoría de eventos
 		"Auditoria",
+		// Pagos Guardados del Paciente
+		"PagosGuardados",
 	],
 	endpoints: () => ({}),
 });

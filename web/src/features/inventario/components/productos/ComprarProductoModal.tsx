@@ -139,7 +139,7 @@ export default function ComprarProductoModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-4">
           {/* Fecha Ingreso */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Fecha de Ingreso *
             </label>
             <input
@@ -158,7 +158,7 @@ export default function ComprarProductoModal({
 
           {/* Cantidad */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Cantidad *
             </label>
             <input
@@ -177,7 +177,7 @@ export default function ComprarProductoModal({
 
           {/* Precio Unitario */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Precio Unitario ($) * (mín. 0,01)
             </label>
             <input
@@ -200,7 +200,7 @@ export default function ComprarProductoModal({
 
           {/* Precio Total (solo calculado) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Precio Total ($)
             </label>
             <input
@@ -212,14 +212,14 @@ export default function ComprarProductoModal({
               tabIndex={-1}
               aria-label="Precio total (calculado)"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-base text-gray-500 mt-1">
               Calculado automáticamente (cantidad × precio unitario)
             </p>
           </div>
 
           {/* Proveedor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Proveedor
             </label>
             <input
@@ -236,7 +236,7 @@ export default function ComprarProductoModal({
 
           {/* Referencia */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Referencia
             </label>
             <input
@@ -253,14 +253,14 @@ export default function ComprarProductoModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-base">
               {error}
             </div>
           )}
 
           {/* Success */}
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
+            <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-base">
               {success}
             </div>
           )}
