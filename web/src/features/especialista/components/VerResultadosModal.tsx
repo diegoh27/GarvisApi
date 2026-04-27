@@ -330,7 +330,7 @@ const VerResultadosModal = ({
 
 	return (
 		<>
-			<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+			<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-3 sm:p-4">
 				<div className="relative flex flex-col w-full max-w-xl max-h-[90vh] rounded-2xl bg-paper shadow-xl overflow-hidden">
 					{/* Header */}
 					<div className="flex items-center justify-between border-b border-mist px-5 py-4 shrink-0">
@@ -529,7 +529,7 @@ const VerResultadosModal = ({
 
 			{/* ── Overlay visor OHIF ─────────────────────────────────────── */}
 			{showOhifViewer && ohifViewerUrl && (
-				<div className="fixed inset-0 z-[60] flex flex-col bg-black">
+				<div className="fixed inset-0 z-[80] flex flex-col bg-black">
 					<div className="flex items-center justify-between bg-gray-900 px-4 py-3 shrink-0">
 						<div className="flex items-center gap-2 text-white min-w-0">
 							<Stethoscope className="h-4 w-4 text-purple-400 shrink-0" />
@@ -569,7 +569,7 @@ const VerResultadosModal = ({
 
 			{/* ── Overlay Carrusel de Imágenes ─────────────────────────────────────── */}
 			{previewImageIndex !== null && imageFiles.length > 0 && (
-				<div className="fixed inset-0 z-[70] flex flex-col bg-black/50 backdrop-blur-md transition-opacity">
+				<div className="fixed inset-0 z-[90] flex flex-col bg-black/50 backdrop-blur-md transition-opacity">
 					<div className="flex items-center justify-between p-4 shrink-0">
 						<div className="text-white min-w-0">
 							<p className="text-sm font-medium opacity-70">
