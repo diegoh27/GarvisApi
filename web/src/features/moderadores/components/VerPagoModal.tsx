@@ -108,7 +108,7 @@ const VerPagoModal = ({
 		setIsDragging(false);
 	};
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+		<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
 			<div className="relative w-full max-w-lg rounded-xl bg-paper shadow-lg flex flex-col max-h-[85vh]">
 				{/* Header */}
 				<div className="flex items-center justify-between border-b border-mist p-3 flex-shrink-0">
@@ -477,7 +477,7 @@ const VerPagoModal = ({
 				</div>
 			</div>
 			{isPreviewOpen && pago?.imagen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+				<div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4">
 					<div className="relative w-full max-w-5xl">
 						<button
 							type="button"

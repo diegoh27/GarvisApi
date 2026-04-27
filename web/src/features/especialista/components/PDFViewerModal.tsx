@@ -74,7 +74,7 @@ const PDFViewerModal = ({ pdfUrl, onClose, fileName }: PDFViewerModalProps) => {
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+		<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
 			<div className="flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-paper shadow-xl">
 				<div className="flex-shrink-0 border-b border-mist bg-paper p-4">
 					<div className="flex items-center justify-between">
