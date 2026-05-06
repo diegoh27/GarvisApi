@@ -26,6 +26,7 @@ import { parseCedulaDisplay } from "../../../shared/utils/cedulaDisplay";
 import { parseTelefonoDisplay } from "../../../shared/utils/telefonoDisplay";
 import { validarRangoCedula, MENSAJE_RANGO_CEDULA } from "../../../shared/utils/validation";
 import { useGetPagosGuardadosQuery, useDeletePagoGuardadoMutation, type PagoGuardado } from "../../citas/citasApi";
+import { normalizeImageUrl } from "../../../shared/utils/imageUrl";
 
 type PasoCheckoutProps = {
 	idEco: string;
@@ -393,7 +394,7 @@ const PasoCheckout = ({
 	const displayIdentificacion = selectedMetodo?.titular_identificacion || "—";
 	const displayTelefono = selectedMetodo?.telefono || "—";
 	const displayCuenta = selectedMetodo?.numero_cuenta || null;
-	const displayQrUrl = selectedMetodo?.imagen_url || null;
+	const displayQrUrl = normalizeImageUrl(selectedMetodo?.imagen_url) || null;
 
 	/* ─── SUCCESS STATE ─── */
 	if (success) {
