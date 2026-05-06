@@ -116,6 +116,7 @@ export type EspecialistaData = {
 	id_especialista: string;
 	nombre: string;
 	apellido: string;
+	activo: number;
 	id_especialidad: string;
 	especialidad: string;
 };

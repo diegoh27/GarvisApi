@@ -796,10 +796,12 @@ const DisponibilidadPendientesPage = () => {
 									className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-base"
 								>
 									<option value="">Seleccione…</option>
-									{especialistasLista.map((e) => (
-										<option key={e.id_especialista} value={e.id_especialista}>
-											{e.nombre} {e.apellido}
-										</option>
+									{especialistasLista
+										.filter((e) => e.activo === 1)
+										.map((e) => (
+											<option key={e.id_especialista} value={e.id_especialista}>
+												{e.nombre} {e.apellido}
+											</option>
 									))}
 								</select>
 								<div className="grid grid-cols-2 gap-2">
