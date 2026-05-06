@@ -218,21 +218,21 @@ const uploadComprobantePagoHandler = async (req, res) => {
 	}
 };
 
-// Middleware para subir orden médica (máximo 2MB, pero se comprime en frontend a 100-200KB)
+// Middleware para subir orden médica (máximo 5MB para soportar PDFs)
 const uploadOrdenMedica = multer({
 	storage,
 	limits: {
-		fileSize: 2 * 1024 * 1024, // 2MB máximo (después de compresión debería ser mucho menor)
+		fileSize: 5 * 1024 * 1024, // 5MB máximo
 	},
 	fileFilter: (req, file, cb) => {
-		// Solo permitir imágenes
-		const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+		// Permitir imágenes y PDFs
+		const allowedMimes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
 		if (allowedMimes.includes(file.mimetype)) {
 			cb(null, true);
 		} else {
 			cb(
 				new Error(
-					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP).",
+					"Tipo de archivo no permitido. Solo se permiten imágenes (JPEG, PNG, WEBP) o PDFs.",
 				),
 				false,
 			);
@@ -252,20 +252,20 @@ const uploadOrdenMedicaHandler = async (req, res) => {
 			});
 		}
 
-		// Verificar que sea una imagen
-		if (!req.file.mimetype.startsWith("image/")) {
+		// Verificar que sea una imagen o PDF
+		if (!req.file.mimetype.startsWith("image/") && req.file.mimetype !== "application/pdf") {
 			return res.status(400).json({
 				ok: false,
-				message: "El archivo debe ser una imagen",
+				message: "El archivo debe ser una imagen o PDF",
 			});
 		}
 
-		// Validar tamaño máximo para imágenes de orden médica (2MB, pero debería venir comprimida a 100-200KB)
-		const maxSize = 2 * 1024 * 1024; // 2MB
+		// Validar tamaño máximo para orden médica (5MB)
+		const maxSize = 5 * 1024 * 1024; // 5MB
 		if (req.file.size > maxSize) {
 			return res.status(400).json({
 				ok: false,
-				message: `La imagen es demasiado grande. Tamaño máximo: 2MB. Tamaño actual: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`,
+				message: `El archivo es demasiado grande. Tamaño máximo: 5MB. Tamaño actual: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`,
 			});
 		}
 
