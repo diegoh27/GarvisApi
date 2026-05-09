@@ -50,7 +50,7 @@ function getRolColor(rol: string) {
 
 const UsuariosPage = () => {
 	const [filtroRol, setFiltroRol] = useState<string>("todos");
-	const [filtroEstado, setFiltroEstado] = useState<string>("todos");
+	const [filtroEstado, setFiltroEstado] = useState<string>("1");
 	const [query, setQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
@@ -561,6 +561,10 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 		return "";
 	};
 
+	const maxDate = new Date();
+	maxDate.setFullYear(maxDate.getFullYear() - 18);
+	const maxDateString = maxDate.toISOString().split("T")[0];
+
 	const parsedCedula = parseCedulaDisplay(usuario.cedula);
 	const [form, setForm] = useState({
 		nombre: usuario.nombre,
@@ -854,6 +858,7 @@ const EditUserModal = ({ usuario, onClose, onSave, isLoading }: EditUserModalPro
 						<input
 							type="date"
 							required
+							max={maxDateString}
 							value={form.fecha_nacimiento}
 							onChange={(e) => {
 								setForm({ ...form, fecha_nacimiento: e.target.value });

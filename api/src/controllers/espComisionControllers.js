@@ -102,7 +102,7 @@ exports.listComisionesController = async ({
 	limit = 200,
 }) => {
 	const safeLimit = sanitizeLimit(limit, 200, 1000);
-	const filters = [];
+	const filters = ["u.activo = 1"];
 	const params = [];
 
 	if (id_especialista) {
@@ -191,11 +191,13 @@ exports.generarComisionesPendientesController = async ({ id_usuario }) => {
 			?
 		FROM cita c
 		INNER JOIN especialista esp ON esp.id_especialista = c.id_especialista
+		INNER JOIN usuario u ON u.id_usuario = c.id_especialista
 		INNER JOIN eco eco ON eco.id_eco = c.id_eco
 		LEFT JOIN esp_comision ec ON ec.id_cita = c.id_cita
 		WHERE c.estado_cita = 3
 			AND c.estado_pago = 1
 			AND ec.id_comision IS NULL
+			AND u.activo = 1
 	`;
 
 	const [result] = await pool.execute(sql, [id_usuario]);
