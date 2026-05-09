@@ -600,7 +600,7 @@ const VerResultadosModal = ({
 							alt={`Vista previa ${previewImageIndex + 1}`}
 							className="max-w-full max-h-full object-contain"
 						/>
-						
+
 						{imageFiles.length > 1 && (
 							<button
 								onClick={(e) => {
