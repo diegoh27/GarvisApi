@@ -438,7 +438,6 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 		}
 
 		try {
-			const fechaNormalizada = normalizeFecha(selectedDisponibilidad.fecha);
 			await asignarCita({
 				id_paciente: selectedPaciente.id_paciente,
 				id_representado: null,
