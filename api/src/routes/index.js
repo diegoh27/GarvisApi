@@ -1,6 +1,10 @@
 const { Router } = require("express");
 const router = Router();
 
+router.get("/health", (_req, res) => {
+	res.status(200).json({ ok: true, service: "garvis-api" });
+});
+
 const medicosRoutes = require("./medicosRoutes");
 const userRoutes = require("./userRoutes");
 const pacientesRoutes = require("./pacientesRoutes");
