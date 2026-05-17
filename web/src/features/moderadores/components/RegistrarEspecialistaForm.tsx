@@ -14,6 +14,10 @@ const RegistrarEspecialistaForm = () => {
 	const { data: ecos = [], isLoading: loadingEcos } = useGetEcosQuery();
 	const [crearEspecialista, { isLoading }] = useCrearEspecialistaMutation();
 
+	const maxDate = new Date();
+	maxDate.setFullYear(maxDate.getFullYear() - 18);
+	const maxDateString = maxDate.toISOString().split("T")[0];
+
 	const [form, setForm] = useState({
 		nombre: "",
 		apellido: "",
@@ -420,6 +424,7 @@ const RegistrarEspecialistaForm = () => {
 					<input
 						type="date"
 						required
+						max={maxDateString}
 						className={`h-11 w-full rounded-lg border bg-paper px-3 text-base outline-none focus:border-brand-500 ${fieldErrors.fecha_nacimiento ? "border-red-500" : "border-brand-300"}`}
 						value={form.fecha_nacimiento}
 						onChange={(e) => updateField("fecha_nacimiento", e.target.value)}
