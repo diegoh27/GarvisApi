@@ -438,7 +438,6 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 		}
 
 		try {
-			const fechaNormalizada = normalizeFecha(selectedDisponibilidad.fecha);
 			await asignarCita({
 				id_paciente: selectedPaciente.id_paciente,
 				id_representado: null,
@@ -665,40 +664,40 @@ const AsignarCitaModal = ({ onClose, onSuccess, pacientePreSeleccionado }: Asign
 									{disponibilidadesFiltradas.map((disp: DisponibilidadItem) => {
 										const slotValido = isSlotAtLeast2HoursFromNow(disp.fecha, disp.hora_inicio);
 										return (
-										<button
-											key={disp.id_disponibilidad}
-											onClick={() => slotValido && handleSelectDisponibilidad(disp)}
-											disabled={isLoading || !slotValido}
-											title={!slotValido ? "Solo se puede asignar con al menos 2 horas de anticipación" : undefined}
-											className={`w-full rounded-lg border p-4 text-left transition-colors ${selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad
-												? "border-brand-700 bg-brand-100"
-												: "border-brand-200 bg-paper hover:bg-cloud"
-												} ${isLoading || !slotValido ? "opacity-60 cursor-not-allowed" : ""}`}
-										>
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<Calendar className="h-4 w-4 text-brand-600" />
-													<span className="font-medium text-brand-900">
-														{formatFecha(disp.fecha)}
-													</span>
-													<Clock className="h-4 w-4 text-brand-600 ml-2" />
-													<span className="text-brand-700">
-														{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
-													</span>
+											<button
+												key={disp.id_disponibilidad}
+												onClick={() => slotValido && handleSelectDisponibilidad(disp)}
+												disabled={isLoading || !slotValido}
+												title={!slotValido ? "Solo se puede asignar con al menos 2 horas de anticipación" : undefined}
+												className={`w-full rounded-lg border p-4 text-left transition-colors ${selectedDisponibilidad?.id_disponibilidad === disp.id_disponibilidad
+													? "border-brand-700 bg-brand-100"
+													: "border-brand-200 bg-paper hover:bg-cloud"
+													} ${isLoading || !slotValido ? "opacity-60 cursor-not-allowed" : ""}`}
+											>
+												<div className="flex items-center justify-between">
+													<div className="flex items-center gap-3">
+														<Calendar className="h-4 w-4 text-brand-600" />
+														<span className="font-medium text-brand-900">
+															{formatFecha(disp.fecha)}
+														</span>
+														<Clock className="h-4 w-4 text-brand-600 ml-2" />
+														<span className="text-brand-700">
+															{formatHora(disp.hora_inicio)} - {formatHora(disp.hora_fin)}
+														</span>
+													</div>
+													{disp.estado === 0 && (
+														<span className="rounded-full bg-yellow-100 px-2 py-1 text-sm font-medium text-yellow-800">
+															Pendiente
+														</span>
+													)}
+													{disp.estado === 1 && (
+														<span className="rounded-full bg-green-100 px-2 py-1 text-sm font-medium text-green-800">
+															Aprobada
+														</span>
+													)}
 												</div>
-												{disp.estado === 0 && (
-													<span className="rounded-full bg-yellow-100 px-2 py-1 text-sm font-medium text-yellow-800">
-														Pendiente
-													</span>
-												)}
-												{disp.estado === 1 && (
-													<span className="rounded-full bg-green-100 px-2 py-1 text-sm font-medium text-green-800">
-														Aprobada
-													</span>
-												)}
-											</div>
-										</button>
-									);
+											</button>
+										);
 									})}
 								</div>
 							)}

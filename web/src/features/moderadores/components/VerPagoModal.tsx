@@ -493,7 +493,7 @@ const VerPagoModal = ({
 						>
 							<div
 								className={
-									`flex max-h-[80vh] w-full items-center justify-center overflow-auto ${zoom > 1 ? "cursor-grab" : ""
+									`flex max-h-[80vh] w-full items-center justify-center overflow-hidden ${zoom > 1 ? "cursor-grab" : ""
 									}`
 								}
 								onMouseDown={handleDragStart}
@@ -505,7 +505,7 @@ const VerPagoModal = ({
 									src={pago.imagen}
 									alt="Comprobante de pago en grande"
 									className={
-										`max-h-none max-w-none ${isDragging ? "cursor-grabbing" : ""}`
+										`max-h-[80vh] max-w-full object-contain ${isDragging ? "cursor-grabbing transition-none" : "transition-transform duration-200"}`
 									}
 									style={{
 										transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,

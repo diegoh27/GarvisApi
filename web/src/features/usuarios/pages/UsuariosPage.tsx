@@ -50,7 +50,7 @@ function getRolColor(rol: string) {
 
 const UsuariosPage = () => {
 	const [filtroRol, setFiltroRol] = useState<string>("todos");
-	const [filtroEstado, setFiltroEstado] = useState<string>("todos");
+	const [filtroEstado, setFiltroEstado] = useState<string>("1");
 	const [query, setQuery] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);

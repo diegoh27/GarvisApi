@@ -531,7 +531,7 @@ const PasoCheckout = ({
 					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
 						<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
 							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-base">1</span>
-							Selecciona tu método de pago
+							Elige tu forma de pago
 						</h3>
 
 						<div className="relative mt-4">
@@ -557,7 +557,7 @@ const PasoCheckout = ({
 						</div>
 
 						{vistaBs && selectedMetodoId && (
-							<div className="mt-4 p-4 rounded-xl bg-cloud border border-brand-200/20">
+							<div className="hidden mt-4 p-4 rounded-xl bg-cloud border border-brand-200/20">
 								<p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tasa del día (BCV)</p>
 								<p className="font-bold text-brand-800">{tasaBCV.toFixed(2)} Bs/USD</p>
 							</div>
@@ -1034,12 +1034,12 @@ const PasoCheckout = ({
 						</div>
 
 						<div className="space-y-3 pt-6 border-t border-brand-200/30">
-							<div className="flex justify-between items-center">
+							<div className="hidden flex justify-between items-center">
 								<span className="text-base text-slate-400">Precio Ecografía</span>
 								<span className="text-base font-semibold text-brand-900">${precioUSD.toFixed(2)}</span>
 							</div>
 							{vistaBs && selectedMetodoId && (
-								<div className="flex justify-between items-center bg-slate-50 p-2 -mx-2 rounded-lg">
+								<div className="hidden flex justify-between items-center bg-slate-50 p-2 -mx-2 rounded-lg">
 									<span className="text-base text-slate-400">Tasa BCV</span>
 									<span className="text-base font-semibold text-brand-600">{tasaBCV.toFixed(2)} Bs/USD</span>
 								</div>
