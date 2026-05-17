@@ -20,11 +20,40 @@ const config = {
 	issuerBaseURL: process.env.AUTH0_ISSUERBASEURL,
 };
 
-// CORS Configuration
+// CORS — en producción solo orígenes del frontend; en dev permite todo
+const DEFAULT_CORS_ORIGINS = [
+	"http://localhost:5173",
+	"http://localhost:3000",
+	"https://garbis.online",
+	"https://www.garbis.online",
+];
+
+function parseCorsOrigins() {
+	const fromEnv = [
+		process.env.FRONTEND_URL,
+		process.env.WEB_BASE_URL,
+		process.env.URL_BASE_FRONT,
+	]
+		.filter(Boolean)
+		.flatMap((v) => v.split(","))
+		.map((v) => v.trim().replace(/\/$/, ""))
+		.filter(Boolean);
+	return [...new Set([...DEFAULT_CORS_ORIGINS, ...fromEnv])];
+}
+
+const allowedOrigins = parseCorsOrigins();
+const isProduction = process.env.NODE_ENV === "production";
+
 const corsOptions = {
-	origin: function (origin, callback) {
-		// Permitir cualquier origen temporalmente para evitar bloqueos en desarrollo
-		callback(null, true);
+	origin(origin, callback) {
+		if (!origin || !isProduction) {
+			return callback(null, true);
+		}
+		const normalized = origin.replace(/\/$/, "");
+		if (allowedOrigins.includes(normalized)) {
+			return callback(null, true);
+		}
+		return callback(new Error(`CORS: origen no permitido (${origin})`));
 	},
 	credentials: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

@@ -3,6 +3,7 @@ module.exports = {
 		{
 			name: "garvis-api",
 			script: "./index.js",
+			cwd: __dirname,
 			instances: 1,
 			exec_mode: "fork",
 			watch: false,
@@ -11,6 +12,7 @@ module.exports = {
 				NODE_ENV: "production",
 				PORT: 3001,
 			},
+			// En el VPS: copiar api/.env.production.example → api/.env y completar valores
 			error_file: "./logs/pm2-error.log",
 			out_file: "./logs/pm2-out.log",
 			log_date_format: "YYYY-MM-DD HH:mm:ss Z",
