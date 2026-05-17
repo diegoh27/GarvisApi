@@ -121,7 +121,7 @@ const listEspecialistasController = async ({ q }) => {
     FROM especialista e
     INNER JOIN usuario u ON u.id_usuario = e.id_especialista
     INNER JOIN especialidad es ON es.id_especialidad = e.id_especialidad
-    WHERE 1=1
+    WHERE u.activo = 1
   `;
 	const params = [];
 	if (q) {
