@@ -18,6 +18,7 @@ import { useCrearCitaMostradorMutation, useCrearPacienteMostradorMutation } from
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useCitaMostradorForm } from "../hooks/useCitaMostradorForm";
 import { METODO_UI_OPTIONS, isMorningSlot, idsCoinciden } from "../utils/citaMostradorUtils";
+import { useUpdatePacientePhoneMostradorMutation } from "../../citas/citasApi";
 
 const PRIMARY = "#006965";
 
@@ -73,8 +74,13 @@ export default function CitaMostradorPage() {
 	/** Texto libre para "Nombre completo" (permite espacios); se parte en nombre/apellido al blur y al enviar. */
 	const [nombreCompletoDraft, setNombreCompletoDraft] = useState("");
 
+	const [updatePhone] = useUpdatePacientePhoneMostradorMutation();
+
 	const {
 		form,
+		idPacienteWeb,
+		originalPhone,
+		setOriginalPhone,
 		setForm,
 		fieldErrors,
 		error,
@@ -108,6 +114,7 @@ export default function CitaMostradorPage() {
 		loadingOcupacion,
 		horaOcupada,
 		ocupados,
+		horaDisponible,
 		selectedEco,
 		isMetodoEnBs,
 		monedaRegistro,
@@ -294,6 +301,32 @@ export default function CitaMostradorPage() {
 				await Swal.fire({ icon: "warning", title: "Datos incompletos", text: "Ingresa la cédula y nombre del paciente." });
 				return false;
 			}
+			
+			// Modal de confirmación para cambiar el teléfono si hay uno guardado en BD y se modificó
+			if (idPacienteWeb && form.telefono !== originalPhone && form.telefono?.trim()) {
+				const confirmPhone = await Swal.fire({
+					title: '¿Actualizar teléfono?',
+					text: '¿Deseas actualizar el número de teléfono del usuario en su perfil permanente?',
+					icon: 'question',
+					showCancelButton: true,
+					confirmButtonText: 'Sí, actualizar',
+					cancelButtonText: 'No, dejar el anterior',
+					confirmButtonColor: PRIMARY,
+				});
+
+				if (confirmPhone.isConfirmed) {
+					try {
+						await updatePhone({ id_paciente: idPacienteWeb, telefono: form.telefono }).unwrap();
+						setOriginalPhone(form.telefono);
+					} catch (e) {
+						await Swal.fire({ icon: "error", title: "Error", text: "No se pudo actualizar el teléfono." });
+						return false; // Evitamos avanzar si hubo error al actualizar, o podríamos dejarlo avanzar y revertir visualmente. Mejor no avanzamos.
+					}
+				} else {
+					setForm(prev => ({ ...prev, telefono: originalPhone }));
+				}
+			}
+
 			if (!pacienteIdentificadoEnSistema) {
 				try {
 					const result = await crearPacienteMostrador({
@@ -1143,7 +1176,7 @@ export default function CitaMostradorPage() {
 								</div>
 								<div className="grid grid-cols-7 gap-y-1 text-center text-base">
 									{calendarCells.map((cell, idx) => {
-										if (!cell.inMonth) {
+										if (!cell.inMonth || !cell.iso) {
 											return (
 												<div key={`pad-${idx}`} className="py-2 text-neutral-300">
 													{cell.day}
@@ -1151,10 +1184,14 @@ export default function CitaMostradorPage() {
 											);
 										}
 										const selected = form.fecha_cita === cell.iso;
+										const hoyStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+										const isPastDate = cell.iso < hoyStr;
+
 										return (
 											<button
 												key={cell.iso}
 												type="button"
+												disabled={isPastDate}
 												onClick={() =>
 													setForm((prev) => ({
 														...prev,
@@ -1162,7 +1199,11 @@ export default function CitaMostradorPage() {
 													}))
 												}
 												className={`rounded-xl py-2 font-medium transition ${
-													selected ? "bg-[#006965] font-bold text-white shadow-md" : "hover:bg-slate-100"
+													selected
+														? "bg-[#006965] font-bold text-white shadow-md"
+														: isPastDate
+															? "text-slate-300 cursor-not-allowed"
+															: "hover:bg-slate-100"
 												}`}
 											>
 												{cell.day}
@@ -1199,15 +1240,18 @@ export default function CitaMostradorPage() {
 							<span className="text-base font-bold uppercase tracking-widest">Horarios de mañana</span>
 						</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-										{morningSlots.map((opt) => {
-											const occ = horaOcupada(opt.value);
+										{morningSlots.filter(opt => horaDisponible(opt.value)).map((opt) => {
+											const hoyStr = new Date().toLocaleDateString('en-CA');
+											const isToday = form.fecha_cita === hoyStr;
+											const isPastTime = isToday && (opt.value <= new Date().toTimeString().slice(0, 8));
+											
 											const sel = form.hora_cita === opt.value;
 											return (
 												<button
 													key={opt.value}
 													type="button"
-													disabled={occ}
-													title={occ ? "Horario ocupado" : undefined}
+													disabled={isPastTime}
+													title={isPastTime ? "Horario ya transcurrido" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1215,7 +1259,7 @@ export default function CitaMostradorPage() {
 														}))
 													}
 													className={`rounded-2xl py-3 text-base font-semibold transition ${
-														occ
+														isPastTime
 															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
@@ -1239,15 +1283,18 @@ export default function CitaMostradorPage() {
 										<span className="text-base font-bold uppercase tracking-widest">Horarios de tarde</span>
 									</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-										{afternoonSlots.map((opt) => {
-											const occ = horaOcupada(opt.value);
+										{afternoonSlots.filter(opt => horaDisponible(opt.value)).map((opt) => {
+											const hoyStr = new Date().toLocaleDateString('en-CA');
+											const isToday = form.fecha_cita === hoyStr;
+											const isPastTime = isToday && (opt.value <= new Date().toTimeString().slice(0, 8));
+											
 											const sel = form.hora_cita === opt.value;
 											return (
 												<button
 													key={opt.value}
 													type="button"
-													disabled={occ}
-													title={occ ? "Horario ocupado" : undefined}
+													disabled={isPastTime}
+													title={isPastTime ? "Horario ya transcurrido" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1255,7 +1302,7 @@ export default function CitaMostradorPage() {
 														}))
 													}
 													className={`rounded-2xl py-3 text-base font-semibold transition ${
-														occ
+														isPastTime
 															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"

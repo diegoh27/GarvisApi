@@ -282,6 +282,18 @@ const citasApi = baseApi.injectEndpoints({
 			}) => response.data,
 			invalidatesTags: ["Citas"],
 		}),
+		updatePacientePhoneMostrador: builder.mutation<
+			{ updated: boolean },
+			{ id_paciente: string; telefono: string }
+		>({
+			query: (body) => ({
+				url: "/citas/mostrador/telefono",
+				method: "PATCH",
+				body,
+			}),
+			transformResponse: (response: { ok: boolean; data: { updated: boolean } }) => response.data,
+			invalidatesTags: ["Citas"],
+		}),
 		asignarCita: builder.mutation<
 			{ id_cita: string },
 			{
@@ -364,12 +376,14 @@ export const {
 	useGetAllCitasQuery,
 	useGetMisCitasCompletasQuery,
 	useMarcarAtendidaMutation,
+	useGetCitasMostradorDisponiblesParaVincularQuery,
 	useLazyGetCitasMostradorDisponiblesParaVincularQuery,
 	useVincularCitasMostradorMutation,
 	useAsignarCitaMutation,
 	useUploadOrdenMedicaMutation,
 	useGetPagosGuardadosQuery,
 	useDeletePagoGuardadoMutation,
+	useUpdatePacientePhoneMostradorMutation,
 } = citasApi;
 
 export { citasApi };

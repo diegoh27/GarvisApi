@@ -71,6 +71,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 	const [idPacienteWeb, setIdPacienteWeb] = useState<string | null>(null);
 	/** R2: mensaje de error cuando el paciente ya tiene una cita activa. */
 	const [citaActivaError, setCitaActivaError] = useState<string | null>(null);
+	const [originalPhone, setOriginalPhone] = useState<string>("");
+
 	const [vincularRepresentado, setVincularRepresentado] = useState<{
 		id_paciente: string;
 		id_representado: string;
@@ -505,19 +507,25 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 					(tieneRepresentado ? representado!.apellido : null) ||
 					(tieneMostrador ? mostrador!.apellido : null) ||
 					"";
+				const telefono = 
+					(tienePaciente && paciente!.telefono ? paciente!.telefono : null) || "";
 				const rif =
 					tieneMostrador && mostrador!.rif
 						? mostrador!.rif
 						: tienePaciente && paciente!.rif
 							? paciente!.rif
 							: undefined;
+				
+				setOriginalPhone(telefono);
+				
 				setForm((prev) => ({
 					...prev,
 					nombre: nombre || prev.nombre,
 					apellido: apellido || prev.apellido,
+					telefono: telefono || prev.telefono,
 					rif: rif ?? prev.rif,
 				}));
-				setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "" }));
+				setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "", telefono: "" }));
 				setPacienteIdentificadoEnSistema(true);
 				// R1: guardar id_paciente del paciente web identificado
 				if (tienePaciente && paciente!.id_paciente) {
@@ -543,6 +551,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 				}
 			} else {
 				setPacienteIdentificadoEnSistema(false);
+				setOriginalPhone("");
 				setMensajeCargaAnterior(
 					"No se encontró ningún paciente registrado, representado ni cita de mostrador previa con esta cédula.",
 				);
@@ -645,6 +654,9 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 
 	return {
 		form,
+		idPacienteWeb,
+		originalPhone,
+		setOriginalPhone,
 		setForm,
 		fieldErrors,
 		error,

@@ -859,9 +859,17 @@ const TodasLasCitasPage = () => {
 												<div>
 													<p className="text-base font-semibold text-zinc-900">{fullName}</p>
 													<p className="text-sm text-zinc-400">ID: {cita.paciente_cedula}</p>
-													<p className="text-sm text-zinc-400">Telf: {cita.paciente_telefono}</p>
+													<p className="text-sm text-zinc-400">
+														{cita.paciente_telefono && 
+														 cita.paciente_telefono !== "00000000" && 
+														 cita.paciente_telefono !== "0000000000" && 
+														 cita.paciente_telefono !== "00000000000" &&
+														 cita.paciente_telefono.replace(/0/g, '') !== '' 
+															? `Telf: ${cita.paciente_telefono}` 
+															: "Telf: No registrado"}
+													</p>
 													<p className="font-mono text-[10px] text-zinc-400">
-														Ref. cita: {cita.id_cita.slice(0, 8)}…
+														Ref. pago: {cita.pago_referencia || "N/A"}
 													</p>
 												</div>
 											</div>

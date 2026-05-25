@@ -23,6 +23,7 @@ const {
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
 	crearPacienteMostradorController,
+	updatePacientePhoneMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 const { savePagoGuardadoController } = require("../controllers/pagosGuardadosControllers");
@@ -1070,6 +1071,24 @@ const getDatosPorCedulaHandler = async (req, res) => {
 	}
 };
 
+const updatePacientePhoneMostradorHandler = async (req, res) => {
+	try {
+		const { id_paciente, telefono } = req.body;
+		if (!id_paciente) {
+			return res.status(400).json({ ok: false, message: "id_paciente es requerido" });
+		}
+		const data = await updatePacientePhoneMostradorController(id_paciente, telefono);
+		return res.status(200).json({ ok: true, data });
+	} catch (err) {
+		if (err.code === "INVALID_PHONE") {
+			return res.status(400).json({ ok: false, message: err.message });
+		}
+		console.error("Error al actualizar teléfono desde mostrador:", err);
+		return res.status(500).json({ ok: false, message: "Error interno del servidor" });
+	}
+};
+
+
 const getUltimoPacienteMostradorHandler = async (req, res) => {
 	try {
 		const cedulaRaw = req.query.cedula;
@@ -1241,4 +1260,5 @@ module.exports = {
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
 	crearPacienteMostradorHandler,
+	updatePacientePhoneMostradorHandler,
 };

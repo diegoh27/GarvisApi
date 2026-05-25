@@ -25,6 +25,7 @@ const {
 	listCitasMostradorDisponiblesParaVincularHandler,
 	vincularCitasMostradorHandler,
 	crearPacienteMostradorHandler,
+	updatePacientePhoneMostradorHandler,
 } = require("../handlers/citasHandlers");
 const { authenticateToken } = require("../middleware/auth");
 const { authorizeRoles } = require("../middleware/authorizeRoles");
@@ -97,6 +98,13 @@ citasRoutes.post(
 	authenticateToken,
 	authorizeRoles("admin", "moderador"),
 	crearPacienteMostradorHandler,
+);
+// PATCH /citas/mostrador/telefono (admin/moderador) - Actualizar teléfono del paciente desde mostrador
+citasRoutes.patch(
+	"/mostrador/telefono",
+	authenticateToken,
+	authorizeRoles("admin", "moderador"),
+	updatePacientePhoneMostradorHandler,
 );
 // POST /citas/mostrador (admin/moderador) - Registrar cita ya pagada de mostrador
 citasRoutes.post(
