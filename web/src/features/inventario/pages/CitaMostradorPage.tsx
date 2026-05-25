@@ -112,7 +112,6 @@ export default function CitaMostradorPage() {
 		ecos,
 		loadingEcos,
 		loadingOcupacion,
-		horaOcupada,
 		ocupados,
 		horaDisponible,
 		selectedEco,
@@ -129,6 +128,7 @@ export default function CitaMostradorPage() {
 		handleCargarDatosAnteriores,
 		validateRepForm,
 		handleSubmit,
+		resetForm,
 		puedeCargarAnterior,
 		HORA_OPTIONS,
 		inputError,
@@ -143,6 +143,8 @@ export default function CitaMostradorPage() {
 					timer: 2200,
 					showConfirmButton: false,
 				});
+				resetForm();
+				setPaso(1);
 			} catch (err: unknown) {
 				const apiErr = typeof err === "object" && err !== null && "data" in err
 					? (err as { data?: { message?: string; code?: string } }).data
@@ -285,6 +287,10 @@ export default function CitaMostradorPage() {
 	};
 
 	const onFormSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (paso !== 4) {
+			return; // Bloquea el envío si se presiona Enter en un input en los pasos 1, 2 o 3
+		}
 		aplicarNombreCompletoAlForm();
 		handleSubmit(e);
 	};
@@ -1042,7 +1048,12 @@ export default function CitaMostradorPage() {
 									type="text"
 									name="referencia"
 									value={form.referencia}
-									onChange={handleChange}
+									onChange={(e) => {
+										const val = e.target.value.replace(/\D/g, "");
+										handleChange({
+											target: { name: "referencia", value: val },
+										} as any);
+									}}
 									maxLength={80}
 									className={`${inputBase} ${fieldErrors.referencia ? inputError : ""}`}
 									placeholder="Número de referencia"
@@ -1348,6 +1359,7 @@ export default function CitaMostradorPage() {
 					</div>
 					{paso < 4 ? (
 						<button
+							key="btn-next"
 							type="button"
 							onClick={() => void handleNext()}
 							disabled={isCreatingPatient || (paso === 1 && !!citaActivaError)}
@@ -1358,6 +1370,7 @@ export default function CitaMostradorPage() {
 						</button>
 					) : (
 						<button
+							key="btn-submit"
 							type="submit"
 							form="form-cita-mostrador"
 							disabled={isSaving || !!citaActivaError}

@@ -224,7 +224,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 		// Datos por cédula: paciente registrado, representado y/o última cita de mostrador
 		getDatosPorCedula: builder.query<
 			{
-				paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; rif: string } | null;
+				paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; telefono?: string; rif: string } | null;
 				representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
 				mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
 				citaActiva: boolean;
@@ -237,7 +237,7 @@ export const comisionesApi = baseApi.injectEndpoints({
 				response: {
 					ok: boolean;
 					data: {
-						paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; rif: string } | null;
+						paciente: { id_paciente: string | null; nombre: string; apellido: string; cedula: string; telefono?: string; rif: string } | null;
 						representado: { id_representado: string; id_paciente: string; nombre: string; apellido: string; cedula: string } | null;
 						mostrador: { nombre: string; apellido: string; cedula: string; rif: string } | null;
 						citaActiva: boolean;
