@@ -1425,25 +1425,30 @@ const createCitaMostradorController = async ({
 		}
 
 		// Mostrador: no crear usuario real. Si hay representado "fantasma" (id_paciente = mostrador) o de un titular ya registrado, usarlo.
-		let id_paciente;
+		let id_paciente = null;
 		let id_representado_final = null;
-		if (id_paciente_titular && id_representado) {
-			const [repRows] = await conn.execute(
-				`SELECT id_representado, id_paciente FROM representado WHERE id_representado = ? LIMIT 1`,
-				[id_representado],
-			);
-			if (repRows.length) {
-				const repPaciente = repRows[0].id_paciente;
-				// Representado del paciente mostrador (fantasma): cita queda bajo mostrador
-				if (repPaciente === MOSTRADOR_PACIENTE_ID) {
-					await ensureMostradorPacienteBase(conn);
-					id_paciente = MOSTRADOR_PACIENTE_ID;
-					id_representado_final = id_representado;
-				} else if (repPaciente === id_paciente_titular) {
-					// Representado de un titular ya registrado: cita bajo ese paciente
-					id_paciente = id_paciente_titular;
-					id_representado_final = id_representado;
+		if (id_paciente_titular) {
+			if (id_representado) {
+				const [repRows] = await conn.execute(
+					`SELECT id_representado, id_paciente FROM representado WHERE id_representado = ? LIMIT 1`,
+					[id_representado],
+				);
+				if (repRows.length) {
+					const repPaciente = repRows[0].id_paciente;
+					// Representado del paciente mostrador (fantasma): cita queda bajo mostrador
+					if (repPaciente === MOSTRADOR_PACIENTE_ID) {
+						await ensureMostradorPacienteBase(conn);
+						id_paciente = MOSTRADOR_PACIENTE_ID;
+						id_representado_final = id_representado;
+					} else if (repPaciente === id_paciente_titular) {
+						// Representado de un titular ya registrado: cita bajo ese paciente
+						id_paciente = id_paciente_titular;
+						id_representado_final = id_representado;
+					}
 				}
+			} else {
+				// Cita directa para un paciente/titular ya registrado en el sistema
+				id_paciente = id_paciente_titular;
 			}
 		}
 		if (id_paciente == null) {
