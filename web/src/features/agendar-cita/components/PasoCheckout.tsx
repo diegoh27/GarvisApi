@@ -532,7 +532,7 @@ const PasoCheckout = ({
 					<div className="bg-paper rounded-3xl p-8 shadow-sm border border-brand-200/20">
 						<h3 className="text-xl font-bold text-brand-900 mb-6 flex items-center gap-3 font-headline">
 							<span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-800 text-white text-base">1</span>
-							Selecciona tu método de pago
+							Elige tu forma de pago
 						</h3>
 
 						<div className="relative mt-4">

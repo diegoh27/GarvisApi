@@ -75,17 +75,34 @@ const getTodayBcvRate = async () => {
 		return forcedRate;
 	}
 
-	const response = await axios.get(
-		"https://ve.dolarapi.com/v1/dolares/oficial",
-		{
-			timeout: 5000,
-		},
-	);
-	const rate = Number(response?.data?.promedio);
-	if (!Number.isFinite(rate) || rate <= 0) {
-		throw new Error("No se pudo obtener tasa BCV válida");
+	try {
+		const response = await axios.get(
+			"https://ve.dolarapi.com/v1/dolares/oficial",
+			{
+				timeout: 5000,
+			},
+		);
+		const rate = Number(response?.data?.promedio);
+		if (!Number.isFinite(rate) || rate <= 0) {
+			throw new Error("No se pudo obtener tasa BCV válida");
+		}
+		return rate;
+	} catch (error) {
+		console.warn("API Dolar falló, intentando usar última tasa registrada:", error.message);
+		const { pool } = require("../db");
+		try {
+			const [rows] = await pool.execute(
+				"SELECT tasa_dia_bcv FROM fac_movimiento WHERE tasa_dia_bcv > 0 ORDER BY creado_en DESC LIMIT 1"
+			);
+			if (rows.length > 0 && rows[0].tasa_dia_bcv) {
+				const lastRate = Number(rows[0].tasa_dia_bcv);
+				if (lastRate > 0) return lastRate;
+			}
+		} catch (dbError) {
+			console.error("Error al buscar tasa en base de datos", dbError);
+		}
+		throw new Error("No se pudo obtener tasa BCV de la API ni de la base de datos.");
 	}
-	return rate;
 };
 
 module.exports = {

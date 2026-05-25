@@ -151,12 +151,12 @@ const uploadZipToOrthanc = async (zipPath) => {
 			} catch (err) {
 				console.warn(`No se pudo subir ${baseName} a Orthanc:`, err.message);
 			} finally {
-				await fsp.unlink(dcmPath).catch(() => {});
+				await fsp.unlink(dcmPath).catch(() => { });
 			}
 		}
 	} finally {
 		// Limpiar directorio de extracción
-		await fsp.rm(extractDir, { recursive: true, force: true }).catch(() => {});
+		await fsp.rm(extractDir, { recursive: true, force: true }).catch(() => { });
 	}
 
 	return studyUids;
@@ -203,11 +203,11 @@ const uploadRarToOrthanc = async (rarPath) => {
 			} catch (err) {
 				console.warn(`No se pudo subir ${baseName} a Orthanc:`, err.message);
 			} finally {
-				await fsp.unlink(dcmPath).catch(() => {});
+				await fsp.unlink(dcmPath).catch(() => { });
 			}
 		}
 	} finally {
-		await fsp.rm(extractDir, { recursive: true, force: true }).catch(() => {});
+		await fsp.rm(extractDir, { recursive: true, force: true }).catch(() => { });
 	}
 
 	return studyUids;
@@ -305,7 +305,7 @@ const uploadDicomToOrthancHandler = async (req, res) => {
 	} finally {
 		// Limpiar archivos temporales subidos por multer
 		for (const file of tempFiles) {
-			await fsp.unlink(file.path).catch(() => {});
+			await fsp.unlink(file.path).catch(() => { });
 		}
 	}
 };

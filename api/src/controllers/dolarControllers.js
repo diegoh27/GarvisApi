@@ -22,7 +22,25 @@ const getDolarOficialController = async () => {
 			fechaActualizacion: data.fechaActualizacion,
 		};
 	} catch (err) {
-		// Si hay error, lanzar con código específico
+		console.warn("API Dolar falló, intentando usar última tasa registrada:", err.message);
+		const { pool } = require("../db");
+		try {
+			const [rows] = await pool.execute(
+				"SELECT tasa_dia_bcv, fecha FROM fac_movimiento WHERE tasa_dia_bcv > 0 ORDER BY creado_en DESC LIMIT 1"
+			);
+			if (rows.length > 0 && rows[0].tasa_dia_bcv) {
+				return {
+					fuente: "oficial (fallback local)",
+					nombre: "Oficial",
+					compra: rows[0].tasa_dia_bcv,
+					venta: rows[0].tasa_dia_bcv,
+					promedio: rows[0].tasa_dia_bcv,
+					fechaActualizacion: rows[0].fecha || new Date().toISOString()
+				};
+			}
+		} catch (dbError) {}
+
+		// Si hay error y no hay fallback, lanzar con código específico
 		if (err.response) {
 			// Error de respuesta HTTP
 			const error = new Error("Error al obtener la tasa del dólar desde la API");
