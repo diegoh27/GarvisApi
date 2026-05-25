@@ -1,6 +1,7 @@
 export { default as RegistrarEspecialistaPage } from "./pages/RegistrarEspecialistaPage";
 export { default as RegistrarModeradorPage } from "./pages/RegistrarModeradorPage";
 export { default as MetodosPagoPage } from "./pages/MetodosPagoPage";
+export { default as RespaldoPage } from "./pages/RespaldoPage";
 export { RegistrarEspecialistaForm } from "./components";
 export {
 	useCrearEspecialistaMutation,

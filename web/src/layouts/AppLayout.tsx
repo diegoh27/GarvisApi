@@ -17,6 +17,7 @@ import {
 	CreditCard,
 	Wallet,
 	Store,
+	Database,
 } from "lucide-react";
 import { useAuth } from "../shared";
 import { useGetMisNotificacionesQuery } from "../features/notificaciones/notificacionesApi";
@@ -57,6 +58,8 @@ const navByRole: Record<string, NavItem[]> = {
 		{ label: "Cita Mostrador", to: "/cita-mostrador", icon: Store },
 		// Auditoría
 		{ label: "Auditoría de Eventos", to: "/auditoria", icon: ShieldAlert },
+		// Respaldo de BD
+		{ label: "Respaldo BD", to: "/admin/respaldo", icon: Database },
 	],
 	moderador: [
 		// Placeholder: el menú real se arma en AppLayout con MODERADOR_MENU_MODULES + permisos.
