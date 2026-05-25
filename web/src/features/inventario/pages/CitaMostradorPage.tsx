@@ -18,6 +18,7 @@ import { useCrearCitaMostradorMutation, useCrearPacienteMostradorMutation } from
 import { useGetEspecialidadesQuery } from "../../especialidades/especialidadesApi";
 import { useCitaMostradorForm } from "../hooks/useCitaMostradorForm";
 import { METODO_UI_OPTIONS, isMorningSlot, idsCoinciden } from "../utils/citaMostradorUtils";
+import { useUpdatePacientePhoneMostradorMutation } from "../../citas/citasApi";
 
 const PRIMARY = "#006965";
 
@@ -66,6 +67,7 @@ export default function CitaMostradorPage() {
 	const { data: especialidades = [] } = useGetEspecialidadesQuery();
 	const [crearCitaMostrador, { isLoading: isSaving }] = useCrearCitaMostradorMutation();
 	const [crearPacienteMostrador, { isLoading: isCreatingPatient }] = useCrearPacienteMostradorMutation();
+	const [updatePacientePhoneMostrador] = useUpdatePacientePhoneMostradorMutation();
 
 	const [paso, setPaso] = useState(1);
 	const [idEspecialidad, setIdEspecialidad] = useState("");
@@ -80,6 +82,9 @@ export default function CitaMostradorPage() {
 		error,
 		mensajeCargaAnterior,
 		pacienteIdentificadoEnSistema,
+		idPacienteWeb,
+		originalPhone,
+		setOriginalPhone,
 		citaActivaError,
 		setCitaActivaError,
 		vincularRepresentado,
@@ -258,8 +263,15 @@ export default function CitaMostradorPage() {
 		return cells;
 	}, [calYear, calMonth]);
 
-	const morningSlots = HORA_OPTIONS.filter((o) => isMorningSlot(o.value));
-	const afternoonSlots = HORA_OPTIONS.filter((o) => !isMorningSlot(o.value));
+	const morningSlots = useMemo(() => {
+		const all = HORA_OPTIONS.filter((o) => isMorningSlot(o.value));
+		return all.filter((opt) => !horaOcupada(opt.value));
+	}, [horaOcupada]);
+
+	const afternoonSlots = useMemo(() => {
+		const all = HORA_OPTIONS.filter((o) => !isMorningSlot(o.value));
+		return all.filter((opt) => !horaOcupada(opt.value));
+	}, [horaOcupada]);
 
 	const inputBase =
 		"w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-base font-medium text-slate-800 shadow-sm focus:border-[#006965] focus:outline-none focus:ring-2 focus:ring-[#006965]/20";
@@ -275,6 +287,25 @@ export default function CitaMostradorPage() {
 		flushSync(() => {
 			setForm((prev) => ({ ...prev, nombre, apellido }));
 		});
+	};
+
+	const hoyStr = useMemo(() => {
+		const d = new Date();
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, "0");
+		const day = String(d.getDate()).padStart(2, "0");
+		return `${y}-${m}-${day}`;
+	}, []);
+
+	const esHoraPasada = (slotValue: string) => {
+		if (form.fecha_cita !== hoyStr) return false;
+		const now = new Date();
+		const currentHour = now.getHours();
+		const currentMin = now.getMinutes();
+		const [slotHour, slotMin] = slotValue.split(":").map((x) => parseInt(x, 10));
+		if (slotHour < currentHour) return true;
+		if (slotHour === currentHour && slotMin <= currentMin) return true;
+		return false;
 	};
 
 	const onFormSubmit = (e: React.FormEvent) => {
@@ -312,8 +343,48 @@ export default function CitaMostradorPage() {
 					await Swal.fire({ icon: "error", title: "Error", text: "No se pudo registrar al paciente." });
 					return false;
 				}
-			} else if (citaActivaError) {
-				return false;
+			} else {
+				if (citaActivaError) {
+					return false;
+				}
+				const telForm = form.telefono?.trim() || "";
+				const telOriginal = originalPhone?.trim() || "";
+				if (idPacienteWeb && telForm !== telOriginal) {
+					const confirmUpdate = await Swal.fire({
+						title: "¿Actualizar teléfono?",
+						text: `El número de teléfono ha cambiado. ¿Deseas actualizar el número de teléfono en el perfil de ${n} ${a} de forma permanente?`,
+						icon: "question",
+						showCancelButton: true,
+						confirmButtonText: "Sí, guardar permanentemente",
+						cancelButtonText: "No, solo para esta cita",
+						confirmButtonColor: "#006965",
+						cancelButtonColor: "#6c757d",
+					});
+					if (confirmUpdate.isConfirmed) {
+						try {
+							await updatePacientePhoneMostrador({
+								id_paciente: idPacienteWeb,
+								telefono: telForm,
+							}).unwrap();
+							setOriginalPhone(telForm);
+							await Swal.fire({
+								icon: "success",
+								title: "Perfil actualizado",
+								text: "El número de teléfono se actualizó permanentemente.",
+								timer: 1500,
+								showConfirmButton: false,
+							});
+						} catch (err) {
+							console.error(err);
+							await Swal.fire({
+								icon: "error",
+								title: "Error",
+								text: "No se pudo actualizar el teléfono en el perfil del paciente.",
+							});
+							return false;
+						}
+					}
+				}
 			}
 			return true;
 		}
@@ -512,15 +583,12 @@ export default function CitaMostradorPage() {
 								<label className={labelBase}>Teléfono (opcional)</label>
 								<div
 									className={`flex h-14 items-stretch overflow-hidden rounded-2xl border bg-white shadow-sm transition-all focus-within:border-[#006965] focus-within:ring-2 focus-within:ring-[#006965]/20 ${
-										pacienteIdentificadoEnSistema ? "bg-slate-100 border-neutral-200" : fieldErrors.telefono ? "border-red-400" : "border-neutral-200"
+										fieldErrors.telefono ? "border-red-400" : "border-neutral-200"
 									}`}
 								>
 									<select
-										className={`w-[5.5rem] shrink-0 border-r border-neutral-200 bg-transparent px-3 text-lg font-bold text-[#006965] focus:outline-none ${
-											pacienteIdentificadoEnSistema ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-										}`}
+										className="w-[5.5rem] shrink-0 border-r border-neutral-200 bg-transparent px-3 text-lg font-bold text-[#006965] focus:outline-none cursor-pointer"
 										value={form.telefono ? form.telefono.substring(0, 4) : "0412"}
-										disabled={pacienteIdentificadoEnSistema}
 										onChange={(e) => {
 											const currentNum = form.telefono ? form.telefono.substring(4) : "";
 											handleChange({
@@ -551,7 +619,6 @@ export default function CitaMostradorPage() {
 												} as any);
 											}
 										}}
-										readOnly={pacienteIdentificadoEnSistema}
 										className="flex-1 border-none bg-transparent px-4 font-medium text-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"
 										placeholder="000 0000"
 										maxLength={7}
@@ -1009,7 +1076,12 @@ export default function CitaMostradorPage() {
 									type="text"
 									name="referencia"
 									value={form.referencia}
-									onChange={handleChange}
+									onChange={(e) => {
+										const val = e.target.value.replace(/\D/g, "");
+										handleChange({
+											target: { name: "referencia", value: val },
+										} as any);
+									}}
 									maxLength={80}
 									className={`${inputBase} ${fieldErrors.referencia ? inputError : ""}`}
 									placeholder="Número de referencia"
@@ -1151,10 +1223,12 @@ export default function CitaMostradorPage() {
 											);
 										}
 										const selected = form.fecha_cita === cell.iso;
+										const esPasado = cell.iso! < hoyStr;
 										return (
 											<button
 												key={cell.iso}
 												type="button"
+												disabled={esPasado}
 												onClick={() =>
 													setForm((prev) => ({
 														...prev,
@@ -1162,7 +1236,11 @@ export default function CitaMostradorPage() {
 													}))
 												}
 												className={`rounded-xl py-2 font-medium transition ${
-													selected ? "bg-[#006965] font-bold text-white shadow-md" : "hover:bg-slate-100"
+													selected
+														? "bg-[#006965] font-bold text-white shadow-md"
+														: esPasado
+															? "text-slate-300 cursor-not-allowed opacity-50 select-none"
+															: "hover:bg-slate-100"
 												}`}
 											>
 												{cell.day}
@@ -1200,14 +1278,14 @@ export default function CitaMostradorPage() {
 						</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
 										{morningSlots.map((opt) => {
-											const occ = horaOcupada(opt.value);
+											const past = esHoraPasada(opt.value);
 											const sel = form.hora_cita === opt.value;
 											return (
 												<button
 													key={opt.value}
 													type="button"
-													disabled={occ}
-													title={occ ? "Horario ocupado" : undefined}
+													disabled={past}
+													title={past ? "Horario pasado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1215,7 +1293,7 @@ export default function CitaMostradorPage() {
 														}))
 													}
 													className={`rounded-2xl py-3 text-base font-semibold transition ${
-														occ
+														past
 															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
@@ -1240,14 +1318,14 @@ export default function CitaMostradorPage() {
 									</div>
 									<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
 										{afternoonSlots.map((opt) => {
-											const occ = horaOcupada(opt.value);
+											const past = esHoraPasada(opt.value);
 											const sel = form.hora_cita === opt.value;
 											return (
 												<button
 													key={opt.value}
 													type="button"
-													disabled={occ}
-													title={occ ? "Horario ocupado" : undefined}
+													disabled={past}
+													title={past ? "Horario pasado" : undefined}
 													onClick={() =>
 														setForm((p) => ({
 															...p,
@@ -1255,7 +1333,7 @@ export default function CitaMostradorPage() {
 														}))
 													}
 													className={`rounded-2xl py-3 text-base font-semibold transition ${
-														occ
+														past
 															? "cursor-not-allowed bg-slate-200 text-slate-400 opacity-60 select-none"
 															: sel
 																? "border-2 border-[#1c837f] bg-white font-bold text-[#006965] shadow-sm"
