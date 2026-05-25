@@ -38,6 +38,7 @@ const kardexRoutes = require("./kardexRoutes");
 
 const rolesRoutes = require("./rolesRoutes");
 const dolarRoutes = require("./dolarRoutes");
+const backupRoutes = require("./backupRoutes");
 
 router.use("/medicos", medicosRoutes);
 router.use("/users", userRoutes);
@@ -76,6 +77,7 @@ router.use("/kardex", kardexRoutes);
 
 router.use("/roles", rolesRoutes);
 router.use("/dolar", dolarRoutes);
+router.use("/backup", backupRoutes);
 
 const loginRoutes = require("./loginRoutes");
 router.use("/auth", loginRoutes);
