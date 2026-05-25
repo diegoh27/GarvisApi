@@ -309,6 +309,10 @@ export default function CitaMostradorPage() {
 	};
 
 	const onFormSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (paso !== 4) {
+			return;
+		}
 		aplicarNombreCompletoAlForm();
 		handleSubmit(e);
 	};
