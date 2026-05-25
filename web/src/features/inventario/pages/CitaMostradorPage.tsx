@@ -312,11 +312,12 @@ export default function CitaMostradorPage() {
 			if (idPacienteWeb && form.telefono !== originalPhone && form.telefono?.trim()) {
 				const confirmPhone = await Swal.fire({
 					title: '¿Actualizar teléfono?',
-					text: '¿Deseas actualizar el número de teléfono del usuario en su perfil permanente?',
+					text: `El número de teléfono ha cambiado. ¿Deseas actualizar el número de teléfono en el perfil de ${n} ${a} de forma permanente?`,
 					icon: 'question',
-					showCancelButton: true,
-					confirmButtonText: 'Sí, actualizar',
-					cancelButtonText: 'No, dejar el anterior',
+					showDenyButton: true,
+					showCancelButton: false,
+					confirmButtonText: 'Sí, guardar permanentemente',
+					denyButtonText: 'No, solo para esta cita',
 					confirmButtonColor: PRIMARY,
 				});
 
@@ -326,10 +327,13 @@ export default function CitaMostradorPage() {
 						setOriginalPhone(form.telefono);
 					} catch (e) {
 						await Swal.fire({ icon: "error", title: "Error", text: "No se pudo actualizar el teléfono." });
-						return false; // Evitamos avanzar si hubo error al actualizar, o podríamos dejarlo avanzar y revertir visualmente. Mejor no avanzamos.
+						return false; // Evitamos avanzar si hubo error al actualizar
 					}
+				} else if (confirmPhone.isDenied) {
+					// Dejamos form.telefono con el nuevo valor pero sin actualizar en BD
 				} else {
-					setForm(prev => ({ ...prev, telefono: originalPhone }));
+					// Si se cierra el modal, no avanzamos
+					return false;
 				}
 			}
 
@@ -551,15 +555,12 @@ export default function CitaMostradorPage() {
 								<label className={labelBase}>Teléfono (opcional)</label>
 								<div
 									className={`flex h-14 items-stretch overflow-hidden rounded-2xl border bg-white shadow-sm transition-all focus-within:border-[#006965] focus-within:ring-2 focus-within:ring-[#006965]/20 ${
-										pacienteIdentificadoEnSistema ? "bg-slate-100 border-neutral-200" : fieldErrors.telefono ? "border-red-400" : "border-neutral-200"
+										fieldErrors.telefono ? "border-red-400" : "border-neutral-200"
 									}`}
 								>
 									<select
-										className={`w-[5.5rem] shrink-0 border-r border-neutral-200 bg-transparent px-3 text-lg font-bold text-[#006965] focus:outline-none ${
-											pacienteIdentificadoEnSistema ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-										}`}
+										className="w-[5.5rem] shrink-0 border-r border-neutral-200 bg-transparent px-3 text-lg font-bold text-[#006965] focus:outline-none cursor-pointer"
 										value={form.telefono ? form.telefono.substring(0, 4) : "0412"}
-										disabled={pacienteIdentificadoEnSistema}
 										onChange={(e) => {
 											const currentNum = form.telefono ? form.telefono.substring(4) : "";
 											handleChange({
@@ -590,7 +591,6 @@ export default function CitaMostradorPage() {
 												} as any);
 											}
 										}}
-										readOnly={pacienteIdentificadoEnSistema}
 										className="flex-1 border-none bg-transparent px-4 font-medium text-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"
 										placeholder="000 0000"
 										maxLength={7}
