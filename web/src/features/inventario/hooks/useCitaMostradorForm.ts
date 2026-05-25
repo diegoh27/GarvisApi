@@ -651,6 +651,43 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		});
 	};
 
+	const resetForm = () => {
+		setForm({
+			id_especialista: "",
+			id_eco: "",
+			fecha_cita: defaultFechaCita(),
+			telefono: "",
+			hora_cita: getCurrentSlot(),
+			metodo: "Transferencia",
+			monto: "",
+			tasa_dia_bcv: dolarOficial?.promedio ? String(dolarOficial.promedio) : "",
+			nombre: "",
+			apellido: "",
+			tipo_cedula: "V",
+			cedula: "",
+			rif: "",
+			referencia: "",
+			id_paciente_resolved: "",
+		});
+		setError("");
+		setFieldErrors({});
+		setMensajeCargaAnterior(null);
+		setPacienteIdentificadoEnSistema(false);
+		setIdPacienteWeb(null);
+		setOriginalPhone("");
+		setCitaActivaError(null);
+		setVincularRepresentado(null);
+		setVincularCitaAlTitular(false);
+		setSearchRepNombre("");
+		setSearchRepApellido("");
+		setResultadosRep([]);
+		setShowCrearRepresentadoForm(false);
+	};
+
+	useEffect(() => {
+		resetForm();
+	}, []);
+
 	const inputError = "border-red-500 focus:border-red-500 focus:ring-red-500/30";
 
 	return {
@@ -707,6 +744,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		handleCargarDatosAnteriores,
 		validateRepForm,
 		handleSubmit,
+		resetForm,
 		quiereAltaTitular,
 		cedulaCompleta,
 		puedeCargarAnterior,
