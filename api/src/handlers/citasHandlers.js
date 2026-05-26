@@ -23,6 +23,7 @@ const {
 	listCitasMostradorDisponiblesParaVincularController,
 	vincularCitasMostradorController,
 	crearPacienteMostradorController,
+	updatePacientePhoneMostradorController,
 } = require("../controllers/citasControllers");
 const { validarCedula } = require("../utils/validacionCedula");
 const { savePagoGuardadoController } = require("../controllers/pagosGuardadosControllers");
@@ -1215,7 +1216,22 @@ const crearPacienteMostradorHandler = async (req, res) => {
 	}
 };
 
+const updatePacientePhoneMostradorHandler = async (req, res) => {
+	try {
+		const { id_paciente, telefono } = req.body;
+		if (!id_paciente || !telefono) {
+			return res.status(400).json({ ok: false, message: "ID del paciente y teléfono son obligatorios." });
+		}
+		const result = await updatePacientePhoneMostradorController(id_paciente, telefono);
+		return res.status(200).json({ ok: true, data: result });
+	} catch (err) {
+		console.error("updatePacientePhoneMostradorHandler error:", err);
+		return res.status(500).json({ ok: false, message: "Error al actualizar el teléfono." });
+	}
+};
+
 module.exports = {
+	updatePacientePhoneMostradorHandler,
 	createCitaHandler,
 	asignarCitaCompletaHandler,
 	listCitasByPacienteHandler,

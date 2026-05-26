@@ -349,6 +349,17 @@ const citasApi = baseApi.injectEndpoints({
 			}),
 			invalidatesTags: ["PagosGuardados"],
 		}),
+		updatePacientePhoneMostrador: builder.mutation<
+			{ ok: boolean; data: any },
+			{ id_paciente: string; telefono: string }
+		>({
+			query: (body) => ({
+				url: "/citas/mostrador/telefono",
+				method: "PATCH",
+				body,
+			}),
+			invalidatesTags: ["Citas"],
+		}),
 	}),
 	overrideExisting: false,
 });
@@ -370,6 +381,7 @@ export const {
 	useUploadOrdenMedicaMutation,
 	useGetPagosGuardadosQuery,
 	useDeletePagoGuardadoMutation,
+	useUpdatePacientePhoneMostradorMutation,
 } = citasApi;
 
 export { citasApi };

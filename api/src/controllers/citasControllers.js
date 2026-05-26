@@ -1303,6 +1303,37 @@ const createCitaMostradorController = async ({
 	try {
 		await conn.beginTransaction();
 
+		// ── REGLA 1: Validación de fechas y horas pasadas
+		if (!fecha_cita) {
+			const err = new Error("La fecha de la cita es requerida.");
+			err.code = "INVALID_DATE";
+			throw err;
+		}
+		
+		const rawHora = String(hora_cita || "").trim() || new Date().toTimeString().slice(0, 8);
+		const horaFinal = /^\d{1,2}:\d{2}(:\d{2})?$/.test(rawHora)
+			? String(rawHora).trim().padEnd(8, ":00").slice(0, 8)
+			: rawHora;
+
+		const hoy = new Date();
+		// Ajustar a medianoche local para comparar solo fechas
+		const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+		
+		if (fecha_cita < hoyStr) {
+			const err = new Error("No se pueden agendar citas en fechas pasadas.");
+			err.code = "PAST_DATE";
+			throw err;
+		}
+
+		if (fecha_cita === hoyStr) {
+			const currentHoraStr = hoy.toTimeString().slice(0, 8);
+			if (horaFinal <= currentHoraStr) {
+				const err = new Error("No se pueden agendar citas en horas que ya han transcurrido hoy.");
+				err.code = "PAST_TIME";
+				throw err;
+			}
+		}
+
 		const montoValue = Number(monto);
 		const tasaValue = Number(tasa_dia_bcv);
 		if (!Number.isFinite(montoValue) || montoValue <= 0) {
@@ -1359,10 +1390,6 @@ const createCitaMostradorController = async ({
 		}
 
 		// Normalizar hora (bloques de 20 min): HH:MM o HH:MM:SS -> HH:MM:00 (hora_cita es obligatorio desde el handler)
-		const rawHora = String(hora_cita || "").trim() || new Date().toTimeString().slice(0, 8);
-		const horaFinal = /^\d{1,2}:\d{2}(:\d{2})?$/.test(rawHora)
-			? String(rawHora).trim().padEnd(8, ":00").slice(0, 8)
-			: rawHora;
 
 		// ── REGLA 2: Bloquear si el paciente web ya tiene una cita activa pendiente de pago
 		// Solo aplica cuando el moderador cargó un paciente ya registrado en el sistema.
@@ -1400,25 +1427,30 @@ const createCitaMostradorController = async ({
 		}
 
 		// Mostrador: no crear usuario real. Si hay representado "fantasma" (id_paciente = mostrador) o de un titular ya registrado, usarlo.
-		let id_paciente;
+		let id_paciente = null;
 		let id_representado_final = null;
-		if (id_paciente_titular && id_representado) {
-			const [repRows] = await conn.execute(
-				`SELECT id_representado, id_paciente FROM representado WHERE id_representado = ? LIMIT 1`,
-				[id_representado],
-			);
-			if (repRows.length) {
-				const repPaciente = repRows[0].id_paciente;
-				// Representado del paciente mostrador (fantasma): cita queda bajo mostrador
-				if (repPaciente === MOSTRADOR_PACIENTE_ID) {
-					await ensureMostradorPacienteBase(conn);
-					id_paciente = MOSTRADOR_PACIENTE_ID;
-					id_representado_final = id_representado;
-				} else if (repPaciente === id_paciente_titular) {
-					// Representado de un titular ya registrado: cita bajo ese paciente
-					id_paciente = id_paciente_titular;
-					id_representado_final = id_representado;
+		if (id_paciente_titular) {
+			if (id_representado) {
+				const [repRows] = await conn.execute(
+					`SELECT id_representado, id_paciente FROM representado WHERE id_representado = ? LIMIT 1`,
+					[id_representado],
+				);
+				if (repRows.length) {
+					const repPaciente = repRows[0].id_paciente;
+					// Representado del paciente mostrador (fantasma): cita queda bajo mostrador
+					if (repPaciente === MOSTRADOR_PACIENTE_ID) {
+						await ensureMostradorPacienteBase(conn);
+						id_paciente = MOSTRADOR_PACIENTE_ID;
+						id_representado_final = id_representado;
+					} else if (repPaciente === id_paciente_titular) {
+						// Representado de un titular ya registrado: cita bajo ese paciente
+						id_paciente = id_paciente_titular;
+						id_representado_final = id_representado;
+					}
 				}
+			} else {
+				// Cita directa para un paciente/titular ya registrado en el sistema
+				id_paciente = id_paciente_titular;
 			}
 		}
 		if (id_paciente == null) {
@@ -1594,7 +1626,7 @@ const getUltimoPacienteMostradorPorCedulaController = async (cedula) => {
 /** Datos por cédula: paciente registrado, representado y/o última cita de mostrador. */
 const getDatosPorCedulaController = async (cedula) => {
 	const [pacienteRows] = await pool.execute(
-		`SELECT u.nombre, u.apellido, u.cedula, p.rif, p.id_paciente
+		`SELECT u.nombre, u.apellido, u.cedula, u.telefono, p.rif, p.id_paciente
 		 FROM usuario u
 		 INNER JOIN paciente p ON p.id_paciente = u.id_usuario
 		 WHERE u.cedula = ?
@@ -1623,6 +1655,7 @@ const getDatosPorCedulaController = async (cedula) => {
 			nombre: pacienteRows[0].nombre || "",
 			apellido: pacienteRows[0].apellido || "",
 			cedula: pacienteRows[0].cedula || "",
+			telefono: pacienteRows[0].telefono || "",
 			rif: pacienteRows[0].rif ?? "",
 		}
 		: null;
@@ -2127,12 +2160,8 @@ const crearPacienteMostradorController = async ({
 		// 2) No existe → crear usuario + paciente
 		const id_usuario = crypto.randomUUID();
 
-		// Calcular N para email ficticio
-		const [countRows] = await conn.execute(
-			"SELECT COUNT(*) AS total FROM usuario WHERE correo LIKE '%@mostrador.com'",
-		);
-		const n = (countRows[0]?.total ?? 0) + 1;
-		const correo = `paciente.mostrador${n}@mostrador.com`;
+		// Generar un email ficticio único usando la cédula para evitar colisiones
+		const correo = `paciente.mostrador.${cedulaFull}@mostrador.com`;
 
 		// Hashear password fijo (el paciente no puede iniciar sesión con esto)
 		const hashedPassword = await bcrypt.hash(crypto.randomUUID(), 10);
@@ -2179,7 +2208,22 @@ const crearPacienteMostradorController = async ({
 	}
 };
 
+const updatePacientePhoneMostradorController = async (id_paciente, telefono) => {
+	const telefonoTrim = String(telefono || "").trim();
+	if (!telefonoTrim) {
+		const err = new Error("El teléfono no puede estar vacío");
+		err.code = "INVALID_PHONE";
+		throw err;
+	}
+	const [result] = await pool.execute(
+		"UPDATE usuario SET telefono = ? WHERE id_usuario = ?",
+		[telefonoTrim, id_paciente]
+	);
+	return { updated: result.affectedRows > 0 };
+};
+
 module.exports = {
+	updatePacientePhoneMostradorController,
 	createCitaFromDisponibilidadController,
 	asignarCitaCompletaController,
 	tienePagoPendienteController,

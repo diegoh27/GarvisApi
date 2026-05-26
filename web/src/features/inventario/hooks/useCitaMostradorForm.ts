@@ -69,6 +69,8 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 	const [pacienteIdentificadoEnSistema, setPacienteIdentificadoEnSistema] = useState(false);
 	/** R1: id_paciente del paciente web identificado al cargar por cédula. */
 	const [idPacienteWeb, setIdPacienteWeb] = useState<string | null>(null);
+	/** originalPhone: almacena el teléfono del paciente al cargarse del sistema para validar si cambió */
+	const [originalPhone, setOriginalPhone] = useState<string>("");
 	/** R2: mensaje de error cuando el paciente ya tiene una cita activa. */
 	const [citaActivaError, setCitaActivaError] = useState<string | null>(null);
 	const [vincularRepresentado, setVincularRepresentado] = useState<{
@@ -239,6 +241,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 			setPacienteIdentificadoEnSistema(false);
 			setIdPacienteWeb(null);
 			setCitaActivaError(null);
+			setOriginalPhone("");
 		}
 	};
 
@@ -511,13 +514,20 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 						: tienePaciente && paciente!.rif
 							? paciente!.rif
 							: undefined;
+				const telefono = (tienePaciente && paciente!.telefono) ? paciente!.telefono : "";
 				setForm((prev) => ({
 					...prev,
 					nombre: nombre || prev.nombre,
 					apellido: apellido || prev.apellido,
 					rif: rif ?? prev.rif,
+					telefono: telefono || prev.telefono,
 				}));
-				setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "" }));
+				if (tienePaciente && paciente!.telefono) {
+					setOriginalPhone(paciente!.telefono);
+				} else {
+					setOriginalPhone("");
+				}
+				setFieldErrors((prev) => ({ ...prev, nombre: "", apellido: "", telefono: "" }));
 				setPacienteIdentificadoEnSistema(true);
 				// R1: guardar id_paciente del paciente web identificado
 				if (tienePaciente && paciente!.id_paciente) {
@@ -641,6 +651,43 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		});
 	};
 
+	const resetForm = () => {
+		setForm({
+			id_especialista: "",
+			id_eco: "",
+			fecha_cita: defaultFechaCita(),
+			telefono: "",
+			hora_cita: getCurrentSlot(),
+			metodo: "Transferencia",
+			monto: "",
+			tasa_dia_bcv: dolarOficial?.promedio ? String(dolarOficial.promedio) : "",
+			nombre: "",
+			apellido: "",
+			tipo_cedula: "V",
+			cedula: "",
+			rif: "",
+			referencia: "",
+			id_paciente_resolved: "",
+		});
+		setError("");
+		setFieldErrors({});
+		setMensajeCargaAnterior(null);
+		setPacienteIdentificadoEnSistema(false);
+		setIdPacienteWeb(null);
+		setOriginalPhone("");
+		setCitaActivaError(null);
+		setVincularRepresentado(null);
+		setVincularCitaAlTitular(false);
+		setSearchRepNombre("");
+		setSearchRepApellido("");
+		setResultadosRep([]);
+		setShowCrearRepresentadoForm(false);
+	};
+
+	useEffect(() => {
+		resetForm();
+	}, []);
+
 	const inputError = "border-red-500 focus:border-red-500 focus:ring-red-500/30";
 
 	return {
@@ -650,6 +697,10 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		error,
 		mensajeCargaAnterior,
 		pacienteIdentificadoEnSistema,
+		idPacienteWeb,
+		setIdPacienteWeb,
+		originalPhone,
+		setOriginalPhone,
 		citaActivaError,
 		setCitaActivaError,
 		vincularRepresentado,
@@ -693,6 +744,7 @@ export function useCitaMostradorForm({ onSave }: UseCitaMostradorFormOptions) {
 		handleCargarDatosAnteriores,
 		validateRepForm,
 		handleSubmit,
+		resetForm,
 		quiereAltaTitular,
 		cedulaCompleta,
 		puedeCargarAnterior,

@@ -25,6 +25,7 @@ import {
 	RegistrarEspecialistaPage,
 	RegistrarModeradorPage,
 	MetodosPagoPage,
+	RespaldoPage,
 } from "../features/admin";
 import { HomePage } from "../features/home";
 import { InventarioPage } from "../features/inventario";
@@ -147,6 +148,14 @@ const App = () => {
 						element={
 							<RoleRoute allowed={["admin"]}>
 								<MetodosPagoPage />
+							</RoleRoute>
+						}
+					/>
+					<Route
+						path="admin/respaldo"
+						element={
+							<RoleRoute allowed={["admin"]}>
+								<RespaldoPage />
 							</RoleRoute>
 						}
 					/>
