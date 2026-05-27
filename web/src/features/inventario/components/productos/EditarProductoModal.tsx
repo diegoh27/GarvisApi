@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUpdateProductoMutation, useGetProductoQuery } from "../../api";
 import { X, Save, Edit2, Info, Bell } from "lucide-react";
+import { pluralizarUnidad, formatUnidad } from "../../../../utils/pluralizar";
 
 interface EditarProductoModalProps {
   isOpen: boolean;
@@ -246,8 +247,8 @@ export default function EditarProductoModal({
                   placeholder="Ej: 100"
                   required
                 />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-50 text-teal-700 text-[10px] font-bold px-2 py-1 rounded">
-                  UNIDADES
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-emerald-50 text-teal-700 text-[10px] font-bold px-2 py-1 rounded uppercase">
+                  {pluralizarUnidad(formData.unidad_consumo || "Unidad", Number(formData.factor_conversion) || 1)}
                 </div>
               </div>
             </div>
@@ -260,7 +261,7 @@ export default function EditarProductoModal({
               <div className="flex flex-col gap-0.5">
                 <span className="text-base font-bold text-[#006965]">Ejemplo visual:</span>
                 <p className="text-base font-medium text-teal-800/80 leading-relaxed">
-                  1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formData.factor_conversion || '100'} {formData.unidad_consumo || 'Pares'}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Pares'}</span>" automáticamente.
+                  1 <span className="font-bold">{formData.unidad_compra || 'Caja'}</span> equivale a <span className="font-bold">{formatUnidad(Number(formData.factor_conversion) || 1, formData.unidad_consumo || 'Unidad')}</span>. El sistema descontará "<span className="font-bold">{formData.unidad_consumo || 'Unidad'}</span>" automáticamente.
                 </p>
               </div>
             </div>
