@@ -1542,6 +1542,58 @@ const createCitaMostradorController = async ({
 			],
 		);
 
+		// ── CONSUMO DE INVENTARIO ──
+		// Como la cita de mostrador se registra como atendida (estado_cita = 3) inmediatamente,
+		// debemos generar el consumo de inventario de sus insumos correspondientes.
+		const [insumos] = await conn.execute(
+			`SELECT ei.id_producto, ei.cantidad, p.stock_base_total, p.consumo_actual, p.factor_conversion
+			 FROM inv_eco_insumo ei
+			 INNER JOIN inv_producto p ON p.id_producto = ei.id_producto
+			 WHERE ei.id_eco = ?
+			 FOR UPDATE`,
+			[id_eco]
+		);
+
+		for (const ins of insumos) {
+			const cantidadDescontar = Number(ins.cantidad);
+			const stockBase = Number(ins.stock_base_total);
+			const consumoActual = Number(ins.consumo_actual || 0);
+
+			let nuevoConsumo = consumoActual + cantidadDescontar;
+			let nuevoStock = stockBase - cantidadDescontar;
+
+			// 1) Actualizar stock base y consumo en el producto
+			await conn.execute(
+				"UPDATE inv_producto SET stock_base_total = ?, consumo_actual = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id_producto = ?",
+				[nuevoStock, nuevoConsumo, ins.id_producto]
+			);
+
+			// 2) Registrar consumo global de la cita
+			const id_consumo = crypto.randomUUID();
+			await conn.execute(
+				"INSERT INTO inv_cita_consumo (id_consumo, id_cita, id_producto, cantidad) VALUES (?, ?, ?, ?)",
+				[id_consumo, id_cita, ins.id_producto, cantidadDescontar]
+			);
+
+			// 3) Registrar movimiento en el Kardex
+			const id_kardex = crypto.randomUUID();
+			await conn.execute(
+				`INSERT INTO inv_kardex 
+				(id_kardex, id_producto, tipo_movimiento, cantidad, stock_anterior, stock_posterior, referencia_tipo, referencia_id, id_usuario, observaciones)
+				VALUES (?, ?, 'SALIDA', ?, ?, ?, 'CITA', ?, ?, ?)`,
+				[
+					id_kardex,
+					ins.id_producto,
+					cantidadDescontar,
+					stockBase,
+					nuevoStock,
+					id_cita,
+					usuarioValido,
+					`Consumo cita mostrador: ${cantidadDescontar} unidades base`
+				]
+			);
+		}
+
 		await conn.commit();
 
 		sendCitaReservadaEmailsAndNotifications({

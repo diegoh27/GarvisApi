@@ -302,9 +302,7 @@ exports.pagarComisionController = async ({
 		const tasaDia = await getTodayBcvRate();
 
 		const montoComisionUsd = round2(Number(comision.monto || 0));
-		const montoIngresoUsd = round2(
-			Math.max(0, Number(comision.eco_precio || 0) - montoComisionUsd),
-		);
+		const montoIngresoUsd = round2(Number(comision.eco_precio || 0));
 
 		const normalizedEgreso = normalizeUsdAmounts({
 			montoUsd: montoComisionUsd,
@@ -508,9 +506,7 @@ exports.editarPagoComisionController = async ({
 		}
 
 		const montoComisionUsd = round2(Number(comision.monto || 0));
-		const montoIngresoUsd = round2(
-			Math.max(0, Number(comision.eco_precio || 0) - montoComisionUsd),
-		);
+		const montoIngresoUsd = round2(Number(comision.eco_precio || 0));
 
 		const normalizedEgreso = normalizeUsdAmounts({
 			montoUsd: montoComisionUsd,
