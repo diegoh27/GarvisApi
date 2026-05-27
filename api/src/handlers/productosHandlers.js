@@ -17,8 +17,16 @@ const {
 const { logInventarioReq } = require("../controllers/invAuditoriaControllers");
 
 const UNIDADES_MEDIDA = [
-	"Bulto", "Caja", "Detal", "Galón", "Gramo", "Kilo", "Kit", 
-	"Litro", "Mililitro", "Paquete", "Par", "Pieza", "Sobre", "Unidad"
+	// Singular / Mayor
+	"Barril", "Galón", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet", "Detal",
+	// Singular / Menor
+	"Litro", "Mililitro", "Par", "Unidad", "Kit", "Pieza", "Sobre", "Kilo", "Gramo", "Lata", "Bolsa", "Ampolla", "Frasco", "Miligramo", "Metro",
+	// Plural / Mayor
+	"Barriles", "Galones", "Metros cúbicos", "Docenas", "Millares", "Bultos", "Cajas", "Toneladas", "Sacos", "Rollos", "Resmas", "Pallets", "Detales",
+	// Plural / Menor
+	"Litros", "Mililitros", "Pares", "Unidades", "Kits", "Piezas", "Sobres", "Kilos", "Gramos", "Latas", "Bolsas", "Ampollas", "Frascos", "Miligramos", "Metros",
+	// Abreviaciones comunes
+	"ml", "g", "kg", "mg", "m", "l"
 ];
 
 // ==========================================
@@ -50,13 +58,14 @@ const createProductoHandler = async (req, res) => {
 				message: "El nombre es requerido",
 			});
 		}
-		if (unidad_compra && !UNIDADES_MEDIDA.includes(unidad_compra)) {
+		const lowercasedUnits = UNIDADES_MEDIDA.map(u => u.trim().toLowerCase());
+		if (unidad_compra && !lowercasedUnits.includes(unidad_compra.trim().toLowerCase())) {
 			return res.status(400).json({
 				ok: false,
 				message: "Unidad de compra no válida",
 			});
 		}
-		if (unidad_consumo && !UNIDADES_MEDIDA.includes(unidad_consumo)) {
+		if (unidad_consumo && !lowercasedUnits.includes(unidad_consumo.trim().toLowerCase())) {
 			return res.status(400).json({
 				ok: false,
 				message: "Unidad de consumo no válida",
@@ -125,13 +134,14 @@ const updateProductoHandler = async (req, res) => {
 		const { id } = req.params;
 		const { nombre, presentacion, categoria, unidad_compra, unidad_consumo, factor_conversion, stock_minimo_base, activo } = req.body;
 
-		if (unidad_compra && !UNIDADES_MEDIDA.includes(unidad_compra)) {
+		const lowercasedUnits = UNIDADES_MEDIDA.map(u => u.trim().toLowerCase());
+		if (unidad_compra && !lowercasedUnits.includes(unidad_compra.trim().toLowerCase())) {
 			return res.status(400).json({
 				ok: false,
 				message: "Unidad de compra no válida",
 			});
 		}
-		if (unidad_consumo && !UNIDADES_MEDIDA.includes(unidad_consumo)) {
+		if (unidad_consumo && !lowercasedUnits.includes(unidad_consumo.trim().toLowerCase())) {
 			return res.status(400).json({
 				ok: false,
 				message: "Unidad de consumo no válida",

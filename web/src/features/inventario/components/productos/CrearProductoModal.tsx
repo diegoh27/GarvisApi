@@ -109,11 +109,11 @@ export default function CrearProductoModal({
 
   const UNIDADES_MEDIDA = [
     "Litro", "Mililitro", 
-    "Par", "Unidad", "Kit", "Pieza", "Sobre", "Kilo", "Gramo","Lata","Bolsa","Ampolla","Frasco","Miligramo"
+    "Par", "Unidad", "Kit", "Pieza", "Sobre", "Kilo", "Gramo","Lata","Bolsa","Ampolla","Frasco","Miligramo", "Metro"
   ].sort();
 
   const UNIDADES_MEDIDA_MAYOR = [
-    "Barril", "Galón  ", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet", "Detal"
+    "Barril", "Galón", "Metro cúbico", "Docena", "Millar", "Bulto", "Caja", "Tonelada", "Saco", "Rollo", "Resma", "Pallet", "Detal"
   ].sort();
 
   return (
