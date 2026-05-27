@@ -35,6 +35,12 @@ También incluye el **Prompt listo para copiar** que puedes utilizar en otra ram
 >    - En `api/src/controllers/espComisionControllers.js`, tanto en `pagarComisionController` como en `editarPagoComisionController`, cambia la fórmula de `montoIngresoUsd`.
 >    - En lugar de restar `montoComisionUsd` de `comision.eco_precio` (lo cual generaba $0 de ganancia y reducía el ingreso reportado), asígnale directamente el precio total del examen: `const montoIngresoUsd = round2(Number(comision.eco_precio || 0));`.
 >    - Esto asegura que el total pagado por el paciente ($20) sea registrado como el **Ingreso** bruto en facturación, y la comisión ($10) sea el **Egreso**, permitiendo al sistema computar la ganancia neta correcta de la clínica ($10, o el 50%) en el balance final.
+> 
+> 6. **Borradores y Plantillas Rápidas con Soporte Personalizado (`InformeFormModal.tsx`)**:
+>    - En `web/src/features/especialista/components/InformeFormModal.tsx`, agrega los estados de react `customPlantillas` y un `useEffect` para cargar desde `localStorage` al iniciar.
+>    - Implementa un botón elegante "Guardar borrador actual" al lado del título de la sección que pregunte por el nombre (vía SweetAlert2 input) y guarde el texto actual de reseña/recomendaciones en `localStorage`.
+>    - Implementa una interfaz de "píldoras" (pills) interactivas en verde esmeralda con un botón de eliminar (icono de cruz) que borra de `localStorage` de forma segura.
+>    - Al hacer clic en cualquier píldora de borrador, pregunta si desea "Reemplazar todo" o "Añadir al final" del texto existente.
 
 ---
 
@@ -254,6 +260,219 @@ A continuación se detalla el código exacto modificado en cada uno de los archi
 -		);
 +		const montoIngresoUsd = round2(Number(comision.eco_precio || 0));
  
+		const tasaDia = await getTodayBcvRate();
+ 
+ 		const montoComisionUsd = round2(Number(comision.monto || 0));
+-		const montoIngresoUsd = round2(
+-			Math.max(0, Number(comision.eco_precio || 0) - montoComisionUsd),
+-		);
++		const montoIngresoUsd = round2(Number(comision.eco_precio || 0));
+ 
  		const normalizedEgreso = normalizeUsdAmounts({
+```
+
+---
+
+*(Definición de states/helpers y types en el componente)*:
+```tsx
+type PlantillaItem = {
+	label: string;
+	reseña: string;
+	recomendaciones: string;
+};
+```
+
+*(Declaraciones e Handlers dentro del componente)*:
+```tsx
+	const [customPlantillas, setCustomPlantillas] = useState<Record<string, PlantillaItem>>({});
+
+	// Cargar plantillas personalizadas de localStorage en el montaje
+	useEffect(() => {
+		try {
+			const stored = localStorage.getItem("garvis_custom_templates");
+			if (stored) {
+				setCustomPlantillas(JSON.parse(stored));
+			}
+		} catch (e) {
+			console.error("Error al cargar plantillas de localStorage:", e);
+		}
+	}, []);
+
+	const handleSaveTemplate = async () => {
+		if (!reseña.trim()) {
+			await Swal.fire({
+				title: "Reseña vacía",
+				text: "Por favor escribe algo en la reseña para poder guardarla como borrador.",
+				icon: "warning",
+				confirmButtonColor: "#1C837F",
+			});
+			return;
+		}
+
+		const { value: templateName } = await Swal.fire({
+			title: "Guardar borrador",
+			text: "Guarda la reseña y recomendaciones actuales como una plantilla reusable.",
+			input: "text",
+			inputLabel: "Nombre de tu borrador/plantilla",
+			inputPlaceholder: "Ej: Eco Abdomen - Hígado Graso",
+			showCancelButton: true,
+			confirmButtonColor: "#1C837F",
+			cancelButtonColor: "#d33",
+			confirmButtonText: "Guardar",
+			cancelButtonText: "Cancelar",
+			inputValidator: (value) => {
+				if (!value || !value.trim()) {
+					return "¡Debes ingresar un nombre para la plantilla!";
+				}
+			}
+		});
+
+		if (templateName) {
+			const key = `custom_${Date.now()}`;
+			const newTemplate: PlantillaItem = {
+				label: templateName.trim(),
+				reseña: reseña.trim(),
+				recomendaciones: recomendaciones.trim()
+			};
+			const updated = {
+				...customPlantillas,
+				[key]: newTemplate
+			};
+			setCustomPlantillas(updated);
+			localStorage.setItem("garvis_custom_templates", JSON.stringify(updated));
+
+			await Swal.fire({
+				title: "¡Guardado!",
+				text: `Tu borrador "${templateName}" ha sido guardado de forma segura en tu navegador.`,
+				icon: "success",
+				confirmButtonColor: "#1C837F"
+			});
+		}
+	};
+
+	const handleDeleteTemplate = async (key: string, e: React.MouseEvent) => {
+		e.stopPropagation(); // Evitar que haga clic en el botón de cargar al borrar
+		const template = customPlantillas[key];
+		if (!template) return;
+
+		const result = await Swal.fire({
+			title: "¿Eliminar borrador?",
+			text: `¿Estás seguro de que deseas eliminar permanentemente el borrador "${template.label}"?`,
+			icon: "warning",
+			showCancelButton: true,
+			confirmButtonColor: "#d33",
+			cancelButtonColor: "#1C837F",
+			confirmButtonText: "Sí, eliminar",
+			cancelButtonText: "Cancelar"
+		});
+
+		if (result.isConfirmed) {
+			const updated = { ...customPlantillas };
+			delete updated[key];
+			setCustomPlantillas(updated);
+			localStorage.setItem("garvis_custom_templates", JSON.stringify(updated));
+
+			await Swal.fire({
+				title: "Eliminado",
+				text: "El borrador ha sido eliminado.",
+				icon: "success",
+				confirmButtonColor: "#1C837F"
+			});
+		}
+	};
+```
+
+*(En la sección JSX del formulario, debajo de la sección de Recomendaciones)*:
+```tsx
+							{/* Borradores Rápidos (Plantillas) */}
+							<div className="rounded-xl border border-brand-800/10 bg-brand-800/5 p-5 mt-4">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div>
+										<label className="block text-base font-semibold text-brand-900">
+											Borradores y Plantillas
+										</label>
+										<p className="mt-1 text-sm text-brand-700">
+											Selecciona una plantilla para cargarla o guarda lo que has escrito actualmente como un nuevo borrador.
+										</p>
+									</div>
+									<button
+										type="button"
+										onClick={handleSaveTemplate}
+										className="rounded-lg bg-[#1C837F] px-3.5 py-1.5 text-xs font-bold text-paper transition-all hover:bg-[#156461] hover:shadow-sm flex items-center gap-1.5"
+									>
+										<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+										</svg>
+										Guardar borrador actual
+									</button>
+								</div>
+
+								{/* List of templates */}
+								<div className="mt-4">
+									{Object.keys(customPlantillas).length === 0 ? (
+										<p className="text-xs text-brand-700 italic bg-white/50 rounded-lg p-3 border border-dashed border-mist">
+											No tienes borradores guardados aún. Escribe en la reseña y presiona "Guardar borrador actual" arriba.
+										</p>
+									) : (
+										<div className="flex flex-wrap gap-2">
+											{Object.keys(customPlantillas).map((key) => {
+												const t = customPlantillas[key];
+												return (
+													<div
+														key={key}
+														className="inline-flex items-center rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 pl-3 pr-2 py-1.5 text-sm font-medium transition-all hover:bg-emerald-100/80 gap-1.5"
+													>
+														<button
+															type="button"
+															onClick={() => {
+																Swal.fire({
+																	title: "¿Cómo deseas aplicar este borrador?",
+																	text: `Se aplicará tu plantilla personalizada: "${t.label}"`,
+																	icon: "question",
+																	showDenyButton: true,
+																	showCancelButton: true,
+																	confirmButtonColor: "#1C837F",
+																	denyButtonColor: "#3085d6",
+																	confirmButtonText: "Reemplazar todo",
+																	denyButtonText: "Añadir al final",
+																	cancelButtonText: "Cancelar"
+																}).then((result) => {
+																	if (result.isConfirmed) {
+																		setReseña(t.reseña);
+																		setRecomendaciones(t.recomendaciones);
+																	} else if (result.isDenied) {
+																		setReseña(prev => prev ? `${prev}\n\n${t.reseña}` : t.reseña);
+																		setRecomendaciones(prev => prev ? `${prev}\n\n${t.recomendaciones}` : t.recomendaciones);
+																	}
+																});
+															}}
+															className="flex items-center gap-1.5 text-left focus:outline-none"
+														>
+															<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+															</svg>
+															<span>{t.label}</span>
+														</button>
+														<button
+															type="button"
+															onClick={(e) => handleDeleteTemplate(key, e)}
+															className="rounded p-0.5 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-900 transition-colors ml-1"
+															title="Eliminar borrador"
+														>
+															<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+															</svg>
+														</button>
+													</div>
+												);
+											})}
+										</div>
+									)}
+								</div>
+							</div>
+```
+```
+
+
 ```
 
