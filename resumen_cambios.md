@@ -30,6 +30,11 @@ También incluye el **Prompt listo para copiar** que puedes utilizar en otra ram
 >      - Para cada insumo, restar la cantidad del `stock_base_total` e incrementar el `consumo_actual` en la tabla `inv_producto`.
 >      - Insertar el registro de consumo en la tabla `inv_cita_consumo`.
 >      - Registrar el movimiento de `SALIDA` en la auditoría de `inv_kardex` referenciando el `id_cita` y `usuarioValido`.
+> 
+> 5. **Corrección de Lógica Financiera en Comisiones de Especialistas (`espComisionControllers.js`)**:
+>    - En `api/src/controllers/espComisionControllers.js`, tanto en `pagarComisionController` como en `editarPagoComisionController`, cambia la fórmula de `montoIngresoUsd`.
+>    - En lugar de restar `montoComisionUsd` de `comision.eco_precio` (lo cual generaba $0 de ganancia y reducía el ingreso reportado), asígnale directamente el precio total del examen: `const montoIngresoUsd = round2(Number(comision.eco_precio || 0));`.
+>    - Esto asegura que el total pagado por el paciente ($20) sea registrado como el **Ingreso** bruto en facturación, y la comisión ($10) sea el **Egreso**, permitiendo al sistema computar la ganancia neta correcta de la clínica ($10, o el 50%) en el balance final.
 
 ---
 
@@ -232,3 +237,23 @@ A continuación se detalla el código exacto modificado en cada uno de los archi
 
 		await conn.commit();
 ```
+
+---
+
+### 5. Backend: Lógica Financiera de Comisiones
+* **Archivo**: `api/src/controllers/espComisionControllers.js`
+* **Cambio**: Modificar la asignación de `montoIngresoUsd` en `pagarComisionController` y `editarPagoComisionController` para que registre el costo total del examen en lugar de restar la comisión.
+
+*(En `pagarComisionController` y `editarPagoComisionController`)*:
+```diff
+		const tasaDia = await getTodayBcvRate();
+ 
+ 		const montoComisionUsd = round2(Number(comision.monto || 0));
+-		const montoIngresoUsd = round2(
+-			Math.max(0, Number(comision.eco_precio || 0) - montoComisionUsd),
+-		);
++		const montoIngresoUsd = round2(Number(comision.eco_precio || 0));
+ 
+ 		const normalizedEgreso = normalizeUsdAmounts({
+```
+
