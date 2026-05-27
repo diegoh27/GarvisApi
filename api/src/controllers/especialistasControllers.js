@@ -114,6 +114,7 @@ const listEspecialistasController = async ({ q }) => {
       u.id_usuario AS id_especialista,
       u.nombre,
       u.apellido,
+      u.activo,
 			e.id_especialidad,
 			e.porcentaje,
       es.nombre AS especialidad

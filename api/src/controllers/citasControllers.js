@@ -2241,7 +2241,7 @@ const crearPacienteMostradorController = async ({
 		await conn.execute(
 			`INSERT INTO paciente
 				(id_paciente, tipo_sangre, descripcion, direccion, rif, email_verificado)
-			 VALUES (?, 'No especificado', 'Paciente registrado por mostrador', NULL, ?, 0)`,
+			 VALUES (?, 'N/A', 'Paciente registrado por mostrador', NULL, ?, 0)`,
 			[id_usuario, rif],
 		);
 
